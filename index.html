@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Platform | All your business on one platform</title>
+  <meta name="description" content="Simple, efficient, yet affordable ERP platform. Integrate Accounting, CRM, Projects, HR, Website, and 20+ more applications seamlessly.">
+  
+  <!-- Tailwind CSS Play CDN (v4 Browser Engine) from unpkg.com to resolve DNS issues -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS v4 Custom Theme Configuration -->
+  <style type="tailwindcss">
+    @theme {
+      --font-sans: 'Inter', sans-serif;
+      --font-caveat: 'Caveat', cursive;
+      --color-brand-50: #f5f3ff;
+      --color-brand-100: #ede9fe;
+      --color-brand-500: #6366f1;
+      --color-brand-600: #4f46e5;
+      --color-brand-700: #4338ca;
+      
+      --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.03);
+      --shadow-soft-hover: 0 12px 30px rgba(0, 0, 0, 0.07);
+      --shadow-pill: 0 8px 30px rgba(0, 0, 0, 0.04);
+    }
+  </style>
+
+  <!-- Standard Custom CSS for Animations -->
+  <style>
+    /* Fade-in entrance animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Highlighter drawing animation */
+    @keyframes drawMarker {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    .marker-draw {
+      animation: drawMarker 1.2s cubic-bezier(0.65, 0, 0.35, 1) 0.6s forwards;
+    }
+
+    /* Hover float animations */
+    .float-slow {
+      animation: float 6s ease-in-out infinite;
+    }
+    .float-delayed {
+      animation: float 6s ease-in-out infinite;
+      animation-delay: 3s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Continuous pulse for chat bubble badge */
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+    .badge-pulse {
+      animation: badgePulse 2s infinite ease-in-out;
+    }
+
+    /* Chat bubble idle hover float */
+    @keyframes chatBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .chat-bounce-idle {
+      animation: chatBounce 3s infinite ease-in-out;
+    }
+
+    /* Wiggle nudge for chat bubble attention */
+    @keyframes wiggleShake {
+      0%, 100% { transform: rotate(0deg); }
+      15% { transform: rotate(-8deg); }
+      30% { transform: rotate(8deg); }
+      45% { transform: rotate(-4deg); }
+      60% { transform: rotate(4deg); }
+      75% { transform: rotate(0deg); }
+    }
+    .nudge-shake {
+      animation: wiggleShake 0.8s ease-in-out;
+    }
+
+    /* SVG Child Vector Hover Animations */
+    .group:hover .animate-spin-hover {
+      animation: spin 4s infinite linear;
+    }
+    .group:hover .animate-bounce-hover {
+      animation: bounceHover 1.2s infinite ease-in-out;
+    }
+    .group:hover .animate-wiggle-hover {
+      animation: wiggleHover 0.7s infinite ease-in-out;
+    }
+    .group:hover .animate-pulse-hover {
+      animation: pulseHover 1.6s infinite ease-in-out;
+    }
+    .group:hover .animate-glide-hover {
+      animation: glideHover 1.6s infinite ease-in-out;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); transform-origin: center; }
+      to { transform: rotate(360deg); transform-origin: center; }
+    }
+    @keyframes bounceHover {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    @keyframes wiggleHover {
+      0%, 100% { transform: rotate(0deg); transform-origin: center; }
+      25% { transform: rotate(-7deg); transform-origin: center; }
+      75% { transform: rotate(7deg); transform-origin: center; }
+    }
+    @keyframes pulseHover {
+      0%, 100% { transform: scale(1); transform-origin: center; }
+      50% { transform: scale(1.15); transform-origin: center; }
+    }
+    @keyframes glideHover {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(4px, -4px); }
+    }
+  </style>
+</head>
+<body class="bg-[#f8f8f8] text-slate-800 font-sans min-h-screen relative overflow-x-hidden">
+
+  <!-- Sticky Navbar -->
+  <header class="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-6 h-16 md:h-20 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-2 group">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-500 to-indigo-600 flex items-center justify-center shadow-md shadow-brand-500/10 group-hover:scale-105 transition-transform duration-300">
+          <svg class="w-5 h-5 text-white animate-pulse-hover" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">ERP<span class="text-brand-600">.one</span></span>
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <nav class="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+        <a href="#apps" class="hover:text-brand-600 transition-colors duration-200">Apps</a>
+        <a href="#" class="hover:text-brand-600 transition-colors duration-200">Community</a>
+        <a href="#" class="hover:text-brand-600 transition-colors duration-200">Pricing</a>
+        <a href="#" class="hover:text-brand-600 transition-colors duration-200">Contact Sales</a>
+      </nav>
+
+      <!-- Nav CTAs -->
+      <div class="hidden md:flex items-center gap-4">
+        <a href="#" class="text-sm font-semibold text-slate-600 hover:text-brand-600 transition-colors duration-200">Sign in</a>
+        <a href="#" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold px-5 py-2.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5">Try it free</a>
+      </div>
+
+      <!-- Mobile Hamburger Menu Button -->
+      <button id="mobile-menu-btn" class="md:hidden p-2 text-slate-600 hover:text-slate-900 focus:outline-none" aria-label="Toggle menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile Nav Menu Panel -->
+    <div id="mobile-menu" class="hidden md:hidden w-full bg-white border-b border-gray-100 px-6 py-6 absolute left-0 top-16 shadow-lg space-y-4">
+      <a href="#apps" class="block text-base font-semibold text-slate-700 hover:text-brand-600 transition-colors">Apps</a>
+      <a href="#" class="block text-base font-semibold text-slate-700 hover:text-brand-600 transition-colors">Community</a>
+      <a href="#" class="block text-base font-semibold text-slate-700 hover:text-brand-600 transition-colors">Pricing</a>
+      <a href="#" class="block text-base font-semibold text-slate-700 hover:text-brand-600 transition-colors">Contact Sales</a>
+      <div class="border-t border-gray-100 pt-4 flex flex-col gap-3">
+        <a href="#" class="text-center text-base font-semibold text-slate-700 hover:text-brand-600 py-2">Sign in</a>
+        <a href="#" class="bg-slate-900 hover:bg-slate-800 text-white text-center text-base font-bold py-3 rounded-full shadow-md">Try it free</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero & Intro Section -->
+  <section class="relative pt-12 pb-24 md:pt-20 md:pb-36 bg-gradient-to-b from-white to-slate-50 overflow-hidden">
+    <!-- Centered Floating Pill Banner -->
+    <div class="max-w-7xl mx-auto px-6 mb-12 flex justify-center animate-fade-in" style="animation-delay: 50ms;">
+      <div class="inline-flex flex-wrap items-center justify-center gap-2 bg-white/95 backdrop-blur px-5 py-3 rounded-full border border-gray-100 shadow-pill hover:shadow-soft-hover transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer max-w-full text-xs sm:text-sm font-medium text-slate-700 group">
+        <span class="text-base flex items-center shrink-0 transition-transform duration-300 group-hover:scale-125">🇮🇳</span>
+        <span class="text-slate-900 font-bold border-r border-slate-200 pr-3">Business Show: Pune - Maharashtra (India)</span>
+        <span class="text-slate-500 font-semibold px-2">24 & 25 September</span>
+        <span class="text-brand-600 font-bold border-l border-slate-200 pl-3 flex items-center gap-1 group-hover:text-brand-700">
+          Register <span class="inline-block transition-transform duration-300 group-hover:translate-x-1.5">→</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Main Hero Content -->
+    <div class="max-w-4xl mx-auto text-center px-6 relative z-10 animate-fade-in" style="animation-delay: 150ms;">
+      <!-- Title -->
+      <h1 class="font-caveat text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-slate-800 leading-[1.15] mb-6 select-none">
+        All your business on 
+        <span class="relative inline-block px-2">
+          <span class="relative z-10 text-brand-600">one platform.</span>
+          <!-- Hand-drawn style yellow highlighter -->
+          <svg class="absolute bottom-2 sm:bottom-3 left-0 w-full h-4 sm:h-5 text-yellow-300 opacity-80 pointer-events-none -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
+            <path class="marker-draw" d="M1,8 Q40,3 70,7 T100,5" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" />
+          </svg>
+        </span>
+      </h1>
+
+      <!-- Subtitle -->
+      <p class="text-lg sm:text-xl md:text-2xl text-slate-500 font-medium tracking-wide mb-10 max-w-2xl mx-auto select-none">
+        Simple, efficient, yet affordable!
+      </p>
+
+      <!-- CTA Buttons & Arrow Badge -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 relative max-w-md mx-auto sm:max-w-none">
+        
+        <!-- Primary CTA -->
+        <a href="#" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 active:scale-95 text-white font-bold text-base px-8 py-4 rounded-full transition-all duration-300 shadow-lg shadow-brand-600/20 hover:shadow-xl hover:shadow-brand-600/30 flex items-center justify-center gap-2 group">
+          Start now - It's free
+          <span class="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+        </a>
+        
+        <!-- Secondary CTA -->
+        <a href="#" class="w-full sm:w-auto bg-white hover:bg-slate-50 active:scale-95 text-slate-700 font-semibold text-base px-8 py-4 rounded-full border border-slate-200 transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-center">
+          Meet an advisor
+        </a>
+
+        <!-- Hand-drawn Arrow & Price Badge -->
+        <div class="absolute top-[8.5rem] sm:top-1/2 sm:-translate-y-1/2 left-1/2 sm:left-auto sm:right-[-14rem] transform -translate-x-1/2 sm:translate-x-0 flex items-center gap-1.5 pointer-events-none select-none">
+          <!-- Hand-drawn Curve Arrow SVG -->
+          <svg class="w-11 h-11 text-slate-400 transform -scale-x-100 rotate-[55deg] sm:rotate-[15deg] shrink-0 float-slow" viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M10,12 C15,35 38,42 45,45" />
+            <path d="M36,48 L46,46 L43,33" />
+          </svg>
+          <div class="font-caveat text-xl sm:text-2xl text-slate-600 rotate-[-3deg] whitespace-nowrap pt-3">
+            <span class="text-brand-600 font-bold">₹580/month</span> for ALL apps
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Soft Floating Background Blobs -->
+    <div class="absolute top-1/4 left-10 w-72 h-72 bg-brand-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 float-slow -z-10"></div>
+    <div class="absolute bottom-10 right-10 w-80 h-80 bg-purple-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 float-delayed -z-10"></div>
+  </section>
+
+  <!-- Large Curved Transition Wave Divider -->
+  <div class="relative w-full overflow-hidden leading-[0] transform translate-y-[2px] z-20">
+    <svg viewBox="0 0 1440 120" class="relative block w-full h-12 md:h-24 text-[#f8f8f8] fill-current" preserveAspectRatio="none">
+      <path d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,42.7C1120,32,1280,32,1360,32L1440,32L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"></path>
+    </svg>
+  </div>
+
+  <!-- Apps Section & Connection Stage -->
+  <section id="apps" class="relative z-10 bg-[#f8f8f8] pb-24 md:pb-32 px-6 overflow-visible">
+    <div class="max-w-7xl mx-auto relative">
+      
+      <!-- Section Title -->
+      <div class="text-center mb-16 relative z-30 select-none">
+        <h2 id="apps-section-title" class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800 transition-all duration-300">
+          Fully Integrated Suite
+        </h2>
+        <p id="apps-section-subtitle" class="text-slate-500 mt-2 text-sm sm:text-base max-w-xl mx-auto transition-all duration-300">
+          Everything runs together, updating inventory, accounting, and reports instantly.
+        </p>
+      </div>
+
+      <!-- Apps Grid (6 columns desktop, responsive) -->
+      <div id="apps-grid-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 relative z-20 transition-all duration-500">
+        
+        <!-- Card 1: Accounting -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#E6F4EA"/>
+              <rect class="animate-pulse-hover" x="12" y="12" width="24" height="24" rx="4" fill="#10B981" fill-opacity="0.15"/>
+              <path d="M16 17H32" stroke="#10B981" stroke-width="3" stroke-linecap="round"/>
+              <path d="M16 23H32" stroke="#10B981" stroke-width="3" stroke-linecap="round"/>
+              <path d="M16 29H24" stroke="#10B981" stroke-width="3" stroke-linecap="round"/>
+              <circle class="animate-bounce-hover" cx="31" cy="29" r="3" fill="#F59E0B"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Accounting</span>
+        </div>
+
+        <!-- Card 2: Knowledge -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#F3E8FF"/>
+              <path class="animate-bounce-hover" d="M14 14C14 12.8954 14.8954 12 16 12H32C33.1046 12 34 12.8954 34 14V34H14V14Z" fill="#8B5CF6" fill-opacity="0.15"/>
+              <path d="M18 18H30" stroke="#8B5CF6" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M18 24H30" stroke="#8B5CF6" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M18 30H26" stroke="#8B5CF6" stroke-width="2.5" stroke-linecap="round"/>
+              <circle class="animate-pulse-hover" cx="29" cy="30" r="4.5" fill="#EC4899"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Knowledge</span>
+        </div>
+
+        <!-- Card 3: Sign -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#E0F2FE"/>
+              <path d="M13 13C13 11.8954 13.8954 11 15 11H27L35 19V35C35 36.1046 34.1046 37 33 37H15C13.8954 37 13 36.1046 13 35V13Z" fill="#0EA5E9" fill-opacity="0.15"/>
+              <path class="animate-wiggle-hover" d="M22 28L25.5 31L32 23" stroke="#0284C7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M17 19H25" stroke="#0EA5E9" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M17 23H20" stroke="#0EA5E9" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Sign</span>
+        </div>
+
+        <!-- Card 4: CRM -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#FCE7F3"/>
+              <path d="M12 15C12 12.7909 13.7909 11 16 11H32C34.2091 11 36 12.7909 36 15V23C36 29.6274 30.6274 35 24 35C17.3726 35 12 29.6274 12 23V15Z" fill="#EC4899" fill-opacity="0.15"/>
+              <circle class="animate-bounce-hover" cx="24" cy="21" r="5" fill="#EC4899"/>
+              <path d="M15 31.5C17.5 28.5 20.5 27 24 27C27.5 27 30.5 28.5 33 31.5" stroke="#D946EF" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">CRM</span>
+        </div>
+
+        <!-- Card 5: Studio -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#EEF2F6"/>
+              <rect x="12" y="12" width="24" height="24" rx="4" fill="#6366F1" fill-opacity="0.15" stroke="#4F46E5" stroke-width="2"/>
+              <path class="animate-glide-hover" d="M25 25L35 35" stroke="#4F46E5" stroke-width="3" stroke-linecap="round"/>
+              <circle class="animate-pulse-hover" cx="35" cy="35" r="3" fill="#EC4899"/>
+              <circle cx="16" cy="16" r="2" fill="#4F46E5"/>
+              <circle cx="32" cy="16" r="2" fill="#4F46E5"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Studio</span>
+        </div>
+
+        <!-- Card 6: Subscriptions -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#ECFDF5"/>
+              <path class="animate-spin-hover" d="M24 12C30.6274 12 36 17.3726 36 24C36 30.6274 30.6274 36 24 36C17.3726 36 12 30.6274 12 24" stroke="#10B981" stroke-width="3.5" stroke-linecap="round"/>
+              <path d="M16 28L12 24L8 28" stroke="#10B981" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle class="animate-pulse-hover" cx="24" cy="24" r="6" fill="#FBBF24" fill-opacity="0.8"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Subscriptions</span>
+        </div>
+
+        <!-- Card 7: AI -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#EEF2FF"/>
+              <path class="animate-pulse-hover" d="M24 12L27 20L35 23L27 26L24 34L21 26L13 23L21 20L24 12Z" fill="#4F46E5" fill-opacity="0.15" stroke="#6366F1" stroke-width="2" stroke-linejoin="round"/>
+              <circle class="animate-bounce-hover" cx="15" cy="13" r="2.5" fill="#F43F5E"/>
+              <circle class="animate-wiggle-hover" cx="34" cy="33" r="3.5" fill="#10B981"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">AI</span>
+        </div>
+
+        <!-- Card 8: Point of Sale -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#FEF3C7"/>
+              <rect class="animate-bounce-hover" x="13" y="14" width="22" height="14" rx="3" fill="#D97706" fill-opacity="0.15" stroke="#F59E0B" stroke-width="2"/>
+              <rect x="11" y="30" width="26" height="4" rx="2" fill="#D97706"/>
+              <path d="M24 28V30" stroke="#B45309" stroke-width="2"/>
+              <circle cx="18" cy="21" r="1.5" fill="#F59E0B"/>
+              <circle cx="24" cy="21" r="1.5" fill="#F59E0B"/>
+              <circle cx="30" cy="21" r="1.5" fill="#F59E0B"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Point of Sale</span>
+        </div>
+
+        <!-- Card 9: Discuss -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#E0F2FE"/>
+              <path class="animate-wiggle-hover" d="M12 16C12 13.7909 13.7909 12 16 12H28C30.2091 12 32 13.7909 32 16V24C32 26.2091 30.2091 28 28 28H19.5L14.5 32.5V28H14C12.8954 28 12 27.1046 12 26V16Z" fill="#0EA5E9" fill-opacity="0.15" stroke="#0284C7" stroke-width="2"/>
+              <path class="animate-bounce-hover" d="M22 16C22 13.7909 23.7909 12 26 12H32C34.2091 12 36 13.7909 36 16V22C36 24.2091 34.2091 26 32 26V28" stroke="#38BDF8" stroke-width="2"/>
+              <circle cx="18" cy="20" r="1.5" fill="#0284C7"/>
+              <circle cx="24" cy="20" r="1.5" fill="#0284C7"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Discuss</span>
+        </div>
+
+        <!-- Card 10: Documents -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#EEF2FF"/>
+              <path class="animate-bounce-hover" d="M14 12C14 10.8954 14.8954 10 16 10H28L34 16V36C34 37.1046 33.1046 38 32 38H16C14.8954 38 14 37.1046 14 36V12Z" fill="#4F46E5" fill-opacity="0.15" stroke="#6366F1" stroke-width="2"/>
+              <path d="M28 10V16H34" stroke="#6366F1" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M19 22H29" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M19 28H25" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Documents</span>
+        </div>
+
+        <!-- Card 11: Project -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#E0F7FA"/>
+              <rect class="animate-pulse-hover" x="12" y="12" width="24" height="24" rx="4" fill="#00ACC1" fill-opacity="0.15" stroke="#0097A7" stroke-width="2"/>
+              <rect x="16" y="16" width="16" height="4" rx="1" fill="#0097A7"/>
+              <rect x="16" y="24" width="10" height="4" rx="1" fill="#00ACC1"/>
+              <circle class="animate-bounce-hover" cx="30" cy="26" r="2" fill="#F59E0B"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Project</span>
+        </div>
+
+        <!-- Card 12: Timesheets -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#E6F4EA"/>
+              <circle cx="24" cy="25" r="11" fill="#10B981" fill-opacity="0.15" stroke="#10B981" stroke-width="2"/>
+              <path class="animate-wiggle-hover" d="M24 18V25L28 29" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M21 10H27" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M24 10V14" stroke="#10B981" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Timesheets</span>
+        </div>
+
+        <!-- Card 13: Field Service -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#E8F5E9"/>
+              <path class="animate-bounce-hover" d="M24 11C18.4772 11 14 15.4772 14 21C14 28 24 37 24 37C24 37 34 28 34 21C34 15.4772 29.5228 11 24 11Z" fill="#4CAF50" fill-opacity="0.15" stroke="#2E7D32" stroke-width="2"/>
+              <circle cx="24" cy="20" r="4.5" fill="#E91E63"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Field Service</span>
+        </div>
+
+        <!-- Card 14: Planning -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#FCE7F3"/>
+              <rect x="12" y="14" width="24" height="22" rx="3" fill="#EC4899" fill-opacity="0.15" stroke="#EC4899" stroke-width="2"/>
+              <path d="M12 20H36" stroke="#D946EF" stroke-width="2"/>
+              <rect class="animate-wiggle-hover" x="17" y="24" width="5" height="4" rx="1" fill="#F43F5E"/>
+              <rect class="animate-bounce-hover" x="26" y="24" width="5" height="4" rx="1" fill="#10B981"/>
+              <path d="M18 11V15" stroke="#EC4899" stroke-width="2" stroke-linecap="round"/>
+              <path d="M30 11V15" stroke="#EC4899" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Planning</span>
+        </div>
+
+        <!-- Card 15: Helpdesk -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#FFE4E6"/>
+              <circle cx="24" cy="24" r="11" fill="#F43F5E" fill-opacity="0.15" stroke="#E11D48" stroke-width="2"/>
+              <circle class="animate-spin-hover" cx="24" cy="24" r="6" stroke="#E11D48" stroke-width="2.5" stroke-dasharray="4,3"/>
+              <path d="M17 17L12 12" stroke="#E11D48" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M31 17L36 12" stroke="#E11D48" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Helpdesk</span>
+        </div>
+
+        <!-- Card 16: eCommerce -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#ECFDF5"/>
+              <path class="animate-bounce-hover" d="M14 18V35C14 36.1046 14.8954 37 16 37H32C33.1046 37 34 36.1046 34 35V18H14Z" fill="#10B981" fill-opacity="0.15" stroke="#10B981" stroke-width="2"/>
+              <path d="M19 18V14C19 11.2386 21.2386 9 24 9C26.7614 9 29 11.2386 29 14V18" stroke="#059669" stroke-width="2" stroke-linecap="round"/>
+              <circle class="animate-pulse-hover" cx="24" cy="27" r="3.5" fill="#F59E0B"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">eCommerce</span>
+        </div>
+
+        <!-- Card 17: Website -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#E0F2FE"/>
+              <rect x="12" y="13" width="24" height="18" rx="3" fill="#0EA5E9" fill-opacity="0.15" stroke="#0284C7" stroke-width="2"/>
+              <circle class="animate-spin-hover" cx="24" cy="22" r="4.5" stroke="#0284C7" stroke-width="1.5"/>
+              <path d="M12 27H36" stroke="#0284C7" stroke-width="2"/>
+              <path d="M18 35H30" stroke="#0284C7" stroke-width="2" stroke-linecap="round"/>
+              <path d="M24 31V35" stroke="#0284C7" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Website</span>
+        </div>
+
+        <!-- Card 18: Email Marketing -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#FEE2E2"/>
+              <rect x="12" y="14" width="24" height="20" rx="3" fill="#EF4444" fill-opacity="0.15" stroke="#EF4444" stroke-width="2"/>
+              <path d="M12 16L24 24L36 16" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/>
+              <path class="animate-glide-hover" d="M22 28L32 30" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
+              <path class="animate-glide-hover" d="M28 24L32 30L26 31" stroke="#3B82F6" stroke-width="2" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Email Marketing</span>
+        </div>
+
+        <!-- Card 19: Purchase -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#FEF3C7"/>
+              <path d="M15 11C15 9.89543 15.8954 9 17 9H31C32.1046 9 33 9.89543 33 11V37C33 38.1046 32.1046 39 31 39H17C15.8954 39 15 38.1046 15 37V11Z" fill="#F59E0B" fill-opacity="0.15" stroke="#D97706" stroke-width="2"/>
+              <path class="animate-wiggle-hover" d="M20 9V12H28V9" stroke="#D97706" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="20" cy="20" r="2" fill="#10B981"/>
+              <circle cx="20" cy="28" r="2" fill="#10B981"/>
+              <line x1="24" y1="20" x2="29" y2="20" stroke="#D97706" stroke-width="2"/>
+              <line x1="24" y1="28" x2="29" y2="28" stroke="#D97706" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Purchase</span>
+        </div>
+
+        <!-- Card 20: Inventory -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#FFEDD5"/>
+              <path class="animate-wiggle-hover" d="M24 11L36 17V31L24 37L12 31V17L24 11Z" fill="#F97316" fill-opacity="0.15" stroke="#EA580C" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M12 17L24 23L36 17" stroke="#EA580C" stroke-width="2"/>
+              <path d="M24 23V37" stroke="#EA580C" stroke-width="2"/>
+              <path d="M18 14L30 20" stroke="#F97316" stroke-width="1.5" stroke-dasharray="3,2"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Inventory</span>
+        </div>
+
+        <!-- Card 21: Manufacturing -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#F1F5F9"/>
+              <path class="animate-bounce-hover" d="M13 36V22L20 15L27 22V36H13Z" fill="#64748B" fill-opacity="0.15" stroke="#475569" stroke-width="2"/>
+              <rect x="30" y="12" width="6" height="24" rx="1.5" fill="#64748B" fill-opacity="0.15" stroke="#475569" stroke-width="2"/>
+              <circle class="animate-spin-hover" cx="20" cy="26" r="3" fill="#F59E0B"/>
+              <path d="M30 18H36" stroke="#475569" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Manufacturing</span>
+        </div>
+
+        <!-- Card 22: Sales -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#ECFDF5"/>
+              <path d="M13 19C13 15.6863 15.6863 13 19 13H29C32.3137 13 35 15.6863 35 19V32C35 34.2091 33.2091 36 31 36H17C14.7909 36 13 34.2091 13 32V19Z" fill="#10B981" fill-opacity="0.15" stroke="#059669" stroke-width="2"/>
+              <circle class="animate-pulse-hover" cx="24" cy="20" r="3" fill="#F59E0B"/>
+              <path class="animate-bounce-hover" d="M18 28H30" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M21 32H27" stroke="#059669" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Sales</span>
+        </div>
+
+        <!-- Card 23: HR -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#E2F1F1"/>
+              <circle cx="24" cy="17" r="5" fill="#0D9488" fill-opacity="0.15" stroke="#0F766E" stroke-width="2"/>
+              <path class="animate-bounce-hover" d="M14 33.5C14 28.5 18 25 24 25C30 25 34 28.5 34 33.5" fill="#0D9488" fill-opacity="0.15" stroke="#0F766E" stroke-width="2" stroke-linecap="round"/>
+              <circle class="animate-pulse-hover" cx="34" cy="16" r="2.5" fill="#EC4899"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">HR</span>
+        </div>
+
+        <!-- Card 24: Dashboard -->
+        <div class="app-card bg-white aspect-square rounded-[16px] p-5 shadow-soft border border-slate-100/80 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:shadow-soft-hover group relative overflow-hidden" style="opacity: 0;">
+          <div class="w-16 h-16 flex items-center justify-center mb-4 card-icon-container">
+            <svg class="w-full h-full transition-transform duration-300 group-hover:scale-110" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="6" y="6" width="36" height="36" rx="8" fill="#FDF2F8"/>
+              <circle cx="24" cy="24" r="12" fill="#EC4899" fill-opacity="0.1" stroke="#EC4899" stroke-width="2"/>
+              <path d="M16 30V24" stroke="#D946EF" stroke-width="3" stroke-linecap="round"/>
+              <path class="animate-wiggle-hover" d="M24 30V18" stroke="#D946EF" stroke-width="3" stroke-linecap="round"/>
+              <path d="M32 30V21" stroke="#EC4899" stroke-width="3" stroke-linecap="round"/>
+              <path class="animate-bounce-hover" d="M15 16L23 13L32 17" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-slate-800 tracking-tight card-name">Dashboard</span>
+        </div>
+
+      </div>
+
+      <!-- Bottom Controls Section -->
+      <div class="mt-16 pt-8 border-t border-slate-200 flex justify-end relative z-30 select-none">
+        <!-- Right-aligned link -->
+        <a href="#" class="group text-sm font-bold text-slate-700 hover:text-brand-600 transition-colors flex items-center gap-1.5 py-1">
+          View all Apps
+          <span class="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Support & Floating Action Elements -->
+  <!-- Support/Help Circle Button -->
+  <button id="support-btn" class="fixed bottom-24 right-6 w-12 h-12 bg-white text-slate-700 rounded-full shadow-lg border border-slate-100 flex items-center justify-center hover:bg-slate-50 hover:-translate-y-1 active:scale-95 transition-all duration-300 z-40 group" aria-label="Open support documentation">
+    <svg class="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+    <!-- Tooltip -->
+    <span class="absolute right-14 bg-slate-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap shadow-md">Support Center</span>
+  </button>
+
+  <!-- Floating Chat Bubble Widget -->
+  <div class="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+    <!-- Chat Widget Window Mockup (Hidden by default) -->
+    <div id="chat-window" class="w-80 h-96 bg-white rounded-2xl border border-slate-100 shadow-2xl flex-col mb-4 overflow-hidden hidden transition-all duration-300 transform translate-y-4 opacity-0 scale-95 origin-bottom-right">
+      <!-- Chat Header -->
+      <div class="bg-gradient-to-r from-brand-600 to-indigo-600 p-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></div>
+          <div>
+            <h3 class="font-bold text-sm">ERP Support Agent</h3>
+            <p class="text-xs text-brand-100">Typically replies instantly</p>
+          </div>
+        </div>
+        <button id="close-chat" class="text-white/80 hover:text-white" aria-label="Close chat">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <!-- Chat Messages (Scrollable) -->
+      <div class="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50 text-xs leading-relaxed" id="chat-messages">
+        <div class="flex items-start gap-2 max-w-[85%] animate-fade-in">
+          <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center shrink-0">EA</div>
+          <div class="bg-white p-3 rounded-2xl shadow-soft border border-slate-100 text-slate-700">
+            Hello! 👋 Need help choosing the right business apps for your business show? Ask me anything!
+          </div>
+        </div>
+      </div>
+      <!-- Chat Input -->
+      <form id="chat-form" class="p-3 bg-white border-t border-slate-100 flex items-center gap-2">
+        <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 px-3 py-2 bg-slate-100 border-none rounded-full text-xs focus:ring-1 focus:ring-brand-500 focus:outline-none" required />
+        <button type="submit" class="w-8 h-8 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center shrink-0 active:scale-90 transition-all shadow-md shadow-brand-500/10">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- Chat Trigger Bubble -->
+    <button id="chat-bubble" class="w-14 h-14 bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-lg flex items-center justify-center hover:-translate-y-1 active:scale-95 transition-all duration-300 group chat-bounce-idle" aria-label="Open live chat">
+      <svg class="w-6 h-6 group-hover:scale-110 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+      <!-- Chat Notification dot -->
+      <span class="absolute top-0 right-0 w-3.5 h-3.5 bg-rose-500 border-2 border-white rounded-full badge-pulse"></span>
+    </button>
+  </div>
+
+  <!-- Script for Interactive Features, Mobile Menu, Chat and Scroll Assembly -->
+  <script>
+    // --- Mobile Menu Toggle ---
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('menu-icon');
+
+    mobileMenuBtn.addEventListener('click', () => {
+      const isHidden = mobileMenu.classList.contains('hidden');
+      if (isHidden) {
+        mobileMenu.classList.remove('hidden');
+        menuIcon.setAttribute('d', 'M6 18L18 6M6 6l12 12'); // Close icon
+      } else {
+        mobileMenu.classList.add('hidden');
+        menuIcon.setAttribute('d', 'M4 6h16M4 12h16M4 18h16'); // Burger icon
+      }
+    });
+
+    // --- Floating Chat Windows & Periodic Nudges ---
+    const chatBubble = document.getElementById('chat-bubble');
+    const chatWindow = document.getElementById('chat-window');
+    const closeChat = document.getElementById('close-chat');
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    function toggleChat(show) {
+      if (show) {
+        chatWindow.classList.remove('hidden');
+        setTimeout(() => {
+          chatWindow.classList.remove('opacity-0', 'scale-95', 'translate-y-4');
+          chatWindow.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+          chatBubble.classList.remove('chat-bounce-idle'); // Stop bouncing when active
+        }, 10);
+      } else {
+        chatWindow.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+        chatWindow.classList.add('opacity-0', 'scale-95', 'translate-y-4');
+        setTimeout(() => {
+          chatWindow.classList.add('hidden');
+          chatBubble.classList.add('chat-bounce-idle'); // Resume bouncing when closed
+        }, 300);
+      }
+    }
+
+    chatBubble.addEventListener('click', () => toggleChat(chatWindow.classList.contains('hidden')));
+    closeChat.addEventListener('click', () => toggleChat(false));
+
+    // Periodic attention nudge (shakes every 8 seconds if closed)
+    setInterval(() => {
+      if (chatWindow.classList.contains('hidden')) {
+        chatBubble.classList.add('nudge-shake');
+        setTimeout(() => {
+          chatBubble.classList.remove('nudge-shake');
+        }, 850);
+      }
+    }, 8000);
+
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      // Add user message via safe DOM API (resolves Trusted Types policy blocks)
+      const userMsg = document.createElement('div');
+      userMsg.className = 'flex items-start justify-end gap-2 max-w-[85%] ml-auto animate-fade-in';
+      
+      const innerMsgDiv = document.createElement('div');
+      innerMsgDiv.className = 'bg-brand-600 text-white p-3 rounded-2xl shadow-soft text-slate-700';
+      innerMsgDiv.textContent = message;
+      
+      userMsg.appendChild(innerMsgDiv);
+      chatMessages.appendChild(userMsg);
+      
+      chatInput.value = '';
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Auto-reply via safe DOM API
+      setTimeout(() => {
+        const agentMsg = document.createElement('div');
+        agentMsg.className = 'flex items-start gap-2 max-w-[85%] animate-fade-in';
+        
+        const avatar = document.createElement('div');
+        avatar.className = 'w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 font-bold flex items-center justify-center shrink-0';
+        avatar.textContent = 'EA';
+        
+        const msgTextDiv = document.createElement('div');
+        msgTextDiv.className = 'bg-white p-3 rounded-2xl shadow-soft border border-slate-100 text-slate-700';
+        msgTextDiv.textContent = 'Thanks for your question! A team representative will connect with you immediately. Have a great day!';
+        
+        agentMsg.appendChild(avatar);
+        agentMsg.appendChild(msgTextDiv);
+        chatMessages.appendChild(agentMsg);
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }, 1000);
+    });
+
+    // --- Dynamic Scroll Assembly & 3D Tilt Card Effects ---
+    const gridContainer = document.getElementById('apps-grid-container');
+    const cards = document.querySelectorAll('.app-card');
+
+    // Pseudorandom scattered offsets pre-assigned to cards
+    cards.forEach((card, i) => {
+      const angle = ((i * 37) % 15 - 7); // -7deg to +7deg
+      const shiftX = ((i * 59) % 31 - 15); // -15px to +15px
+      const shiftY = ((i * 73) % 41 - 10) + 40; // -10px to +30px + 40px down
+      card.style.transform = `translate(${shiftX}px, ${shiftY}px) rotate(${angle}deg)`;
+      card.style.opacity = '0';
+    });
+
+    // Observe when the grid becomes visible to assemble the cards
+    const assemblyObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          cards.forEach((card, i) => {
+            setTimeout(() => {
+              card.style.transition = 'all 1.1s cubic-bezier(0.34, 1.56, 0.64, 1)';
+              card.style.transform = 'translate(0, 0) rotate(0deg)';
+              card.style.opacity = '1';
+              
+              // Enable interactive transitions and 3D tilt after snapping into grid
+              setTimeout(() => {
+                card.style.transition = 'transform 0.25s ease-out, box-shadow 0.25s ease-out';
+                card.dataset.assembled = "true";
+              }, 1100);
+            }, i * 35); // Stagger cards by 35ms
+          });
+          assemblyObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    assemblyObserver.observe(gridContainer);
+
+    // Modern 3D Tilt Interactive Motion on Card Hover
+    cards.forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        if (card.dataset.assembled !== "true") return;
+        
+        const rect = card.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const width = rect.width;
+        const height = rect.height;
+        
+        // Calculate percentages from center (-0.5 to 0.5)
+        const percentX = (mouseX / width) - 0.5;
+        const percentY = (mouseY / height) - 0.5;
+        
+        // Apply rotations (max 9 degrees) and translate upwards
+        const rotateX = -(percentY * 9).toFixed(2);
+        const rotateY = (percentX * 9).toFixed(2);
+        
+        card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+        card.style.boxShadow = '0 16px 36px rgba(0, 0, 0, 0.09)';
+        card.style.zIndex = '30';
+      });
+
+      card.addEventListener('mouseleave', () => {
+        if (card.dataset.assembled !== "true") return;
+        
+        // Return smoothly to flat rest
+        card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) translateY(0px)';
+        card.style.boxShadow = '';
+        card.style.zIndex = '';
+      });
+    });
+  </script>
+</body>
+</html>

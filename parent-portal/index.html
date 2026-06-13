@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greenwood International School | Parent Portal</title>
+  <meta name="description" content="All-in-one parent portal for academic details, leave application, bus tracking, online fee payments, communication, report cards and school announcements.">
+  
+  <!-- Tailwind CSS Play CDN (v4 Browser Engine) -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js for Performance Visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Leaflet.js CSS & JS for Bus Live Map Tracking -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuko/UtJN3XgP2nr5dQ8lEARB=" crossorigin=""></script>
+
+  <!-- Custom Theme Configurations via Tailwind v4 -->
+  <style type="tailwindcss">
+    @theme {
+      --font-sans: 'Inter', sans-serif;
+      --font-display: 'Outfit', sans-serif;
+      
+      --color-primary-50: #f0f5ff;
+      --color-primary-100: #e0ebff;
+      --color-primary-500: #3b82f6;
+      --color-primary-600: #2563eb;
+      --color-primary-700: #1d4ed8;
+      --color-primary-800: #1e40af;
+      --color-primary-900: #1e3a8a;
+      
+      --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+      --shadow-card-hover: 0 10px 30px -4px rgba(0, 0, 0, 0.1);
+      --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.35);
+    }
+  </style>
+
+  <!-- Custom CSS Animations & Print Layouts -->
+  <style>
+    /* Smooth transitions for routing and tab shifts */
+    .view-section {
+      transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+    }
+    .view-section.hidden {
+      display: none;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 4px;
+    }
+
+    /* Print styling rules for certificates & report cards */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .print-card {
+        border: 2px solid #000 !important;
+        padding: 40px !important;
+        margin: 20px !important;
+        background: white !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col md:flex-row transition-colors duration-300">
+
+  <!-- ========================================== -->
+  <!-- SIDEBAR NAVIGATION                         -->
+  <!-- ========================================== -->
+  <aside id="sidebar" class="no-print w-72 bg-white dark:bg-slate-950 border-r border-slate-150 dark:border-slate-800 flex flex-col fixed md:sticky top-0 h-screen z-50 transition-transform duration-300 -translate-x-full md:translate-x-0">
+    <!-- School Identity Logo -->
+    <div class="p-6 border-b border-slate-150 dark:border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-primary-500/25 shrink-0">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="font-display font-bold text-base tracking-tight leading-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">GREENWOOD</h1>
+          <span class="text-xs font-semibold text-primary-500 tracking-wider">PARENT PORTAL</span>
+        </div>
+      </div>
+      <!-- Mobile Sidebar Close Button -->
+      <button onclick="toggleSidebar(false)" class="md:hidden p-1.5 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Navigation Menu Items -->
+    <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+      <a href="javascript:void(0)" onclick="switchTab('dashboard')" data-tab="dashboard" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-primary-600 bg-primary-50 dark:bg-primary-950/40 dark:text-primary-400 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" /></svg>
+        Dashboard
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('student')" data-tab="student" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+        Student Details
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('leave')" data-tab="leave" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        Leave Application
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('absence')" data-tab="absence" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        Absence Log & Alerts
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('bus')" data-tab="bus" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+        Bus Map Tracking
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('fee')" data-tab="fee" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+        Fee Payments
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('notice')" data-tab="notice" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+        School Notice Board
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('result')" data-tab="result" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg>
+        Results & Performance
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('certificate')" data-tab="certificate" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+        Certificates Center
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('timetable')" data-tab="timetable" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        Class Timetable
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('chat')" data-tab="chat" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+        Communication Center
+      </a>
+      <a href="javascript:void(0)" onclick="switchTab('document')" data-tab="document" class="sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all">
+        <svg class="w-5 h-5 text-current shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+        Academic Documents
+      </a>
+    </nav>
+
+    <!-- Portal Footer / Account Summary Info -->
+    <div class="p-6 border-t border-slate-150 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/20">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-700 dark:text-slate-300 border border-slate-350/50 dark:border-slate-700">
+          RS
+        </div>
+        <div class="overflow-hidden">
+          <h4 class="font-semibold text-sm leading-tight truncate">Rajesh Sharma</h4>
+          <span class="text-xs text-slate-500 truncate block">Parent Account</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Background Backdrop (Mobile sidebar toggle) -->
+  <div id="sidebar-backdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+  <!-- ========================================== -->
+  <!-- CORE WORKSPACE CONTENT AREA                -->
+  <!-- ========================================== -->
+  <main class="flex-1 flex flex-col min-w-0 min-h-screen relative">
+    
+    <!-- Top sticky Navbar Header -->
+    <header class="no-print sticky top-0 z-30 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-150 dark:border-slate-800/80 px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <!-- Sidebar Toggle Icon on Mobile -->
+        <button onclick="toggleSidebar(true)" class="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span class="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider hidden sm:inline-block">Academic Session 2026-27</span>
+      </div>
+
+      <!-- Header actions bar -->
+      <div class="flex items-center gap-4">
+        <!-- Student Selector Dropdown -->
+        <div class="relative shrink-0">
+          <select id="student-selector" onchange="changeStudent(this.value)" class="appearance-none bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 pl-4 pr-10 py-2.5 rounded-xl text-sm font-semibold border-none focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all cursor-pointer">
+            <option value="arjun" selected>👦 Arjun Sharma (8-A)</option>
+            <option value="ananya">👧 Ananya Sharma (5-B)</option>
+          </select>
+          <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-500">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </div>
+        </div>
+
+        <!-- Light/Dark Mode Switcher -->
+        <button onclick="toggleTheme()" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition-all cursor-pointer" aria-label="Toggle theme">
+          <!-- Moon Icon (shown in light mode) -->
+          <svg id="theme-moon" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+          <!-- Sun Icon (shown in dark mode) -->
+          <svg id="theme-sun" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 9H3m3.343-5.657l.707.707m2.828 9.9a5 5 0 117.072 0l-.707-.707M6.343 17.657l-.707-.707m2.828-9.9a5 5 0 117.072 0l-.707-.707" /></svg>
+        </button>
+
+        <!-- Notifications Bell dropdown container -->
+        <div class="relative">
+          <button onclick="toggleDropdown('notification-dropdown')" class="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl transition-all relative cursor-pointer">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+            <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse border border-white dark:border-slate-950"></span>
+          </button>
+          
+          <!-- Dropdown list panel -->
+          <div id="notification-dropdown" class="hidden absolute right-0 mt-3.5 w-80 sm:w-96 bg-white dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-2xl py-3 z-50">
+            <div class="px-5 pb-2 border-b border-slate-100 dark:border-slate-900 flex justify-between items-center">
+              <span class="font-display font-bold text-sm">Notifications & Alerts</span>
+              <button onclick="clearNotifications()" class="text-xs font-semibold text-primary-500 hover:text-primary-600">Mark all read</button>
+            </div>
+            <div class="max-h-72 overflow-y-auto" id="notification-list">
+              <!-- Dynamically populated notifications -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Dynamic Section Container Workspace -->
+    <div class="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-8">
+      
+      <!-- ========================================== -->
+      <!-- MODULE 1: PARENT DASHBOARD                 -->
+      <!-- ========================================== -->
+      <section id="tab-dashboard" class="view-section space-y-8">
+        <!-- Welcome banner -->
+        <div class="relative bg-gradient-to-r from-slate-900 via-slate-850 to-primary-950 dark:from-slate-950 dark:via-slate-900 dark:to-primary-950 rounded-3xl p-6 md:p-8 text-white overflow-hidden shadow-2xl border border-slate-800">
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary-500/10 via-transparent to-transparent"></div>
+          <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <span class="text-primary-400 font-extrabold text-xs tracking-wider uppercase mb-1.5 block">GIS Parent Dashboard</span>
+              <h2 class="font-display font-bold text-2xl md:text-3xl tracking-tight mb-2">Welcome Back, Mr. Rajesh Sharma</h2>
+              <p class="text-slate-400 text-sm max-w-xl leading-relaxed">Stay updated with your children's school progress, attendance records, pending invoices, and schedules all in one centralized hub.</p>
+            </div>
+            <div class="flex gap-3 shrink-0">
+              <button onclick="switchTab('leave')" class="bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm px-5  py-3 rounded-full shadow-lg shadow-primary-600/20 active:scale-95 transition-all cursor-pointer">Apply Leave</button>
+              <button onclick="switchTab('fee')" class="bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm px-5 py-3 rounded-full active:scale-95 transition-all cursor-pointer">Pay Fees</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student profile overview grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Left 2 cols: Stat summaries & active alerts -->
+          <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Quick stats bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div class="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-between">
+                <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Attendance Rate</span>
+                <span class="font-display font-bold text-2xl mt-2 text-slate-800 dark:text-slate-100" id="dash-stat-attendance">94%</span>
+              </div>
+              <div class="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-between">
+                <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Current Class</span>
+                <span class="font-display font-bold text-2xl mt-2 text-slate-800 dark:text-slate-100" id="dash-stat-class">8-A</span>
+              </div>
+              <div class="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-between">
+                <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Unresolved Absences</span>
+                <span class="font-display font-bold text-2xl mt-2 text-rose-500" id="dash-stat-absence">0</span>
+              </div>
+              <div class="bg-white dark:bg-slate-950 p-5 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-between">
+                <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pending Dues</span>
+                <span class="font-display font-bold text-2xl mt-2 text-amber-500" id="dash-stat-dues">₹30,500</span>
+              </div>
+            </div>
+
+            <!-- Student Summary Profile Card -->
+            <div class="bg-white dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card overflow-hidden">
+              <div class="p-6 flex flex-col sm:flex-row items-center gap-6">
+                <!-- Avatar picture frame -->
+                <div class="relative w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 dark:border-slate-900 bg-slate-100 shrink-0">
+                  <img id="dash-student-avatar" src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&fit=crop&q=80" alt="Student profile picture" class="w-full h-full object-cover">
+                </div>
+                <!-- Description summary details -->
+                <div class="text-center sm:text-left flex-1 min-w-0">
+                  <span class="bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">Active Student Profile</span>
+                  <h3 class="font-display font-bold text-xl text-slate-800 dark:text-slate-100" id="dash-student-name">Arjun Sharma</h3>
+                  <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Roll Number: <span id="dash-student-roll" class="font-semibold text-slate-600 dark:text-slate-350">12</span> &bull; Section: <span id="dash-student-section" class="font-semibold text-slate-600 dark:text-slate-350">8-A</span></p>
+                  <p class="text-xs text-slate-400 mt-2 italic">House Group: <span id="dash-student-house" class="font-bold text-red-500">Shivaji</span> &bull; Class Advisor: <span id="dash-student-advisor" class="font-semibold">Mrs. Preeti Sen</span></p>
+                </div>
+                <button onclick="switchTab('student')" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer">View Full Details</button>
+              </div>
+            </div>
+
+            <!-- Attendance summary chart + Next Class Card details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Attendance donut container -->
+              <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col items-center text-center">
+                <h4 class="font-display font-semibold text-sm self-start mb-4">Academic Term Attendance</h4>
+                <div class="relative w-36 h-36 flex items-center justify-center">
+                  <!-- Custom SVG Donut Gauge -->
+                  <svg class="w-full h-full" viewBox="0 0 36 36">
+                    <path class="text-slate-100 dark:text-slate-900" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path id="dash-attendance-gauge" class="text-emerald-500" stroke-dasharray="94, 100" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  </svg>
+                  <div class="absolute flex flex-col items-center">
+                    <span class="font-display font-bold text-2xl text-slate-800 dark:text-slate-100" id="dash-gauge-text">94%</span>
+                    <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Attendance</span>
+                  </div>
+                </div>
+                <div class="mt-4 text-xs text-slate-400 flex gap-4">
+                  <div><span class="inline-block w-2.5 h-2.5 bg-emerald-500 rounded-full mr-1.5"></span>Present: <span class="font-semibold text-slate-600 dark:text-slate-300" id="dash-days-present">141 Days</span></div>
+                  <div><span class="inline-block w-2.5 h-2.5 bg-rose-500 rounded-full mr-1.5"></span>Absent: <span class="font-semibold text-slate-600 dark:text-slate-300" id="dash-days-absent">9 Days</span></div>
+                </div>
+              </div>
+
+              <!-- Live school schedule item / class -->
+              <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h4 class="font-display font-semibold text-sm">Next Period Class</h4>
+                    <span class="text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider inline-block mt-1">Status: UPCOMING</span>
+                  </div>
+                  <span class="text-xs font-bold text-slate-400 uppercase" id="dash-schedule-time">09:15 AM</span>
+                </div>
+                <div class="my-4">
+                  <h3 class="font-display font-bold text-xl text-primary-500" id="dash-schedule-subject">Mathematics (Algebra)</h3>
+                  <p class="text-xs text-slate-400 mt-1">Instructor: <span class="font-semibold" id="dash-schedule-teacher">Mr. Suresh Iyer</span> &bull; Room 104</p>
+                </div>
+                <button onclick="switchTab('timetable')" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-semibold py-2.5 rounded-xl text-center transition-all cursor-pointer">View Entire Timetable</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right col: Upcoming school events calendar / checklist -->
+          <div class="space-y-8">
+            <!-- School calendar feed -->
+            <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+              <div class="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-900">
+                <h4 class="font-display font-bold text-sm tracking-tight flex items-center gap-2"><svg class="w-5 h-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>Upcoming Events</h4>
+                <span class="text-xs text-slate-400 font-semibold cursor-pointer hover:text-primary-500 transition-colors">See all</span>
+              </div>
+              <div class="space-y-4">
+                <div class="flex gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400 flex flex-col items-center justify-center shrink-0">
+                    <span class="text-base font-bold leading-none">24</span>
+                    <span class="text-[9px] font-semibold uppercase tracking-wider mt-0.5">Jun</span>
+                  </div>
+                  <div>
+                    <h5 class="text-sm font-semibold leading-snug">Parent-Teacher Meeting (PTM)</h5>
+                    <p class="text-xs text-slate-400 mt-0.5">09:00 AM - 01:00 PM &bull; School Campus</p>
+                  </div>
+                </div>
+                <div class="flex gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex flex-col items-center justify-center shrink-0">
+                    <span class="text-base font-bold leading-none">28</span>
+                    <span class="text-[9px] font-semibold uppercase tracking-wider mt-0.5">Jun</span>
+                  </div>
+                  <div>
+                    <h5 class="text-sm font-semibold leading-snug">Annual Day & Cultural Celebrations</h5>
+                    <p class="text-xs text-slate-400 mt-0.5">04:00 PM - 08:00 PM &bull; Main Auditorium</p>
+                  </div>
+                </div>
+                <div class="flex gap-4">
+                  <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex flex-col items-center justify-center shrink-0">
+                    <span class="text-base font-bold leading-none">10</span>
+                    <span class="text-[9px] font-semibold uppercase tracking-wider mt-0.5">Jul</span>
+                  </div>
+                  <div>
+                    <h5 class="text-sm font-semibold leading-snug">First Term Examinations Begin</h5>
+                    <p class="text-xs text-slate-400 mt-0.5">Syllabus details available in Documents</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Action Shortcuts panel -->
+            <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-4">
+              <h4 class="font-display font-bold text-sm pb-2 border-b border-slate-100 dark:border-slate-900">Portal Shortcuts</h4>
+              <div class="grid grid-cols-2 gap-3">
+                <button onclick="switchTab('bus')" class="flex flex-col items-center p-3.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-center transition-all cursor-pointer group">
+                  <span class="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:scale-105 transition-transform"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg></span>
+                  <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2">Track School Bus</span>
+                </button>
+                <button onclick="switchTab('result')" class="flex flex-col items-center p-3.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-center transition-all cursor-pointer group">
+                  <span class="p-2 bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 rounded-lg group-hover:scale-105 transition-transform"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" /></svg></span>
+                  <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2">Report Cards</span>
+                </button>
+                <button onclick="switchTab('chat')" class="flex flex-col items-center p-3.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-center transition-all cursor-pointer group">
+                  <span class="p-2 bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 rounded-lg group-hover:scale-105 transition-transform"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg></span>
+                  <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2">Chat with Teacher</span>
+                </button>
+                <button onclick="switchTab('certificate')" class="flex flex-col items-center p-3.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 rounded-xl text-center transition-all cursor-pointer group">
+                  <span class="p-2 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-lg group-hover:scale-105 transition-transform"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z" /></svg></span>
+                  <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-2">Certificates</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 2: STUDENT DETAILS                  -->
+      <!-- ========================================== -->
+      <section id="tab-student" class="view-section hidden space-y-8">
+        <div class="flex flex-col md:flex-row gap-8 items-start">
+          
+          <!-- Left Col: Mini-card + profile picture picker -->
+          <div class="w-full md:w-80 bg-white dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card overflow-hidden shrink-0">
+            <div class="h-28 bg-gradient-to-r from-primary-600 to-indigo-600 relative"></div>
+            <div class="px-6 pb-6 relative flex flex-col items-center text-center -mt-14">
+              <!-- Student Profile Image -->
+              <div class="w-28 h-28 rounded-full overflow-hidden border-4 border-white dark:border-slate-950 bg-slate-100 shadow-md">
+                <img id="detail-student-avatar" src="" alt="Student Profile" class="w-full h-full object-cover">
+              </div>
+              <h3 class="font-display font-bold text-lg text-slate-800 dark:text-slate-100 mt-4" id="detail-student-name">Arjun Sharma</h3>
+              <span class="text-xs text-primary-500 font-bold uppercase tracking-wider mt-1" id="detail-student-grade">Grade 8 - Section A</span>
+              <p class="text-xs text-slate-400 mt-2">Roll Number: <span id="detail-student-roll" class="font-bold text-slate-700 dark:text-slate-300">12</span></p>
+
+              <!-- Stats quick list -->
+              <div class="w-full mt-6 pt-6 border-t border-slate-100 dark:border-slate-900 grid grid-cols-2 gap-4">
+                <div class="text-center">
+                  <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Blood Type</span>
+                  <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block" id="detail-student-blood">O+</span>
+                </div>
+                <div class="text-center">
+                  <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">House</span>
+                  <span class="text-sm font-bold text-red-500 mt-1 block" id="detail-student-house">Shivaji</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Col: Detailed profile blocks tab view -->
+          <div class="flex-1 bg-white dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card p-6 md:p-8 space-y-8">
+            <h3 class="font-display font-bold text-lg border-b border-slate-100 dark:border-slate-900 pb-3">Complete Profile Record</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Full Name</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block" id="detail-full-name">Arjun Sharma</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Admission Date / No.</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block" id="detail-admission-no">15 Apr 2021 &bull; GIS/2021/8946</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Date of Birth</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block" id="detail-dob">14 Aug 2012</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Class Teacher / Advisor</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block" id="detail-advisor">Mrs. Preeti Sen</span>
+              </div>
+            </div>
+
+            <h3 class="font-display font-bold text-base border-b border-slate-100 dark:border-slate-900 pb-2 pt-4">Parent & Guardian Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Father's Name</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block">Mr. Rajesh Sharma</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Mother's Name</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block">Mrs. Sunita Sharma</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Registered Email Address</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block">rajesh.sharma@example.com</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Registered Contact Number</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block">+91 98765 01234</span>
+              </div>
+            </div>
+
+            <h3 class="font-display font-bold text-base border-b border-slate-100 dark:border-slate-900 pb-2 pt-4">Emergency & Health Info</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Emergency Contact Person</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block">Mr. Rajesh Sharma (+91 98765 01234)</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Known Medical Conditions / Allergies</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1 block" id="detail-medical">None Reported</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 3: LEAVE APPLICATION                -->
+      <!-- ========================================== -->
+      <section id="tab-leave" class="view-section hidden space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Left 1 col: Submit new leave request -->
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+            <h3 class="font-display font-bold text-lg border-b border-slate-100 dark:border-slate-900 pb-3">Request Student Leave</h3>
+            
+            <form id="leave-form" onsubmit="submitLeave(event)" class="space-y-4">
+              <!-- Date range row -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs font-semibold text-slate-400 block mb-1">Start Date</label>
+                  <input type="date" id="leave-start" required class="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="text-xs font-semibold text-slate-400 block mb-1">End Date</label>
+                  <input type="date" id="leave-end" required class="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                </div>
+              </div>
+
+              <!-- Leave category switcher -->
+              <div>
+                <label class="text-xs font-semibold text-slate-400 block mb-1">Leave Type</label>
+                <select id="leave-type" class="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                  <option value="Casual Leave">Casual Leave</option>
+                  <option value="Medical Leave">Medical/Sick Leave</option>
+                  <option value="Emergency Leave">Emergency Leave</option>
+                </select>
+              </div>
+
+              <!-- Reason description textarea -->
+              <div>
+                <label class="text-xs font-semibold text-slate-400 block mb-1">Reason for Absence</label>
+                <textarea id="leave-reason" placeholder="Write reason details..." required rows="3" class="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none resize-none"></textarea>
+              </div>
+
+              <!-- File upload (Medical certificate placeholder) -->
+              <div>
+                <label class="text-xs font-semibold text-slate-400 block mb-1">Medical Attachment (If applicable)</label>
+                <div class="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-primary-500 rounded-xl p-4 text-center cursor-pointer transition-colors relative group">
+                  <input type="file" id="leave-file" class="absolute inset-0 opacity-0 cursor-pointer">
+                  <svg class="w-8 h-8 text-slate-400 mx-auto mb-1 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                  <span class="text-xs font-semibold text-slate-500 block">Click to upload document</span>
+                </div>
+              </div>
+
+              <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm py-3 rounded-xl transition-all cursor-pointer">Submit Leave Request</button>
+            </form>
+          </div>
+
+          <!-- Right 2 cols: Leave applications history & statuses -->
+          <div class="lg:col-span-2 bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+            <h3 class="font-display font-bold text-lg border-b border-slate-100 dark:border-slate-900 pb-3">Leave Request History</h3>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-100 dark:border-slate-900 text-slate-400 font-semibold">
+                    <th class="pb-3">Duration Dates</th>
+                    <th class="pb-3">Leave Category</th>
+                    <th class="pb-3">Reason Summary</th>
+                    <th class="pb-3 text-right">Approval Status</th>
+                  </tr>
+                </thead>
+                <tbody id="leave-history-table">
+                  <!-- JS dynamically loads rows here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 4: SCHOOL ABSENCE LOG & ALERTS      -->
+      <!-- ========================================== -->
+      <section id="tab-absence" class="view-section hidden space-y-8">
+        <!-- Live unexcused alert warning banner -->
+        <div id="unexcused-absence-banner" class="bg-gradient-to-r from-rose-500/20 to-orange-500/20 border-l-4 border-rose-500 rounded-2xl p-6 text-slate-900 dark:text-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6 hidden">
+          <div class="flex items-center gap-4">
+            <div class="p-3 bg-rose-500/10 text-rose-500 rounded-xl">
+              <svg class="w-6 h-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+            <div>
+              <h4 class="font-display font-bold text-base">Immediate Action Required: Unexcused Absence</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="absence-alert-message">Student was reported absent without approved leave during morning class call. Please verify status.</p>
+            </div>
+          </div>
+          <button onclick="switchTab('leave')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-3 rounded-full shadow-lg shadow-rose-600/20 active:scale-95 transition-all shrink-0 cursor-pointer">Submit Leave Request Now</button>
+        </div>
+
+        <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+          <h3 class="font-display font-bold text-lg border-b border-slate-100 dark:border-slate-900 pb-3">Automated Absence Alerts History</h3>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr class="border-b border-slate-100 dark:border-slate-900 text-slate-400 font-semibold">
+                  <th class="pb-3">Absence Date</th>
+                  <th class="pb-3">Type of Log</th>
+                  <th class="pb-3">Notification Channel Log Details</th>
+                  <th class="pb-3 text-right">Excusal Status</th>
+                </tr>
+              </thead>
+              <tbody id="absence-history-table">
+                <!-- JS dynamically populates -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 5: BUS MAP TRACKING                 -->
+      <!-- ========================================== -->
+      <section id="tab-bus" class="view-section hidden space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Left 2 cols: Map View -->
+          <div class="lg:col-span-2 space-y-4">
+            <div class="bg-white dark:bg-slate-950 p-4 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-card">
+              <!-- Leaflet Map Container -->
+              <div id="bus-map" class="w-full h-[450px] rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 relative z-10"></div>
+            </div>
+          </div>
+
+          <!-- Right 1 col: Bus info details & ETA checklist -->
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+            <div class="flex justify-between items-start pb-3 border-b border-slate-100 dark:border-slate-900">
+              <div>
+                <h3 class="font-display font-bold text-lg">Bus Track Details</h3>
+                <span class="text-xs font-semibold text-emerald-500 uppercase tracking-wide block mt-0.5">● Simulating Live Location</span>
+              </div>
+              <!-- ETA Counter -->
+              <div class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-white px-3.5 py-2 rounded-xl text-center shrink-0">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block leading-none">ETA</span>
+                <span class="font-display font-bold text-lg mt-1 block leading-none" id="bus-eta-timer">12 Mins</span>
+              </div>
+            </div>
+
+            <!-- Driver profile -->
+            <div class="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl">
+              <div class="w-12 h-12 rounded-full overflow-hidden bg-slate-200">
+                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&fit=crop&q=80" alt="Driver profile photo" class="w-full h-full object-cover">
+              </div>
+              <div class="flex-1">
+                <h4 class="font-semibold text-sm">Suresh Patil</h4>
+                <p class="text-xs text-slate-400 mt-0.5">Route Driver &bull; Route 4B</p>
+              </div>
+              <a href="tel:+919876543210" class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 dark:bg-primary-950/40 dark:text-primary-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+              </a>
+            </div>
+
+            <!-- Route Stop checklist progress -->
+            <div class="space-y-4">
+              <h4 class="font-semibold text-sm">Route Stops Progression</h4>
+              <div class="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200 dark:before:bg-slate-800">
+                <!-- Stop item -->
+                <div class="relative">
+                  <span class="absolute -left-6 top-1 w-4.5 h-4.5 rounded-full bg-emerald-500 border-4 border-white dark:border-slate-950"></span>
+                  <div class="text-xs font-bold text-emerald-500">Kothrud Depot (Stop 1)</div>
+                  <span class="text-[10px] text-slate-400">Passed at 07:45 AM</span>
+                </div>
+                <!-- Stop item -->
+                <div class="relative">
+                  <span class="absolute -left-6 top-1 w-4.5 h-4.5 rounded-full bg-emerald-500 border-4 border-white dark:border-slate-950"></span>
+                  <div class="text-xs font-bold text-emerald-500">Karve Statue (Stop 2)</div>
+                  <span class="text-[10px] text-slate-400">Passed at 07:55 AM</span>
+                </div>
+                <!-- Stop item -->
+                <div class="relative">
+                  <span class="absolute -left-6 top-1 w-4.5 h-4.5 rounded-full bg-primary-500 border-4 border-white dark:border-slate-950 animate-pulse"></span>
+                  <div class="text-xs font-bold text-primary-500">Deccan Corner (Stop 3 - Current)</div>
+                  <span class="text-[10px] text-slate-400">Arrived at 08:05 AM</span>
+                </div>
+                <!-- Stop item -->
+                <div class="relative">
+                  <span class="absolute -left-6 top-1 w-4.5 h-4.5 rounded-full bg-slate-200 dark:bg-slate-800 border-4 border-white dark:border-slate-950"></span>
+                  <div class="text-xs font-semibold text-slate-400">School Campus (Terminal)</div>
+                  <span class="text-[10px] text-slate-400">Expected: 08:20 AM</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 6: ONLINE FEE PAYMENT               -->
+      <!-- ========================================== -->
+      <section id="tab-fee" class="view-section hidden space-y-8">
+        <!-- Dashboard details row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex items-center gap-4">
+            <span class="p-3.5 bg-rose-50 dark:bg-rose-950/40 text-rose-500 rounded-2xl"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+            <div>
+              <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Pending Fee Balance</span>
+              <span class="font-display font-bold text-2xl mt-1 text-rose-500 block" id="fee-total-pending">₹30,500</span>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex items-center gap-4">
+            <span class="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 rounded-2xl"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></span>
+            <div>
+              <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Total Fees Paid</span>
+              <span class="font-display font-bold text-2xl mt-1 text-emerald-500 block" id="fee-total-paid">₹29,500</span>
+            </div>
+          </div>
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-center">
+            <button onclick="openCheckoutModal()" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm py-3 rounded-xl shadow-lg shadow-primary-600/20 active:scale-95 transition-all cursor-pointer">Quick Pay Pending Fees</button>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+          <h3 class="font-display font-bold text-lg border-b border-slate-100 dark:border-slate-900 pb-3">Fees Statement Details</h3>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+              <thead>
+                <tr class="border-b border-slate-100 dark:border-slate-900 text-slate-400 font-semibold">
+                  <th class="pb-3">Invoice Details / Description</th>
+                  <th class="pb-3">Due Date</th>
+                  <th class="pb-3">Bill Amount</th>
+                  <th class="pb-3 text-center">Status</th>
+                  <th class="pb-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="fee-statement-table">
+                <!-- JS dynamically populates -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 7: ANNOUNCEMENTS & NOTICES         -->
+      <!-- ========================================== -->
+      <section id="tab-notice" class="view-section hidden space-y-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+          <h3 class="font-display font-bold text-xl">Official Notice Board</h3>
+          <!-- Notice categories tag switcher -->
+          <div class="flex gap-2">
+            <button onclick="filterNotices('all')" class="notice-filter-btn px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-full transition-all cursor-pointer">All notices</button>
+            <button onclick="filterNotices('academic')" class="notice-filter-btn px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 text-xs font-bold rounded-full transition-all cursor-pointer">Academics</button>
+            <button onclick="filterNotices('holiday')" class="notice-filter-btn px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 text-xs font-bold rounded-full transition-all cursor-pointer">Holidays</button>
+            <button onclick="filterNotices('event')" class="notice-filter-btn px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 text-xs font-bold rounded-full transition-all cursor-pointer">Events</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="notice-board-grid">
+          <!-- Dynamic Notices -->
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 8: RESULTS & PERFORMANCE            -->
+      <!-- ========================================== -->
+      <section id="tab-result" class="view-section hidden space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Left 2 cols: Subject marks breakdown -->
+          <div class="lg:col-span-2 bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-100 dark:border-slate-900">
+              <h3 class="font-display font-bold text-lg">First Term Examination Report</h3>
+              <button onclick="printReportCard()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-850 text-slate-800 dark:text-slate-250 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                Print Report Card PDF
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-100 dark:border-slate-900 text-slate-400 font-semibold">
+                    <th class="pb-3">Subject Name</th>
+                    <th class="pb-3">Class Test (20)</th>
+                    <th class="pb-3">Exam Score (80)</th>
+                    <th class="pb-3">Total Marks (100)</th>
+                    <th class="pb-3">Subject Grade</th>
+                    <th class="pb-3 text-right">Remarks</th>
+                  </tr>
+                </thead>
+                <tbody id="results-table-body">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Grade summary footer calculations -->
+            <div class="pt-6 border-t border-slate-100 dark:border-slate-900 grid grid-cols-2 sm:grid-cols-3 gap-6">
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Overall Percentage</span>
+                <span class="font-display font-extrabold text-xl text-slate-800 dark:text-slate-100 mt-1 block" id="results-pct">85.0%</span>
+              </div>
+              <div>
+                <span class="text-xs text-slate-400 font-semibold block">Cumulative Grade / CGPA</span>
+                <span class="font-display font-extrabold text-xl text-emerald-500 mt-1 block" id="results-cgpa">A Grade &bull; 8.8 GPA</span>
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <span class="text-xs text-slate-400 font-semibold block">Class Teacher Remarks</span>
+                <span class="text-xs text-slate-500 mt-1 block font-semibold italic">"Excellent focus. Showing brilliant understanding in analytical domains."</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right 1 col: Performance radar chart visualization -->
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+            <h3 class="font-display font-bold text-lg border-b border-slate-100 dark:border-slate-900 pb-3">Performance Comparison</h3>
+            <div class="relative w-full aspect-square flex items-center justify-center">
+              <canvas id="performance-chart" class="w-full h-full"></canvas>
+            </div>
+            <p class="text-xs text-slate-400 text-center italic">Radar matches student score vs. overall class subject average.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 9: CERTIFICATES CENTER             -->
+      <!-- ========================================== -->
+      <section id="tab-certificate" class="view-section hidden space-y-8">
+        <h3 class="font-display font-bold text-xl">Official Student Certificates</h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Bonafide card -->
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-between">
+            <div class="space-y-3">
+              <span class="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl inline-block"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg></span>
+              <h4 class="font-display font-bold text-base">Bonafide Student Certificate</h4>
+              <p class="text-xs text-slate-400 leading-relaxed">Official proof of active enrollment verified for academic session 2026-27 passport or scholarship filings.</p>
+            </div>
+            <button onclick="openCertificateModal('bonafide')" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-bold py-3 rounded-xl text-center mt-6 transition-all cursor-pointer border border-slate-100 dark:border-slate-800">View & Download Certificate</button>
+          </div>
+
+          <!-- Leaving card -->
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-between">
+            <div class="space-y-3">
+              <span class="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl inline-block"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-6 0v-1m6 0H9" /></svg></span>
+              <h4 class="font-display font-bold text-base">Transfer & Leaving Certificate</h4>
+              <p class="text-xs text-slate-400 leading-relaxed">Official school leaving summary draft, indicating details of course exit (active only upon school transfer requests).</p>
+            </div>
+            <button onclick="openCertificateModal('leaving')" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-bold py-3 rounded-xl text-center mt-6 transition-all cursor-pointer border border-slate-100 dark:border-slate-800">View & Download Certificate</button>
+          </div>
+
+          <!-- Achievement card -->
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card flex flex-col justify-between">
+            <div class="space-y-3">
+              <span class="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl inline-block"><svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg></span>
+              <h4 class="font-display font-bold text-base">Academic Excellence Merit Certificate</h4>
+              <p class="text-xs text-slate-400 leading-relaxed">Awarded to high-achieving students scoring above 90% aggregate scores in annual examinations.</p>
+            </div>
+            <button onclick="openCertificateModal('achievement')" class="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-bold py-3 rounded-xl text-center mt-6 transition-all cursor-pointer border border-slate-100 dark:border-slate-800">View & Download Certificate</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 10: CLASS TIMETABLE                 -->
+      <!-- ========================================== -->
+      <section id="tab-timetable" class="view-section hidden space-y-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-150 dark:border-slate-800">
+          <div>
+            <h3 class="font-display font-bold text-xl">Class Schedule Timetable</h3>
+            <p class="text-xs text-slate-400 mt-1">Check daily schedules and teaching faculty details.</p>
+          </div>
+          <!-- Daily Day Switched Selector -->
+          <div class="flex gap-1.5 bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl overflow-x-auto max-w-full">
+            <button onclick="filterTimetable('Mon')" class="timetable-day-btn px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer">Mon</button>
+            <button onclick="filterTimetable('Tue')" class="timetable-day-btn px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-bold rounded-xl transition-all cursor-pointer">Tue</button>
+            <button onclick="filterTimetable('Wed')" class="timetable-day-btn px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-bold rounded-xl transition-all cursor-pointer">Wed</button>
+            <button onclick="filterTimetable('Thu')" class="timetable-day-btn px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-bold rounded-xl transition-all cursor-pointer">Thu</button>
+            <button onclick="filterTimetable('Fri')" class="timetable-day-btn px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-bold rounded-xl transition-all cursor-pointer">Fri</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="timetable-slots-grid">
+          <!-- Timetable slots dynamically added -->
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 11: COMMUNICATION CENTER            -->
+      <!-- ========================================== -->
+      <section id="tab-chat" class="view-section hidden space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          
+          <!-- Left 1 col: Submit inquiry/contact admin form -->
+          <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card space-y-6">
+            <h3 class="font-display font-bold text-lg border-b border-slate-100 dark:border-slate-900 pb-3">Submit Administration Inquiry</h3>
+            
+            <form onsubmit="submitInquiry(event)" class="space-y-4">
+              <div>
+                <label class="text-xs font-semibold text-slate-400 block mb-1">Inquiry Category</label>
+                <select required class="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+                  <option value="fees">Fee Structure & Billing</option>
+                  <option value="bus">School Transport/Bus Routing</option>
+                  <option value="academic">Exam Schedule & Curriculums</option>
+                  <option value="general">General Administrative Query</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-slate-400 block mb-1">Subject Header</label>
+                <input type="text" placeholder="Summary of question..." required class="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="text-xs font-semibold text-slate-400 block mb-1">Message Description</label>
+                <textarea placeholder="Write full details..." required rows="4" class="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none resize-none"></textarea>
+              </div>
+
+              <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-sm py-3 rounded-xl transition-all cursor-pointer">Submit Administrative Ticket</button>
+            </form>
+          </div>
+
+          <!-- Right 2 cols: Live interactive Chat Widget -->
+          <div class="lg:col-span-2 bg-white dark:bg-slate-950 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card overflow-hidden flex flex-col h-[520px]">
+            <!-- Chat Head Details -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 border-b border-slate-800 p-4 text-white flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full overflow-hidden bg-slate-700 relative flex items-center justify-center font-bold text-slate-350">
+                  <img id="chat-teacher-avatar" src="" alt="Teacher profile image" class="w-full h-full object-cover">
+                </div>
+                <div>
+                  <h4 class="font-display font-semibold text-sm" id="chat-teacher-name">Mrs. Preeti Sen</h4>
+                  <span class="text-[10px] text-emerald-400 font-bold tracking-wide block">● Typically active during school hours</span>
+                </div>
+              </div>
+
+              <!-- Teacher/Recipient Switcher -->
+              <select id="chat-contact-selector" onchange="switchChatContact(this.value)" class="bg-slate-850 hover:bg-slate-800 text-white border-none text-xs font-semibold px-3 py-2 rounded-xl focus:outline-none">
+                <option value="advisor" selected>Class Teacher</option>
+                <option value="math">Mathematics Instructor</option>
+                <option value="admin">Principal Office Office</option>
+              </select>
+            </div>
+
+            <!-- Messages Stream Area -->
+            <div class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50 dark:bg-slate-900/20 text-xs" id="chat-stream-area">
+              <!-- Chat history logs populated via JS -->
+            </div>
+
+            <!-- Message write action form -->
+            <form onsubmit="sendChatMessage(event)" class="p-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-900 flex items-center gap-3">
+              <input type="text" id="chat-input-box" placeholder="Write message details to teacher..." required class="flex-1 bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary-500 focus:outline-none">
+              <button type="submit" class="p-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center shrink-0 active:scale-90 transition-all shadow-md shadow-primary-500/25 cursor-pointer">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- MODULE 12: ACADEMIC DOCUMENTS              -->
+      <!-- ========================================== -->
+      <section id="tab-document" class="view-section hidden space-y-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+          <div>
+            <h3 class="font-display font-bold text-xl">Syllabus, Worksheets & Homework</h3>
+            <p class="text-xs text-slate-400 mt-1">Download core classroom study aids and guidelines.</p>
+          </div>
+          <!-- Quick search filter -->
+          <div class="relative w-full sm:w-64">
+            <input type="text" id="doc-search-box" oninput="searchDocs(this.value)" placeholder="Search document name..." class="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents folder grids -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="documents-grid-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODAL WINDOWS & CHECKOUT PORTALS           -->
+  <!-- ========================================== -->
+
+  <!-- Online Fee Payment Checkout Modal -->
+  <div id="checkout-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden p-4">
+    <div class="bg-white dark:bg-slate-950 rounded-3xl max-w-lg w-full overflow-hidden border border-slate-150 dark:border-slate-800 shadow-2xl flex flex-col max-h-[90vh]">
+      <!-- Head -->
+      <div class="p-6 border-b border-slate-100 dark:border-slate-900 flex justify-between items-center bg-slate-50 dark:bg-slate-900/30">
+        <h3 class="font-display font-bold text-base">Select Gateway & Payment</h3>
+        <button onclick="closeCheckoutModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+      </div>
+
+      <!-- Content -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+        <div class="p-4 bg-primary-50 dark:bg-primary-950/20 text-slate-800 dark:text-primary-300 rounded-2xl flex justify-between items-center">
+          <span class="font-semibold">Total Amount Due</span>
+          <span class="font-display font-extrabold text-xl text-primary-600 dark:text-primary-400" id="checkout-amount-label">₹30,500</span>
+        </div>
+
+        <div class="space-y-3">
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Choose Payment Mode</label>
+          <div class="grid grid-cols-1 gap-2.5">
+            <label class="flex items-center gap-3.5 p-4 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 select-none">
+              <input type="radio" name="payment-method" value="upi" checked class="text-primary-600 focus:ring-primary-500">
+              <div>
+                <span class="font-semibold block leading-tight">UPI Apps (PhonePe, GPay, Paytm)</span>
+                <span class="text-[10px] text-slate-400">Instant validation & zero surcharge</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-3.5 p-4 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 select-none">
+              <input type="radio" name="payment-method" value="card" class="text-primary-600 focus:ring-primary-500">
+              <div>
+                <span class="font-semibold block leading-tight">Credit or Debit Cards</span>
+                <span class="text-[10px] text-slate-400">Visa, Mastercard, RuPay cards supported</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-3.5 p-4 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 select-none">
+              <input type="radio" name="payment-method" value="net" class="text-primary-600 focus:ring-primary-500">
+              <div>
+                <span class="font-semibold block leading-tight">Net Banking</span>
+                <span class="text-[10px] text-slate-400">Secure bank authentication login</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Simulated Loading state container -->
+        <div id="checkout-loader" class="hidden flex flex-col items-center justify-center py-6 text-center space-y-4">
+          <div class="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs font-semibold text-slate-500">Contacting school payment merchant server...</span>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="p-6 border-t border-slate-100 dark:border-slate-900 flex justify-end gap-3 bg-slate-50 dark:bg-slate-900/30">
+        <button onclick="closeCheckoutModal()" class="px-5 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer">Cancel</button>
+        <button id="pay-confirm-btn" onclick="executePayment()" class="bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all cursor-pointer">Proceed to Secure Checkout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Document PDF View Certificate Modal -->
+  <div id="certificate-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center hidden p-4">
+    <div class="bg-white dark:bg-slate-950 rounded-3xl max-w-3xl w-full overflow-hidden border border-slate-150 dark:border-slate-800 shadow-2xl flex flex-col max-h-[95vh]">
+      <!-- Head controls -->
+      <div class="p-5 border-b border-slate-100 dark:border-slate-900 flex justify-between items-center bg-slate-50 dark:bg-slate-900/30 no-print">
+        <h3 class="font-display font-bold text-base">Certificate Document Preview</h3>
+        <div class="flex items-center gap-3">
+          <button onclick="printCertificate()" class="bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all cursor-pointer">Print / Save PDF</button>
+          <button onclick="closeCertificateModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-white"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+        </div>
+      </div>
+
+      <!-- Preview container printable -->
+      <div class="p-8 overflow-y-auto flex-1 flex justify-center bg-slate-100 dark:bg-slate-900/40">
+        <div id="certificate-print-template" class="w-full max-w-2xl bg-white text-slate-900 border-8 border-double border-slate-800 p-8 md:p-12 relative text-center flex flex-col justify-between aspect-[1.414/1] shadow-lg">
+          <!-- Corner flourishes decorations -->
+          <div class="absolute top-2 left-2 w-12 h-12 border-t-2 border-l-2 border-slate-800"></div>
+          <div class="absolute top-2 right-2 w-12 h-12 border-t-2 border-r-2 border-slate-800"></div>
+          <div class="absolute bottom-2 left-2 w-12 h-12 border-b-2 border-l-2 border-slate-800"></div>
+          <div class="absolute bottom-2 right-2 w-12 h-12 border-b-2 border-r-2 border-slate-800"></div>
+          
+          <!-- School Identity Header -->
+          <div class="space-y-1.5">
+            <h2 class="font-display font-extrabold text-2xl tracking-wide uppercase text-primary-900">Greenwood International School</h2>
+            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest block">Affiliated to National Secondary Education Council Board</span>
+            <div class="w-24 h-[1px] bg-slate-300 mx-auto mt-2"></div>
+          </div>
+
+          <!-- Document core script text -->
+          <div id="cert-body-content" class="my-6">
+            <!-- Dynamic text loaded here -->
+          </div>
+
+          <!-- Signatures Footer -->
+          <div class="flex justify-between items-end mt-8 border-t border-slate-200 pt-6">
+            <div class="text-left">
+              <span class="text-xs text-slate-400 font-semibold block">Issue Date</span>
+              <span class="text-xs font-bold text-slate-800 block mt-1">13th June 2026</span>
+            </div>
+            <!-- School Seal logo -->
+            <div class="w-16 h-16 rounded-full border-2 border-slate-800 text-slate-800 flex items-center justify-center font-bold text-xs shrink-0 select-none">
+              GIS SEAL
+            </div>
+            <div class="text-right">
+              <!-- Mock Signature font -->
+              <span class="font-caveat text-xl text-slate-700 italic block leading-none">M. K. Verma</span>
+              <span class="text-xs text-slate-400 font-semibold block mt-1.5">Principal signatory</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success notifications toast banner pop -->
+  <div id="toast-success" class="fixed bottom-6 left-6 bg-slate-900 text-white dark:bg-white dark:text-slate-950 px-5 py-4 rounded-2xl shadow-2xl border border-slate-800/20 z-50 flex items-center gap-3.5 transition-all transform translate-y-24 opacity-0 pointer-events-none max-w-sm">
+    <span class="p-1 bg-emerald-500 text-white rounded-full"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></span>
+    <div>
+      <h5 class="font-bold text-sm" id="toast-title">Success</h5>
+      <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5" id="toast-body">Details updated successfully.</p>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- APPLICATION REACTIVE STATE JAVASCRIPT     -->
+  <!-- ========================================== -->
+  <script>
+    // --- Mock state structure ---
+    const appState = {
+      activeStudent: 'arjun',
+      theme: 'dark',
+      activeTab: 'dashboard',
+      
+      students: {
+        arjun: {
+          name: 'Arjun Sharma',
+          roll: 12,
+          class: '8-A',
+          dob: '14 Aug 2012',
+          blood: 'O+',
+          house: 'Shivaji',
+          houseColor: 'text-rose-500',
+          advisor: 'Mrs. Preeti Sen',
+          attendancePct: 94,
+          daysPresent: 141,
+          daysAbsent: 9,
+          medical: 'Dust Allergy, carrying inhaler required.',
+          avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&fit=crop&q=80',
+          timetable: [
+            { time: '08:30 - 09:15', sub: 'English Lit.', teacher: 'Mrs. Preeti Sen', room: '104', bg: 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400' },
+            { time: '09:15 - 10:00', sub: 'Mathematics', teacher: 'Mr. Suresh Iyer', room: '104', bg: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400' },
+            { time: '10:15 - 11:00', sub: 'Science Lab', teacher: 'Dr. Ramesh Bose', room: 'Physics Lab', bg: 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400' },
+            { time: '11:00 - 11:45', sub: 'History', teacher: 'Mrs. Rekha Joshi', room: '104', bg: 'bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400' },
+            { time: '12:30 - 01:15', sub: 'Physical Ed.', teacher: 'Coach K. Singh', room: 'Playground', bg: 'bg-teal-50 dark:bg-teal-950/20 text-teal-600 dark:text-teal-400' }
+          ],
+          performance: [88, 92, 85, 78, 82], // Math, Science, English, SST, Hindi
+          overallPct: '85.0%',
+          overallCgpa: 'A Grade &bull; 8.8 GPA',
+          remarks: 'Excellent focus. Showing brilliant understanding in analytical domains.',
+          busEta: '12 Mins',
+          pendingDues: 30500,
+          unexcusedAbsence: 0
+        },
+        ananya: {
+          name: 'Ananya Sharma',
+          roll: 5,
+          class: '5-B',
+          dob: '23 Nov 2015',
+          blood: 'A+',
+          house: 'Ashoka',
+          houseColor: 'text-emerald-500',
+          advisor: 'Mr. Amit Varma',
+          attendancePct: 88,
+          daysPresent: 132,
+          daysAbsent: 18,
+          medical: 'Peanut allergy, emergency medication in medical cabinet.',
+          avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&fit=crop&q=80',
+          timetable: [
+            { time: '08:30 - 09:15', sub: 'EVS Science', teacher: 'Mr. Amit Varma', room: '202', bg: 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400' },
+            { time: '09:15 - 10:00', sub: 'Art & Craft', teacher: 'Mrs. Sonia Roy', room: 'Art Studio', bg: 'bg-pink-50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400' },
+            { time: '10:15 - 11:00', sub: 'English Gram.', teacher: 'Miss Clara Mendonca', room: '202', bg: 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400' },
+            { time: '11:00 - 11:45', sub: 'Mathematics', teacher: 'Mrs. Neha Mehta', room: '202', bg: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400' },
+            { time: '12:30 - 01:15', sub: 'Library Session', teacher: 'Mr. G. Karve', room: 'Main Library', bg: 'bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400' }
+          ],
+          performance: [95, 89, 91, 94, 88], // Math, Science (EVS), English, Social Science, Hindi
+          overallPct: '91.4%',
+          overallCgpa: 'A+ Grade &bull; 9.4 GPA',
+          remarks: 'Highly proactive student, showing excellent verbal skills and outstanding project work.',
+          busEta: '25 Mins',
+          pendingDues: 6000,
+          unexcusedAbsence: 1 // Trigger alert banner mock
+        }
+      },
+
+      notifications: [
+        { id: 1, title: 'Annual Day Celebrations notice issued', desc: 'Schedules and costume requirements draft available on notices board.', date: '1 hour ago', read: false },
+        { id: 2, title: 'Term 2 Fee payment gateway active', desc: 'Pay term tuition and bus fees securely online before June 30.', date: '1 day ago', read: false },
+        { id: 3, title: 'Summer Camp registration deadline', desc: 'Final registration lists closing by tomorrow evening.', date: '2 days ago', read: true }
+      ],
+
+      leaveApplications: [
+        { id: 101, start: '2026-05-12', end: '2026-05-14', type: 'Medical Leave', reason: 'Student had high fever, physician prescribed 3 days rest.', status: 'Approved' },
+        { id: 102, start: '2026-06-22', end: '2026-06-23', type: 'Casual Leave', reason: 'Attending a close family relative wedding ceremony out of town.', status: 'Pending' }
+      ],
+
+      absenceHistory: [
+        { date: '18 Feb 2026', type: 'Unexcused Absence', log: 'Alert SMS sent to Rajesh at 09:30 AM &bull; Email delivered', status: 'Excused (Sick Leave)' },
+        { date: '12 May 2026', type: 'Excused Leave', log: 'No alerts sent. Pre-approved medical leave active.', status: 'Excused' }
+      ],
+
+      feeStatements: [
+        { id: 2001, desc: 'Term 2 Tuition Fees', due: '30 Jun 2026', amount: 24500, status: 'Pending', type: 'arjun' },
+        { id: 2002, desc: 'Term 2 School Bus Fees', due: '30 Jun 2026', amount: 6000, status: 'Pending', type: 'arjun' },
+        { id: 2003, desc: 'Term 2 Tuition Fees', due: '30 Jun 2026', amount: 6000, status: 'Pending', type: 'ananya' },
+        { id: 2004, desc: 'Term 1 Tuition Fees', due: '15 Nov 2025', amount: 24500, status: 'Paid', type: 'arjun', paidDate: '10 Nov 2025' },
+        { id: 2005, desc: 'Registration & Admin Fee', due: '30 Jun 2025', amount: 5000, status: 'Paid', type: 'arjun', paidDate: '15 Jun 2025' }
+      ],
+
+      notices: [
+        { id: 1, title: 'PTA Meeting Schedule & Agenda Details', desc: 'Parent teacher discussions scheduled for June 24th from 9 AM to 1 PM. Core topics include the implementation of Greenwood modern digital curricula and bus route reviews.', date: '13 Jun 2026', cat: 'academic', tag: 'Academic' },
+        { id: 2, title: 'Annual Cultural Day Event Notification', desc: 'Annual Day Celebrations scheduled on June 28th, 4:00 PM. Parents requested to confirm student participant schedules with class advisors. Invitations attached.', date: '10 Jun 2026', cat: 'event', tag: 'Event' },
+        { id: 3, title: 'Summer Academic Break Holidays Notification', desc: 'Greenwood Campus remaining closed for regular school classes from July 1st to July 8th. Homework packets are downloaded inside documents.', date: '08 Jun 2026', cat: 'holiday', tag: 'Holiday' }
+      ],
+
+      chats: {
+        arjun: {
+          advisor: [
+            { sender: 'teacher', text: 'Hello Mr. Sharma, just wanted to check if Arjun has resolved his homework query from physics lab session?' },
+            { sender: 'parent', text: 'Yes, Mrs. Sen. We sat down together last night. He has finished the worksheet and will submit it today.' }
+          ],
+          math: [
+            { sender: 'teacher', text: 'Hello, Arjun performed exceptionally in the algebra mock test last week. Keep it up!' }
+          ],
+          admin: [
+            { sender: 'parent', text: 'When is the bus route audit completion scheduled?' },
+            { sender: 'teacher', text: 'The transport department is finalizing stop details, update notices will list by next week.' }
+          ]
+        },
+        ananya: {
+          advisor: [
+            { sender: 'teacher', text: 'Hello Mr. Sharma, I wanted to discuss Ananya\'s progress in EVS class. She is participating well!' }
+          ],
+          math: [
+            { sender: 'teacher', text: 'Please ensure Ananya practices multiplication tables up to 12 over the weekend.' }
+          ],
+          admin: [
+            { sender: 'parent', text: 'What is the timing for the bus route 4B on monsoon schedule?' },
+            { sender: 'teacher', text: 'It runs 10 mins earlier to account for rain delays.' }
+          ]
+        }
+      },
+
+      documents: [
+        { name: 'Algebra Homework Sheet - Week 4.pdf', cat: 'Homework', size: '1.2 MB', desc: 'Class test practice exercises, math assignments.' },
+        { name: 'Syllabus Grid Final Exam - Grade 8.pdf', cat: 'Syllabus', size: '2.4 MB', desc: 'Complete course guidelines, exam reference lists.' },
+        { name: 'School Bus Route Details 2026.pdf', cat: 'Guides', size: '840 KB', desc: 'Revised stops list, driver schedules.' }
+      ]
+    };
+
+    let performanceRadarChart = null;
+    let busMap = null;
+    let busMarker = null;
+
+    // --- Page Initialization ---
+    window.addEventListener('DOMContentLoaded', () => {
+      // Check default local storage theme if available
+      document.body.className = "bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans min-h-screen flex flex-col md:flex-row transition-colors duration-300";
+      // Initialize core renders
+      changeStudent('arjun');
+      renderNotifications();
+      renderLeaveHistory();
+      renderAbsenceHistory();
+      renderFeeStatements();
+      renderNotices('all');
+      renderTimetable('Mon');
+      renderChatStream();
+      renderDocuments();
+      initBusMap();
+    });
+
+    // --- Sidebar navigation switcher ---
+    function switchTab(tabId) {
+      appState.activeTab = tabId;
+      
+      // Hide all sections
+      document.querySelectorAll('.view-section').forEach(section => {
+        section.classList.add('hidden');
+      });
+      // Show target tab
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      // Update sidebar styling highlight
+      document.querySelectorAll('.sidebar-link').forEach(link => {
+        if (link.getAttribute('data-tab') === tabId) {
+          link.className = "sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-primary-600 bg-primary-50 dark:bg-primary-950/40 dark:text-primary-400 group transition-all";
+        } else {
+          link.className = "sidebar-link flex items-center gap-3.5 px-3.5 py-3.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-900 group transition-all";
+        }
+      });
+
+      // Special re-draw checks for charts or maps
+      if (tabId === 'result') {
+        setTimeout(initPerformanceChart, 100);
+      }
+      if (tabId === 'bus') {
+        setTimeout(() => {
+          if (busMap) busMap.invalidateSize();
+        }, 100);
+      }
+
+      // Close mobile sidebar on redirection
+      toggleSidebar(false);
+    }
+
+    function toggleSidebar(show) {
+      const sidebar = document.getElementById('sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (show) {
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    // --- Theme Switcher Logic ---
+    function toggleTheme() {
+      const html = document.documentElement;
+      const moon = document.getElementById('theme-moon');
+      const sun = document.getElementById('theme-sun');
+      
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        moon.classList.remove('hidden');
+        sun.classList.add('hidden');
+        appState.theme = 'light';
+      } else {
+        html.classList.add('dark');
+        moon.classList.add('hidden');
+        sun.classList.remove('theme-sun');
+        sun.classList.remove('hidden');
+        appState.theme = 'dark';
+      }
+    }
+
+    // --- Student Switcher Details ---
+    function changeStudent(studentId) {
+      appState.activeStudent = studentId;
+      const student = appState.students[studentId];
+      
+      // Update selector UI state just in case
+      document.getElementById('student-selector').value = studentId;
+
+      // Update Dashboard details
+      document.getElementById('dash-student-name').textContent = student.name;
+      document.getElementById('dash-student-avatar').src = student.avatar;
+      document.getElementById('dash-student-roll').textContent = student.roll;
+      document.getElementById('dash-student-section').textContent = student.class;
+      document.getElementById('dash-student-advisor').textContent = student.advisor;
+      document.getElementById('dash-student-house').textContent = student.house;
+      document.getElementById('dash-student-house').className = `font-bold ${student.houseColor}`;
+
+      // Update Dashboard Stats widgets
+      document.getElementById('dash-stat-attendance').textContent = `${student.attendancePct}%`;
+      document.getElementById('dash-stat-class').textContent = student.class;
+      document.getElementById('dash-stat-absence').textContent = student.unexcusedAbsence;
+      document.getElementById('dash-stat-dues').textContent = `₹${student.pendingDues.toLocaleString()}`;
+
+      // Update Attendance Donut
+      document.getElementById('dash-attendance-gauge').setAttribute('stroke-dasharray', `${student.attendancePct}, 100`);
+      document.getElementById('dash-gauge-text').textContent = `${student.attendancePct}%`;
+      document.getElementById('dash-days-present').textContent = `${student.daysPresent} Days`;
+      document.getElementById('dash-days-absent').textContent = `${student.daysAbsent} Days`;
+
+      // Update next class period info
+      if (studentId === 'arjun') {
+        document.getElementById('dash-schedule-time').textContent = '09:15 AM';
+        document.getElementById('dash-schedule-subject').textContent = 'Mathematics (Algebra)';
+        document.getElementById('dash-schedule-teacher').textContent = 'Mr. Suresh Iyer';
+      } else {
+        document.getElementById('dash-schedule-time').textContent = '08:30 AM';
+        document.getElementById('dash-schedule-subject').textContent = 'EVS Science';
+        document.getElementById('dash-schedule-teacher').textContent = 'Mr. Amit Varma';
+      }
+
+      // Update Module 2: Detailed Student Card
+      document.getElementById('detail-student-name').textContent = student.name;
+      document.getElementById('detail-student-avatar').src = student.avatar;
+      document.getElementById('detail-student-grade').textContent = `Grade ${student.class}`;
+      document.getElementById('detail-student-roll').textContent = student.roll;
+      document.getElementById('detail-student-blood').textContent = student.blood;
+      document.getElementById('detail-student-house').textContent = student.house;
+      document.getElementById('detail-student-house').className = `text-sm font-bold ${student.houseColor} mt-1 block`;
+      document.getElementById('detail-full-name').textContent = student.name;
+      document.getElementById('detail-dob').textContent = student.dob;
+      document.getElementById('detail-advisor').textContent = student.advisor;
+      document.getElementById('detail-medical').textContent = student.medical;
+      document.getElementById('detail-admission-no').textContent = studentId === 'arjun' ? '15 Apr 2021 | GIS/2021/8946' : '02 Jul 2023 | GIS/2023/1204';
+
+      // Update Module 4: Unexcused alert banner trigger
+      const alertBanner = document.getElementById('unexcused-absence-banner');
+      if (student.unexcusedAbsence > 0) {
+        alertBanner.classList.remove('hidden');
+        document.getElementById('absence-alert-message').textContent = `${student.name} was reported absent without approved leave during morning class call today. Please verify status or apply for leave immediately.`;
+      } else {
+        alertBanner.classList.add('hidden');
+      }
+
+      // Update Module 5: Bus details
+      document.getElementById('bus-eta-timer').textContent = student.busEta;
+
+      // Update Module 8: Results & Report cards
+      renderResultsTable(studentId);
+
+      // Re-trigger performance chart details if in results tab
+      if (appState.activeTab === 'result') {
+        initPerformanceChart();
+      }
+
+      // Re-trigger timetable list
+      renderTimetable('Mon');
+
+      // Re-trigger documents
+      renderDocuments();
+
+      // Re-trigger fee statement lists
+      renderFeeStatements();
+
+      // Re-trigger chat history view
+      renderChatStream();
+    }
+
+    // --- Dropdown Toggles ---
+    function toggleDropdown(dropdownId) {
+      const dropdown = document.getElementById(dropdownId);
+      dropdown.classList.toggle('hidden');
+      
+      // Close dropdown click handler outside
+      const handler = (e) => {
+        if (!e.target.closest(`#${dropdownId}`) && !e.target.closest('button')) {
+          dropdown.classList.add('hidden');
+          document.removeEventListener('click', handler);
+        }
+      };
+      if (!dropdown.classList.contains('hidden')) {
+        document.addEventListener('click', handler);
+      }
+    }
+
+    // --- Toast Notifications Pop-ups ---
+    function triggerToast(title, body) {
+      document.getElementById('toast-title').textContent = title;
+      document.getElementById('toast-body').textContent = body;
+      const toast = document.getElementById('toast-success');
+      toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+      }, 3500);
+    }
+
+    // --- Notifications tray ---
+    function renderNotifications() {
+      const container = document.getElementById('notification-list');
+      container.innerHTML = '';
+      
+      if (appState.notifications.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center text-xs text-slate-400">No active alerts available.</div>';
+        return;
+      }
+
+      appState.notifications.forEach(n => {
+        const item = document.createElement('div');
+        item.className = `p-4 hover:bg-slate-50 dark:hover:bg-slate-900 border-b border-slate-100 dark:border-slate-900 cursor-pointer flex gap-3.5 ${n.read ? '' : 'bg-primary-50/20 dark:bg-primary-950/10'}`;
+        item.innerHTML = `
+          <div class="w-2 h-2 rounded-full ${n.read ? 'bg-transparent' : 'bg-primary-500'} mt-1.5 shrink-0"></div>
+          <div>
+            <h5 class="font-bold text-xs leading-snug">${n.title}</h5>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">${n.desc}</p>
+            <span class="text-[9px] text-slate-400 block mt-1">${n.date}</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function clearNotifications() {
+      appState.notifications.forEach(n => n.read = true);
+      renderNotifications();
+      triggerToast('Notifications Read', 'All notifications marked as read.');
+    }
+
+    // --- Module 3: Leave applications operations ---
+    function renderLeaveHistory() {
+      const container = document.getElementById('leave-history-table');
+      container.innerHTML = '';
+      
+      appState.leaveApplications.forEach(app => {
+        const statusColors = {
+          Approved: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400',
+          Pending: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
+          Rejected: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'
+        };
+
+        const row = document.createElement('tr');
+        row.className = "border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-900/10";
+        row.innerHTML = `
+          <td class="py-4 font-semibold text-slate-800 dark:text-slate-200">${formatDateString(app.start)} to ${formatDateString(app.end)}</td>
+          <td class="py-4 text-xs font-semibold text-slate-500">${app.type}</td>
+          <td class="py-4 text-xs max-w-xs truncate text-slate-500">${app.reason}</td>
+          <td class="py-4 text-right">
+            <span class="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${statusColors[app.status]}">${app.status}</span>
+          </td>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function submitLeave(e) {
+      e.preventDefault();
+      const start = document.getElementById('leave-start').value;
+      const end = document.getElementById('leave-end').value;
+      const type = document.getElementById('leave-type').value;
+      const reason = document.getElementById('leave-reason').value;
+
+      if (new Date(start) > new Date(end)) {
+        alert("Start date cannot exceed end date!");
+        return;
+      }
+
+      const newLeave = {
+        id: appState.leaveApplications.length + 101,
+        start,
+        end,
+        type,
+        reason,
+        status: 'Pending'
+      };
+
+      appState.leaveApplications.unshift(newLeave);
+      renderLeaveHistory();
+      document.getElementById('leave-form').reset();
+      triggerToast('Leave Applied', 'Your student leave application has been submitted to advisor.');
+    }
+
+    function formatDateString(dateStr) {
+      const options = { day: 'numeric', month: 'short', year: 'numeric' };
+      return new Date(dateStr).toLocaleDateString('en-IN', options);
+    }
+
+    // --- Module 4: Absence logs history ---
+    function renderAbsenceHistory() {
+      const container = document.getElementById('absence-history-table');
+      container.innerHTML = '';
+
+      appState.absenceHistory.forEach(item => {
+        row = document.createElement('tr');
+        row.className = "border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-900/10";
+        row.innerHTML = `
+          <td class="py-4 font-semibold text-slate-800 dark:text-slate-200">${item.date}</td>
+          <td class="py-4 text-xs text-rose-500 font-bold uppercase tracking-wider">${item.type}</td>
+          <td class="py-4 text-xs text-slate-500">${item.log}</td>
+          <td class="py-4 text-right"><span class="text-xs font-semibold text-slate-500">${item.status}</span></td>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // --- Module 5: Bus Live location tracking map ---
+    function initBusMap() {
+      // Coordinates centering Pune, Maharashtra (e.g. Deccan region route path)
+      const busRouteCoordinates = [
+        [18.5283, 73.8113], // Stop 1: Kothrud
+        [18.5226, 73.8304], // Stop 2: Karve Road
+        [18.5173, 73.8427], // Stop 3: Deccan Gymkhana
+        [18.5308, 73.8546]  // Stop 4: School Campus
+      ];
+
+      // Setup Leaflet map instance
+      busMap = L.map('bus-map').setView([18.5226, 73.8304], 14);
+
+      // OpenStreetMap Tiles loader
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(busMap);
+
+      // Draw route path line
+      const pathLine = L.polyline(busRouteCoordinates, { color: '#3b82f6', weight: 4, opacity: 0.8 }).addTo(busMap);
+
+      // Custom icon for bus marker
+      const busIcon = L.divIcon({
+        className: 'bg-primary-600 text-white rounded-full flex items-center justify-center p-2.5 shadow-xl border-2 border-white',
+        html: `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      // Add driver/bus pin
+      busMarker = L.marker([18.5173, 73.8427], { icon: busIcon }).addTo(busMap); // Centered at Deccan Stop 3
+      busMarker.bindPopup('<div class="text-xs"><b>Bus MH-12-PQ-9876</b><br/>Driver: Suresh Patil<br/>Stop: Deccan Corner</div>').openPopup();
+
+      // Simulated tiny movement path simulation
+      let indexStep = 0;
+      let forward = true;
+      setInterval(() => {
+        if (appState.activeTab === 'bus') {
+          // Add a random drift to simulate live drive movement
+          const currentBase = busRouteCoordinates[2]; // Stop 3 Deccan Gymkhana base
+          const driftLat = (Math.random() - 0.5) * 0.002;
+          const driftLng = (Math.random() - 0.5) * 0.002;
+          const newPos = [currentBase[0] + driftLat, currentBase[1] + driftLng];
+          busMarker.setLatLng(newPos);
+        }
+      }, 5000);
+    }
+
+    // --- Module 6: Online fee payments details ---
+    function renderFeeStatements() {
+      const container = document.getElementById('fee-statement-table');
+      container.innerHTML = '';
+
+      let pendingSum = 0;
+      let paidSum = 0;
+
+      appState.feeStatements.forEach(inv => {
+        // Only show fees matches relevant active kid
+        if (inv.type !== appState.activeStudent) return;
+
+        if (inv.status === 'Pending') {
+          pendingSum += inv.amount;
+        } else {
+          paidSum += inv.amount;
+        }
+
+        const row = document.createElement('tr');
+        row.className = "border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-900/10";
+        row.innerHTML = `
+          <td class="py-4 font-semibold text-slate-800 dark:text-slate-200">${inv.desc}</td>
+          <td class="py-4 text-xs text-slate-500">${inv.due || '--'}</td>
+          <td class="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">₹${inv.amount.toLocaleString()}</td>
+          <td class="py-4 text-center">
+            <span class="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${inv.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400'}">${inv.status}</span>
+          </td>
+          <td class="py-4 text-right">
+            ${inv.status === 'Paid' 
+              ? `<button onclick="printReceipt(${inv.id})" class="text-xs font-bold text-primary-500 hover:text-primary-600 cursor-pointer">Receipt PDF</button>` 
+              : `<button onclick="openCheckoutModal()" class="bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition-all cursor-pointer">Pay Now</button>`}
+          </td>
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById('fee-total-pending').textContent = `₹${pendingSum.toLocaleString()}`;
+      document.getElementById('fee-total-paid').textContent = `₹${paidSum.toLocaleString()}`;
+    }
+
+    function openCheckoutModal() {
+      const student = appState.students[appState.activeStudent];
+      document.getElementById('checkout-amount-label').textContent = `₹${student.pendingDues.toLocaleString()}`;
+      document.getElementById('checkout-modal').classList.remove('hidden');
+    }
+
+    function closeCheckoutModal() {
+      document.getElementById('checkout-modal').classList.add('hidden');
+      // Reset simulated loader views
+      document.getElementById('checkout-loader').classList.add('hidden');
+      document.getElementById('pay-confirm-btn').classList.remove('hidden');
+    }
+
+    function executePayment() {
+      const loader = document.getElementById('checkout-loader');
+      const payBtn = document.getElementById('pay-confirm-btn');
+      
+      payBtn.classList.add('hidden');
+      loader.classList.remove('hidden');
+
+      setTimeout(() => {
+        // Shift pending fees to Paid states
+        appState.feeStatements.forEach(inv => {
+          if (inv.type === appState.activeStudent && inv.status === 'Pending') {
+            inv.status = 'Paid';
+            inv.paidDate = '13 Jun 2026';
+          }
+        });
+
+        // Clear dashboard statistics
+        const student = appState.students[appState.activeStudent];
+        student.pendingDues = 0;
+        changeStudent(appState.activeStudent);
+        renderFeeStatements();
+        closeCheckoutModal();
+        triggerToast('Payment Successful', 'Online receipt generated successfully inside statement records.');
+      }, 2000);
+    }
+
+    function printReceipt(invoiceId) {
+      const inv = appState.feeStatements.find(i => i.id === invoiceId);
+      const student = appState.students[appState.activeStudent];
+      
+      const receiptHTML = `
+        <div class="space-y-4">
+          <span class="text-xs font-bold uppercase tracking-wider text-primary-500">Greenwood International Tuition Fee Receipt</span>
+          <h3 class="font-display font-bold text-xl text-slate-800 border-b pb-2">TRANSACTION SUCCESS CONFIRMATION</h3>
+          <div class="grid grid-cols-2 gap-4 text-xs pt-2">
+            <div><b>Receipt Number:</b> REC-${inv.id}</div>
+            <div><b>Date Paid:</b> ${inv.paidDate || 'N/A'}</div>
+            <div><b>Student:</b> ${student.name} (Grade ${student.class})</div>
+            <div><b>Billing Parent:</b> Rajesh Sharma</div>
+            <div><b>Item Detail:</b> ${inv.desc}</div>
+            <div><b>Paid Amount:</b> ₹${inv.amount.toLocaleString()}</div>
+          </div>
+          <p class="text-[10px] text-slate-400 italic pt-6">Digital transaction signature verified. Greenwood Financial Accounts division.</p>
+        </div>
+      `;
+
+      openCertificateModalCustom(receiptHTML);
+    }
+
+    // --- Module 7: Announcements & Notice filter board ---
+    function renderNotices(categoryFilter) {
+      const container = document.getElementById('notice-board-grid');
+      container.innerHTML = '';
+
+      appState.notices.forEach(notice => {
+        if (categoryFilter !== 'all' && notice.cat !== categoryFilter) return;
+
+        const bgStyles = {
+          academic: 'border-l-4 border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/10',
+          holiday: 'border-l-4 border-rose-500 bg-rose-50/20 dark:bg-rose-950/10',
+          event: 'border-l-4 border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/10'
+        };
+
+        const card = document.createElement('div');
+        card.className = `p-6 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card ${bgStyles[notice.cat]} flex flex-col justify-between`;
+        card.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex justify-between items-center">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">${notice.date}</span>
+              <span class="text-[9px] font-bold px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full">${notice.tag}</span>
+            </div>
+            <h4 class="font-display font-bold text-base text-slate-850 dark:text-white leading-snug">${notice.title}</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">${notice.desc}</p>
+          </div>
+          <div class="flex gap-4 mt-6 pt-4 border-t border-slate-100 dark:border-slate-900 text-xs font-semibold text-primary-500">
+            <a href="javascript:void(0)" onclick="triggerToast('Notice Attachment', 'PDF attachment download started.')" class="hover:underline">Download Agenda PDF</a>
+            <a href="javascript:void(0)" onclick="triggerToast('Notice Details', 'Calendar sync complete.')" class="hover:underline text-slate-400 hover:text-slate-600">Add to Calendar</a>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterNotices(cat) {
+      renderNotices(cat);
+      // Highlights category button
+      document.querySelectorAll('.notice-filter-btn').forEach(btn => {
+        if (btn.getAttribute('onclick').includes(cat)) {
+          btn.className = "notice-filter-btn px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-full transition-all cursor-pointer";
+        } else {
+          btn.className = "notice-filter-btn px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-350 text-xs font-bold rounded-full transition-all cursor-pointer";
+        }
+      });
+    }
+
+    // --- Module 8: Results, Grading, Marks and Chart ---
+    function renderResultsTable(studentId) {
+      const container = document.getElementById('results-table-body');
+      container.innerHTML = '';
+      const student = appState.students[studentId];
+
+      const subjectsList = studentId === 'arjun' 
+        ? ['Mathematics', 'Science Lab', 'English Lit.', 'Social Science', 'Hindi Language']
+        : ['Mathematics', 'Art & Craft', 'English Lit.', 'EVS Science', 'Hindi Language'];
+
+      const gradingScale = (score) => {
+        if (score >= 90) return 'A+';
+        if (score >= 80) return 'A';
+        if (score >= 70) return 'B';
+        return 'C';
+      };
+
+      subjectsList.forEach((sub, i) => {
+        const testMarks = Math.round(student.performance[i] * 0.2); // 20%
+        const examMarks = Math.round(student.performance[i] * 0.8); // 80%
+        const total = testMarks + examMarks;
+
+        const row = document.createElement('tr');
+        row.className = "border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-900/10";
+        row.innerHTML = `
+          <td class="py-4 font-semibold text-slate-800 dark:text-slate-200">${sub}</td>
+          <td class="py-4 text-xs font-semibold text-slate-500">${testMarks} / 20</td>
+          <td class="py-4 text-xs font-semibold text-slate-500">${examMarks} / 80</td>
+          <td class="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">${total} / 100</td>
+          <td class="py-4"><span class="text-xs font-bold text-emerald-500">${gradingScale(total)}</span></td>
+          <td class="py-4 text-right text-xs text-slate-400 italic">${total >= 85 ? 'Outstanding effort' : 'Consistent progress'}</td>
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById('results-pct').textContent = student.overallPct;
+      document.getElementById('results-cgpa').innerHTML = student.overallCgpa;
+    }
+
+    function initPerformanceChart() {
+      const ctx = document.getElementById('performance-chart').getContext('2d');
+      const student = appState.students[appState.activeStudent];
+      const isArjun = appState.activeStudent === 'arjun';
+
+      const labels = isArjun 
+        ? ['Math', 'Science', 'English', 'SST', 'Hindi']
+        : ['Math', 'Art', 'English', 'EVS', 'Hindi'];
+      
+      const classAverage = [82, 80, 84, 75, 78]; // Hardcoded default comparison
+
+      if (performanceRadarChart) {
+        performanceRadarChart.destroy();
+      }
+
+      performanceRadarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `${student.name} Scores`,
+            data: student.performance,
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderColor: '#3b82f6',
+            borderWidth: 2,
+            pointBackgroundColor: '#2563eb'
+          }, {
+            label: 'Class Average',
+            data: classAverage,
+            backgroundColor: 'rgba(148, 163, 184, 0.1)',
+            borderColor: '#94a3b8',
+            borderWidth: 1.5,
+            borderDash: [4, 4]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              angleLines: { color: '#e2e8f0' },
+              grid: { color: '#e2e8f0' },
+              pointLabels: { font: { family: 'Outfit', size: 11 } },
+              suggestedMin: 50,
+              suggestedMax: 100
+            }
+          }
+        }
+      });
+    }
+
+    function printReportCard() {
+      window.print();
+    }
+
+    // --- Module 9: Certificates View and Printer template ---
+    function openCertificateModal(certType) {
+      const student = appState.students[appState.activeStudent];
+      const container = document.getElementById('cert-body-content');
+      
+      let text = '';
+      if (certType === 'bonafide') {
+        text = `
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-4">TO WHOMSOEVER IT MAY CONCERN</span>
+          <p class="text-sm md:text-base leading-relaxed text-slate-700 italic max-w-lg mx-auto">
+            This is to certify that <b>${student.name}</b>, Roll Number <b>${student.roll}</b>, is a bonafide student of Greenwood International School, currently studying in <b>Grade ${student.class}</b> during the academic session 2026-2027.
+          </p>
+          <p class="text-xs text-slate-400 mt-6 max-w-md mx-auto">
+            This certificate is issued at the request of the parent Rajesh Sharma for general administrative references and verified official filings.
+          </p>
+        `;
+      } else if (certType === 'leaving') {
+        text = `
+          <span class="text-xs font-bold text-slate-400 tracking-widest block mb-4">TRANSFER / LEAVING SUMMARY CERTIFICATE</span>
+          <p class="text-sm leading-relaxed text-slate-700 italic max-w-lg mx-auto">
+            This certifies that <b>${student.name}</b>, child of Rajesh Sharma, was enrolled in Greenwood International School since April 2021. The student is currently clear of all library, athletic, and tuition invoice dues.
+          </p>
+          <span class="text-xs text-rose-500 font-bold block mt-6">STATUS: DRAFT COPY ONLY (Official exit requires manual registry confirmation)</span>
+        `;
+      } else {
+        text = `
+          <span class="text-xs font-bold text-amber-500 tracking-widest block mb-4">CERTIFICATE OF MERIT</span>
+          <h4 class="font-display font-extrabold text-lg text-slate-800 mb-2">Academic Excellence Recognition</h4>
+          <p class="text-sm leading-relaxed text-slate-700 italic max-w-lg mx-auto">
+            Awarded to <b>${student.name}</b> for outstanding performance in the term exams, achieving a cumulative grade of <b>${student.overallPct}</b> and showing outstanding academic excellence.
+          </p>
+        `;
+      }
+
+      container.innerHTML = text;
+      document.getElementById('certificate-modal').classList.remove('hidden');
+    }
+
+    function openCertificateModalCustom(customHTML) {
+      document.getElementById('cert-body-content').innerHTML = customHTML;
+      document.getElementById('certificate-modal').classList.remove('hidden');
+    }
+
+    function closeCertificateModal() {
+      document.getElementById('certificate-modal').classList.add('hidden');
+    }
+
+    function printCertificate() {
+      window.print();
+    }
+
+    // --- Module 10: Daily class schedule timetables ---
+    function renderTimetable(day) {
+      const container = document.getElementById('timetable-slots-grid');
+      container.innerHTML = '';
+      const student = appState.students[appState.activeStudent];
+
+      student.timetable.forEach(period => {
+        const card = document.createElement('div');
+        card.className = `p-5 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-card bg-white dark:bg-slate-950 space-y-3 hover:shadow-soft-hover transition-all duration-300`;
+        card.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-semibold text-slate-400 dark:text-slate-500">${period.time}</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${period.bg}">${period.room}</span>
+          </div>
+          <div>
+            <h4 class="font-display font-bold text-base text-slate-800 dark:text-white">${period.sub}</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Faculty: ${period.teacher}</p>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterTimetable(day) {
+      renderTimetable(day);
+      document.querySelectorAll('.timetable-day-btn').forEach(btn => {
+        if (btn.textContent === day) {
+          btn.className = "timetable-day-btn px-4 py-2 bg-primary-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer";
+        } else {
+          btn.className = "timetable-day-btn px-4 py-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-xs font-bold rounded-xl transition-all cursor-pointer";
+        }
+      });
+    }
+
+    // --- Module 11: Communications Chat and forms ---
+    function renderChatStream() {
+      const container = document.getElementById('chat-stream-area');
+      container.innerHTML = '';
+      const activeContact = document.getElementById('chat-contact-selector').value;
+      const chatLogs = (appState.chats[appState.activeStudent] && appState.chats[appState.activeStudent][activeContact]) || [];
+      const student = appState.students[appState.activeStudent];
+
+      const teacherName = activeContact === 'advisor' 
+        ? student.advisor 
+        : activeContact === 'math' ? 'Mr. Suresh Iyer' : 'Principal Office Staff';
+
+      const avatarColors = {
+        advisor: 'bg-indigo-100 text-indigo-600',
+        math: 'bg-emerald-100 text-emerald-600',
+        admin: 'bg-amber-100 text-amber-600'
+      };
+
+      // Set avatar picture or initials
+      document.getElementById('chat-teacher-name').textContent = teacherName;
+      document.getElementById('chat-teacher-avatar').src = activeContact === 'advisor' && appState.activeStudent === 'arjun' 
+        ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&fit=crop&q=80'
+        : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&fit=crop&q=80';
+
+      chatLogs.forEach(msg => {
+        const bubble = document.createElement('div');
+        if (msg.sender === 'parent') {
+          bubble.className = "flex items-start justify-end gap-2 max-w-[85%] ml-auto";
+          bubble.innerHTML = `
+            <div class="bg-primary-600 text-white p-3 rounded-2xl rounded-tr-none shadow-sm leading-relaxed">
+              ${msg.text}
+            </div>
+          `;
+        } else {
+          bubble.className = "flex items-start gap-3.5 max-w-[85%]";
+          bubble.innerHTML = `
+            <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${avatarColors[activeContact]}">
+              ${teacherName.split(' ').slice(-1)[0][0]}
+            </div>
+            <div class="bg-white dark:bg-slate-950 p-3 rounded-2xl rounded-tl-none border border-slate-150 dark:border-slate-800 shadow-sm leading-relaxed text-slate-700 dark:text-slate-350">
+              ${msg.text}
+            </div>
+          `;
+        }
+        container.appendChild(bubble);
+      });
+
+      // Autoscroll stream bottom
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function switchChatContact(val) {
+      renderChatStream();
+    }
+
+    function sendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input-box');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const activeContact = document.getElementById('chat-contact-selector').value;
+      if (!appState.chats[appState.activeStudent]) {
+        appState.chats[appState.activeStudent] = {};
+      }
+      if (!appState.chats[appState.activeStudent][activeContact]) {
+        appState.chats[appState.activeStudent][activeContact] = [];
+      }
+
+      appState.chats[appState.activeStudent][activeContact].push({ sender: 'parent', text });
+      
+      renderChatStream();
+      input.value = '';
+
+      // Simulated auto teacher reply
+      setTimeout(() => {
+        appState.chats[appState.activeStudent][activeContact].push({ 
+          sender: 'teacher', 
+          text: 'Thank you for your message. I have received it and will look into this during school recess hours.' 
+        });
+        renderChatStream();
+      }, 1500);
+    }
+
+    function submitInquiry(e) {
+      e.preventDefault();
+      e.target.reset();
+      triggerToast('Administrative Inquiry Submitted', 'A ticket ID was created, office representatives will connect shortly.');
+    }
+
+    // --- Module 12: Academic Documents Manager ---
+    function renderDocuments(searchQuery = '') {
+      const container = document.getElementById('documents-grid-container');
+      container.innerHTML = '';
+
+      appState.documents.forEach(doc => {
+        if (searchQuery && !doc.name.toLowerCase().includes(searchQuery.toLowerCase())) return;
+
+        const card = document.createElement('div');
+        card.className = "p-5 rounded-2xl bg-white dark:bg-slate-950 border border-slate-150 dark:border-slate-800 shadow-card flex items-start gap-4 hover:shadow-soft-hover transition-all duration-300";
+        card.innerHTML = `
+          <div class="p-3 bg-slate-100 dark:bg-slate-900 rounded-xl text-slate-500 shrink-0">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <span class="text-[9px] font-extrabold uppercase tracking-wider text-primary-500 block">${doc.cat} &bull; ${doc.size}</span>
+            <h4 class="font-display font-semibold text-sm leading-snug truncate mt-1 text-slate-800 dark:text-white" title="${doc.name}">${doc.name}</h4>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-snug truncate">${doc.desc}</p>
+            <button onclick="triggerToast('Download Started', 'Downloading file: ${doc.name}')" class="text-xs font-bold text-primary-500 hover:text-primary-600 block mt-3.5 cursor-pointer">Download File PDF</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      if (container.children.length === 0) {
+        container.innerHTML = '<div class="col-span-full py-8 text-center text-xs text-slate-400">No matching documents found.</div>';
+      }
+    }
+
+    function searchDocs(val) {
+      renderDocuments(val);
+    }
+  </script>
+</body>
+</html>
