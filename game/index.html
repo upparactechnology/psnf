@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="PSNF - Professional educational games for children with autism and special education needs." />
+  <title>PSNF | Interactive Learning Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="voice-settings.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <section id="homeScreen" class="screen active" aria-label="Home dashboard">
+      <header class="home-header glass-card">
+        <div class="brand-wrap">
+          <img src="images/logo.png" alt="PSNF Logo" class="brand-logo">
+          <div>
+            <h1>PSNF</h1>
+            <p>Interactive Learning Games</p>
+          </div>
+        </div>
+        <button id="homeResetBtn" class="top-icon-btn" type="button" aria-label="Reload page"
+          title="Reload page">↻</button>
+        <div class="stats-row" aria-label="Learning stats">
+          <article class="stat-card">
+            <span class="stat-icon">⭐</span>
+            <div>
+              <strong id="starsCountHome">250</strong>
+              <small>Stars</small>
+            </div>
+          </article>
+          <article class="stat-card">
+            <span class="stat-icon">XP</span>
+            <div class="xp-wrap">
+              <strong><span id="xpCountHome">1250</span> / 2000</strong>
+              <small>XP</small>
+              <div class="xp-track">
+                <div class="xp-fill" id="xpFillHome" style="width:62.5%"></div>
+              </div>
+            </div>
+          </article>
+          <article class="stat-card">
+            <span class="stat-icon">🏅</span>
+            <div>
+              <strong id="levelCountHome">5</strong>
+              <small>Level</small>
+            </div>
+          </article>
+        </div>
+      </header>
+
+      <main class="home-main">
+        <section class="hero-copy">
+          <h2>Choose a Game</h2>
+          <p>Fun and interactive games to learn and practice everyday skills</p>
+        </section>
+
+        <section class="game-grid" aria-label="Game cards">
+          <article class="game-card card-purple" data-game-target="sentence-builder.html">
+            <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1000&q=80"
+              alt="Pizza slices on a table" />
+            <span class="game-badge">💬</span>
+            <h3>Sentence Builder</h3>
+            <p>Drag images to build communication sentences and hear them spoken clearly.</p>
+            <button class="cta-btn" type="button">Play Game </button>
+          </article>
+
+          <article class="game-card card-green" data-game-target="money-counting.html">
+            <img src="images/money/main.png" alt="Indian currency and coins" />
+            <span class="game-badge">₹</span>
+            <h3>Money Counting</h3>
+            <p>Count money and choose the right amount for everyday purchases.</p>
+            <button class="cta-btn" type="button">Play Game </button>
+          </article>
+
+          <article class="game-card card-blue" data-game-target="shopping-store.html">
+            <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1000&q=80"
+              alt="Shopping cart in a grocery store" />
+            <span class="game-badge">🛒</span>
+            <h3>Shopping Store</h3>
+            <p>Practice selecting items and making decisions in a store-like setting.</p>
+            <button class="cta-btn" type="button">Play Game </button>
+          </article>
+
+          <article class="game-card card-orange" data-game-target="safety-signs.html">
+            <img src="https://images.unsplash.com/photo-1503249023995-51b0f3778ccf?auto=format&fit=crop&w=1000&q=80"
+              alt="Street safety signs" />
+            <span class="game-badge">⚠️</span>
+            <h3>Safety Signs</h3>
+            <p>Identify important signs and learn safe actions in daily life.</p>
+            <button class="cta-btn" type="button">Play Game </button>
+          </article>
+
+          <article class="game-card card-red" data-game-target="safe-vs-unsafe.html">
+            <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1000&q=80"
+              alt="Different people in portraits" />
+            <span class="game-badge">🧩</span>
+            <h3>Safe vs Unsafe</h3>
+            <p>Learn to recognize safe and unsafe social situations with confidence.</p>
+            <button class="cta-btn" type="button">Play Game </button>
+          </article>
+        </section>
+
+        <section class="features-strip glass-card" aria-label="Platform features">
+          <article class="feature-item">
+            <div class="feature-icon">🔊</div>
+            <div>
+              <h4>Audio Support</h4>
+              <p>Hear instructions and sentence playback with clear narration.</p>
+            </div>
+          </article>
+          <article class="feature-item">
+            <div class="feature-icon">👆</div>
+            <div>
+              <h4>Easy to Use</h4>
+              <p>Touch-friendly controls with simple and accessible interactions.</p>
+            </div>
+          </article>
+          <article class="feature-item">
+            <div class="feature-icon">🎯</div>
+            <div>
+              <h4>Learn &amp; Practice</h4>
+              <p>Build real-life communication and daily routine skills step by step.</p>
+            </div>
+          </article>
+          <article class="feature-item">
+            <div class="feature-icon">🛡️</div>
+            <div>
+              <h4>Safe &amp; Secure</h4>
+              <p>Calm, distraction-free environment designed for focused learning.</p>
+            </div>
+          </article>
+        </section>
+      </main>
+    </section>
+
+    <script src="DragDropTouch.js"></script>
+    <script src="voice-settings.js"></script>
+    <script src="index.js"></script>
+</body>
+
+</html>
