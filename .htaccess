@@ -1,0 +1,7 @@
+Options -Indexes
+
+# Protect sensitive directories
+RewriteEngine On
+
+# Block access to hidden files
+RewriteRule (^\.|/\.) - [F]
