@@ -1,10 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
+    <script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            window.isDark = false;
+        } else {
+            document.documentElement.classList.add('dark');
+            window.isDark = true;
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'PSNF ERP — Login' ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (Local Fallback) -->
+    <script src="<?= url('js/tailwindcss.js') ?>"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -70,7 +80,7 @@
     });
     </script>
 </head>
-<body class="min-h-screen font-sans antialiased" style="background: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.1) 0%, transparent 50%), #080d1a;">
+<body class="min-h-screen font-sans antialiased bg-slate-50 text-slate-800 dark:bg-[#080d1a] dark:text-slate-200" style="background-image: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.05) 0%, transparent 50%);">
 
 <div class="min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md">
@@ -82,16 +92,16 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                 </svg>
             </div>
-            <h1 class="text-2xl font-bold text-white">PSNF ERP</h1>
-            <p class="text-slate-400 text-sm mt-1">Pearl Special Needs Foundation</p>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">PSNF ERP</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Pearl Special Needs Foundation</p>
         </div>
 
         <!-- Card -->
-        <div class="rounded-2xl p-8 shadow-2xl border" style="background: rgba(15,23,42,0.9); border-color: rgba(255,255,255,0.06); backdrop-filter: blur(16px);">
+        <div class="rounded-2xl p-8 shadow-2xl border border-slate-200 dark:border-white/5 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
             <?= $content ?>
         </div>
 
-        <p class="text-center text-xs text-slate-600 mt-6">© <?= date('Y') ?> Pearl Special Needs Foundation. All rights reserved.</p>
+        <p class="text-center text-xs text-slate-400 dark:text-slate-600 mt-6">© <?= date('Y') ?> Pearl Special Needs Foundation. All rights reserved.</p>
     </div>
 </div>
 

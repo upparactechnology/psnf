@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, ParentPortalController};
+use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, ParentPortalController, FeeController, TransportController, CertificateController};
 
 // ─── Auth (Guest Only) ────────────────────────────────────────────────────────
 $router->get('/login',           [AuthController::class, 'showLogin'],          ['guest']);
@@ -60,6 +60,29 @@ $router->post('/students/{id}/documents',          [StudentController::class, 'u
 $router->post('/students/{id}/guardians',          [StudentController::class, 'storeGuardian'],      ['auth', 'permission:edit_students']);
 $router->post('/students/{id}/emergency-contacts', [StudentController::class, 'storeEmergencyContact'],['auth', 'permission:edit_students']);
 $router->get('/students/{id}/timeline',            [StudentController::class, 'timeline'],           ['auth', 'permission:view_students']);
+
+// ─── Fees Management — Admin ──────────────────────────────────────────────────
+$router->get('/fees',                       [FeeController::class, 'index'],          ['auth', 'tenant']);
+$router->get('/fees/create',                [FeeController::class, 'create'],         ['auth', 'tenant']);
+$router->post('/fees',                      [FeeController::class, 'store'],          ['auth', 'tenant']);
+$router->post('/fees/{id}/pay',             [FeeController::class, 'recordPayment'],  ['auth', 'tenant']);
+$router->post('/fees/{id}/delete',          [FeeController::class, 'destroy'],        ['auth', 'tenant']);
+
+// ─── Transport Management — Admin ──────────────────────────────────────────────
+$router->get('/transport',                  [TransportController::class, 'index'],    ['auth', 'tenant']);
+$router->get('/transport/create',           [TransportController::class, 'create'],   ['auth', 'tenant']);
+$router->post('/transport',                 [TransportController::class, 'store'],    ['auth', 'tenant']);
+$router->get('/transport/{id}/edit',        [TransportController::class, 'edit'],     ['auth', 'tenant']);
+$router->post('/transport/{id}',            [TransportController::class, 'update'],    ['auth', 'tenant']);
+$router->post('/transport/{id}/assign',     [TransportController::class, 'assignStudent'],['auth', 'tenant']);
+$router->post('/transport/{id}/delete',     [TransportController::class, 'destroy'],   ['auth', 'tenant']);
+
+// ─── Certificate Designer — Admin ──────────────────────────────────────────────
+$router->get('/certificates',               [CertificateController::class, 'index'],  ['auth', 'tenant']);
+$router->get('/certificates/create',        [CertificateController::class, 'create'], ['auth', 'tenant']);
+$router->post('/certificates',              [CertificateController::class, 'store'],  ['auth', 'tenant']);
+$router->get('/certificates/{id}/view',     [CertificateController::class, 'show'],   ['auth', 'tenant']);
+$router->post('/certificates/{id}/delete',  [CertificateController::class, 'destroy'],['auth', 'tenant']);
 
 // ─── Migrations Helper (Web Run) ─────────────────────────────────────────────
 $router->get('/migrate', function () {

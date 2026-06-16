@@ -19,23 +19,24 @@ abstract class Model
 
     // ─── Query Helpers ────────────────────────────────────────────────────────
 
-    protected static function tenantWhere(): array
+    protected static function tenantWhere(string $alias = ''): array
     {
         $where  = [];
         $params = [];
+        $prefix = $alias ? $alias . '.' : '';
 
         if (static::$tenantScope) {
             $tid = Database::getTenantId();
             $sid = Database::getSchoolId();
             $bid = Database::getBranchId();
 
-            if ($tid) { $where[] = 'tenant_id = ?'; $params[] = $tid; }
-            if ($sid) { $where[] = 'school_id = ?'; $params[] = $sid; }
-            if ($bid) { $where[] = 'branch_id = ?'; $params[] = $bid; }
+            if ($tid) { $where[] = $prefix . 'tenant_id = ?'; $params[] = $tid; }
+            if ($sid) { $where[] = $prefix . 'school_id = ?'; $params[] = $sid; }
+            if ($bid) { $where[] = $prefix . 'branch_id = ?'; $params[] = $bid; }
         }
 
         if (static::$softDelete) {
-            $where[] = 'deleted_at IS NULL';
+            $where[] = $prefix . 'deleted_at IS NULL';
         }
 
         return [$where, $params];

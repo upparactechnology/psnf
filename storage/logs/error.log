@@ -1,0 +1,530 @@
+[16-Jun-2026 08:04:57 Europe/Berlin] PHP Warning:  Undefined variable $sidebarOpen in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 171
+[16-Jun-2026 08:05:09 Europe/Berlin] PHP Warning:  Undefined variable $sidebarOpen in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 171
+[16-Jun-2026 08:05:29 Europe/Berlin] PHP Warning:  Undefined variable $sidebarOpen in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 171
+[16-Jun-2026 08:05:46 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:05:46 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:05:50 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:05:50 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:05:50 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:05:52 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:05:52 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:05:53 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:06:02 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:06:02 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:06:02 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:06:08 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:06:08 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:06:13 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:06:14 Europe/Berlin] PHP Fatal error:  Cannot redeclare navLink() (previously declared in C:\xampp\htdocs\psnf\resources\views\layouts\app.php:154) in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 161
+[16-Jun-2026 08:06:21 Europe/Berlin] PHP Warning:  Undefined variable $ic in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 176
+[16-Jun-2026 08:06:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 176
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "email" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "last_login_at" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "is_active" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "is_active" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:18 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "email" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "last_login_at" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "is_active" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "is_active" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "name" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "email" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "last_login_at" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "is_active" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "is_active" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 70
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 73
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 74
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 82
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 91
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 94
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 95
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 101
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 105
+[16-Jun-2026 08:13:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\users\index.php on line 106
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "admission_status" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "disability_type" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "photo" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "first_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "last_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "first_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "last_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "dob" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "gender" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "disability_type" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "admission_status" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:04 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "admission_status" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "disability_type" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "photo" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "first_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "last_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "first_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "last_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "dob" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "gender" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "disability_type" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "admission_status" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:21 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "admission_status" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "disability_type" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "photo" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "first_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "last_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "first_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "last_name" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "dob" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "gender" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "disability_type" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "admission_status" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:22 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 127
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 128
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 133
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  substr(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 137
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 141
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 142
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 144
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 153
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Deprecated:  ucfirst(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 158
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 166
+[16-Jun-2026 09:05:23 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type int in C:\xampp\htdocs\psnf\resources\views\students\index.php on line 170
+[16-Jun-2026 09:07:01 Europe/Berlin] PHP Warning:  Undefined variable $content in C:\xampp\htdocs\psnf\resources\views\layouts\auth.php on line 92
+[16-Jun-2026 09:07:04 Europe/Berlin] PHP Warning:  Undefined variable $content in C:\xampp\htdocs\psnf\resources\views\layouts\auth.php on line 92
+[16-Jun-2026 09:07:32 Europe/Berlin] PHP Warning:  Undefined variable $_view_content_ in C:\xampp\htdocs\psnf\core\View.php on line 21
+[16-Jun-2026 09:07:34 Europe/Berlin] PHP Warning:  Undefined variable $_view_content_ in C:\xampp\htdocs\psnf\core\View.php on line 21
+[16-Jun-2026 09:07:35 Europe/Berlin] PHP Warning:  Undefined variable $_view_content_ in C:\xampp\htdocs\psnf\core\View.php on line 21
+[16-Jun-2026 09:07:36 Europe/Berlin] PHP Warning:  Undefined variable $_view_content_ in C:\xampp\htdocs\psnf\core\View.php on line 21
+[16-Jun-2026 09:31:48 Europe/Berlin] PHP Fatal error:  Declaration of App\Controllers\CertificateController::view(string $id): string must be compatible with Core\Controller::view(string $view, array $data = []): string in C:\xampp\htdocs\psnf\app\Controllers\CertificateController.php on line 113
+[16-Jun-2026 09:33:38 Europe/Berlin] PHP Fatal error:  Declaration of App\Controllers\CertificateController::view(string $id): string must be compatible with Core\Controller::view(string $view, array $data = []): string in C:\xampp\htdocs\psnf\app\Controllers\CertificateController.php on line 113
+[16-Jun-2026 09:34:27 Europe/Berlin] PHP Fatal error:  Declaration of App\Controllers\CertificateController::view(string $id): string must be compatible with Core\Controller::view(string $view, array $data = []): string in C:\xampp\htdocs\psnf\app\Controllers\CertificateController.php on line 113

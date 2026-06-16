@@ -39,7 +39,7 @@ class AuthController extends Controller
 
         if (!$result['success']) {
             $this->flash('error', $result['error']);
-            $this->flash('old',   ['email' => $email]);
+            \Core\Session::flash('old',   ['email' => $email]);
 
             if ($this->request->wantsJson()) {
                 return $this->json(['success' => false, 'message' => $result['error']], 401);

@@ -124,5 +124,4 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
 
 <?php
 $content = ob_get_clean();
-include VIEWS_PATH . '/layouts/app.php';
 ?>

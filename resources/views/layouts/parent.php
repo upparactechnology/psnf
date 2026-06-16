@@ -1,14 +1,23 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
+    <script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            window.isDark = false;
+        } else {
+            document.documentElement.classList.add('dark');
+            window.isDark = true;
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'PSNF Parent Portal' ?></title>
     <meta name="description" content="Pearl Special Needs Foundation — Parent Portal">
     <meta name="csrf-token" content="<?= \Core\View::csrfToken() ?>">
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (Local Fallback) -->
+    <script src="<?= url('js/tailwindcss.js') ?>"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -84,7 +93,7 @@
         .htmx-request.htmx-indicator { opacity: 1; }
     </style>
 </head>
-<body class="bg-surface-950 font-sans antialiased text-slate-200 min-h-screen" x-data="{ sidebarOpen: true, mobileNav: false }">
+<body class="bg-slate-50 text-slate-800 dark:bg-surface-950 dark:text-slate-200 font-sans antialiased min-h-screen" x-data="{ sidebarOpen: true, mobileNav: false, isDark: window.isDark, toggleTheme() { this.isDark = !this.isDark; if (this.isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); } } }">
 
 <!-- Flash Messages -->
 <?php $success = \Core\Session::getFlash('success'); $error = \Core\Session::getFlash('error'); ?>
@@ -108,11 +117,11 @@
 <div class="flex h-screen overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="flex-shrink-0 flex flex-col border-r border-slate-800/60"
-           :class="sidebarOpen ? 'w-66' : 'w-16'" style="background: linear-gradient(180deg, #0f172a 0%, #080d1a 100%);">
+    <aside class="flex-shrink-0 flex flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900 transition-all duration-300"
+           :class="sidebarOpen ? 'w-64' : 'w-16'">
 
         <!-- Logo -->
-        <div class="flex items-center gap-3 px-4 py-5 border-b border-slate-800/60">
+        <div class="flex items-center gap-3 px-4 py-5 border-b border-slate-200 dark:border-slate-800/60">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
@@ -129,17 +138,17 @@
 
         <!-- Multi-Child Context Selector -->
         <?php if (!empty($all_students) && !empty($active_student)): ?>
-        <div class="px-4 py-4 border-b border-slate-800/60" x-show="sidebarOpen" x-data="{ childDropdown: false }">
+        <div class="px-4 py-4 border-b border-slate-200 dark:border-slate-800/60" x-show="sidebarOpen" x-data="{ childDropdown: false }">
             <label class="block text-[10px] uppercase tracking-wider font-semibold text-slate-500 mb-1.5">Selected Child</label>
             <div class="relative">
                 <button @click="childDropdown = !childDropdown"
-                        class="w-full flex items-center justify-between gap-2.5 p-2 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all text-left">
+                        class="w-full flex items-center justify-between gap-2.5 p-2 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all text-left">
                     <div class="flex items-center gap-2">
                         <div class="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
                             <?= strtoupper(substr($active_student['first_name'], 0, 1)) ?>
                         </div>
                         <div class="overflow-hidden">
-                            <p class="text-xs font-semibold text-white leading-tight truncate"><?= e($active_student['first_name'] . ' ' . $active_student['last_name']) ?></p>
+                            <p class="text-xs font-semibold text-slate-800 dark:text-white leading-tight truncate"><?= e($active_student['first_name'] . ' ' . $active_student['last_name']) ?></p>
                             <p class="text-[10px] text-slate-500 truncate"><?= e($active_student['class']) ?></p>
                         </div>
                     </div>
@@ -148,7 +157,7 @@
 
                 <!-- Dropdown -->
                 <div x-show="childDropdown" @click.outside="childDropdown = false" x-cloak
-                     class="absolute top-full left-0 w-full mt-1.5 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1">
+                     class="absolute top-full left-0 w-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 p-1.5 space-y-1">
                     <?php
                     $currentPath = \Core\Application::$app->request->getPath();
                     foreach ($all_students as $std) {
@@ -179,17 +188,20 @@
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
             <?php
             $currentPath = \Core\Application::$app->request->getPath();
+            $sidebarOpen = true;
 
-            function parentNavLink(string $href, string $icon, string $label, string $current, bool $open = true): void {
-                $active = str_starts_with($current, $href) && $href !== '/';
-                if ($href === '/parent/dashboard') $active = ($current === '/parent/dashboard' || $current === '/parent');
-                $classes = $active
-                    ? 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-indigo-600/20 text-indigo-400 border border-indigo-500/20'
-                    : 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200';
-                echo "<a href=\"" . url(ltrim($href, '/')) . "\" class=\"$classes\" title=\"$label\">";
-                echo "<span class=\"flex-shrink-0\">$icon</span>";
-                if ($open) echo "<span class=\"truncate\">$label</span>";
-                echo "</a>";
+            if (!function_exists('parentNavLink')) {
+                function parentNavLink(string $href, string $icon, string $label, string $current, bool $open = true): void {
+                    $active = str_starts_with($current, $href) && $href !== '/';
+                    if ($href === '/parent/dashboard') $active = ($current === '/parent/dashboard' || $current === '/parent');
+                    $classes = $active
+                        ? 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-brand-500/10 text-brand-600 dark:bg-brand-600/20 dark:text-brand-400 border border-brand-500/20 dark:border-brand-500/20'
+                        : 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all duration-200';
+                    echo "<a href=\"" . url(ltrim($href, '/')) . "\" class=\"$classes\" title=\"$label\">";
+                    echo "<span class=\"flex-shrink-0\">$icon</span>";
+                    if ($open) echo "<span class=\"truncate\" x-show=\"sidebarOpen\">$label</span>";
+                    echo "</a>";
+                }
             }
 
             $ic = [
@@ -206,13 +218,13 @@
             ];
             ?>
 
-            <div class="text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Main Portal</div>
+            <div class="text-xs font-semibold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Main Portal</div>
             <?php parentNavLink('/parent/dashboard', $ic['dashboard'], 'Overview Dashboard', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/announcements', $ic['announcements'], 'Announcements', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/communication', $ic['messages'], 'Staff Messages', $currentPath, $sidebarOpen); ?>
 
             <?php if (!empty($active_student)): ?>
-            <div class="text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 mt-5 mb-2" x-show="sidebarOpen">Child Record</div>
+            <div class="text-xs font-semibold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mt-5 mb-2" x-show="sidebarOpen">Child Record</div>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/attendance', $ic['attendance'], 'Attendance Log', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/timetable', $ic['timetable'], 'Weekly Timetable', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/homework', $ic['homework'], 'Active Homework', $currentPath, $sidebarOpen); ?>
@@ -220,18 +232,24 @@
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/medical', $ic['medical'], 'Medical Warnings', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/transport', $ic['transport'], 'Bus Transport', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/fees', $ic['fees'], 'Fee Invoices', $currentPath, $sidebarOpen); ?>
+            <a href="/psnf/game/index.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all duration-200" title="Interactive Games">
+                <span class="flex-shrink-0">
+                    <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+                <span class="truncate" x-show="sidebarOpen">Interactive Games</span>
+            </a>
             <?php endif; ?>
         </nav>
 
         <!-- Parent Footer -->
         <?php $pUser = auth(); ?>
-        <div class="border-t border-slate-800/60 p-3">
+        <div class="border-t border-slate-200 dark:border-slate-800/60 p-3">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                     <?= strtoupper(substr($pUser['name'] ?? 'P', 0, 1)) ?>
                 </div>
                 <div x-show="sidebarOpen" class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-white truncate"><?= e($pUser['name'] ?? '') ?></p>
+                    <p class="text-sm font-semibold text-slate-800 dark:text-white truncate"><?= e($pUser['name'] ?? '') ?></p>
                     <p class="text-xs text-slate-500 truncate">Parent Account</p>
                 </div>
                 <a x-show="sidebarOpen" href="<?= url('logout') ?>" class="text-slate-500 hover:text-red-400 transition-colors" title="Logout">
@@ -245,11 +263,11 @@
     <div class="flex-1 flex flex-col overflow-hidden">
 
         <!-- Header -->
-        <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-800/60 bg-surface-900/40 backdrop-blur">
+        <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/40 backdrop-blur">
             <div>
-                <h1 class="text-lg font-bold text-white"><?= $pageTitle ?? 'Parent Portal' ?></h1>
+                <h1 class="text-lg font-bold text-slate-800 dark:text-white"><?= $pageTitle ?? 'Parent Portal' ?></h1>
                 <?php if (!empty($active_student)): ?>
-                <p class="text-xs text-slate-400">Viewing profile context of: <strong class="text-slate-200"><?= e($active_student['first_name'] . ' ' . $active_student['last_name']) ?></strong></p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Viewing profile context of: <strong class="text-slate-700 dark:text-slate-200 font-semibold"><?= e($active_student['first_name'] . ' ' . $active_student['last_name']) ?></strong></p>
                 <?php endif; ?>
             </div>
 
@@ -258,6 +276,14 @@
                 <div class="htmx-indicator">
                     <div class="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
+
+                <!-- Theme Toggler -->
+                <button @click="toggleTheme()" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" title="Toggle Theme">
+                    <!-- Sun (shows in dark mode) -->
+                    <svg x-show="isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+                    <!-- Moon (shows in light mode) -->
+                    <svg x-show="!isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
 
                 <span class="text-xs text-slate-500 font-medium"><?= date('D, d M Y') ?></span>
             </div>

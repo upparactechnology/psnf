@@ -233,6 +233,18 @@
                 </a>
             </div>
 
+            <!-- Interactive Learning Games Shortcut Card -->
+            <div class="p-5 rounded-2xl bg-gradient-to-br from-fuchsia-900 to-pink-950 border border-pink-900/30 flex items-center justify-between gap-4">
+                <div class="space-y-1 max-w-[70%]">
+                    <h4 class="text-xs font-bold text-white">Interactive Learning Games</h4>
+                    <p class="text-[10px] text-slate-400 leading-snug">Fun, accessible educational games for sentence building, money counting, and safety skills.</p>
+                </div>
+                <a href="/psnf/game/index.html"
+                   class="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-xs font-bold text-white shadow-md transition-all whitespace-nowrap">
+                    Play Games
+                </a>
+            </div>
+
         </div>
 
     </div>

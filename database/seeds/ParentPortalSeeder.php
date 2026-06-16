@@ -36,7 +36,6 @@ class ParentPortalSeeder
                 'phone'             => '+91-9876543210',
                 'designation'       => 'Guardian',
                 'is_active'         => 1,
-                'is_email_verified' => 1,
                 'email_verified_at' => now(),
                 'created_at'        => now()
             ]);
@@ -58,7 +57,6 @@ class ParentPortalSeeder
         if (!$existsGuardian) {
             $gid = $this->db->insert('guardians', [
                 'tenant_id'    => $tid,
-                'uuid'         => str_uuid(),
                 'name'         => 'Rajesh Kumar',
                 'relationship' => 'Father',
                 'gender'       => 'male',
@@ -66,8 +64,7 @@ class ParentPortalSeeder
                 'email'        => $parentEmail,
                 'occupation'   => 'Software Engineer',
                 'address'      => 'Apt 405, Pearl Heights, Mumbai, India',
-                'id_type'      => 'Aadhar',
-                'id_number'    => '1234-5678-9012',
+                'aadhar'       => '1234-5678-9012',
                 'user_id'      => $puid,
                 'created_at'   => now()
             ]);
@@ -138,15 +135,12 @@ class ParentPortalSeeder
                 // Create student medical profile
                 $this->db->insert('student_medical', [
                     'student_id'          => $sId,
-                    'tenant_id'           => $tid,
-                    'school_id'           => $sid,
-                    'branch_id'           => $bid,
                     'allergies'           => $stu['disability_type'] === 'ASD' ? 'Gluten, Lactose' : 'Dust, Pollen',
                     'triggers'            => $stu['disability_type'] === 'ASD' ? 'Loud whistles, bright strobe lights' : 'Sudden changes in temperature',
                     'current_medications' => 'None',
                     'doctor_name'         => 'Dr. Anjali Mehta',
                     'doctor_phone'        => '+91-9892011223',
-                    'hospital'            => 'Children Specialty Hospital',
+                    'hospital_name'       => 'Children Specialty Hospital',
                     'care_instructions'   => $stu['care_instructions'],
                     'emergency_protocols' => 'Contact father immediately and relocate to quiet room.'
                 ]);
@@ -156,8 +150,7 @@ class ParentPortalSeeder
                     'guardian_id'  => $gid,
                     'student_id'   => $sId,
                     'is_primary'   => 1,
-                    'can_pickup'   => 1,
-                    'is_emergency' => 1
+                    'can_pickup'   => 1
                 ]);
 
                 $studentIds[] = $sId;

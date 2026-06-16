@@ -1,0 +1,1 @@
+[2026-06-15 17:57:07] UNCAUGHT PDOException: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it in C:\xampp\htdocs\files\version 1\app\Core\Database.php:13

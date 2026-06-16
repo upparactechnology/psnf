@@ -1,14 +1,23 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
+    <script>
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            window.isDark = false;
+        } else {
+            document.documentElement.classList.add('dark');
+            window.isDark = true;
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'PSNF ERP' ?></title>
     <meta name="description" content="Pearl Special Needs Foundation — ERP System">
     <meta name="csrf-token" content="<?= \Core\View::csrfToken() ?>">
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS (Local Fallback) -->
+    <script src="<?= url('js/tailwindcss.js') ?>"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -54,7 +63,7 @@
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 
-    <style>
+    <style type="tailwindcss">
         [x-cloak] { display: none !important; }
 
         /* Custom Scrollbar */
@@ -100,7 +109,7 @@
         .htmx-request.htmx-indicator { opacity: 1; }
     </style>
 </head>
-<body class="bg-surface-950 font-sans antialiased text-slate-200 min-h-screen" x-data="{ sidebarOpen: true, mobileNav: false }">
+<body class="bg-slate-50 text-slate-800 dark:bg-surface-950 dark:text-slate-200 font-sans antialiased min-h-screen" x-data="{ sidebarOpen: true, mobileNav: false, isDark: window.isDark, toggleTheme() { this.isDark = !this.isDark; if (this.isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); } } }">
 
 <!-- Flash Messages -->
 <?php $success = \Core\Session::getFlash('success'); $error = \Core\Session::getFlash('error'); ?>
@@ -121,14 +130,20 @@
 </div>
 <?php endif; ?>
 
+<?php
+$currentPath = \Core\Application::$app->request->getPath();
+$isDashboard = ($currentPath === '/dashboard' || $currentPath === '/' || $currentPath === '');
+$user = auth();
+?>
 <div class="flex h-screen overflow-hidden">
 
+    <?php if (!$isDashboard): ?>
     <!-- Sidebar -->
-    <aside class="flex-shrink-0 flex flex-col border-r border-slate-800/60"
-           :class="sidebarOpen ? 'w-64' : 'w-16'" style="background: linear-gradient(180deg, #0f172a 0%, #080d1a 100%);">
+    <aside class="flex-shrink-0 flex flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900 transition-all duration-300"
+           :class="sidebarOpen ? 'w-64' : 'w-16'">
 
         <!-- Logo -->
-        <div class="flex items-center gap-3 px-4 py-5 border-b border-slate-800/60">
+        <div class="flex items-center gap-3 px-4 py-5 border-b border-slate-200 dark:border-slate-800/60">
             <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
@@ -146,48 +161,112 @@
         <!-- Nav -->
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
 
-            <?php $currentPath = \Core\Application::$app->request->getPath(); ?>
-
-            <?php function navLink(string $href, string $icon, string $label, string $current, bool $open = true): void {
-                $active = str_starts_with($current, $href) && $href !== '/';
-                if ($href === '/dashboard') $active = $current === '/dashboard';
-                $classes = $active ? 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-indigo-600/20 text-indigo-400 border border-indigo-500/20' : 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200';
-                echo "<a href=\"" . url(ltrim($href, '/')) . "\" class=\"$classes\" title=\"$label\">";
-                echo "<span class=\"flex-shrink-0\">$icon</span>";
-                if ($open) echo "<span class=\"truncate\">$label</span>";
-                echo "</a>";
-            }
+            <?php 
+            $sidebarOpen = true; 
+            ?>
+            <?php if (!function_exists('navLink')) {
+                function navLink(string $href, string $icon, string $label, string $current, bool $open = true, bool $disabled = false): void {
+                    $active = str_starts_with($current, $href) && $href !== '/';
+                    if ($href === '/dashboard') $active = $current === '/dashboard';
+                    
+                    if ($disabled) {
+                        $classes = 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-350 dark:text-slate-650 cursor-not-allowed opacity-50';
+                        echo "<div class=\"$classes\" title=\"$label (Coming Soon)\">";
+                        echo "<span class=\"flex-shrink-0\">$icon</span>";
+                        if ($open) {
+                            echo "<span class=\"truncate flex-1\">$label</span>";
+                            echo "<span class=\"text-[9px] px-1.5 py-0.5 rounded bg-slate-150 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-normal uppercase tracking-wide\">Soon</span>";
+                        }
+                        echo "</div>";
+                    } else {
+                        $classes = $active ? 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-brand-500/10 text-brand-600 dark:bg-brand-600/20 dark:text-brand-400 border border-brand-500/20 dark:border-brand-500/20' : 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all duration-200';
+                        echo "<a href=\"" . url(ltrim($href, '/')) . "\" class=\"$classes\" title=\"$label\">";
+                        echo "<span class=\"flex-shrink-0\">$icon</span>";
+                        if ($open) echo "<span class=\"truncate\" x-show=\"sidebarOpen\">$label</span>";
+                        echo "</a>";
+                    }
+                }
+            } 
 
             $ic = [
+                'launcher'  => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>',
                 'dashboard' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>',
                 'students'  => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>',
                 'users'     => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
                 'roles'     => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>',
                 'logs'      => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>',
+                'fees'      => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>',
+                'transport' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>',
+                'certificates' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+                'admissions' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>',
+                'classes' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>',
+                'attendance' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                'timetables' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>',
+                'exams' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+                'receipts' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+                'scholarships' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222m4 9.722v-7.5l-4-2.222"/></svg>',
+                'tracking' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+                'settings' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
             ];
+
+            // Determine active module from path
+            $module = '';
+            if (str_starts_with($currentPath, '/students') || str_starts_with($currentPath, '/certificates')) {
+                $module = 'academic';
+            } elseif (str_starts_with($currentPath, '/fees')) {
+                $module = 'finance';
+            } elseif (str_starts_with($currentPath, '/transport')) {
+                $module = 'transport';
+            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/roles')) {
+                $module = 'administration';
+            }
             ?>
 
-            <div class="text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Overview</div>
-            <?php navLink('/dashboard', $ic['dashboard'], 'Dashboard', $currentPath, $sidebarOpen); ?>
+            <!-- Back to Launcher -->
+            <div class="mb-4 pb-3 border-b border-slate-200 dark:border-slate-800/60">
+                <?php navLink('/dashboard', $ic['launcher'], 'Back to Apps', $currentPath, $sidebarOpen); ?>
+            </div>
 
-            <div class="text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 mt-5 mb-2" x-show="sidebarOpen">Students</div>
-            <?php navLink('/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
+            <?php if ($module === 'academic'): ?>
+                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic</div>
+                <?php navLink('/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
+                <?php navLink('/certificates', $ic['certificates'], 'Certificates', $currentPath, $sidebarOpen); ?>
+                <?php navLink('../game/index.html', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', 'Learning Games', $currentPath, $sidebarOpen); ?>
+                <?php navLink('/admissions', $ic['admissions'], 'Admissions', $currentPath, $sidebarOpen, true); ?>
+                <?php navLink('/classes', $ic['classes'], 'Classes & Sections', $currentPath, $sidebarOpen, true); ?>
+                <?php navLink('/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen, true); ?>
+                <?php navLink('/timetables', $ic['timetables'], 'Timetables', $currentPath, $sidebarOpen, true); ?>
+                <?php navLink('/exams', $ic['exams'], 'Exams & Grades', $currentPath, $sidebarOpen, true); ?>
 
-            <div class="text-xs font-semibold text-slate-600 uppercase tracking-wider px-3 mt-5 mb-2" x-show="sidebarOpen">Administration</div>
-            <?php navLink('/users', $ic['users'], 'Users', $currentPath, $sidebarOpen); ?>
-            <?php navLink('/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
+            <?php elseif ($module === 'finance'): ?>
+                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Finance</div>
+                <?php navLink('/fees', $ic['fees'], 'Fees & Invoices', $currentPath, $sidebarOpen); ?>
+                <?php navLink('/receipts', $ic['receipts'], 'Receipts', $currentPath, $sidebarOpen, true); ?>
+                <?php navLink('/scholarships', $ic['scholarships'], 'Scholarships', $currentPath, $sidebarOpen, true); ?>
+
+            <?php elseif ($module === 'transport'): ?>
+                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Transport</div>
+                <?php navLink('/transport', $ic['transport'], 'Routes & Vehicles', $currentPath, $sidebarOpen); ?>
+                <?php navLink('/tracking', $ic['tracking'], 'Live Tracking', $currentPath, $sidebarOpen, true); ?>
+
+            <?php elseif ($module === 'administration'): ?>
+                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Administration</div>
+                <?php navLink('/users', $ic['users'], 'Users Management', $currentPath, $sidebarOpen); ?>
+                <?php navLink('/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
+                <?php navLink('../file manager/public/', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>', 'File Manager', $currentPath, $sidebarOpen); ?>
+                <?php navLink('/settings', $ic['settings'], 'Settings', $currentPath, $sidebarOpen, true); ?>
+            <?php endif; ?>
 
         </nav>
 
         <!-- User Footer -->
-        <?php $user = auth(); ?>
-        <div class="border-t border-slate-800/60 p-3">
+        <div class="border-t border-slate-200 dark:border-slate-800/60 p-3">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                     <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
                 </div>
                 <div x-show="sidebarOpen" class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-white truncate"><?= e($user['name'] ?? '') ?></p>
+                    <p class="text-sm font-medium text-slate-800 dark:text-white truncate"><?= e($user['name'] ?? '') ?></p>
                     <p class="text-xs text-slate-500 truncate"><?= e(implode(', ', array_slice($user['role_names'] ?? [], 0, 2))) ?></p>
                 </div>
                 <a x-show="sidebarOpen" href="<?= url('logout') ?>" class="text-slate-500 hover:text-red-400 transition-colors" title="Logout">
@@ -196,22 +275,54 @@
             </div>
         </div>
     </aside>
+    <?php endif; ?>
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
 
         <!-- Top Bar -->
-        <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-800/60 bg-surface-900/50 backdrop-blur">
+        <?php if ($isDashboard): ?>
+        <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/50 backdrop-blur">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+                    <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-bold text-slate-800 dark:text-white tracking-wide">PSNF ERP Portal</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Theme Toggler -->
+                <button @click="toggleTheme()" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" title="Toggle Theme">
+                    <!-- Sun (shows in dark mode) -->
+                    <svg x-show="isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+                    <!-- Moon (shows in light mode) -->
+                    <svg x-show="!isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
+                <span class="text-xs text-slate-500"><?= date('D, d M Y') ?></span>
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                        <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
+                    </div>
+                    <span class="text-xs text-slate-600 dark:text-slate-300 font-medium"><?= e($user['name'] ?? '') ?></span>
+                    <a href="<?= url('logout') ?>" class="text-slate-500 hover:text-red-400 transition-colors ml-1" title="Logout">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    </a>
+                </div>
+            </div>
+        </header>
+        <?php else: ?>
+        <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/50 backdrop-blur">
             <div>
-                <h1 class="text-lg font-semibold text-white"><?= $pageTitle ?? 'Dashboard' ?></h1>
+                <h1 class="text-lg font-semibold text-slate-800 dark:text-white"><?= $pageTitle ?? 'Dashboard' ?></h1>
                 <?php if (!empty($breadcrumbs)): ?>
                 <nav class="flex items-center gap-1 mt-0.5">
                     <?php foreach ($breadcrumbs as $i => $bc): ?>
-                    <?php if ($i > 0): ?><span class="text-slate-600 text-xs">›</span><?php endif; ?>
+                    <?php if ($i > 0): ?><span class="text-slate-400 dark:text-slate-600 text-xs">›</span><?php endif; ?>
                     <?php if ($i < count($breadcrumbs) - 1): ?>
-                    <a href="<?= url(ltrim($bc['url'] ?? '#', '/')) ?>" class="text-xs text-slate-500 hover:text-slate-300"><?= e($bc['label']) ?></a>
+                    <a href="<?= url(ltrim($bc['url'] ?? '#', '/')) ?>" class="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"><?= e($bc['label']) ?></a>
                     <?php else: ?>
-                    <span class="text-xs text-slate-400"><?= e($bc['label']) ?></span>
+                    <span class="text-xs text-slate-400 dark:text-slate-500"><?= e($bc['label']) ?></span>
                     <?php endif; ?>
                     <?php endforeach; ?>
                 </nav>
@@ -224,9 +335,18 @@
                     <div class="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
 
+                <!-- Theme Toggler -->
+                <button @click="toggleTheme()" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" title="Toggle Theme">
+                    <!-- Sun (shows in dark mode) -->
+                    <svg x-show="isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+                    <!-- Moon (shows in light mode) -->
+                    <svg x-show="!isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
+
                 <span class="text-xs text-slate-500"><?= date('D, d M Y') ?></span>
             </div>
         </header>
+        <?php endif; ?>
 
         <!-- Page Content -->
         <main class="flex-1 overflow-y-auto p-6" id="main-content">

@@ -178,5 +178,4 @@ function selectClassE(string $field, array $errors = []): string {
 
 <?php
 $content = ob_get_clean();
-include VIEWS_PATH . '/layouts/app.php';
 ?>

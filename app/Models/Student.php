@@ -40,7 +40,7 @@ class Student extends Model
     public static function search(string $query, array $filters = [], int $perPage = 15, int $page = 1): array
     {
         $like   = "%$query%";
-        [$tWhere, $tParams] = static::tenantWhere();
+        [$tWhere, $tParams] = static::tenantWhere('s');
 
         if ($query) {
             $tWhere[] = "(s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_number LIKE ? OR s.gr_number LIKE ?)";

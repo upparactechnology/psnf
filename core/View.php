@@ -6,31 +6,34 @@ namespace Core;
 
 class View
 {
-    public static function render(string $view, array $data = []): string
+    public static function render(string $_view_name_, array $_view_data_ = []): string
     {
-        $viewFile = VIEWS_PATH . '/' . str_replace('.', '/', $view) . '.php';
+        $_view_file_ = VIEWS_PATH . '/' . str_replace('.', '/', $_view_name_) . '.php';
 
-        if (!file_exists($viewFile)) {
-            throw new \RuntimeException("View not found: $view ($viewFile)");
+        if (!file_exists($_view_file_)) {
+            throw new \RuntimeException("View not found: $_view_name_ ($_view_file_)");
         }
 
-        extract($data, EXTR_SKIP);
+        extract($_view_data_, EXTR_OVERWRITE);
 
         ob_start();
-        require $viewFile;
-        $content = ob_get_clean();
+        require $_view_file_;
+        $_view_content_ = ob_get_clean();
+        if (!(isset($content) && $_view_content_ === '')) {
+            $content = $_view_content_;
+        }
 
         // Check if view extends a layout
         if (isset($layout)) {
-            $layoutFile = VIEWS_PATH . '/layouts/' . $layout . '.php';
-            if (file_exists($layoutFile)) {
+            $_layout_file_ = VIEWS_PATH . '/layouts/' . $layout . '.php';
+            if (file_exists($_layout_file_)) {
                 ob_start();
-                require $layoutFile;
+                require $_layout_file_;
                 return ob_get_clean();
             }
         }
 
-        return $content;
+        return $_view_content_;
     }
 
     public static function partial(string $partial, array $data = []): string

@@ -35,7 +35,7 @@ abstract class Controller
         return $this->response->back();
     }
 
-    protected function flash(string $type, string $message): void
+    protected function flash(string $type, mixed $message): void
     {
         Session::flash($type, $message);
     }

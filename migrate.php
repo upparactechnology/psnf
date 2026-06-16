@@ -7,33 +7,35 @@ declare(strict_types=1);
  * Run from project root: php migrate.php [--fresh] [--seed] [--seed-only]
  */
 
-define('ROOT_PATH',   __DIR__);
-define('APP_PATH',    ROOT_PATH . '/app');
-define('CORE_PATH',   ROOT_PATH . '/core');
-define('CONFIG_PATH', ROOT_PATH . '/config');
-define('VIEWS_PATH',  ROOT_PATH . '/resources/views');
-define('STORAGE_PATH',ROOT_PATH . '/storage');
-
-// ── Load helpers first (no Application needed) ──────────────────────────────
-require CORE_PATH . '/helpers.php';
-
-// ── Load config into globals ─────────────────────────────────────────────────
-$GLOBALS['config'] = [
-    'app'      => require CONFIG_PATH . '/app.php',
-    'database' => require CONFIG_PATH . '/database.php',
-    'auth'     => require CONFIG_PATH . '/auth.php',
-];
-
-// ── Load core classes ────────────────────────────────────────────────────────
-require CORE_PATH . '/Database.php';
-require CORE_PATH . '/Model.php';
-require CORE_PATH . '/Migration.php';
-
-// ── Minimal Application stub for Model::db() ─────────────────────────────────
 namespace Core {
-    // Provide the static $app with a db property so Model::db() works
+    class Application {
+        public static $app;
+    }
 }
+
 namespace {
+    define('ROOT_PATH',   __DIR__);
+    define('APP_PATH',    ROOT_PATH . '/app');
+    define('CORE_PATH',   ROOT_PATH . '/core');
+    define('CONFIG_PATH', ROOT_PATH . '/config');
+    define('VIEWS_PATH',  ROOT_PATH . '/resources/views');
+    define('STORAGE_PATH',ROOT_PATH . '/storage');
+
+    // ── Load helpers first (no Application needed) ──────────────────────────────
+    require CORE_PATH . '/helpers.php';
+
+    // ── Load config into globals ─────────────────────────────────────────────────
+    $GLOBALS['config'] = [
+        'app'      => require CONFIG_PATH . '/app.php',
+        'database' => require CONFIG_PATH . '/database.php',
+        'auth'     => require CONFIG_PATH . '/auth.php',
+    ];
+
+    // ── Load core classes ────────────────────────────────────────────────────────
+    require CORE_PATH . '/Database.php';
+    require CORE_PATH . '/Model.php';
+    require CORE_PATH . '/Migration.php';
+
     $stub = new stdClass();
     $stub->db = new \Core\Database();
     \Core\Application::$app = $stub; // @phpstan-ignore-line

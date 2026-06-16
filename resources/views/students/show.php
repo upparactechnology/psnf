@@ -415,5 +415,4 @@ function studentProfile() {
 
 <?php
 $content = ob_get_clean();
-include VIEWS_PATH . '/layouts/app.php';
 ?>

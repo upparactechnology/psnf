@@ -73,6 +73,7 @@ class Database
 
     public function insert(string $table, array $data): int|string
     {
+        $data = array_filter($data, fn($k) => !str_starts_with((string)$k, '_'), ARRAY_FILTER_USE_KEY);
         $cols = implode(', ', array_map(fn($k) => "`$k`", array_keys($data)));
         $plh  = implode(', ', array_fill(0, count($data), '?'));
         $this->query("INSERT INTO `$table` ($cols) VALUES ($plh)", array_values($data));
@@ -81,6 +82,7 @@ class Database
 
     public function update(string $table, array $data, string $where, array $whereParams = []): int
     {
+        $data = array_filter($data, fn($k) => !str_starts_with((string)$k, '_'), ARRAY_FILTER_USE_KEY);
         $set  = implode(', ', array_map(fn($k) => "`$k` = ?", array_keys($data)));
         $stmt = $this->query("UPDATE `$table` SET $set WHERE $where", [...array_values($data), ...$whereParams]);
         return $stmt->rowCount();
