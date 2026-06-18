@@ -1,0 +1,215 @@
+=== Users with email 'parent@psnf.edu' ===
+Array
+(
+    [0] => Array
+        (
+            [id] => 2
+            [name] => Rajesh Kumar
+            [email] => parent@psnf.edu
+            [tenant_id] => 1
+        )
+
+)
+
+=== Guardians ===
+Array
+(
+    [0] => Array
+        (
+            [id] => 1
+            [name] => Rajesh Kumar
+            [user_id] => 2
+            [tenant_id] => 1
+        )
+
+)
+
+=== User Roles ===
+Array
+(
+    [0] => Array
+        (
+            [user_id] => 1
+            [role_id] => 1
+            [created_at] => 2026-06-16 13:46:53
+            [role_name] => Super Admin
+            [user_email] => admin@psnf.edu
+        )
+
+    [1] => Array
+        (
+            [user_id] => 1
+            [role_id] => 8
+            [created_at] => 2026-06-16 13:46:53
+            [role_name] => Parent
+            [user_email] => admin@psnf.edu
+        )
+
+    [2] => Array
+        (
+            [user_id] => 2
+            [role_id] => 8
+            [created_at] => 2026-06-16 12:15:37
+            [role_name] => Parent
+            [user_email] => parent@psnf.edu
+        )
+
+)
+
+=== All Roles ===
+Array
+(
+    [0] => Array
+        (
+            [id] => 1
+            [tenant_id] => 
+            [name] => Super Admin
+            [slug] => super_admin
+            [description] => Full system access
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 1
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+    [1] => Array
+        (
+            [id] => 2
+            [tenant_id] => 
+            [name] => School Admin
+            [slug] => school_admin
+            [description] => School level administrator
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 2
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+    [2] => Array
+        (
+            [id] => 3
+            [tenant_id] => 
+            [name] => Manager
+            [slug] => manager
+            [description] => Branch manager
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 3
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+    [3] => Array
+        (
+            [id] => 4
+            [tenant_id] => 
+            [name] => Teacher
+            [slug] => teacher
+            [description] => Classroom teacher
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 4
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+    [4] => Array
+        (
+            [id] => 5
+            [tenant_id] => 
+            [name] => Therapist
+            [slug] => therapist
+            [description] => Therapy specialist
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 5
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+    [5] => Array
+        (
+            [id] => 6
+            [tenant_id] => 
+            [name] => Staff
+            [slug] => staff
+            [description] => General staff member
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 6
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+    [6] => Array
+        (
+            [id] => 7
+            [tenant_id] => 
+            [name] => Driver
+            [slug] => driver
+            [description] => Transport driver
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 7
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+    [7] => Array
+        (
+            [id] => 8
+            [tenant_id] => 
+            [name] => Parent
+            [slug] => parent
+            [description] => Parent / guardian
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 8
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+    [8] => Array
+        (
+            [id] => 9
+            [tenant_id] => 
+            [name] => Student
+            [slug] => student
+            [description] => Student user
+            [is_system] => 1
+            [is_active] => 1
+            [sort_order] => 9
+            [created_by] => 
+            [updated_by] => 
+            [created_at] => 2026-06-16 08:43:12
+            [updated_at] => 
+            [deleted_at] => 
+        )
+
+)

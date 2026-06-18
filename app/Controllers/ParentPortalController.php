@@ -195,13 +195,217 @@ class ParentPortalController extends Controller
             }
         }
 
+        // Tomorrow's Attendance context
+        $tomorrowDate = date('Y-m-d', strtotime('+1 day'));
+        $tomorrowAtt  = $this->db()->selectOne(
+            "SELECT * FROM attendance WHERE student_id = ? AND date = ? LIMIT 1",
+            [$student['id'], $tomorrowDate]
+        );
+
         return View::render('parent/attendance', array_merge($context, [
-            'title'   => 'Child Attendance',
-            'logs'    => $logs,
-            'summary' => $summary,
-            'month'   => $month,
-            'year'    => $year,
+            'title'        => 'Child Attendance',
+            'logs'         => $logs,
+            'summary'      => $summary,
+            'month'        => $month,
+            'year'         => $year,
+            'tomorrowDate' => $tomorrowDate,
+            'tomorrowAtt'  => $tomorrowAtt,
         ]));
+    }
+
+    public function submitTomorrowAttendance(string $id): void
+    {
+        $context = $this->getContext((int)$id);
+        $student = $context['active_student'];
+
+        $date         = Application::$app->request->input('date');
+        $date         = $date ?: date('Y-m-d', strtotime('+1 day'));
+        $status       = Application::$app->request->input('status');
+        $remarks      = Application::$app->request->input('remarks', '');
+        $isMedical    = Application::$app->request->input('is_medical', '0');
+
+        $timestamp = strtotime($date);
+        if (!$timestamp) {
+            Session::flash('error', 'Invalid date selected.');
+            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            exit();
+        }
+
+        $dateStr = date('Y-m-d', $timestamp);
+
+        // Check if date is in the past
+        if ($dateStr < date('Y-m-d')) {
+            Session::flash('error', 'You cannot declare attendance for past dates.');
+            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            exit();
+        }
+
+        if (empty($status) || !in_array($status, ['present', 'absent'])) {
+            Session::flash('error', 'Please select either Present or Absent.');
+            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            exit();
+        }
+
+        if ($status === 'absent' && empty(trim($remarks))) {
+            Session::flash('error', 'Please provide a reason for the absence.');
+            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            exit();
+        }
+
+        // Force is_medical to '1' if the word 'medical' is used in the remarks (case-insensitive)
+        if ($status === 'absent' && stripos($remarks, 'medical') !== false) {
+            $isMedical = '1';
+        }
+
+        $exists = $this->db()->selectOne(
+            "SELECT * FROM attendance WHERE student_id = ? AND date = ? LIMIT 1",
+            [$student['id'], $dateStr]
+        );
+
+        // Enforce the 11:00 PM day prior deadline
+        $targetDateTimestamp = strtotime($dateStr);
+        $deadlineTimestamp = strtotime(date('Y-m-d', $targetDateTimestamp) . ' -1 day 23:00:00');
+        if (time() >= $deadlineTimestamp) {
+            Session::flash('error', 'The deadline to declare or modify attendance for this date has passed (11:00 PM on the day prior).');
+            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            exit();
+        }
+
+        if ($exists) {
+            if (empty($exists['created_by']) || (int)$exists['created_by'] !== auth_id()) {
+                Session::flash('error', 'This attendance record is managed by the school and cannot be modified.');
+                Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                exit();
+            }
+        }
+
+        $storedName = null;
+        if ($status === 'absent' && $isMedical === '1') {
+            $file = Application::$app->request->file('medical_certificate');
+            if ($file && $file['error'] === UPLOAD_ERR_OK) {
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                if (!in_array($ext, ['pdf', 'png', 'jpg', 'jpeg'])) {
+                    Session::flash('error', 'Medical certificate must be a PDF, PNG, JPG, or JPEG file.');
+                    Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                    exit();
+                }
+                if ($file['size'] > 5 * 1024 * 1024) {
+                    Session::flash('error', 'Medical certificate size must be less than 5MB.');
+                    Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                    exit();
+                }
+
+                $uploadDir = storage_path('uploads/attendance/' . $student['id']);
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $storedName = bin2hex(random_bytes(16)) . '.' . $ext;
+                move_uploaded_file($file['tmp_name'], $uploadDir . '/' . $storedName);
+            } else {
+                // Check if we already have a medical certificate stored
+                if ($exists && !empty($exists['medical_certificate'])) {
+                    $storedName = $exists['medical_certificate'];
+                } else {
+                    $errorMsg = (stripos($remarks, 'medical') !== false)
+                        ? 'Please upload a medical certificate (required since the reason contains the word "medical").'
+                        : 'Please upload a medical certificate for medical issues.';
+                    Session::flash('error', $errorMsg);
+                    Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                    exit();
+                }
+            }
+        }
+
+        $medCert = ($status === 'absent' && $isMedical === '1') ? $storedName : null;
+        $remarksVal = ($status === 'absent') ? $remarks : null;
+
+        if ($exists) {
+            $this->db()->query(
+                "UPDATE attendance SET status = ?, remarks = ?, medical_certificate = ?, updated_at = NOW() WHERE id = ?",
+                [$status, $remarksVal, $medCert, $exists['id']]
+            );
+        } else {
+            $this->db()->query(
+                "INSERT INTO attendance (tenant_id, school_id, branch_id, student_id, date, status, remarks, medical_certificate, created_by, created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                [
+                    $student['tenant_id'],
+                    $student['school_id'],
+                    $student['branch_id'],
+                    $student['id'],
+                    $dateStr,
+                    $status,
+                    $remarksVal,
+                    $medCert,
+                    auth_id()
+                ]
+            );
+        }
+
+        \App\Models\StudentTimeline::logEvent(
+            (int)$student['id'],
+            'attendance_declaration',
+            "Parent declared attendance for {$dateStr} as: " . ucfirst($status),
+            ['status' => $status, 'date' => $dateStr],
+            auth_id(),
+            $status === 'present' ? 'green' : 'red',
+            'calendar'
+        );
+
+        Session::flash('success', "Attendance declaration for " . date('l, d M Y', strtotime($dateStr)) . " has been saved successfully.");
+        Application::$app->response->redirect("/parent/students/{$id}/attendance");
+        exit();
+    }
+
+    public function checkDateAttendance(string $id): string
+    {
+        $context = $this->getContext((int)$id);
+        $student = $context['active_student'];
+
+        $date = Application::$app->request->get('date', date('Y-m-d', strtotime('+1 day')));
+
+        // Parse date to ensure it is valid
+        $timestamp = strtotime($date);
+        if (!$timestamp) {
+            return "<div class='text-rose-400 text-xs font-semibold p-4'>Invalid date selected.</div>";
+        }
+
+        $dateStr = date('Y-m-d', $timestamp);
+
+        // Past dates check
+        $isPast = ($dateStr < date('Y-m-d'));
+
+        $tomorrowAtt = $this->db()->selectOne(
+            "SELECT * FROM attendance WHERE student_id = ? AND date = ? LIMIT 1",
+            [$student['id'], $dateStr]
+        );
+
+        $targetDateTimestamp = strtotime($dateStr);
+        $deadlineTimestamp = strtotime(date('Y-m-d', $targetDateTimestamp) . ' -1 day 23:00:00');
+        $canEdit = (time() < $deadlineTimestamp);
+        $remainingSeconds = max(0, $deadlineTimestamp - time());
+        $lockedReason = '';
+
+        if ($isPast) {
+            $canEdit = false;
+            $lockedReason = 'past_date';
+        } elseif (!$canEdit) {
+            $lockedReason = 'time_expired';
+        } elseif ($tomorrowAtt) {
+            if (empty($tomorrowAtt['created_by']) || (int)$tomorrowAtt['created_by'] !== auth_id()) {
+                $canEdit = false;
+                $lockedReason = 'school_managed';
+            }
+        }
+
+        return View::render('parent/attendance_form', [
+            'active_student'   => $student,
+            'tomorrowAtt'      => $tomorrowAtt,
+            'canEdit'          => $canEdit,
+            'remainingSeconds' => $remainingSeconds,
+            'lockedReason'     => $lockedReason,
+            'date'             => $dateStr,
+        ]);
     }
 
     public function timetable(string $id): string

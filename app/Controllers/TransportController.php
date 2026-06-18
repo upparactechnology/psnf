@@ -50,6 +50,113 @@ class TransportController extends Controller
         return $this->view('transport/index', compact('routes', 'assignments', 'unassignedStudents'));
     }
 
+    public function tracking(): string
+    {
+        $tenantId = \Core\Database::getTenantId();
+
+        // Auto-patch schema if current_speed column is missing
+        $columns = $this->db()->select("SHOW COLUMNS FROM `transport_routes` LIKE 'current_speed'");
+        if (empty($columns)) {
+            $this->db()->query("ALTER TABLE `transport_routes` ADD COLUMN `current_speed` DECIMAL(5,2) NOT NULL DEFAULT 0.00");
+        }
+
+        $routes = $this->db()->select("
+            SELECT tr.*, COUNT(st.id) as student_count
+            FROM transport_routes tr
+            LEFT JOIN student_transport st ON st.route_id = tr.id
+            WHERE tr.tenant_id = ?
+            GROUP BY tr.id
+            ORDER BY tr.status DESC, tr.route_name ASC
+        ", [$tenantId]);
+
+        return $this->view('transport/tracking', compact('routes'));
+    }
+
+    public function liveData(): string
+    {
+        $tenantId = \Core\Database::getTenantId();
+
+        // Auto-patch schema if current_speed column is missing
+        $columns = $this->db()->select("SHOW COLUMNS FROM `transport_routes` LIKE 'current_speed'");
+        if (empty($columns)) {
+            $this->db()->query("ALTER TABLE `transport_routes` ADD COLUMN `current_speed` DECIMAL(5,2) NOT NULL DEFAULT 0.00");
+        }
+
+        $rows = $this->db()->select("
+            SELECT tr.id, tr.route_name as name, tr.bus_number as bus, tr.driver_name as driver,
+                   tr.driver_phone as phone, tr.status,
+                   tr.current_latitude  as lat,
+                   tr.current_longitude as lng,
+                   tr.current_speed     as speed,
+                   tr.last_updated_at   as updated_at,
+                   COUNT(st.id) as students
+            FROM transport_routes tr
+            LEFT JOIN student_transport st ON st.route_id = tr.id
+            WHERE tr.tenant_id = ?
+            GROUP BY tr.id
+        ", [$tenantId]);
+
+        $data = array_map(fn($r) => [
+            'id'         => (int)$r['id'],
+            'name'       => $r['name'],
+            'bus'        => $r['bus'],
+            'driver'     => $r['driver'],
+            'phone'      => $r['phone'],
+            'status'     => $r['status'],
+            'lat'        => (float)($r['lat']  ?? 13.0827),
+            'lng'        => (float)($r['lng']  ?? 80.2707),
+            'speed'      => (float)($r['speed'] ?? 0.0),
+            'students'   => (int)$r['students'],
+            'updated_at' => $r['updated_at'],
+        ], $rows);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'routes' => $data]);
+        exit();
+    }
+
+    public function updateLocation(string $id): string
+    {
+        header('Content-Type: application/json');
+
+        $route = TransportRoute::find((int)$id);
+        if (!$route) {
+            echo json_encode(['success' => false, 'message' => 'Route not found.']);
+            exit();
+        }
+
+        $body = json_decode(file_get_contents('php://input'), true);
+        $lat  = isset($body['lat']) ? (float)$body['lat'] : null;
+        $lng  = isset($body['lng']) ? (float)$body['lng'] : null;
+        $speed = isset($body['speed']) ? (float)$body['speed'] : null;
+
+        if ($lat === null || $lng === null || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
+            echo json_encode(['success' => false, 'message' => 'Invalid coordinates.']);
+            exit();
+        }
+
+        $updateData = [
+            'current_latitude'  => $lat,
+            'current_longitude' => $lng,
+            'last_updated_at'   => now(),
+        ];
+        if ($speed !== null) {
+            $updateData['current_speed'] = $speed;
+        }
+
+        TransportRoute::update($route['id'], $updateData);
+
+        ActivityLog::log('transport_location_updated', auth_id(), [
+            'route_id' => $route['id'],
+            'lat'      => $lat,
+            'lng'      => $lng,
+            'speed'    => $speed,
+        ]);
+
+        echo json_encode(['success' => true, 'lat' => $lat, 'lng' => $lng, 'speed' => $speed]);
+        exit();
+    }
+
     public function create(): string
     {
         return $this->view('transport/create');

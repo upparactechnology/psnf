@@ -528,3 +528,24 @@
 [16-Jun-2026 09:31:48 Europe/Berlin] PHP Fatal error:  Declaration of App\Controllers\CertificateController::view(string $id): string must be compatible with Core\Controller::view(string $view, array $data = []): string in C:\xampp\htdocs\psnf\app\Controllers\CertificateController.php on line 113
 [16-Jun-2026 09:33:38 Europe/Berlin] PHP Fatal error:  Declaration of App\Controllers\CertificateController::view(string $id): string must be compatible with Core\Controller::view(string $view, array $data = []): string in C:\xampp\htdocs\psnf\app\Controllers\CertificateController.php on line 113
 [16-Jun-2026 09:34:27 Europe/Berlin] PHP Fatal error:  Declaration of App\Controllers\CertificateController::view(string $id): string must be compatible with Core\Controller::view(string $view, array $data = []): string in C:\xampp\htdocs\psnf\app\Controllers\CertificateController.php on line 113
+[18-Jun-2026 12:35:19 Europe/Berlin] PHP Warning:  Undefined array key "allergies" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 36
+[18-Jun-2026 12:35:19 Europe/Berlin] PHP Warning:  Undefined array key "triggers" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 41
+[18-Jun-2026 12:35:19 Europe/Berlin] PHP Warning:  Undefined array key "current_medications" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 56
+[18-Jun-2026 12:35:19 Europe/Berlin] PHP Warning:  Undefined array key "hospital" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 60
+[18-Jun-2026 12:35:19 Europe/Berlin] PHP Warning:  Undefined array key "doctor_name" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 69
+[18-Jun-2026 12:35:19 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 70
+[18-Jun-2026 12:35:19 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 72
+[18-Jun-2026 12:54:55 Europe/Berlin] PHP Warning:  Undefined array key "allergies" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 36
+[18-Jun-2026 12:54:55 Europe/Berlin] PHP Warning:  Undefined array key "triggers" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 41
+[18-Jun-2026 12:54:55 Europe/Berlin] PHP Warning:  Undefined array key "current_medications" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 56
+[18-Jun-2026 12:54:55 Europe/Berlin] PHP Warning:  Undefined array key "hospital" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 60
+[18-Jun-2026 12:54:55 Europe/Berlin] PHP Warning:  Undefined array key "doctor_name" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 69
+[18-Jun-2026 12:54:55 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 70
+[18-Jun-2026 12:54:55 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 72
+[18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "allergies" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 36
+[18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "triggers" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 41
+[18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "current_medications" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 56
+[18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "hospital" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 60
+[18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "doctor_name" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 69
+[18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 70
+[18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 72

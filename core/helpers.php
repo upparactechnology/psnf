@@ -221,3 +221,13 @@ if (!function_exists('e')) {
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     }
 }
+
+if (!function_exists('dashboard_url')) {
+    function dashboard_url(): string
+    {
+        if (has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher') || has_role('therapist') || has_role('staff')) {
+            return '/dashboard';
+        }
+        return has_role('parent') ? '/parent/dashboard' : '/dashboard';
+    }
+}

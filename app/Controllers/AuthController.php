@@ -51,7 +51,7 @@ class AuthController extends Controller
             return $this->json(['success' => true, 'token' => $result['token']]);
         }
 
-        return $this->redirect('/dashboard');
+        return $this->redirect(dashboard_url());
     }
 
     public function logout(): string
@@ -172,6 +172,6 @@ class AuthController extends Controller
             return $this->json(['success' => true, 'message' => 'OTP verified.']);
         }
 
-        return $this->redirect('/dashboard');
+        return $this->redirect(dashboard_url());
     }
 }

@@ -206,6 +206,7 @@ class CreateParentPortalTables
                 `driver_phone`      VARCHAR(30) NOT NULL,
                 `current_latitude`  DECIMAL(10,8) NULL,
                 `current_longitude` DECIMAL(11,8) NULL,
+                `current_speed`     DECIMAL(5,2) NOT NULL DEFAULT 0.00,
                 `status`            ENUM('inactive', 'en_route', 'completed') NOT NULL DEFAULT 'inactive',
                 `last_updated_at`   TIMESTAMP NULL,
                 `created_at`        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

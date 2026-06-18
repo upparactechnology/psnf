@@ -72,6 +72,10 @@ class Application
                 $GLOBALS['config'][$key] = require $file;
             }
         }
+
+        // Set system default timezone
+        $timezone = config('app.timezone', 'UTC');
+        date_default_timezone_set($timezone);
     }
 
     private function initErrorHandling(): void

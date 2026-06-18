@@ -11,6 +11,10 @@ class DashboardController extends Controller
 {
     public function index(): string
     {
+        if (has_role('parent')) {
+            $this->redirect('/parent/dashboard');
+        }
+
         $user     = $this->auth();
         $tenantId = $user['tenant_id'];
 

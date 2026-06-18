@@ -144,18 +144,21 @@ class ParentPortalSeeder
                     'care_instructions'   => $stu['care_instructions'],
                     'emergency_protocols' => 'Contact father immediately and relocate to quiet room.'
                 ]);
+            } else {
+                $sId = (int)$existsStu['id'];
+            }
 
-                // Link to Guardian
+            $studentIds[] = $sId;
+
+            // Link to Guardian (if not already linked)
+            $existsLink = $this->db->selectOne("SELECT 1 FROM guardian_student WHERE guardian_id = ? AND student_id = ?", [$gid, $sId]);
+            if (!$existsLink) {
                 $this->db->insert('guardian_student', [
                     'guardian_id'  => $gid,
                     'student_id'   => $sId,
                     'is_primary'   => 1,
                     'can_pickup'   => 1
                 ]);
-
-                $studentIds[] = $sId;
-            } else {
-                $studentIds[] = (int) $existsStu['id'];
             }
         }
 

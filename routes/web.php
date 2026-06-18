@@ -19,7 +19,7 @@ $router->post('/otp',            [AuthController::class, 'verifyOtp']);
 // Root redirect
 $router->get('/', function () {
     if (is_logged_in()) {
-        \Core\Application::$app->response->redirect('/dashboard');
+        \Core\Application::$app->response->redirect(dashboard_url());
     } else {
         \Core\Application::$app->response->redirect('/login');
     }
@@ -71,11 +71,15 @@ $router->post('/fees/{id}/delete',          [FeeController::class, 'destroy'],  
 // ─── Transport Management — Admin ──────────────────────────────────────────────
 $router->get('/transport',                  [TransportController::class, 'index'],    ['auth', 'tenant']);
 $router->get('/transport/create',           [TransportController::class, 'create'],   ['auth', 'tenant']);
+$router->get('/transport/tracking',         [TransportController::class, 'tracking'], ['auth', 'tenant']);
+$router->get('/transport/live-data',        [TransportController::class, 'liveData'], ['auth', 'tenant']);
 $router->post('/transport',                 [TransportController::class, 'store'],    ['auth', 'tenant']);
 $router->get('/transport/{id}/edit',        [TransportController::class, 'edit'],     ['auth', 'tenant']);
 $router->post('/transport/{id}',            [TransportController::class, 'update'],    ['auth', 'tenant']);
 $router->post('/transport/{id}/assign',     [TransportController::class, 'assignStudent'],['auth', 'tenant']);
+$router->post('/transport/{id}/location',   [TransportController::class, 'updateLocation'],['auth', 'tenant']);
 $router->post('/transport/{id}/delete',     [TransportController::class, 'destroy'],   ['auth', 'tenant']);
+
 
 // ─── Certificate Designer — Admin ──────────────────────────────────────────────
 $router->get('/certificates',               [CertificateController::class, 'index'],  ['auth', 'tenant']);
@@ -86,6 +90,7 @@ $router->post('/certificates/{id}/delete',  [CertificateController::class, 'dest
 
 // ─── Migrations Helper (Web Run) ─────────────────────────────────────────────
 $router->get('/migrate', function () {
+    require_once CORE_PATH . '/Migration.php';
     $runner = new \Core\Migration();
     ob_start();
     $runner->run();
@@ -97,6 +102,8 @@ $router->get('/migrate', function () {
 // ─── Parent Portal — Module 3 ────────────────────────────────────────────────
 $router->get('/parent/dashboard',                  [ParentPortalController::class, 'dashboard'],     ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/attendance',   [ParentPortalController::class, 'attendance'],    ['auth', 'role:parent']);
+$router->get('/parent/students/{id}/attendance/check-date', [ParentPortalController::class, 'checkDateAttendance'], ['auth', 'role:parent']);
+$router->post('/parent/students/{id}/attendance/declare', [ParentPortalController::class, 'submitTomorrowAttendance'], ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/timetable',    [ParentPortalController::class, 'timetable'],     ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/homework',     [ParentPortalController::class, 'homework'],      ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/exams',        [ParentPortalController::class, 'exams'],         ['auth', 'role:parent']);

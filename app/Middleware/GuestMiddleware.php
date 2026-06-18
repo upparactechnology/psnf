@@ -9,7 +9,7 @@ class GuestMiddleware
     public function handle(\Core\Request $request): ?string
     {
         if (\Core\Session::has('user')) {
-            \Core\Application::$app->response->redirect('/dashboard');
+            \Core\Application::$app->response->redirect(dashboard_url());
             exit();
         }
         return null;

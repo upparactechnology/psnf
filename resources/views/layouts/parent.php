@@ -128,10 +128,15 @@
                 </svg>
             </div>
             <div x-show="sidebarOpen" x-transition.opacity class="overflow-hidden">
-                <p class="text-sm font-bold text-white leading-tight">PSNF Portal</p>
-                <p class="text-xs text-slate-500">Parent Access</p>
+                <p class="text-sm font-bold text-slate-800 dark:text-white leading-tight">PSNF Portal</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Parent Access</p>
             </div>
-            <button @click="sidebarOpen = !sidebarOpen" class="ml-auto text-slate-500 hover:text-slate-300 transition-colors">
+            <!-- Theme Toggler (visible when sidebar is open) -->
+            <button x-show="sidebarOpen" @click="toggleTheme()" class="ml-auto text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors p-1" title="Toggle Theme">
+                <svg x-show="!isDark" class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+                <svg x-show="isDark" class="w-5 h-5 text-indigo-450" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </button>
+            <button @click="sidebarOpen = !sidebarOpen" :class="sidebarOpen ? '' : 'ml-auto'" class="text-slate-500 hover:text-slate-850 dark:hover:text-slate-300 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
         </div>
@@ -241,6 +246,29 @@
             <?php endif; ?>
         </nav>
 
+        <!-- Theme Switcher inside Sidebar -->
+        <div class="px-3 pb-3 pt-2 border-t border-slate-200 dark:border-slate-800/60" x-show="sidebarOpen">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <svg x-show="!isDark" class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+                    <svg x-show="isDark" class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    <span class="text-xs font-medium text-slate-700 dark:text-slate-300" x-text="isDark ? 'Dark Theme' : 'Light Theme'"></span>
+                </div>
+                <button @click="toggleTheme()"
+                        class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                        :class="isDark ? 'bg-brand-500' : 'bg-slate-300'">
+                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                          :class="isDark ? 'translate-x-4' : 'translate-x-0'"></span>
+                </button>
+            </div>
+        </div>
+        <div class="px-3 pb-3 pt-2 flex justify-center border-t border-slate-200 dark:border-slate-800/60" x-show="!sidebarOpen">
+            <button @click="toggleTheme()" class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all" title="Toggle Theme">
+                <svg x-show="!isDark" class="w-4.5 h-4.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+                <svg x-show="isDark" class="w-4.5 h-4.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </button>
+        </div>
+
         <!-- Parent Footer -->
         <?php $pUser = auth(); ?>
         <div class="border-t border-slate-200 dark:border-slate-800/60 p-3">
@@ -279,10 +307,10 @@
 
                 <!-- Theme Toggler -->
                 <button @click="toggleTheme()" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" title="Toggle Theme">
-                    <!-- Sun (shows in dark mode) -->
-                    <svg x-show="isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
-                    <!-- Moon (shows in light mode) -->
-                    <svg x-show="!isDark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-cloak><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                    <!-- Sun (light mode: click to switch to dark) -->
+                    <svg x-show="!isDark" class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z"/></svg>
+                    <!-- Moon (dark mode: click to switch to light) -->
+                    <svg x-show="isDark" class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 </button>
 
                 <span class="text-xs text-slate-500 font-medium"><?= date('D, d M Y') ?></span>
@@ -300,6 +328,13 @@
     // Set CSRF on all HTMX actions
     document.body.addEventListener('htmx:configRequest', function(e) {
         e.detail.headers['X-CSRF-Token'] = document.querySelector('meta[name="csrf-token"]')?.content;
+    });
+
+    // Re-initialize Alpine.js on HTMX swaps
+    document.body.addEventListener('htmx:afterSwap', function(e) {
+        if (typeof Alpine !== 'undefined') {
+            Alpine.process(e.detail.target);
+        }
     });
 
     // Auto fadeout flash alerts
