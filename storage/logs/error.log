@@ -549,3 +549,4 @@
 [18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "doctor_name" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 69
 [18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 70
 [18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 72
+[19-Jun-2026 11:52:09 Asia/Kolkata] PHP Warning:  Undefined variable $studentListJson in C:\xampp\htdocs\psnf\resources\views\driver\dashboard.php on line 756
