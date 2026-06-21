@@ -132,8 +132,24 @@
 
 <?php
 $currentPath = \Core\Application::$app->request->getPath();
-$isDashboard = ($currentPath === '/dashboard' || $currentPath === '/' || $currentPath === '');
+$isDashboard = ($currentPath === '/dashboard' || $currentPath === '/teacher/dashboard' || $currentPath === '/' || $currentPath === '');
 $user = auth();
+$db = \Core\Application::$app->db;
+$assignedApps = [];
+if ($user) {
+    $hasAppAccessRecords = $db->selectOne("SELECT 1 FROM user_apps WHERE user_id = ?", [$user['id']]);
+    if ($hasAppAccessRecords) {
+        $userApps = $db->select("SELECT app_name FROM user_apps WHERE user_id = ?", [$user['id']]);
+        $assignedApps = array_column($userApps, 'app_name');
+    } else {
+        if (has_role('super_admin') || has_role('school_admin') || has_role('manager')) {
+            $assignedApps = [
+                'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
+                'transport', 'file_manager', 'games', 'config'
+            ];
+        }
+    }
+}
 ?>
 <div class="flex h-screen overflow-hidden">
 
@@ -167,7 +183,9 @@ $user = auth();
             <?php if (!function_exists('navLink')) {
                 function navLink(string $href, string $icon, string $label, string $current, bool $open = true, bool $disabled = false): void {
                     $active = str_starts_with($current, $href) && $href !== '/';
-                    if ($href === '/dashboard') $active = $current === '/dashboard';
+                    if ($href === '/dashboard' || $href === '/teacher/dashboard') {
+                        $active = ($current === '/dashboard' || $current === '/teacher/dashboard');
+                    }
                     
                     if ($disabled) {
                         $classes = 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-350 dark:text-slate-650 cursor-not-allowed opacity-50';
@@ -211,50 +229,77 @@ $user = auth();
 
             // Determine active module from path
             $module = '';
-            if (str_starts_with($currentPath, '/students') || str_starts_with($currentPath, '/certificates')) {
+            if (str_starts_with($currentPath, '/students') || str_starts_with($currentPath, '/admissions')) {
                 $module = 'academic';
-            } elseif (str_starts_with($currentPath, '/fees')) {
+            } elseif (str_starts_with($currentPath, '/classes') || str_starts_with($currentPath, '/attendance') || str_starts_with($currentPath, '/certificates') || str_starts_with($currentPath, '/timetables') || str_starts_with($currentPath, '/exams')) {
+                $module = 'academic_summary';
+            } elseif (str_starts_with($currentPath, '/fees') || str_starts_with($currentPath, '/receipts') || str_starts_with($currentPath, '/scholarships')) {
                 $module = 'finance';
             } elseif (str_starts_with($currentPath, '/transport')) {
                 $module = 'transport';
-            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/roles')) {
+            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/settings')) {
                 $module = 'administration';
+            } elseif (str_starts_with($currentPath, '/medical')) {
+                $module = 'medical';
             }
             ?>
 
             <!-- Back to Launcher -->
             <div class="mb-4 pb-3 border-b border-slate-200 dark:border-slate-800/60">
-                <?php navLink('/dashboard', $ic['launcher'], 'Back to Apps', $currentPath, $sidebarOpen); ?>
+                <?php navLink(dashboard_url(), $ic['launcher'], 'Back to Apps', $currentPath, $sidebarOpen); ?>
             </div>
 
             <?php if ($module === 'academic'): ?>
                 <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic</div>
-                <?php navLink('/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
-                <?php navLink('/certificates', $ic['certificates'], 'Certificates', $currentPath, $sidebarOpen); ?>
-                <?php navLink('../game/index.html', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', 'Learning Games', $currentPath, $sidebarOpen); ?>
-                <?php navLink('/admissions', $ic['admissions'], 'Admissions', $currentPath, $sidebarOpen, true); ?>
-                <?php navLink('/classes', $ic['classes'], 'Classes & Sections', $currentPath, $sidebarOpen, true); ?>
-                <?php navLink('/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen, true); ?>
-                <?php navLink('/timetables', $ic['timetables'], 'Timetables', $currentPath, $sidebarOpen, true); ?>
-                <?php navLink('/exams', $ic['exams'], 'Exams & Grades', $currentPath, $sidebarOpen, true); ?>
+                <?php if (in_array('academic', $assignedApps)): ?>
+                    <?php navLink('/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
+
+            <?php elseif ($module === 'academic_summary'): ?>
+                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic Summary</div>
+                <?php if (in_array('academic_summary', $assignedApps) || in_array('academic', $assignedApps)): ?>
+                    <?php navLink('/classes', $ic['classes'], 'Classes & Sections', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/certificates', $ic['certificates'], 'Certificates', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/timetables', $ic['timetables'], 'Timetables', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/exams', $ic['exams'], 'Exams & Grades', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
 
             <?php elseif ($module === 'finance'): ?>
-                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Finance</div>
-                <?php navLink('/fees', $ic['fees'], 'Fees & Invoices', $currentPath, $sidebarOpen); ?>
-                <?php navLink('/receipts', $ic['receipts'], 'Receipts', $currentPath, $sidebarOpen, true); ?>
-                <?php navLink('/scholarships', $ic['scholarships'], 'Scholarships', $currentPath, $sidebarOpen, true); ?>
+                <?php if (in_array('finance', $assignedApps)): ?>
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Finance</div>
+                    <?php navLink('/fees', $ic['fees'], 'Fees & Invoices', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/receipts', $ic['receipts'], 'Receipts', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/scholarships', $ic['scholarships'], 'Scholarships', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
 
             <?php elseif ($module === 'transport'): ?>
-                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Transport</div>
-                <?php navLink('/transport', $ic['transport'], 'Routes & Vehicles', $currentPath, $sidebarOpen); ?>
-                <?php navLink('/transport/tracking', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Live Tracking', $currentPath, $sidebarOpen); ?>
+                <?php if (in_array('transport', $assignedApps)): ?>
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Transport</div>
+                    <?php navLink('/transport', $ic['transport'], 'Routes & Vehicles', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/transport/tracking', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Live Tracking', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
 
             <?php elseif ($module === 'administration'): ?>
-                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Administration</div>
-                <?php navLink('/users', $ic['users'], 'Users Management', $currentPath, $sidebarOpen); ?>
-                <?php navLink('/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
-                <?php navLink('../file manager/public/', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>', 'File Manager', $currentPath, $sidebarOpen); ?>
-                <?php navLink('/settings', $ic['settings'], 'Settings', $currentPath, $sidebarOpen, true); ?>
+                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">H.R Directory</div>
+                <?php if (in_array('hr', $assignedApps)): ?>
+                    <?php navLink('/users', $ic['users'], 'Users Management', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/users/attendance', $ic['attendance'], 'Teacher Attendance', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
+                <?php if (in_array('access_control', $assignedApps)): ?>
+                    <?php navLink('/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
+                <?php if (in_array('file_manager', $assignedApps)): ?>
+                    <?php navLink('../file manager/public/', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>', 'File Manager', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
+                <?php if (in_array('config', $assignedApps)): ?>
+                    <?php navLink('/settings', $ic['settings'], 'Settings', $currentPath, $sidebarOpen, true); ?>
+                <?php endif; ?>
+            <?php elseif ($module === 'medical'): ?>
+                <?php if (in_array('medical', $assignedApps)): ?>
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Medical</div>
+                    <?php navLink('/medical', '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>', 'Care Profiles', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
             <?php endif; ?>
 
         </nav>

@@ -13,4 +13,16 @@ define('START_TIME', microtime(true));
 require ROOT_PATH . '/core/Application.php';
 
 $app = new \Core\Application();
+
+// Automatically run pending migrations to keep db schema up to date
+try {
+    require_once ROOT_PATH . '/core/Migration.php';
+    $runner = new \Core\Migration();
+    ob_start();
+    $runner->run();
+    ob_end_clean();
+} catch (\Throwable $e) {
+    // Ignore database errors if already migrated or during bootstrap
+}
+
 $app->run();

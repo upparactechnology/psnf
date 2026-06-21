@@ -115,6 +115,12 @@ class RolesPermissionsSeeder
             'reports'     => ['view_reports','export_reports'],
             'audit'       => ['view_audit_logs'],
             'settings'    => ['view_settings','edit_settings'],
+            'portal_access'=> [
+                'teacher_portal','parents_portal','driver_app','teacher_staff_app',
+                'see_student_name','see_student_medical','see_student_guardian','access_exams_app',
+                'teacher_app_student_details','teacher_app_half_leave_notification','teacher_app_timetables',
+                'staff_app_student_details','staff_app_half_leave_notification','staff_app_half_leave_details'
+            ],
         ];
 
         foreach ($modules as $module => $actions) {
@@ -141,6 +147,54 @@ class RolesPermissionsSeeder
                 $exists = $this->db->selectOne("SELECT 1 FROM role_permissions WHERE role_id = ? AND permission_id = ?", [$superAdminRole['id'], $perm['id']]);
                 if (!$exists) {
                     $this->db->insert('role_permissions', ['role_id' => $superAdminRole['id'], 'permission_id' => $perm['id']]);
+                }
+            }
+        }
+
+        // Seed default presets for Teacher role
+        $teacherRole = $this->db->selectOne("SELECT id FROM roles WHERE slug = 'teacher' AND tenant_id IS NULL");
+        if ($teacherRole) {
+            $teacherPerms = [
+                'teacher_portal',
+                'teacher_staff_app',
+                'see_student_name',
+                'see_student_medical',
+                'see_student_guardian',
+                'access_exams_app',
+                'teacher_app_student_details',
+                'teacher_app_half_leave_notification',
+                'teacher_app_timetables'
+            ];
+            foreach ($teacherPerms as $slug) {
+                $perm = $this->db->selectOne("SELECT id FROM permissions WHERE slug = ?", [$slug]);
+                if ($perm) {
+                    $exists = $this->db->selectOne("SELECT 1 FROM role_permissions WHERE role_id = ? AND permission_id = ?", [$teacherRole['id'], $perm['id']]);
+                    if (!$exists) {
+                        $this->db->insert('role_permissions', ['role_id' => $teacherRole['id'], 'permission_id' => $perm['id']]);
+                    }
+                }
+            }
+        }
+
+        // Seed default presets for Staff role
+        $staffRole = $this->db->selectOne("SELECT id FROM roles WHERE slug = 'staff' AND tenant_id IS NULL");
+        if ($staffRole) {
+            $staffPerms = [
+                'teacher_staff_app',
+                'staff_app_student_details',
+                'staff_app_half_leave_notification',
+                'staff_app_half_leave_details',
+                'see_student_name',
+                'see_student_medical',
+                'see_student_guardian'
+            ];
+            foreach ($staffPerms as $slug) {
+                $perm = $this->db->selectOne("SELECT id FROM permissions WHERE slug = ?", [$slug]);
+                if ($perm) {
+                    $exists = $this->db->selectOne("SELECT 1 FROM role_permissions WHERE role_id = ? AND permission_id = ?", [$staffRole['id'], $perm['id']]);
+                    if (!$exists) {
+                        $this->db->insert('role_permissions', ['role_id' => $staffRole['id'], 'permission_id' => $perm['id']]);
+                    }
                 }
             }
         }

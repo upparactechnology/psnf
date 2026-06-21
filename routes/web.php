@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, ParentPortalController, FeeController, TransportController, CertificateController};
+use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController};
 
 // ─── Auth (Guest Only) ────────────────────────────────────────────────────────
 $router->get('/login',           [AuthController::class, 'showLogin'],          ['guest']);
@@ -28,8 +28,10 @@ $router->get('/', function () {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth', 'tenant']);
+$router->get('/teacher/dashboard', [TeacherPortalController::class, 'dashboard'], ['auth', 'role:teacher']);
 
 // ─── Users ────────────────────────────────────────────────────────────────────
+$router->get('/users/attendance',  [UserController::class, 'attendanceLog'],['auth', 'permission:view_users']);
 $router->get('/users',             [UserController::class, 'index'],   ['auth', 'permission:view_users']);
 $router->get('/users/create',      [UserController::class, 'create'],  ['auth', 'permission:create_users']);
 $router->post('/users',            [UserController::class, 'store'],   ['auth', 'permission:create_users']);
@@ -68,6 +70,18 @@ $router->post('/fees',                      [FeeController::class, 'store'],    
 $router->post('/fees/{id}/pay',             [FeeController::class, 'recordPayment'],  ['auth', 'tenant']);
 $router->post('/fees/{id}/delete',          [FeeController::class, 'destroy'],        ['auth', 'tenant']);
 
+// ─── Receipts — Admin ─────────────────────────────────────────────────────────
+$router->get('/receipts', [ReceiptsController::class, 'index'], ['auth', 'tenant']);
+$router->get('/receipts/{id}/view', [ReceiptsController::class, 'show'], ['auth', 'tenant']);
+
+// ─── Scholarships — Admin ─────────────────────────────────────────────────────
+$router->get('/scholarships', [ScholarshipController::class, 'index'], ['auth', 'tenant']);
+$router->post('/scholarships/store', [ScholarshipController::class, 'store'], ['auth', 'tenant']);
+
+// ─── Medical Logs & Care Profiles — Admin ──────────────────────────────────────
+$router->get('/medical', [MedicalController::class, 'index'], ['auth', 'tenant']);
+$router->post('/medical/{id}', [MedicalController::class, 'store'], ['auth', 'tenant']);
+
 // ─── Transport Management — Admin ──────────────────────────────────────────────
 $router->get('/transport',                  [TransportController::class, 'index'],    ['auth', 'tenant']);
 $router->get('/transport/create',           [TransportController::class, 'create'],   ['auth', 'tenant']);
@@ -87,6 +101,26 @@ $router->get('/certificates/create',        [CertificateController::class, 'crea
 $router->post('/certificates',              [CertificateController::class, 'store'],  ['auth', 'tenant']);
 $router->get('/certificates/{id}/view',     [CertificateController::class, 'show'],   ['auth', 'tenant']);
 $router->post('/certificates/{id}/delete',  [CertificateController::class, 'destroy'],['auth', 'tenant']);
+
+// ─── Admissions ──────────────────────────────────────────────────────────────
+$router->get('/admissions', [AdmissionsController::class, 'index'], ['auth', 'tenant']);
+$router->post('/admissions/{id}/status', [AdmissionsController::class, 'updateStatus'], ['auth', 'tenant']);
+
+// ─── Classes & Sections ───────────────────────────────────────────────────────
+$router->get('/classes', [ClassesController::class, 'index'], ['auth', 'tenant']);
+$router->get('/classes/{class}', [ClassesController::class, 'show'], ['auth', 'tenant']);
+
+// ─── Attendance ──────────────────────────────────────────────────────────────
+$router->get('/attendance', [AttendanceController::class, 'index'], ['auth', 'tenant']);
+$router->post('/attendance/save', [AttendanceController::class, 'save'], ['auth', 'tenant']);
+
+// ─── Timetables ──────────────────────────────────────────────────────────────
+$router->get('/timetables', [TimetablesController::class, 'index'], ['auth', 'tenant']);
+$router->post('/timetables/store', [TimetablesController::class, 'store'], ['auth', 'tenant']);
+
+// ─── Exams & Grades ──────────────────────────────────────────────────────────
+$router->get('/exams', [ExamsController::class, 'index'], ['auth', 'tenant']);
+$router->post('/exams/store', [ExamsController::class, 'store'], ['auth', 'tenant']);
 
 // ─── Migrations Helper (Web Run) ─────────────────────────────────────────────
 $router->get('/migrate', function () {

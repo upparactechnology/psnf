@@ -150,10 +150,24 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
             </div>
             <?php endforeach; ?>
 
+            <?php if ($s['disability_detail']): ?>
+            <div class="mt-4 p-3 rounded-xl bg-slate-950/30 border border-slate-800/60">
+                <p class="text-xs font-semibold text-slate-400 mb-1">Disability Details</p>
+                <p class="text-xs text-slate-350"><?= e($s['disability_detail']) ?></p>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($s['special_needs_summary']): ?>
+            <div class="mt-4 p-3 rounded-xl bg-slate-950/30 border border-slate-800/60">
+                <p class="text-xs font-semibold text-slate-400 mb-1">Special Need Summary</p>
+                <p class="text-xs text-slate-350"><?= e($s['special_needs_summary']) ?></p>
+            </div>
+            <?php endif; ?>
+
             <?php if ($s['care_instructions']): ?>
             <div class="mt-4 p-3 rounded-xl bg-blue-950/30 border border-blue-900/30">
                 <p class="text-xs font-semibold text-blue-400 mb-1">Care Instructions</p>
-                <p class="text-xs text-slate-400"><?= e($s['care_instructions']) ?></p>
+                <p class="text-xs text-slate-450"><?= e($s['care_instructions']) ?></p>
             </div>
             <?php endif; ?>
         </div>
@@ -288,7 +302,11 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                     </div>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-white"><?= e($g['name']) ?> <?= $g['is_primary'] ? '<span class="text-xs text-brand-400">(Primary)</span>' : '' ?></p>
-                        <p class="text-xs text-slate-400"><?= e($g['relationship']) ?> · <?= e($g['phone']) ?></p>
+                        <p class="text-xs text-slate-400">
+                            <?= e($g['relationship']) ?> · <?= e($g['phone']) ?>
+                            <?= !empty($g['email']) ? ' · ' . e($g['email']) : '' ?>
+                            <?= !empty($g['aadhar']) ? ' · Aadhaar: ' . e($g['aadhar']) : '' ?>
+                        </p>
                     </div>
                     <?php if ($g['can_pickup']): ?>
                     <span class="text-xs bg-emerald-900/30 text-emerald-400 border border-emerald-700/30 px-2 py-0.5 rounded-full">Can Pickup</span>

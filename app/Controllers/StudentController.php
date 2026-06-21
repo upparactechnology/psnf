@@ -48,13 +48,27 @@ class StudentController extends Controller
         $data = $this->request->getBody();
 
         $rules = [
-            'first_name'     => 'required|min:2|max:100',
-            'last_name'      => 'required|min:2|max:100',
-            'gender'         => 'required|in:male,female,other',
-            'dob'            => 'required|date',
-            'disability_type'=> 'required',
-            'school_id'      => 'required|exists:schools,id',
-            'branch_id'      => 'required|exists:branches,id',
+            'full_name'             => 'required|min:2|max:200',
+            'gender'                 => 'required|in:male,female,other',
+            'dob'                    => 'required|date',
+            'blood_group'            => 'nullable|in:Unknown,A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'aadhar_number'          => 'nullable|max:20',
+            'mother_tongue'          => 'nullable|max:100',
+            'address'                => 'nullable',
+            'disability_type'        => 'required',
+            'disability_detail'      => 'nullable',
+            'care_instructions'      => 'nullable',
+            'special_needs_summary'  => 'nullable',
+            'school_id'              => 'required|exists:schools,id',
+            'branch_id'              => 'required|exists:branches,id',
+            'guardian_name'          => 'nullable|min:2',
+            'guardian_relationship'  => 'nullable',
+            'guardian_phone'         => 'nullable',
+            'guardian_email'         => 'nullable',
+            'guardian_aadhar'        => 'nullable|max:20',
+            'allergies'              => 'nullable',
+            'triggers'               => 'nullable',
+            'medications'            => 'nullable',
         ];
 
         $validator = new \Core\Validator($data, $rules);
@@ -67,8 +81,32 @@ class StudentController extends Controller
             return $this->redirect('/students/create');
         }
 
+        $validated = $validator->validated();
+
+        // Split Full Name
+        $parts = preg_split('/\s+/', trim($validated['full_name']));
+        if (count($parts) === 1) {
+            $validated['first_name'] = $parts[0];
+            $validated['middle_name'] = '';
+            $validated['last_name'] = '';
+        } elseif (count($parts) === 2) {
+            $validated['first_name'] = $parts[0];
+            $validated['middle_name'] = '';
+            $validated['last_name'] = $parts[1];
+        } else {
+            $validated['first_name'] = $parts[0];
+            $validated['last_name'] = array_pop($parts);
+            $validated['middle_name'] = implode(' ', array_slice($parts, 1));
+        }
+
         try {
-            $studentId = $this->service->create($validator->validated());
+            $photoFile = $this->request->file('photo');
+            $filesData = [];
+            if ($photoFile && $photoFile['error'] === UPLOAD_ERR_OK) {
+                $filesData['photo'] = $photoFile;
+            }
+
+            $studentId = $this->service->create($validated, $filesData);
             $this->flash('success', 'Student admission application submitted successfully.');
 
             if ($this->request->wantsJson()) {
@@ -96,7 +134,7 @@ class StudentController extends Controller
 
     public function edit(string $id): string
     {
-        $student  = Student::find((int) $id);
+        $student  = Student::withDetails((int) $id);
         if (!$student) { $this->response->abort(404); exit(); }
 
         $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
@@ -108,9 +146,72 @@ class StudentController extends Controller
     public function update(string $id): string
     {
         $data = $this->request->getBody();
-        $this->service->update((int) $id, $data);
 
-        $this->flash('success', 'Student updated successfully.');
+        $rules = [
+            'full_name'             => 'required|min:2|max:200',
+            'gender'                 => 'required|in:male,female,other',
+            'dob'                    => 'required|date',
+            'blood_group'            => 'nullable|in:Unknown,A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'aadhar_number'          => 'nullable|max:20',
+            'mother_tongue'          => 'nullable|max:100',
+            'address'                => 'nullable',
+            'disability_type'        => 'required',
+            'disability_detail'      => 'nullable',
+            'care_instructions'      => 'nullable',
+            'special_needs_summary'  => 'nullable',
+            'school_id'              => 'required|exists:schools,id',
+            'branch_id'              => 'required|exists:branches,id',
+            'class'                  => 'nullable|max:50',
+            'section'                => 'nullable|max:20',
+            'academic_year'          => 'nullable|max:20',
+            'notes'                  => 'nullable',
+            'guardian_name'          => 'nullable|min:2',
+            'guardian_relationship'  => 'nullable',
+            'guardian_phone'         => 'nullable',
+            'guardian_email'         => 'nullable',
+            'guardian_aadhar'        => 'nullable|max:20',
+            'allergies'              => 'nullable',
+            'triggers'               => 'nullable',
+            'medications'            => 'nullable',
+        ];
+
+        $validator = new \Core\Validator($data, $rules);
+        if ($validator->fails()) {
+            \Core\Session::flash('errors', $validator->errors());
+            return $this->redirect("/students/$id/edit");
+        }
+
+        $validated = $validator->validated();
+
+        // Split Full Name
+        $parts = preg_split('/\s+/', trim($validated['full_name']));
+        if (count($parts) === 1) {
+            $validated['first_name'] = $parts[0];
+            $validated['middle_name'] = '';
+            $validated['last_name'] = '';
+        } elseif (count($parts) === 2) {
+            $validated['first_name'] = $parts[0];
+            $validated['middle_name'] = '';
+            $validated['last_name'] = $parts[1];
+        } else {
+            $validated['first_name'] = $parts[0];
+            $validated['last_name'] = array_pop($parts);
+            $validated['middle_name'] = implode(' ', array_slice($parts, 1));
+        }
+
+        try {
+            $photoFile = $this->request->file('photo');
+            $filesData = [];
+            if ($photoFile && $photoFile['error'] === UPLOAD_ERR_OK) {
+                $filesData['photo'] = $photoFile;
+            }
+
+            $this->service->update((int) $id, $validated, $filesData);
+            $this->flash('success', 'Student updated successfully.');
+        } catch (\Throwable $e) {
+            $this->flash('error', 'Failed to update student: ' . $e->getMessage());
+        }
+
         return $this->redirect("/students/$id");
     }
 

@@ -21,25 +21,45 @@ $roleColors = [
             <h2 class="text-xl font-bold text-white">User Management</h2>
             <p class="text-sm text-slate-500 mt-0.5"><?= number_format($total ?? 0) ?> users total</p>
         </div>
-        <?php if (has_permission('create_users')): ?>
-        <a href="<?= url('users/create') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            New User
-        </a>
-        <?php endif; ?>
+        <div class="flex items-center gap-2">
+            <a href="<?= url('users/attendance') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white border border-slate-700/50 hover:bg-slate-800/40 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Teacher Attendance Log
+            </a>
+            <?php if (has_permission('create_users')): ?>
+            <a href="<?= url('users/create') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                New User
+            </a>
+            <?php endif; ?>
+        </div>
     </div>
 
-    <!-- Search -->
-    <div class="relative max-w-md">
-        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        </div>
-        <form method="GET" action="<?= url('users') ?>">
+    <!-- Search & Filter -->
+    <form method="GET" action="<?= url('users') ?>" class="flex flex-col sm:flex-row items-center gap-3">
+        <div class="relative w-full sm:max-w-xs">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
             <input type="text" name="search" value="<?= e($search ?? '') ?>"
-                   placeholder="Search users by name or email..."
+                   placeholder="Search users..."
                    class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
-        </form>
-    </div>
+        </div>
+        
+        <div class="relative w-full sm:w-48">
+            <select name="role_id" onchange="this.form.submit()"
+                    class="w-full bg-slate-900/70 border border-slate-700/60 text-slate-300 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
+                <option value="">All Roles</option>
+                <?php foreach ($roles as $role): ?>
+                <option value="<?= $role['id'] ?>" <?= ($role_id ?? '') == $role['id'] ? 'selected' : '' ?>><?= e($role['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <?php if (!empty($search) || !empty($role_id)): ?>
+        <a href="<?= url('users') ?>" class="text-xs text-slate-400 hover:text-slate-350 transition-colors">Clear Filters</a>
+        <?php endif; ?>
+    </form>
 
     <!-- Table -->
     <?php if (empty($data)): ?>
@@ -125,10 +145,10 @@ $roleColors = [
         <p class="text-sm text-slate-500">Showing <?= $from ?? 1 ?>–<?= $to ?? count($data) ?> of <?= number_format($total ?? 0) ?></p>
         <div class="flex items-center gap-2">
             <?php if (($current_page??1) > 1): ?>
-            <a href="?<?= http_build_query(['page' => ($current_page??1)-1, 'search' => $search??'']) ?>" class="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-all border border-slate-700/50">← Prev</a>
+            <a href="?<?= http_build_query(['page' => ($current_page??1)-1, 'search' => $search??'', 'role_id' => $role_id??'']) ?>" class="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-all border border-slate-700/50">← Prev</a>
             <?php endif; ?>
             <?php if (($current_page??1) < ($last_page??1)): ?>
-            <a href="?<?= http_build_query(['page' => ($current_page??1)+1, 'search' => $search??'']) ?>" class="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-all border border-slate-700/50">Next →</a>
+            <a href="?<?= http_build_query(['page' => ($current_page??1)+1, 'search' => $search??'', 'role_id' => $role_id??'']) ?>" class="px-3 py-1.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-all border border-slate-700/50">Next →</a>
             <?php endif; ?>
         </div>
     </div>

@@ -550,3 +550,7 @@
 [18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 70
 [18-Jun-2026 13:33:10 Europe/Berlin] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 72
 [19-Jun-2026 11:52:09 Asia/Kolkata] PHP Warning:  Undefined variable $studentListJson in C:\xampp\htdocs\psnf\resources\views\driver\dashboard.php on line 756
+[21-Jun-2026 12:00:40 Asia/Kolkata] PHP Deprecated:  urlencode(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\classes\index.php on line 29
+[21-Jun-2026 12:15:00 Asia/Kolkata] PHP Deprecated:  urlencode(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\classes\index.php on line 29
+[21-Jun-2026 13:13:58 Asia/Kolkata] PHP Deprecated:  urlencode(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\classes\index.php on line 29
+[21-Jun-2026 13:14:09 Asia/Kolkata] PHP Deprecated:  urlencode(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\classes\index.php on line 29

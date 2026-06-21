@@ -35,18 +35,14 @@ function selectClassE(string $field, array $errors = []): string {
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
             <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Personal Information</h3>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">First Name <span class="text-red-400">*</span></label>
-                    <input type="text" name="first_name" value="<?= e($s['first_name']) ?>" required class="<?= inputClassE('first_name') ?>">
+                    <label class="block text-xs font-medium text-slate-400">Full Name <span class="text-red-400">*</span></label>
+                    <input type="text" name="full_name" value="<?= e(trim(($s['first_name'] ?? '') . ' ' . ($s['middle_name'] ?? '') . ' ' . ($s['last_name'] ?? ''))) ?>" required class="<?= inputClassE('full_name') ?>" placeholder="Full name">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Middle Name</label>
-                    <input type="text" name="middle_name" value="<?= e($s['middle_name'] ?? '') ?>" class="<?= inputClassE('middle_name') ?>">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Last Name <span class="text-red-400">*</span></label>
-                    <input type="text" name="last_name" value="<?= e($s['last_name']) ?>" required class="<?= inputClassE('last_name') ?>">
+                    <label class="block text-xs font-medium text-slate-400">Student Image</label>
+                    <input type="file" name="photo" accept=".png,.jpg,.jpeg" class="w-full bg-slate-900/70 border border-slate-700/60 text-slate-400 placeholder-slate-500 rounded-xl py-2 px-4 text-sm focus:outline-none focus:ring-1 transition-all file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-600/20 file:text-brand-400 hover:file:bg-brand-600/30 cursor-pointer">
                 </div>
             </div>
 
@@ -153,6 +149,63 @@ function selectClassE(string $field, array $errors = []): string {
             <div class="space-y-1.5">
                 <label class="block text-xs font-medium text-slate-400">Special Needs Summary</label>
                 <textarea name="special_needs_summary" rows="2" class="<?= inputClassE('special_needs_summary') ?>"><?= e($s['special_needs_summary']??'') ?></textarea>
+            </div>
+        </div>
+
+        <!-- Guardian Details -->
+        <?php $primaryGuardian = !empty($s['guardians']) ? $s['guardians'][0] : []; ?>
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Primary Guardian / Parent</h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Guardian Name</label>
+                    <input type="text" name="guardian_name" value="<?= e($primaryGuardian['name'] ?? '') ?>" class="<?= inputClassE('guardian_name') ?>" placeholder="Full name">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Relationship</label>
+                    <select name="guardian_relationship" class="<?= selectClassE('guardian_relationship') ?>">
+                        <option value="">Select</option>
+                        <?php foreach (['Father', 'Mother', 'Guardian', 'Sibling', 'Grandparent', 'Other'] as $r): ?>
+                        <option value="<?= $r ?>" <?= ($primaryGuardian['relationship'] ?? '') === $r ? 'selected' : '' ?>><?= $r ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Phone Number</label>
+                    <input type="tel" name="guardian_phone" value="<?= e($primaryGuardian['phone'] ?? '') ?>" class="<?= inputClassE('guardian_phone') ?>" placeholder="+91 XXXXX XXXXX">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Email</label>
+                    <input type="email" name="guardian_email" value="<?= e($primaryGuardian['email'] ?? '') ?>" class="<?= inputClassE('guardian_email') ?>" placeholder="parent@email.com">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Aadhaar Card Number</label>
+                    <input type="text" name="guardian_aadhar" value="<?= e($primaryGuardian['aadhar'] ?? '') ?>" class="<?= inputClassE('guardian_aadhar') ?>" placeholder="XXXX XXXX XXXX" maxlength="14">
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical Information -->
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Medical Information</h3>
+            
+            <div class="space-y-1.5">
+                <label class="block text-xs font-medium text-slate-400">Known Allergies</label>
+                <textarea name="allergies" rows="2" class="<?= inputClassE('allergies') ?>" placeholder="List known allergies..."><?= e($s['medical']['allergies'] ?? '') ?></textarea>
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="block text-xs font-medium text-slate-400">Triggers / Sensitivities</label>
+                <textarea name="triggers" rows="2" class="<?= inputClassE('triggers') ?>" placeholder="Known behavioral triggers, sensory sensitivities..."><?= e($s['medical']['triggers'] ?? '') ?></textarea>
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="block text-xs font-medium text-slate-400">Current Medications</label>
+                <textarea name="medications" rows="2" class="<?= inputClassE('medications') ?>" placeholder="Medication name, dosage, frequency..."><?= e($s['medical']['current_medications'] ?? '') ?></textarea>
             </div>
         </div>
 

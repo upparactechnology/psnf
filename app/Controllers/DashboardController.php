@@ -14,11 +14,34 @@ class DashboardController extends Controller
         if (has_role('parent')) {
             $this->redirect('/parent/dashboard');
         }
+        if (has_role('teacher')) {
+            $this->redirect('/teacher/dashboard');
+        }
 
-        $user     = $this->auth();
+        $sessionUser = $this->auth();
+        $db = \Core\Application::$app->db;
+
+        // Load fresh user data to get updated settings
+        $user = User::find($sessionUser['id']);
         $tenantId = $user['tenant_id'];
 
-        $db = \Core\Application::$app->db;
+        // Determine assigned apps
+        $assignedApps = [];
+        $hasAppAccessRecords = $db->selectOne("SELECT 1 FROM user_apps WHERE user_id = ?", [$user['id']]);
+        
+        if ($hasAppAccessRecords) {
+            $userApps = $db->select("SELECT app_name FROM user_apps WHERE user_id = ?", [$user['id']]);
+            $assignedApps = array_column($userApps, 'app_name');
+        } else {
+            // Default: if no assignment exists and user is admin/manager, grant all apps.
+            // Teachers with no assignments get none.
+            if (has_role('super_admin') || has_role('school_admin') || has_role('manager')) {
+                $assignedApps = [
+                    'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
+                    'transport', 'file_manager', 'games', 'config'
+                ];
+            }
+        }
 
         $stats = [
             'total_students'  => (int) ($db->selectOne("SELECT COUNT(*) as c FROM students WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
@@ -36,6 +59,8 @@ class DashboardController extends Controller
             [$tenantId]
         );
 
-        return $this->view('dashboard/index', compact('stats', 'statusCounts', 'recentLogs', 'recentStudents', 'user'));
+        return $this->view('dashboard/index', compact(
+            'stats', 'statusCounts', 'recentLogs', 'recentStudents', 'user', 'assignedApps'
+        ));
     }
 }

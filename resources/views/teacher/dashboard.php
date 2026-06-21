@@ -1,26 +1,44 @@
 <?php
 $layout    = 'app';
-$pageTitle = 'Portal Home';
-$breadcrumbs = [['label' => 'Portal Home']];
+$pageTitle = 'Teacher Dashboard';
+$breadcrumbs = [['label' => 'Teacher Dashboard']];
 ob_start();
 ?>
 
-<div x-data="{ showLogs: false }" class="max-w-6xl mx-auto space-y-8">
+<div class="max-w-6xl mx-auto space-y-8">
 
     <!-- Header section -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl border border-slate-200 dark:border-slate-800/50 bg-white dark:bg-slate-900/30 backdrop-blur">
         <div>
-            <h2 class="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Welcome, <?= e(auth()['name'] ?? 'Administrator') ?>!</h2>
+            <h2 class="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">Welcome, <?= e(auth()['name'] ?? 'Teacher') ?>!</h2>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Select an application from the launcher below to get started.</p>
-        </div>
-        <div class="flex items-center gap-3">
-            <button @click="showLogs = true" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all border border-slate-200 dark:border-slate-700/50 shadow-md">
-                <svg class="w-4.5 h-4.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                Audit Trail Logs
-            </button>
         </div>
     </div>
 
+    <!-- Teacher Attendance Info Box -->
+    <?php if (isset($teacherAttendance) && $teacherAttendance): ?>
+        <?php if ($teacherAttendance['status'] === 'late'): ?>
+        <div class="flex items-center gap-3 p-5 rounded-2xl border border-red-750/30 bg-red-950/20 text-red-400 backdrop-blur shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-red-900/30 flex items-center justify-center flex-shrink-0 border border-red-700/30">
+                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+                <p class="text-sm font-semibold leading-none">Today's Attendance: <span class="text-red-500 font-bold uppercase">Late Check-in</span></p>
+                <p class="text-xs text-red-400/80 mt-1">Checked in at <?= date('h:i A', strtotime($teacherAttendance['opened_at'])) ?> (Lecture Time: <?= date('h:i A', strtotime($teacherAttendance['lecture_time'])) ?> + <?= $teacherAttendance['grace_period'] ?>m grace period)</p>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="flex items-center gap-3 p-5 rounded-2xl border border-emerald-700/30 bg-emerald-950/20 text-emerald-400 backdrop-blur shadow-sm">
+            <div class="w-10 h-10 rounded-xl bg-emerald-900/30 flex items-center justify-center flex-shrink-0 border border-emerald-700/30">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div>
+                <p class="text-sm font-semibold leading-none">Today's Attendance: <span class="text-emerald-500 font-bold uppercase">On Time</span></p>
+                <p class="text-xs text-emerald-400/80 mt-1">Checked in at <?= date('h:i A', strtotime($teacherAttendance['opened_at'])) ?> (Lecture Time: <?= date('h:i A', strtotime($teacherAttendance['lecture_time'])) ?>)</p>
+            </div>
+        </div>
+        <?php endif; ?>
+    <?php endif; ?>
 
     <!-- Odoo style App Launcher Grid -->
     <div>
@@ -147,20 +165,6 @@ ob_start();
             </a>
             <?php endif; ?>
 
-            <!-- 9. System Config -->
-            <?php if (in_array('config', $assignedApps)): ?>
-            <a href="<?= url('roles') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-slate-500/30 dark:hover:border-slate-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
-                <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-slate-600 to-slate-800 shadow-lg group-hover:scale-105 transition-transform duration-300 mb-3.5">
-                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                </div>
-                <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors">System Config</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Settings</span>
-            </a>
-            <?php endif; ?>
-
             <!-- Fallback if empty -->
             <?php if (empty($assignedApps)): ?>
             <div class="col-span-full rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/20 p-12 text-center shadow-sm">
@@ -176,125 +180,95 @@ ob_start();
     <!-- Overview Stats Pane -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
 
-        <!-- Admission Pipeline Widget -->
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 p-6 shadow-sm">
-            <h3 class="text-base font-semibold text-slate-800 dark:text-white mb-5">Admissions Pipeline</h3>
-            <?php
-            $pipeline = [
-                ['key' => 'applied',    'label' => 'Applied',    'color' => 'bg-slate-500'],
-                ['key' => 'review',     'label' => 'Under Review','color' => 'bg-yellow-500'],
-                ['key' => 'assessment', 'label' => 'Assessment', 'color' => 'bg-blue-500'],
-                ['key' => 'approved',   'label' => 'Approved',   'color' => 'bg-emerald-500'],
-                ['key' => 'enrolled',   'label' => 'Enrolled',   'color' => 'bg-brand-500'],
-            ];
-            $total = array_sum($statusCounts) ?: 1;
-            foreach ($pipeline as $stage):
-                $count = $statusCounts[$stage['key']] ?? 0;
-                $pct   = round(($count / $total) * 100);
-            ?>
-            <div class="mb-4 last:mb-0">
-                <div class="flex items-center justify-between mb-1.5">
-                    <span class="text-sm text-slate-600 dark:text-slate-300"><?= $stage['label'] ?></span>
-                    <span class="text-sm font-semibold text-slate-800 dark:text-white"><?= $count ?></span>
+        <!-- Today's Class Schedule Widget -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 p-6 shadow-sm flex flex-col">
+            <div class="flex items-center gap-2.5 mb-5">
+                <div class="w-9 h-9 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 flex items-center justify-center text-brand-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
-                <div class="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div class="h-2 <?= $stage['color'] ?> rounded-full transition-all duration-700" style="width: <?= $pct ?>%"></div>
+                <div>
+                    <h3 class="text-base font-semibold text-slate-800 dark:text-white">Today's Class Schedule</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"><?= date('l, d M Y') ?></p>
                 </div>
             </div>
-            <?php endforeach; ?>
-        </div>
-
-        <!-- Recent Registries Widget -->
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-5">
-                <h3 class="text-base font-semibold text-slate-800 dark:text-white">Recent Student Applications</h3>
-                <a href="<?= url('students') ?>" class="text-xs text-brand-500 dark:text-brand-400 hover:text-brand-600 dark:hover:text-brand-300 font-medium transition-colors">View All →</a>
-            </div>
-            <?php if (empty($recentStudents)): ?>
-            <div class="text-center py-10">
-                <p class="text-sm text-slate-500">No applications recently.</p>
+            <?php if (empty($teacherSchedule)): ?>
+            <div class="flex-1 flex flex-col items-center justify-center py-10 text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                    <svg class="w-6 h-6 text-slate-400 dark:text-slate-555" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                </div>
+                <p class="text-sm font-medium text-slate-850 dark:text-slate-200">No lectures scheduled for today.</p>
+                <p class="text-2xs text-slate-500 mt-0.5">Enjoy your free day or prepare your materials.</p>
             </div>
             <?php else: ?>
-            <div class="space-y-3">
-                <?php foreach (array_slice($recentStudents, 0, 4) as $s): ?>
-                <?php
-                $statusClasses = [
-                    'applied'    => 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600/30',
-                    'review'     => 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700/30',
-                    'assessment' => 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700/30',
-                    'approved'   => 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700/30',
-                    'enrolled'   => 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-700/30',
-                    'withdrawn'  => 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700/30',
-                ];
-                $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600/30';
-                ?>
-                <a href="<?= url('students/' . $s['id']) ?>" class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-colors group">
-                    <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 text-white"
-                         style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-                        <?= strtoupper(substr($s['first_name'], 0, 1) . substr($s['last_name'], 0, 1)) ?>
+            <div class="space-y-4 flex-1">
+                <?php foreach ($teacherSchedule as $item): ?>
+                <div class="flex items-center justify-between p-4 rounded-xl border border-slate-150 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-900/20 hover:border-brand-500/20 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all duration-200">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 flex flex-col items-center justify-center text-brand-600 dark:text-brand-400 font-bold shrink-0">
+                            <span class="text-xs"><?= date('g:i', strtotime($item['start_time'])) ?></span>
+                            <span class="text-3xs uppercase tracking-wider"><?= date('A', strtotime($item['start_time'])) ?></span>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-semibold text-slate-800 dark:text-white"><?= e($item['subject']) ?></h4>
+                            <div class="flex items-center gap-2 mt-1 text-xs text-slate-550 dark:text-slate-400">
+                                <span><?= e($item['class']) ?><?= $item['section'] ? ' - ' . e($item['section']) : '' ?></span>
+                                <?php if ($item['room']): ?>
+                                <span>•</span>
+                                <span class="flex items-center gap-0.5">
+                                    <svg class="w-3.5 h-3.5 inline text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    Room <?= e($item['room']) ?>
+                                </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-slate-800 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-300 transition-colors">
-                            <?= e($s['first_name'] . ' ' . $s['last_name']) ?>
-                        </p>
-                        <p class="text-xs text-slate-500 font-mono"><?= e($s['admission_number'] ?? 'No ADM#') ?></p>
+                    <div class="text-right">
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30">
+                            <?= date('h:i A', strtotime($item['start_time'])) ?> - <?= date('h:i A', strtotime($item['end_time'])) ?>
+                        </span>
                     </div>
-                    <span class="text-2xs px-2 py-0.5 rounded-full font-medium border <?= $sc ?>">
-                        <?= ucfirst($s['admission_status']) ?>
-                    </span>
-                </a>
+                </div>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
         </div>
-    </div>
 
-    <!-- Slide-over Drawer for Audit Logs -->
-    <div x-show="showLogs" class="fixed inset-0 overflow-hidden z-[9999]" x-cloak>
-        <div class="absolute inset-0 overflow-hidden">
-            <!-- Backdrop -->
-            <div x-show="showLogs" x-transition:enter="ease-in-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in-out duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" @click="showLogs = false"></div>
-
-            <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
-                <div x-show="showLogs" x-transition:enter="transform transition ease-in-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transform transition ease-in-out duration-300" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full" class="w-screen max-w-md">
-                    <div class="h-full flex flex-col bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl overflow-y-scroll">
-                        <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                            <div>
-                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Audit Trail Logs</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">Recent system activity records</p>
-                            </div>
-                            <button @click="showLogs = false" class="p-1 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </div>
-                        <div class="flex-1 p-6 space-y-4">
-                            <?php if (empty($recentLogs)): ?>
-                            <p class="text-sm text-slate-500 py-6 text-center">No recent activity logs.</p>
-                            <?php else: ?>
-                            <div class="space-y-4">
-                                <?php foreach ($recentLogs as $log): ?>
-                                <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/20">
-                                    <div class="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0 mt-1.5"></div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-semibold text-slate-800 dark:text-white truncate"><?= e(str_replace('_', ' ', $log['event'])) ?></p>
-                                        <?php if ($log['description']): ?>
-                                        <p class="text-xs text-slate-650 dark:text-slate-400 mt-0.5 leading-relaxed"><?= e($log['description']) ?></p>
-                                        <?php endif; ?>
-                                        <div class="flex items-center gap-2 mt-2 text-2xs text-slate-500">
-                                            <span class="font-medium text-slate-700 dark:text-slate-500"><?= e($log['user_name'] ?? 'System') ?></span>
-                                            <span>·</span>
-                                            <span><?= format_date($log['created_at'], 'd M Y, H:i') ?></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+        <!-- Recent Announcements Widget -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/40 p-6 shadow-sm flex flex-col">
+            <div class="flex items-center gap-2.5 mb-5">
+                <div class="w-9 h-9 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 flex items-center justify-center text-amber-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-slate-800 dark:text-white">Recent Announcements</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Important notices & updates</p>
                 </div>
             </div>
+            <?php if (empty($announcements)): ?>
+            <div class="flex-1 flex flex-col items-center justify-center py-10 text-center">
+                <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                    <svg class="w-6 h-6 text-slate-400 dark:text-slate-550" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <p class="text-sm font-medium text-slate-850 dark:text-slate-200">No announcements posted yet.</p>
+                <p class="text-2xs text-slate-500 mt-0.5">Keep an eye out for updates from the school admin.</p>
+            </div>
+            <?php else: ?>
+            <div class="space-y-4 flex-1">
+                <?php foreach ($announcements as $ann): ?>
+                <div class="p-4 rounded-xl border border-slate-150 dark:border-slate-800/40 bg-slate-50/50 dark:bg-slate-900/20 hover:border-amber-500/20 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-all duration-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-semibold text-slate-800 dark:text-white"><?= e($ann['title']) ?></h4>
+                        <span class="text-3xs text-slate-500 dark:text-slate-450 font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-800/60 px-2 py-0.5 rounded-full">
+                            <?= date('d M Y', strtotime($ann['published_at'])) ?>
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-650 dark:text-slate-400 leading-relaxed"><?= nl2br(e($ann['content'])) ?></p>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
         </div>
+
     </div>
 
 </div>

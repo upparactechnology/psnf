@@ -20,7 +20,16 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
         <a href="<?= url('users') ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
     </div>
 
-    <form method="POST" action="<?= url('users') ?>" x-data="{ loading: false, showPass: false }" @submit="loading = true">
+    <?php
+    $oldRoleIds = array_map('intval', $old['roles'] ?? []);
+    $oldRoleSlugs = [];
+    foreach ($roles as $role) {
+        if (in_array((int)$role['id'], $oldRoleIds)) {
+            $oldRoleSlugs[] = $role['slug'];
+        }
+    }
+    ?>
+    <form method="POST" action="<?= url('users') ?>" x-data="{ loading: false, showPass: false, selectedRoleSlugs: <?= json_encode($oldRoleSlugs) ?> }" @submit="loading = true">
         <?= \Core\View::csrf() ?>
 
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
@@ -89,6 +98,22 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
                     <?= eMsg('branch_id',$errors) ?>
                 </div>
             </div>
+            <!-- Teacher settings -->
+            <div class="border-t border-slate-800/60 pt-4 mt-4 space-y-4">
+                <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Teacher Attendance Settings</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Lecture Start Time</label>
+                        <input type="time" name="lecture_time" value="<?= e($fn('lecture_time')) ?>" class="<?= iClass('lecture_time',$errors) ?>">
+                        <p class="text-3xs text-slate-500">Only required for teachers to check daily attendance.</p>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Grace Period (Minutes)</label>
+                        <input type="number" name="grace_period" min="0" value="<?= e($fn('grace_period') ?: '5') ?>" class="<?= iClass('grace_period',$errors) ?>" placeholder="e.g. 5">
+                        <p class="text-3xs text-slate-500">Allowed delay (in minutes) before marked as Late.</p>
+                    </div>
+                </div>
+            </div>
 
             <div class="space-y-1.5">
                 <label class="block text-xs font-medium text-slate-400">Active Status</label>
@@ -105,8 +130,25 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <?php foreach ($roles as $role): ?>
                 <label class="flex items-center gap-2 cursor-pointer p-3 rounded-xl border border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/30 transition-all">
-                    <input type="checkbox" name="roles[]" value="<?= $role['id'] ?>" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500/30">
+                    <input type="checkbox" name="roles[]" value="<?= $role['id'] ?>"
+                           :checked="selectedRoleSlugs.includes('<?= $role['slug'] ?>')"
+                           @change="if ($el.checked) { if (!selectedRoleSlugs.includes('<?= $role['slug'] ?>')) selectedRoleSlugs.push('<?= $role['slug'] ?>') } else { selectedRoleSlugs = selectedRoleSlugs.filter(s => s !== '<?= $role['slug'] ?>') }"
+                           class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500/30">
                     <span class="text-sm text-slate-300"><?= e($role['name']) ?></span>
+                </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- Applications -->
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 mb-5">
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3 mb-4"
+                x-text="'Assign Applications' + (selectedRoleSlugs.includes('parent') ? ' (for Mobile Application)' : (selectedRoleSlugs.includes('staff') ? ' (for Admin Dashboard)' : ''))">Assign Applications</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <?php foreach ($apps as $appKey => $appName): ?>
+                <label class="flex items-center gap-2 cursor-pointer p-3 rounded-xl border border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/30 transition-all">
+                    <input type="checkbox" name="apps[]" value="<?= $appKey ?>" <?= in_array($appKey, $fn('apps') ?: []) ? 'checked' : '' ?> class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500/30">
+                    <span class="text-sm text-slate-300"><?= e($appName) ?></span>
                 </label>
                 <?php endforeach; ?>
             </div>

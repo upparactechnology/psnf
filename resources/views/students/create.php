@@ -48,20 +48,16 @@ $fn      = fn($key) => $old[$key] ?? '';
             <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5">
                 <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Personal Information</h3>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">First Name <span class="text-red-400">*</span></label>
-                        <input type="text" name="first_name" value="<?= e($fn('first_name')) ?>" required class="<?= inputClass('first_name', $errors) ?>" placeholder="First name">
-                        <?= errorMsg('first_name', $errors) ?>
+                        <label class="block text-xs font-medium text-slate-400">Full Name <span class="text-red-400">*</span></label>
+                        <input type="text" name="full_name" value="<?= e($fn('full_name')) ?>" required class="<?= inputClass('full_name', $errors) ?>" placeholder="Full name">
+                        <?= errorMsg('full_name', $errors) ?>
                     </div>
                     <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Middle Name</label>
-                        <input type="text" name="middle_name" value="<?= e($fn('middle_name')) ?>" class="<?= inputClass('middle_name', $errors) ?>" placeholder="Middle name">
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Last Name <span class="text-red-400">*</span></label>
-                        <input type="text" name="last_name" value="<?= e($fn('last_name')) ?>" required class="<?= inputClass('last_name', $errors) ?>" placeholder="Last name">
-                        <?= errorMsg('last_name', $errors) ?>
+                        <label class="block text-xs font-medium text-slate-400">Student Image</label>
+                        <input type="file" name="photo" accept=".png,.jpg,.jpeg" class="w-full bg-slate-900/70 border border-slate-700/60 text-slate-400 placeholder-slate-500 rounded-xl py-2 px-4 text-sm focus:outline-none focus:ring-1 transition-all file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-600/20 file:text-brand-400 hover:file:bg-brand-600/30 cursor-pointer">
+                        <?= errorMsg('photo', $errors) ?>
                     </div>
                 </div>
 
@@ -205,7 +201,7 @@ $fn      = fn($key) => $old[$key] ?? '';
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Phone Number</label>
                         <input type="tel" name="guardian_phone" value="<?= e($fn('guardian_phone')) ?>" class="<?= inputClass('guardian_phone', $errors) ?>" placeholder="+91 XXXXX XXXXX">
@@ -213,6 +209,10 @@ $fn      = fn($key) => $old[$key] ?? '';
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Email</label>
                         <input type="email" name="guardian_email" value="<?= e($fn('guardian_email')) ?>" class="<?= inputClass('guardian_email', $errors) ?>" placeholder="parent@email.com">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Aadhaar Card Number</label>
+                        <input type="text" name="guardian_aadhar" value="<?= e($fn('guardian_aadhar')) ?>" class="<?= inputClass('guardian_aadhar', $errors) ?>" placeholder="XXXX XXXX XXXX" maxlength="14">
                     </div>
                 </div>
             </div>

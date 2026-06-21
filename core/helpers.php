@@ -225,9 +225,12 @@ if (!function_exists('e')) {
 if (!function_exists('dashboard_url')) {
     function dashboard_url(): string
     {
-        if (has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher') || has_role('therapist') || has_role('staff')) {
-            return '/dashboard';
+        if (has_role('teacher')) {
+            return '/teacher/dashboard';
         }
-        return has_role('parent') ? '/parent/dashboard' : '/dashboard';
+        if (has_role('parent')) {
+            return '/parent/dashboard';
+        }
+        return '/dashboard';
     }
 }
