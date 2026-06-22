@@ -12,12 +12,16 @@ class RoleController extends Controller
     public function index(): string
     {
         $roles = Role::allWithPermissionCount();
+        $roles = array_filter($roles, function($role) {
+            return !in_array($role['slug'], ['school_admin', 'manager', 'therapist', 'student']);
+        });
         return $this->view('roles/index', ['roles' => $roles]);
     }
 
     public function create(): string
     {
         $permissions = Permission::allGroupedByModule();
+        unset($permissions['branches'], $permissions['schools'], $permissions['tenants']);
         return $this->view('roles/create', ['permissions' => $permissions]);
     }
 
@@ -44,6 +48,7 @@ class RoleController extends Controller
     {
         $role        = Role::withPermissions((int) $id);
         $permissions = Permission::allGroupedByModule();
+        unset($permissions['branches'], $permissions['schools'], $permissions['tenants']);
         return $this->view('roles/edit', compact('role', 'permissions'));
     }
 

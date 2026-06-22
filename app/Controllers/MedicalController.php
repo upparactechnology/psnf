@@ -20,6 +20,7 @@ class MedicalController extends Controller
         $search   = $this->request->get('search', '');
         $page     = (int) $this->request->get('page', 1);
         $disability = $this->request->get('disability', '');
+        $classFilter = $this->request->get('class', '');
         
         $perPage = 15;
         $offset = ($page - 1) * $perPage;
@@ -40,6 +41,11 @@ class MedicalController extends Controller
             $where[] = "s.disability_type = ?";
             $params[] = $disability;
         }
+
+        if ($classFilter) {
+            $where[] = "s.class = ?";
+            $params[] = $classFilter;
+        }
         
         $whereClause = implode(" AND ", $where);
         
@@ -50,7 +56,7 @@ class MedicalController extends Controller
         ", $params)['cnt'] ?? 0);
         
         $students = $this->db()->select("
-            SELECT s.id, s.first_name, s.last_name, s.dob, s.gender, s.admission_number, s.blood_group, s.disability_type, s.photo,
+            SELECT s.id, s.first_name, s.last_name, s.dob, s.gender, s.admission_number, s.blood_group, s.disability_type, s.photo, s.class,
                    sm.allergies, sm.allergy_severity, sm.triggers, sm.current_medications, sm.medical_conditions, 
                    sm.care_instructions, sm.emergency_protocols, sm.doctor_name, sm.doctor_phone, sm.hospital_name,
                    sm.insurance_provider, sm.insurance_number, sm.blood_pressure, sm.weight_kg, sm.height_cm, sm.dietary_restrictions
@@ -66,7 +72,16 @@ class MedicalController extends Controller
         // Fetch list of disability types for filter dropdown
         $disabilities = ['ASD', 'ADHD', 'Down Syndrome', 'Cerebral Palsy', 'Dyslexia', 'Intellectual Disability', 'Hearing Impairment', 'Visual Impairment', 'Multiple Disabilities', 'Other'];
 
-        return $this->view('medical/index', compact('students', 'total', 'page', 'lastPage', 'search', 'disability', 'disabilities', 'offset', 'perPage'));
+        // Fetch list of distinct classes
+        $classList = $this->db()->select("
+            SELECT DISTINCT class 
+            FROM students 
+            WHERE tenant_id = ? AND deleted_at IS NULL AND class IS NOT NULL AND class != ''
+            ORDER BY class ASC
+        ", [$tenantId]);
+        $classes = array_column($classList, 'class');
+
+        return $this->view('medical/index', compact('students', 'total', 'page', 'lastPage', 'search', 'disability', 'disabilities', 'offset', 'perPage', 'classFilter', 'classes'));
     }
 
     public function store(string $id): string

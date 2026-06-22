@@ -1,7 +1,7 @@
 <?php
 $layout    = 'app';
-$pageTitle = 'Medical Logs & Care Profiles';
-$breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Medical Logs']];
+$pageTitle = 'Medical & Care';
+$breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Medical & Care']];
 ob_start();
 ?>
 
@@ -51,6 +51,18 @@ ob_start();
     }
 }" class="space-y-6">
 
+    <!-- View Switcher Tabs -->
+    <div class="flex items-center border-b border-slate-800 gap-6">
+        <a href="<?= url('medical') ?>"
+           class="flex items-center gap-2 py-3 px-1 border-b-2 font-bold text-sm transition-all focus:outline-none border-red-500 text-red-400">
+            <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            All Student Medical
+            <span class="inline-flex items-center justify-center px-2 py-0.5 ml-1 text-2xs font-semibold rounded-full bg-red-950/40 text-red-400 border border-red-900/30">
+                <?= $total ?>
+            </span>
+        </a>
+    </div>
+
     <!-- Header section (Dynamic filters only, main heading rendered by layout app.php) -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
         <form method="GET" action="<?= url('medical') ?>" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
@@ -62,8 +74,16 @@ ob_start();
                        class="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
             </div>
             
-            <select name="disability" onchange="this.form.submit()"
+            <select name="class" onchange="this.form.submit()"
                     class="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
+                <option value="">All Classes</option>
+                <?php foreach ($classes as $c): ?>
+                    <option value="<?= e($c) ?>" <?= $classFilter === $c ? 'selected' : '' ?>><?= e($c) ?></option>
+                <?php endforeach; ?>
+            </select>
+            
+            <select name="disability" onchange="this.form.submit()"
+                    class="bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
                 <option value="">All Special Needs</option>
                 <?php foreach ($disabilities as $d): ?>
                     <option value="<?= $d ?>" <?= $disability === $d ? 'selected' : '' ?>><?= $d ?></option>
@@ -129,7 +149,7 @@ ob_start();
                                             <?= e($s['first_name'] . ' ' . $s['last_name']) ?>
                                         </a>
                                         <p class="text-xs text-slate-500 font-mono mt-0.5"><?= e($s['admission_number']) ?></p>
-                                        <p class="text-3xs text-slate-400 mt-1"><?= age($s['dob']) ?> · <?= ucfirst($s['gender']) ?></p>
+                                        <p class="text-3xs text-slate-400 mt-1"><?= age($s['dob']) ?> · <?= ucfirst($s['gender']) ?><?php if (!empty($s['class'])): ?> · Class: <?= e($s['class']) ?><?php endif; ?></p>
                                         <span class="inline-flex text-3xs font-semibold px-2 py-0.5 rounded border mt-2 <?= $dc ?>">
                                             <?= $s['disability_type'] ?>
                                         </span>

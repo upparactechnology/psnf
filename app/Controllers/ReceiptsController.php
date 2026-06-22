@@ -18,19 +18,37 @@ class ReceiptsController extends Controller
     {
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
+        $search = $this->request->get('search', '');
 
-        // Fetch all fee payment records along with invoice and student names
+        $where = ["fp.tenant_id = ?"];
+        $params = [$tenantId];
+
+        if ($search) {
+            $cleanedSearch = trim($search);
+            if (preg_match('/^rec-0*(\d+)$/i', $cleanedSearch, $matches)) {
+                $receiptId = (int)$matches[1];
+                $where[] = "(fp.id = ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR fi.invoice_number LIKE ? OR fp.payment_ref LIKE ?)";
+                array_push($params, $receiptId, "%$search%", "%$search%", "%$search%", "%$search%");
+            } else {
+                $where[] = "(s.first_name LIKE ? OR s.last_name LIKE ? OR fi.invoice_number LIKE ? OR fp.payment_ref LIKE ? OR fp.id LIKE ?)";
+                array_push($params, "%$search%", "%$search%", "%$search%", "%$search%", "%$search%");
+            }
+        }
+
+        $whereClause = implode(" AND ", $where);
+
+        // Fetch fee payment records along with invoice and student names matching search
         $payments = $db->select(
             "SELECT fp.*, fi.invoice_number, fi.title as invoice_title, s.first_name, s.last_name, s.admission_number 
              FROM fee_payments fp
              JOIN fee_invoices fi ON fp.invoice_id = fi.id
              JOIN students s ON fi.student_id = s.id
-             WHERE fp.tenant_id = ?
+             WHERE $whereClause
              ORDER BY fp.paid_at DESC, fp.created_at DESC",
-            [$tenantId]
+            $params
         );
 
-        return $this->view('receipts/index', compact('payments'));
+        return $this->view('receipts/index', compact('payments', 'search'));
     }
 
     public function show(string $id): string

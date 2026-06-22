@@ -585,9 +585,6 @@ class ParentPortalController extends Controller
         // Log to Student Timeline
         $this->db()->insert('student_timeline', [
             'student_id'  => $student['id'],
-            'tenant_id'   => $student['tenant_id'],
-            'school_id'   => $student['school_id'],
-            'branch_id'   => $student['branch_id'],
             'event_type'  => 'fee_payment',
             'title'       => 'Fee Payment Successful',
             'description' => "Paid {$amount} INR for '{$invoice['title']}' via {$method}. Ref: {$ref}.",
@@ -654,9 +651,6 @@ class ParentPortalController extends Controller
         // Log event
         $this->db()->insert('student_timeline', [
             'student_id'  => $student['id'],
-            'tenant_id'   => $student['tenant_id'],
-            'school_id'   => $student['school_id'],
-            'branch_id'   => $student['branch_id'],
             'event_type'  => 'profile_update',
             'title'       => 'Emergency Contact Updated',
             'description' => "Emergency contact set to {$name} ({$relation}) by Parent.",

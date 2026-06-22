@@ -275,9 +275,6 @@ class TransportController extends Controller
         if ($student) {
             $this->db()->insert('student_timeline', [
                 'student_id'  => $studentId,
-                'tenant_id'   => $student['tenant_id'],
-                'school_id'   => $student['school_id'],
-                'branch_id'   => $student['branch_id'],
                 'event_type'  => 'transport',
                 'title'       => 'Transport Assigned',
                 'description' => "Assigned to route '{$route['route_name']}' ({$route['bus_number']}). Pickup: {$pickupPoint} at {$pickupTime}.",

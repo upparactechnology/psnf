@@ -140,7 +140,26 @@ if ($user) {
     $hasAppAccessRecords = $db->selectOne("SELECT 1 FROM user_apps WHERE user_id = ?", [$user['id']]);
     if ($hasAppAccessRecords) {
         $userApps = $db->select("SELECT app_name FROM user_apps WHERE user_id = ?", [$user['id']]);
-        $assignedApps = array_column($userApps, 'app_name');
+        $rawApps = array_column($userApps, 'app_name');
+        foreach ($rawApps as $rawApp) {
+            if ($rawApp === 'staff_dashboard') {
+                $assignedApps = array_merge($assignedApps, [
+                    'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
+                    'transport', 'file_manager', 'games', 'config'
+                ]);
+            } elseif ($rawApp === 'driver_app') {
+                $assignedApps[] = 'transport';
+            } elseif ($rawApp === 'teacher_app') {
+                $assignedApps = array_merge($assignedApps, [
+                    'academic', 'academic_summary', 'medical', 'games'
+                ]);
+            } elseif ($rawApp === 'parents_dashboard') {
+                // Parents dashboard doesn't need admin launcher items
+            } else {
+                $assignedApps[] = $rawApp;
+            }
+        }
+        $assignedApps = array_unique($assignedApps);
     } else {
         if (has_role('super_admin') || has_role('school_admin') || has_role('manager')) {
             $assignedApps = [
@@ -289,11 +308,9 @@ if ($user) {
                 <?php if (in_array('access_control', $assignedApps)): ?>
                     <?php navLink('/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
                 <?php endif; ?>
-                <?php if (in_array('file_manager', $assignedApps)): ?>
-                    <?php navLink('../file manager/public/', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>', 'File Manager', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
+
                 <?php if (in_array('config', $assignedApps)): ?>
-                    <?php navLink('/settings', $ic['settings'], 'Settings', $currentPath, $sidebarOpen, true); ?>
+                    <?php navLink('/settings', $ic['settings'], 'Settings', $currentPath, $sidebarOpen); ?>
                 <?php endif; ?>
             <?php elseif ($module === 'medical'): ?>
                 <?php if (in_array('medical', $assignedApps)): ?>

@@ -83,12 +83,31 @@ class TeacherPortalController extends Controller
         
         if ($hasAppAccessRecords) {
             $userApps = $db->select("SELECT app_name FROM user_apps WHERE user_id = ?", [$user['id']]);
-            $assignedApps = array_column($userApps, 'app_name');
+            $rawApps = array_column($userApps, 'app_name');
+            foreach ($rawApps as $rawApp) {
+                if ($rawApp === 'staff_dashboard') {
+                    $assignedApps = array_merge($assignedApps, [
+                        'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
+                        'transport', 'file_manager', 'games', 'config'
+                    ]);
+                } elseif ($rawApp === 'driver_app') {
+                    $assignedApps[] = 'transport';
+                } elseif ($rawApp === 'teacher_app') {
+                    $assignedApps = array_merge($assignedApps, [
+                        'academic', 'academic_summary', 'medical', 'games'
+                    ]);
+                } elseif ($rawApp === 'parents_dashboard') {
+                    // Parents dashboard doesn't need admin launcher items
+                } else {
+                    $assignedApps[] = $rawApp;
+                }
+            }
+            $assignedApps = array_unique($assignedApps);
         }
 
         $stats = [
             'total_students'  => (int) ($db->selectOne("SELECT COUNT(*) as c FROM students WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
-            'total_users'     => (int) ($db->selectOne("SELECT COUNT(*) as c FROM users WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
+            'total_users'     => (int) ($db->selectOne("SELECT COUNT(DISTINCT u.id) as c FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE u.tenant_id = ? AND u.deleted_at IS NULL AND r.slug IN ('super_admin', 'teacher', 'staff', 'driver', 'parent')", [$tenantId])['c'] ?? 0),
         ];
 
         // Fetch teacher's timetable schedule for today

@@ -1,8 +1,8 @@
 <?php
 $layout    = 'app';
-$pageTitle = 'Live Bus Tracking';
+$pageTitle = 'Bus & Transport';
 $breadcrumbs = [
-    ['label' => 'Transport', 'url' => '/transport'],
+    ['label' => 'Bus & Transport', 'url' => '/transport'],
     ['label' => 'Live Tracking'],
 ];
 ob_start();
@@ -10,10 +10,24 @@ ob_start();
 
 <div class="space-y-6" x-data="liveTracking()" x-init="init()">
 
+    <!-- View Switcher Tabs -->
+    <div class="flex items-center border-b border-slate-200 dark:border-slate-800 gap-6">
+        <a href="<?= url('transport') ?>"
+           class="flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-all focus:outline-none border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+            Routes & Vehicles
+        </a>
+        <a href="<?= url('transport/tracking') ?>"
+           class="flex items-center gap-2 py-3 px-1 border-b-2 font-bold text-sm transition-all focus:outline-none border-indigo-500 text-indigo-600 dark:text-indigo-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Live Tracking
+        </a>
+    </div>
+
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Live Bus Tracking</h2>
+            <h2 class="text-xl font-bold text-slate-800 dark:text-white">Live Tracking</h2>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Real-time positions of all active school transport routes</p>
         </div>
         <div class="flex items-center gap-3">
@@ -41,7 +55,7 @@ ob_start();
         </div>
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 shadow-sm">
             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Active Buses</p>
-            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1"><?= count(array_filter($routes, fn($r) => $r['status'] === 'active')) ?></p>
+            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1"><?= count(array_filter($routes, fn($r) => $r['status'] === 'en_route')) ?></p>
         </div>
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 shadow-sm">
             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Students on Bus</p>
@@ -73,8 +87,8 @@ ob_start();
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-                                    <?= $route['status'] === 'active' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-800' ?>">
-                                    <svg class="w-5 h-5 <?= $route['status'] === 'active' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <?= $route['status'] === 'en_route' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-800' ?>">
+                                    <svg class="w-5 h-5 <?= $route['status'] === 'en_route' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4"/>
                                     </svg>
@@ -85,8 +99,8 @@ ob_start();
                                 </div>
                             </div>
                             <span class="flex-shrink-0 text-2xs px-2 py-0.5 rounded-full font-semibold
-                                <?= $route['status'] === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' ?>">
-                                <?= ucfirst($route['status']) ?>
+                                <?= $route['status'] === 'en_route' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' ?>">
+                                <?= $route['status'] === 'en_route' ? 'En Route' : ucfirst($route['status']) ?>
                             </span>
                         </div>
                         <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -116,9 +130,9 @@ ob_start();
                                     </span>
                                     <span :class="{
                                               'text-slate-400 dark:text-slate-650': (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) == 0,
-                                              'text-emerald-500 dark:text-emerald-400': (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) > 0 && (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) <= 40,
-                                              'text-amber-500 dark:text-amber-400': (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) > 40 && (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) <= 60,
-                                              'text-red-500 dark:text-red-400 animate-pulse': (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) > 60
+                                              'text-emerald-500 dark:text-emerald-400': (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) > 0 && (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) <= 60,
+                                              'text-amber-500 dark:text-amber-400': (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) > 60 && (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) <= 80,
+                                              'text-red-500 dark:text-red-400 animate-pulse': (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) > 80
                                           }"
                                           x-text="Math.round(routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) + ' km/h'"></span>
                                 </div>
@@ -351,7 +365,7 @@ function liveTracking() {
         },
 
         busIcon(status) {
-            const color = status === 'active' ? '#10b981' : '#94a3b8';
+            const color = status === 'en_route' ? '#10b981' : '#94a3b8';
             const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="18" fill="${color}" opacity="0.15"/>
                 <circle cx="18" cy="18" r="13" fill="${color}"/>
@@ -367,7 +381,7 @@ function liveTracking() {
         },
 
         addOrUpdateMarker(route) {
-            const speedColor = route.speed === 0 ? '#64748b' : (route.speed <= 40 ? '#10b981' : (route.speed <= 60 ? '#f59e0b' : '#ef4444'));
+            const speedColor = route.speed === 0 ? '#64748b' : (route.speed <= 60 ? '#10b981' : (route.speed <= 80 ? '#f59e0b' : '#ef4444'));
             const speedText = route.speed === 0 ? 'Stopped' : `${Math.round(route.speed)} km/h`;
             const popup = `
                 <div style="min-width:180px;font-family:Inter,sans-serif;">
@@ -378,12 +392,12 @@ function liveTracking() {
                     <div style="font-size:12px;color:#64748b;margin-bottom:4px;">🎒 ${route.students} students</div>
                     <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
                         <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;display:inline-block;
-                             background:${route.status === 'active' ? '#d1fae5' : '#f1f5f9'};
-                             color:${route.status === 'active' ? '#065f46' : '#64748b'};">
-                            ${route.status.toUpperCase()}
+                             background:${route.status === 'en_route' ? '#d1fae5' : '#f1f5f9'};
+                             color:${route.status === 'en_route' ? '#065f46' : '#64748b'};">
+                            ${route.status === 'en_route' ? 'EN ROUTE' : route.status.toUpperCase()}
                         </span>
                         <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;display:inline-block;
-                             background:${route.speed === 0 ? '#f1f5f9' : (route.speed <= 40 ? '#d1fae5' : (route.speed <= 60 ? '#fef3c7' : '#fee2e2'))};
+                             background:${route.speed === 0 ? '#f1f5f9' : (route.speed <= 60 ? '#d1fae5' : (route.speed <= 80 ? '#fef3c7' : '#fee2e2'))};
                              color:${speedColor};">
                             ⚡ ${speedText}
                         </span>
@@ -448,7 +462,7 @@ function liveTracking() {
                         this.updateMap = L.map('update-map', { zoomControl: false }).setView([lat, lng], 14);
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(this.updateMap);
 
-                        this.updateMarker = L.marker([lat, lng], { draggable: true, icon: this.busIcon('active') }).addTo(this.updateMap);
+                        this.updateMarker = L.marker([lat, lng], { draggable: true, icon: this.busIcon('en_route') }).addTo(this.updateMap);
                         this.updateMarker.on('dragend', (e) => {
                             const pos = e.target.getLatLng();
                             this.updateLat = parseFloat(pos.lat.toFixed(6));
@@ -565,7 +579,7 @@ function liveTracking() {
                 if (!this.simulateSpeed) return;
 
                 this.routesList.forEach(r => {
-                    if (r.status !== 'active') {
+                    if (r.status !== 'en_route') {
                         r.speed = 0;
                         return;
                     }
@@ -575,8 +589,8 @@ function liveTracking() {
                             r.speed = 25 + Math.random() * 10;
                         }
                     } else {
-                        const change = (Math.random() * 8) - 4;
-                        r.speed = Math.max(15, Math.min(72, r.speed + change));
+                        const change = (Math.random() * 12) - 6;
+                        r.speed = Math.max(15, Math.min(95, r.speed + change));
                     }
 
                     this.addOrUpdateMarker(r);

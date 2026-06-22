@@ -121,6 +121,16 @@ class RolesPermissionsSeeder
                 'teacher_app_student_details','teacher_app_half_leave_notification','teacher_app_timetables',
                 'staff_app_student_details','staff_app_half_leave_notification','staff_app_half_leave_details'
             ],
+            'driver_app'  => [
+                'driver_app_pickup_route',
+                'driver_app_drop_route',
+                'driver_app_students_onboard',
+                'driver_app_safety_center',
+                'driver_app_speed_monitor',
+                'driver_app_sos',
+                'driver_app_trip_logs',
+                'driver_app_early_leave'
+            ],
         ];
 
         foreach ($modules as $module => $actions) {
@@ -194,6 +204,31 @@ class RolesPermissionsSeeder
                     $exists = $this->db->selectOne("SELECT 1 FROM role_permissions WHERE role_id = ? AND permission_id = ?", [$staffRole['id'], $perm['id']]);
                     if (!$exists) {
                         $this->db->insert('role_permissions', ['role_id' => $staffRole['id'], 'permission_id' => $perm['id']]);
+                    }
+                }
+            }
+        }
+
+        // Seed default presets for Driver role
+        $driverRole = $this->db->selectOne("SELECT id FROM roles WHERE slug = 'driver' AND tenant_id IS NULL");
+        if ($driverRole) {
+            $driverPerms = [
+                'driver_app',
+                'driver_app_pickup_route',
+                'driver_app_drop_route',
+                'driver_app_students_onboard',
+                'driver_app_safety_center',
+                'driver_app_speed_monitor',
+                'driver_app_sos',
+                'driver_app_trip_logs',
+                'driver_app_early_leave'
+            ];
+            foreach ($driverPerms as $slug) {
+                $perm = $this->db->selectOne("SELECT id FROM permissions WHERE slug = ?", [$slug]);
+                if ($perm) {
+                    $exists = $this->db->selectOne("SELECT 1 FROM role_permissions WHERE role_id = ? AND permission_id = ?", [$driverRole['id'], $perm['id']]);
+                    if (!$exists) {
+                        $this->db->insert('role_permissions', ['role_id' => $driverRole['id'], 'permission_id' => $perm['id']]);
                     }
                 }
             }

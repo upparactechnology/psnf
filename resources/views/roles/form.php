@@ -51,7 +51,7 @@ $currentPermIds = $r['permission_ids'] ?? [];
 
             <?php foreach ($permissions as $module => $perms): ?>
             <div class="mb-6 last:mb-0">
-                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3"><?= ucfirst($module) ?></h4>
+                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3"><?= ucfirst(str_replace('_', ' ', $module)) ?></h4>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                     <?php foreach ($perms as $perm): ?>
                     <label class="flex items-center gap-2 p-2.5 rounded-lg border border-slate-800/60 hover:border-slate-700/60 hover:bg-slate-800/30 cursor-pointer transition-all">

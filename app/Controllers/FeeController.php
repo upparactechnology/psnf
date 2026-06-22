@@ -20,6 +20,7 @@ class FeeController extends Controller
     {
         $status = $this->request->get('status', '');
         $search = $this->request->get('search', '');
+        $view   = $this->request->get('view', 'pending');
         
         $where = ["fi.tenant_id = ?"];
         $params = [\Core\Database::getTenantId()];
@@ -45,7 +46,7 @@ class FeeController extends Controller
             WHERE $whereClause
             ORDER BY fi.due_date DESC
         ", $params);
-
+ 
         $stats = $this->db()->selectOne("
             SELECT 
                 COALESCE(SUM(amount), 0) as total_invoiced,
@@ -55,8 +56,8 @@ class FeeController extends Controller
             FROM fee_invoices
             WHERE tenant_id = ?
         ", [\Core\Database::getTenantId()]);
-
-        return $this->view('fees/index', compact('invoices', 'stats', 'status', 'search'));
+ 
+        return $this->view('fees/index', compact('invoices', 'stats', 'status', 'search', 'view'));
     }
 
     public function create(): string
@@ -148,9 +149,6 @@ class FeeController extends Controller
         $student = $this->db()->selectOne("SELECT first_name, last_name FROM students WHERE id = ?", [$invoice['student_id']]);
         $this->db()->insert('student_timeline', [
             'student_id'  => $invoice['student_id'],
-            'tenant_id'   => $invoice['tenant_id'],
-            'school_id'   => $invoice['school_id'],
-            'branch_id'   => $invoice['branch_id'],
             'event_type'  => 'fee_payment',
             'title'       => 'Fee Payment Logged',
             'description' => "Logged manual payment of {$amount} INR for '{$invoice['title']}' via {$method}.",

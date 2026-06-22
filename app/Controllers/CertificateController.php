@@ -92,9 +92,6 @@ class CertificateController extends Controller
         if ($student) {
             $this->db()->insert('student_timeline', [
                 'student_id'  => (int)$data['student_id'],
-                'tenant_id'   => $student['tenant_id'],
-                'school_id'   => $student['school_id'],
-                'branch_id'   => $student['branch_id'],
                 'event_type'  => 'document',
                 'title'       => 'Certificate Issued',
                 'description' => "Issued certificate '{$data['title']}' via Visual Designer.",

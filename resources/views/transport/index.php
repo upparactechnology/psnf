@@ -1,16 +1,30 @@
 <?php
 $layout    = 'app';
-$pageTitle = 'Bus Transport Management';
-$breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Transport']];
+$pageTitle = 'Bus & Transport';
+$breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Bus & Transport']];
 ob_start();
 ?>
 
 <div class="space-y-6">
 
+    <!-- View Switcher Tabs -->
+    <div class="flex items-center border-b border-slate-200 dark:border-slate-800 gap-6">
+        <a href="<?= url('transport') ?>"
+           class="flex items-center gap-2 py-3 px-1 border-b-2 font-bold text-sm transition-all focus:outline-none border-indigo-500 text-indigo-600 dark:text-indigo-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+            Routes & Vehicles
+        </a>
+        <a href="<?= url('transport/tracking') ?>"
+           class="flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-all focus:outline-none border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Live Tracking
+        </a>
+    </div>
+
     <!-- Header Actions -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Transport Routes</h2>
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">Routes & Vehicles</h2>
             <p class="text-sm text-slate-500 mt-0.5">Manage vehicles, drivers, and student route configurations.</p>
         </div>
         <a href="<?= url('transport/create') ?>"

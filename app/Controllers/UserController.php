@@ -10,16 +10,10 @@ use App\Models\{User, Role};
 class UserController extends Controller
 {
     protected array $availableApps = [
-        'academic'      => 'Academic Registry',
-        'academic_summary' => 'Academic Summary',
-        'hr'            => 'HR Directory',
-        'access_control'=> 'Access Control',
-        'finance'       => 'Finance & Fees',
-        'medical'       => 'Medical Logs',
-        'transport'     => 'Transport & Bus',
-        'file_manager'  => 'File Manager',
-        'games'         => 'Learning Games',
-        'config'        => 'System Config',
+        'driver_app'        => 'Driver App',
+        'staff_dashboard'   => 'Staff Dashboard',
+        'teacher_app'       => 'Staff and Teacher App',
+        'parents_dashboard' => 'Parents Dashboard',
     ];
 
     public function index(): string
@@ -30,6 +24,9 @@ class UserController extends Controller
 
         $conditions = [];
         $params = [];
+
+        // Only show users with the selected roles: Teacher, Staff, Driver, Parent, Super Admin
+        $conditions[] = "id IN (SELECT ur.user_id FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE r.slug IN ('super_admin', 'teacher', 'staff', 'driver', 'parent'))";
 
         if ($search !== '') {
             $conditions[] = "(name LIKE ? OR email LIKE ?)";
@@ -46,6 +43,9 @@ class UserController extends Controller
 
         $result  = User::paginate($page, 15, $conditionStr, $params);
         $roles   = Role::allWithPermissionCount();
+        $roles   = array_filter($roles, function($role) {
+            return in_array($role['slug'], ['super_admin', 'teacher', 'staff', 'driver', 'parent']);
+        });
 
         return $this->view('users/index', array_merge($result, [
             'search' => $search,
@@ -57,6 +57,9 @@ class UserController extends Controller
     public function create(): string
     {
         $roles    = Role::all('sort_order');
+        $roles    = array_filter($roles, function($role) {
+            return in_array($role['slug'], ['super_admin', 'teacher', 'staff', 'driver', 'parent']);
+        });
         $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $branches = \Core\Application::$app->db->select("SELECT id, name FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $apps     = $this->availableApps;
@@ -116,6 +119,9 @@ class UserController extends Controller
     {
         $user     = User::withRoles((int) $id);
         $roles    = Role::all('sort_order');
+        $roles    = array_filter($roles, function($role) {
+            return in_array($role['slug'], ['super_admin', 'teacher', 'staff', 'driver', 'parent']);
+        });
         $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $branches = \Core\Application::$app->db->select("SELECT id, name FROM branches WHERE tenant_id = ? AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $apps     = $this->availableApps;

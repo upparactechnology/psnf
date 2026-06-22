@@ -69,9 +69,27 @@ ob_start();
         </div>
     </div>
 
+    <!-- View Switcher Tabs -->
+    <div class="flex items-center border-b border-slate-200 dark:border-slate-800 gap-6">
+        <a href="<?= url('fees?view=pending' . ($search ? '&search=' . urlencode($search) : '') . ($status ? '&status=' . urlencode($status) : '')) ?>"
+           class="flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-all focus:outline-none <?= $view === 'pending' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            Pending Fee Collection
+            <span class="inline-flex items-center justify-center px-2 py-0.5 ml-1 text-2xs font-semibold rounded-full bg-amber-50 dark:bg-amber-955/40 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30">
+                <?= count(array_filter($invoices, function($inv) { return $inv['status'] !== 'paid'; })) ?>
+            </span>
+        </a>
+        <a href="<?= url('fees?view=kanban' . ($search ? '&search=' . urlencode($search) : '') . ($status ? '&status=' . urlencode($status) : '')) ?>"
+           class="flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm transition-all focus:outline-none <?= $view === 'kanban' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400 font-bold' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-350' ?>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+            Kanban Fee Collection
+        </a>
+    </div>
+
     <!-- Actions & Filter Bar -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
         <form method="GET" action="<?= url('fees') ?>" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
+            <input type="hidden" name="view" value="<?= e($view) ?>">
             <div class="relative flex-1 max-w-md">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -97,6 +115,7 @@ ob_start();
         </a>
     </div>
 
+    <?php if ($view === 'pending'): ?>
     <!-- Invoices Table -->
     <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/30 overflow-hidden shadow-sm">
         <table class="w-full">
@@ -112,18 +131,21 @@ ob_start();
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 dark:divide-slate-800/40">
-                <?php if (empty($invoices)): ?>
+                <?php 
+                $pendingInvoices = array_filter($invoices, function($inv) { return $inv['status'] !== 'paid'; });
+                ?>
+                <?php if (empty($pendingInvoices)): ?>
                 <tr>
                     <td colspan="7" class="px-5 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                        No invoices found.
+                        No pending invoices found.
                     </td>
                 </tr>
                 <?php else: ?>
-                <?php foreach ($invoices as $inv): ?>
+                <?php foreach ($pendingInvoices as $inv): ?>
                 <?php
                 $statusColors = [
                     'unpaid'         => 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/20',
-                    'partially_paid' => 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/20',
+                    'partially_paid' => 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-955/30 dark:text-amber-400 dark:border-amber-900/20',
                     'paid'           => 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/20',
                 ];
                 $sc = $statusColors[$inv['status']] ?? 'bg-slate-100 text-slate-700 border-slate-200';
@@ -180,6 +202,210 @@ ob_start();
             </tbody>
         </table>
     </div>
+    <?php else: ?>
+
+    <!-- Kanban Board -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <?php
+        $unpaidInvoices = array_filter($invoices, function($inv) { return $inv['status'] === 'unpaid'; });
+        $partiallyPaidInvoices = array_filter($invoices, function($inv) { return $inv['status'] === 'partially_paid'; });
+        $paidInvoices = array_filter($invoices, function($inv) { return $inv['status'] === 'paid'; });
+        ?>
+        
+        <!-- Unpaid Column -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900/10 p-4 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-850">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500/50"></span>
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-white">Unpaid</h3>
+                </div>
+                <span class="inline-flex items-center justify-center px-2 py-0.5 text-3xs font-semibold rounded-full bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200/50 dark:border-red-900/20">
+                    <?= count($unpaidInvoices) ?>
+                </span>
+            </div>
+            
+            <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                <?php if (empty($unpaidInvoices)): ?>
+                <p class="text-xs text-center py-8 text-slate-400 dark:text-slate-500 italic">No unpaid invoices.</p>
+                <?php else: ?>
+                    <?php foreach ($unpaidInvoices as $inv): ?>
+                    <?php
+                    $unpaidVal = (float)$inv['amount'] - (float)$inv['paid_amount'];
+                    ?>
+                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900/50 shadow-sm space-y-3 hover:border-slate-350 dark:hover:border-slate-700 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-semibold font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                <?= e($inv['invoice_number']) ?>
+                            </span>
+                            <span class="text-3xs font-semibold px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/20">
+                                UNPAID
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-white truncate" title="<?= e($inv['title']) ?>"><?= e($inv['title']) ?></h4>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 font-semibold"><?= e($inv['first_name'] . ' ' . $inv['last_name']) ?></p>
+                            <p class="text-[10px] text-slate-450 dark:text-slate-500 font-mono">Adm: <?= e($inv['admission_number']) ?></p>
+                        </div>
+
+                        <div class="border-t border-slate-100 dark:border-slate-800/65 pt-2.5 flex items-center justify-between">
+                            <div>
+                                <p class="text-[9px] text-slate-400 uppercase tracking-wider">Amount</p>
+                                <p class="text-sm font-extrabold text-slate-800 dark:text-white"><?= number_format((float)$inv['amount']) ?> INR</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[9px] text-slate-400 uppercase tracking-wider">Due Date</p>
+                                <p class="text-xs text-slate-655 dark:text-slate-400 font-mono font-semibold"><?= e($inv['due_date']) ?></p>
+                            </div>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                            <button @click="openPayment(<?= $inv['id'] ?>, '<?= e($inv['title']) ?>', <?= $unpaidVal ?>)"
+                                    class="flex-1 py-1.5 text-center text-3xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-lg transition-all border border-emerald-200/40 dark:border-emerald-900/20">
+                                Record Pay
+                            </button>
+                            <form action="<?= url("fees/{$inv['id']}/delete") ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this invoice?')" class="inline-block flex-1">
+                                <?= \Core\View::csrf() ?>
+                                <button type="submit" class="w-full py-1.5 text-center text-3xs font-bold text-red-655 dark:text-red-405 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all border border-red-200/40 dark:border-red-900/20">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Partially Paid Column -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900/10 p-4 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-850">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-white">Partially Paid</h3>
+                </div>
+                <span class="inline-flex items-center justify-center px-2 py-0.5 text-3xs font-semibold rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30">
+                    <?= count($partiallyPaidInvoices) ?>
+                </span>
+            </div>
+            
+            <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                <?php if (empty($partiallyPaidInvoices)): ?>
+                <p class="text-xs text-center py-8 text-slate-400 dark:text-slate-500 italic">No partially paid invoices.</p>
+                <?php else: ?>
+                    <?php foreach ($partiallyPaidInvoices as $inv): ?>
+                    <?php
+                    $unpaidVal = (float)$inv['amount'] - (float)$inv['paid_amount'];
+                    ?>
+                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-855 bg-white dark:bg-slate-900/50 shadow-sm space-y-3 hover:border-slate-350 dark:hover:border-slate-700 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-semibold font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                <?= e($inv['invoice_number']) ?>
+                            </span>
+                            <span class="text-3xs font-semibold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/20">
+                                PARTIAL
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-white truncate" title="<?= e($inv['title']) ?>"><?= e($inv['title']) ?></h4>
+                            <p class="text-xs text-slate-650 dark:text-slate-400 mt-1 font-semibold"><?= e($inv['first_name'] . ' ' . $inv['last_name']) ?></p>
+                            <p class="text-[10px] text-slate-450 dark:text-slate-500 font-mono">Adm: <?= e($inv['admission_number']) ?></p>
+                        </div>
+
+                        <div class="border-t border-slate-100 dark:border-slate-800/60 pt-2.5 flex items-center justify-between">
+                            <div>
+                                <p class="text-[9px] text-slate-400 uppercase tracking-wider">Amount</p>
+                                <p class="text-sm font-extrabold text-slate-800 dark:text-white"><?= number_format((float)$inv['amount']) ?> INR</p>
+                                <p class="text-[9px] text-emerald-600 dark:text-emerald-500 font-medium">Paid: <?= number_format((float)$inv['paid_amount']) ?></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[9px] text-slate-400 uppercase tracking-wider">Due Date</p>
+                                <p class="text-xs text-slate-600 dark:text-slate-400 font-mono font-semibold"><?= e($inv['due_date']) ?></p>
+                            </div>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                            <button @click="openPayment(<?= $inv['id'] ?>, '<?= e($inv['title']) ?>', <?= $unpaidVal ?>)"
+                                    class="flex-1 py-1.5 text-center text-3xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-lg transition-all border border-emerald-200/40 dark:border-emerald-900/20">
+                                Record Pay
+                            </button>
+                            <form action="<?= url("fees/{$inv['id']}/delete") ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this invoice?')" class="inline-block flex-1">
+                                <?= \Core\View::csrf() ?>
+                                <button type="submit" class="w-full py-1.5 text-center text-3xs font-bold text-red-655 dark:text-red-405 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all border border-red-200/40 dark:border-red-900/20">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Paid Column -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900/10 p-4 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-850">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-white">Paid</h3>
+                </div>
+                <span class="inline-flex items-center justify-center px-2 py-0.5 text-3xs font-semibold rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/30">
+                    <?= count($paidInvoices) ?>
+                </span>
+            </div>
+            
+            <div class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                <?php if (empty($paidInvoices)): ?>
+                <p class="text-xs text-center py-8 text-slate-400 dark:text-slate-500 italic">No paid invoices.</p>
+                <?php else: ?>
+                    <?php foreach ($paidInvoices as $inv): ?>
+                    <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-855 bg-white dark:bg-slate-900/50 shadow-sm space-y-3 hover:border-slate-350 dark:hover:border-slate-700 transition-all">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-semibold font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                                <?= e($inv['invoice_number']) ?>
+                            </span>
+                            <span class="text-3xs font-semibold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/20">
+                                PAID
+                            </span>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-white truncate" title="<?= e($inv['title']) ?>"><?= e($inv['title']) ?></h4>
+                            <p class="text-xs text-slate-650 dark:text-slate-400 mt-1 font-semibold"><?= e($inv['first_name'] . ' ' . $inv['last_name']) ?></p>
+                            <p class="text-[10px] text-slate-455 dark:text-slate-500 font-mono">Adm: <?= e($inv['admission_number']) ?></p>
+                        </div>
+
+                        <div class="border-t border-slate-100 dark:border-slate-800/60 pt-2.5 flex items-center justify-between">
+                            <div>
+                                <p class="text-[9px] text-slate-400 uppercase tracking-wider">Amount</p>
+                                <p class="text-sm font-extrabold text-slate-800 dark:text-white"><?= number_format((float)$inv['amount']) ?> INR</p>
+                                <p class="text-[9px] text-emerald-600 dark:text-emerald-500 font-medium">Paid: <?= number_format((float)$inv['paid_amount']) ?></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[9px] text-slate-400 uppercase tracking-wider">Due Date</p>
+                                <p class="text-xs text-slate-600 dark:text-slate-400 font-mono font-semibold"><?= e($inv['due_date']) ?></p>
+                            </div>
+                        </div>
+
+                        <!-- Card Action Buttons -->
+                        <div class="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+                            <form action="<?= url("fees/{$inv['id']}/delete") ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this invoice?')" class="inline-block w-full">
+                                <?= \Core\View::csrf() ?>
+                                <button type="submit" class="w-full py-1.5 text-center text-3xs font-bold text-red-655 dark:text-red-405 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all border border-red-200/40 dark:border-red-900/20">
+                                    Delete Invoice
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Slide-over/Modal Backdrop -->
     <div x-show="paymentModal" class="fixed inset-0 overflow-hidden z-[9999]" x-cloak>

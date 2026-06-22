@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController};
+use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController, SettingsController};
 
 // ─── Auth (Guest Only) ────────────────────────────────────────────────────────
 $router->get('/login',           [AuthController::class, 'showLogin'],          ['guest']);
@@ -38,6 +38,10 @@ $router->post('/users',            [UserController::class, 'store'],   ['auth', 
 $router->get('/users/{id}/edit',   [UserController::class, 'edit'],    ['auth', 'permission:edit_users']);
 $router->post('/users/{id}',       [UserController::class, 'update'],  ['auth', 'permission:edit_users']);
 $router->delete('/users/{id}',     [UserController::class, 'destroy'], ['auth', 'permission:delete_users']);
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+$router->get('/settings',          [SettingsController::class, 'index'],  ['auth', 'permission:view_settings']);
+$router->post('/settings',         [SettingsController::class, 'update'], ['auth', 'permission:edit_settings']);
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
 $router->get('/roles',             [RoleController::class, 'index'],   ['auth', 'permission:view_roles']);
