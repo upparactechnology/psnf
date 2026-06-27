@@ -1,0 +1,17 @@
+{
+    "cinzel": {
+        "500": "C:\\xampp\\htdocs\\psnf\\certificate_generator\\vendor\\dompdf\\dompdf\/lib\/fonts\/cinzel_500_409b27f0243b7a18e7541cb9bdc06979",
+        "bold": "C:\\xampp\\htdocs\\psnf\\certificate_generator\\vendor\\dompdf\\dompdf\/lib\/fonts\/cinzel_bold_c9c3879c158e0dafc0f2487c789a9af5",
+        "800": "cinzel_800_00a0a46fed25951c8f2f0665da676e68"
+    },
+    "inter": {
+        "normal": "C:\\xampp\\htdocs\\psnf\\certificate_generator\\vendor\\dompdf\\dompdf\/lib\/fonts\/inter_normal_5a66f8ceb794f00a7f54c797a21283b3",
+        "500": "C:\\xampp\\htdocs\\psnf\\certificate_generator\\vendor\\dompdf\\dompdf\/lib\/fonts\/inter_500_efef4d9d61ac26570557ad601dea222a",
+        "600": "C:\\xampp\\htdocs\\psnf\\certificate_generator\\vendor\\dompdf\\dompdf\/lib\/fonts\/inter_600_3604d9d49b61fc3b7c29c4259c86ff89",
+        "bold": "inter_bold_02384cdf43e3d24b76c57c66dfd114bf"
+    },
+    "playfair display": {
+        "italic": "C:\\xampp\\htdocs\\psnf\\certificate_generator\\vendor\\dompdf\\dompdf\/lib\/fonts\/playfair_display_italic_bab3bae3f62f67e682f698e956a7d149",
+        "600": "playfair_display_600_555a1287914f9012e021a3b119eb30d7"
+    }
+}

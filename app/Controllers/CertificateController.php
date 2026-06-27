@@ -21,11 +21,23 @@ class CertificateController extends Controller
         $tenantId = \Core\Database::getTenantId();
 
         $certificates = $this->db()->select("
-            SELECT c.*, s.first_name, s.last_name, s.admission_number
-            FROM certificates c
-            JOIN students s ON s.id = c.student_id
-            WHERE c.tenant_id = ?
-            ORDER BY c.issued_at DESC
+            SELECT 
+                gc.id,
+                ct.name AS title,
+                ct.name AS certificate_type,
+                gc.pdf_path AS file_path,
+                DATE(gc.generated_at) AS issued_at,
+                'generated' AS source,
+                s.first_name,
+                s.last_name,
+                s.admission_number,
+                p.id AS participant_id
+            FROM generated_certificates gc
+            JOIN participants p ON p.id = gc.participant_id
+            JOIN certificate_types ct ON ct.id = p.certificate_type_id
+            JOIN students s ON s.id = p.student_id
+            WHERE s.tenant_id = ?
+            ORDER BY issued_at DESC
         ", [$tenantId]);
 
         return $this->view('certificates/index', compact('certificates'));

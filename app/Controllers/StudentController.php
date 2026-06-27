@@ -129,7 +129,32 @@ class StudentController extends Controller
             exit();
         }
 
-        return $this->view('students/show', ['student' => $student]);
+        $db = \Core\Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+        
+        $classes = $db->select(
+            "SELECT DISTINCT class 
+             FROM students 
+             WHERE tenant_id = ? AND class IS NOT NULL AND class != '' AND deleted_at IS NULL
+             ORDER BY class ASC",
+            [$tenantId]
+        );
+        $sections = $db->select(
+            "SELECT DISTINCT section 
+             FROM students 
+             WHERE tenant_id = ? AND section IS NOT NULL AND section != '' AND deleted_at IS NULL
+             ORDER BY section ASC",
+            [$tenantId]
+        );
+        $academicYears = $db->select(
+            "SELECT DISTINCT academic_year 
+             FROM students 
+             WHERE tenant_id = ? AND academic_year IS NOT NULL AND academic_year != '' AND deleted_at IS NULL
+             ORDER BY academic_year DESC",
+            [$tenantId]
+        );
+
+        return $this->view('students/show', compact('student', 'classes', 'sections', 'academicYears'));
     }
 
     public function edit(string $id): string
@@ -178,6 +203,7 @@ class StudentController extends Controller
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
             \Core\Session::flash('errors', $validator->errors());
+            \Core\Session::flash('old', $data);
             return $this->redirect("/students/$id/edit");
         }
 
@@ -207,12 +233,12 @@ class StudentController extends Controller
             }
 
             $this->service->update((int) $id, $validated, $filesData);
-            $this->flash('success', 'Student updated successfully.');
+            $this->flash('success', 'Student profile updated successfully.');
+            return $this->redirect("/students/$id");
         } catch (\Throwable $e) {
-            $this->flash('error', 'Failed to update student: ' . $e->getMessage());
+            $this->flash('error', 'Failed to update student. ' . $e->getMessage());
+            return $this->redirect("/students/$id/edit");
         }
-
-        return $this->redirect("/students/$id");
     }
 
     public function updateMedical(string $id): string
@@ -236,6 +262,20 @@ class StudentController extends Controller
         }
 
         Student::updateStatus((int) $id, $status, auth_id());
+
+        if ($status === 'enrolled') {
+            $class = trim($this->request->input('class') ?? '');
+            $section = trim($this->request->input('section') ?? '');
+            $academicYear = trim($this->request->input('academic_year') ?? '');
+            
+            $db = \Core\Application::$app->db;
+            $db->query(
+                "UPDATE students 
+                 SET class = ?, section = ?, academic_year = ?, enrolled_date = ? 
+                 WHERE id = ?",
+                [$class, $section, $academicYear, date('Y-m-d'), (int)$id]
+            );
+        }
 
         if ($this->request->wantsJson() || $this->isHtmx()) {
             return $this->successResponse('Status updated.');

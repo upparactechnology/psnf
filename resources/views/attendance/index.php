@@ -116,7 +116,7 @@ ob_start();
                                             <input type="radio" name="attendance[<?= $s['id'] ?>]" value="late" <?= $status === 'late' ? 'checked' : '' ?> class="sr-only">
                                             Late
                                         </label>
-                                        <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all has-[:checked]:bg-red-650 has-[:checked]:text-white text-slate-450 hover:text-white">
+                                        <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all has-[:checked]:bg-red-600 has-[:checked]:text-white text-slate-450 hover:text-white">
                                             <input type="radio" name="attendance[<?= $s['id'] ?>]" value="absent" <?= $status === 'absent' ? 'checked' : '' ?> class="sr-only">
                                             Absent
                                         </label>

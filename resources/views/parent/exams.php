@@ -65,11 +65,16 @@
                             <p class="text-[9px] text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider"><?= e($cert['certificate_type']) ?> category</p>
                             <p class="text-[9px] text-slate-500">Issued: <?= date('d M Y', strtotime($cert['issued_at'])) ?></p>
                         </div>
-                        <a href="<?= url('certificates/' . $cert['id'] . '/view') ?>" target="_blank"
-                           class="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-bold text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700/60 hover:border-slate-650 dark:hover:border-slate-600 transition-all shadow-sm">
-                            <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-450" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                            View Certificate
-                        </a>
+                        <div class="flex gap-2 w-full pt-1">
+                            <a href="/psnf/certificate_generator/index.php?page=download-file&participant_id=<?= (int)$cert['participant_id'] ?>&format=jpg"
+                               class="flex-1 text-center py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-bold text-slate-800 dark:text-white border border-slate-250 hover:border-slate-650 transition-all shadow-sm">
+                                JPG
+                            </a>
+                            <a href="/psnf/certificate_generator/index.php?page=download-file&participant_id=<?= (int)$cert['participant_id'] ?>&format=pdf"
+                               class="flex-1 text-center py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm">
+                                PDF
+                            </a>
+                        </div>
                     </div>
                     <?php endforeach; ?>
                     <?php endif; ?>

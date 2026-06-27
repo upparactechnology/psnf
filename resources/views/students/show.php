@@ -71,21 +71,41 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                         Update Status <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="statusOpen" @click.outside="statusOpen = false" x-transition
+                         id="status-dropdown"
                          class="absolute right-0 mt-2 w-48 rounded-xl border border-slate-700/50 bg-slate-900 shadow-2xl z-20 overflow-hidden">
+                        <style>
+                            html:not(.dark) #status-dropdown button {
+                                color: #1e293b !important;
+                            }
+                            html:not(.dark) #status-dropdown button:hover {
+                                color: #ffffff !important;
+                                background-color: #4f46e5 !important;
+                            }
+                        </style>
                         <?php foreach (['applied','review','assessment','approved','enrolled','withdrawn'] as $st): ?>
-                        <form method="POST" action="<?= url('students/'.$s['id'].'/status') ?>">
-                            <?= \Core\View::csrf() ?>
-                            <input type="hidden" name="admission_status" value="<?= $st ?>">
-                            <button type="submit" class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors <?= $s['admission_status'] === $st ? 'text-brand-400' : '' ?>">
+                        <?php if ($st === 'enrolled'): ?>
+                            <button type="button" @click="showEnrollModal = true; statusOpen = false" class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors <?= $s['admission_status'] === $st ? 'text-brand-400' : '' ?>">
                                 <?= ucfirst($st) ?><?= $s['admission_status'] === $st ? ' ✓' : '' ?>
                             </button>
-                        </form>
+                        <?php else: ?>
+                            <form method="POST" action="<?= url('students/'.$s['id'].'/status') ?>">
+                                <?= \Core\View::csrf() ?>
+                                <input type="hidden" name="admission_status" value="<?= $st ?>">
+                                <button type="submit" class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors <?= $s['admission_status'] === $st ? 'text-brand-400' : '' ?>">
+                                    <?= ucfirst($st) ?><?= $s['admission_status'] === $st ? ' ✓' : '' ?>
+                                </button>
+                            </form>
+                        <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
                 <?php endif; ?>
 
                 <?php if (has_permission('edit_students')): ?>
+                <a href="<?= url('students/'.$s['id'].'/report-card/edit') ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all bg-emerald-600 hover:bg-emerald-500 border border-emerald-700/50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Report Card
+                </a>
                 <a href="<?= url('students/'.$s['id'].'/edit') ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     Edit
@@ -418,6 +438,74 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Enrollment Modal -->
+    <div x-show="showEnrollModal" 
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+         x-cloak
+         x-transition>
+        <div class="w-full max-w-md rounded-2xl border border-slate-800/60 bg-slate-900 p-6 space-y-5 shadow-2xl relative"
+             @click.outside="showEnrollModal = false">
+            
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-white">Enroll Student</h3>
+                <button @click="showEnrollModal = false" class="text-slate-400 hover:text-white transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form method="POST" action="<?= url('students/'.$s['id'].'/status') ?>" class="space-y-4">
+                <?= \Core\View::csrf() ?>
+                <input type="hidden" name="admission_status" value="enrolled">
+
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-450">Class <span class="text-red-400">*</span></label>
+                    <input type="text" name="class" required placeholder="e.g. Class A" list="existing-classes"
+                           class="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
+                    <datalist id="existing-classes">
+                        <?php foreach ($classes as $c): ?>
+                            <option value="<?= e($c['class']) ?>"></option>
+                        <?php endforeach; ?>
+                    </datalist>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-450">Section</label>
+                    <input type="text" name="section" placeholder="e.g. A (optional)" list="existing-sections"
+                           class="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
+                    <datalist id="existing-sections">
+                        <?php foreach ($sections as $sec): ?>
+                            <option value="<?= e($sec['section']) ?>"></option>
+                        <?php endforeach; ?>
+                    </datalist>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-450">Academic Year <span class="text-red-400">*</span></label>
+                    <input type="text" name="academic_year" required placeholder="e.g. 2026-2027" list="existing-academic-years"
+                           value="<?= date('Y') . '-' . (date('Y') + 1) ?>"
+                           class="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
+                    <datalist id="existing-academic-years">
+                        <?php foreach ($academicYears as $ay): ?>
+                            <option value="<?= e($ay['academic_year']) ?>"></option>
+                        <?php endforeach; ?>
+                    </datalist>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                    <button type="button" @click="showEnrollModal = false"
+                            class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-350 hover:bg-slate-750 transition-all">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-md hover:opacity-95 transition-all"
+                            style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff !important;">
+                        Enroll Student
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -427,6 +515,7 @@ function studentProfile() {
         statusOpen: false,
         showAddContact: false,
         showUpload: false,
+        showEnrollModal: false,
     }
 }
 </script>

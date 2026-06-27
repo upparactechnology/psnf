@@ -11,11 +11,13 @@ class DashboardController extends Controller
 {
     public function index(): string
     {
-        if (has_role('parent')) {
-            $this->redirect('/parent/dashboard');
-        }
-        if (has_role('teacher')) {
-            $this->redirect('/teacher/dashboard');
+        if (!has_role('super_admin') && !has_role('school_admin') && !has_role('manager')) {
+            if (has_role('parent')) {
+                $this->redirect('/parent/dashboard');
+            }
+            if (has_role('teacher')) {
+                $this->redirect('/teacher/dashboard');
+            }
         }
 
         $sessionUser = $this->auth();
@@ -36,13 +38,13 @@ class DashboardController extends Controller
                 if ($rawApp === 'staff_dashboard') {
                     $assignedApps = array_merge($assignedApps, [
                         'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
-                        'transport', 'file_manager', 'games', 'config'
+                        'transport', 'file_manager', 'games', 'config', 'report_cards'
                     ]);
                 } elseif ($rawApp === 'driver_app') {
                     $assignedApps[] = 'transport';
                 } elseif ($rawApp === 'teacher_app') {
                     $assignedApps = array_merge($assignedApps, [
-                        'academic', 'academic_summary', 'medical', 'games'
+                        'academic', 'academic_summary', 'medical', 'games', 'report_cards'
                     ]);
                 } elseif ($rawApp === 'parents_dashboard') {
                     // Parents dashboard doesn't need admin launcher items
@@ -52,12 +54,11 @@ class DashboardController extends Controller
             }
             $assignedApps = array_unique($assignedApps);
         } else {
-            // Default: if no assignment exists and user is admin/manager, grant all apps.
-            // Teachers with no assignments get none.
-            if (has_role('super_admin') || has_role('school_admin') || has_role('manager')) {
+            // Default: if no assignment exists and user is admin/manager/teacher, grant all apps.
+            if (has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher')) {
                 $assignedApps = [
                     'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
-                    'transport', 'file_manager', 'games', 'config'
+                    'transport', 'file_manager', 'games', 'config', 'report_cards'
                 ];
             }
         }

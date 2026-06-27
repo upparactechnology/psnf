@@ -58,12 +58,25 @@
     </div>
 
     <!-- The Certificate visual sheet -->
-    <div class="cert-container w-full max-w-3xl bg-white border-8 p-12 flex flex-col justify-between aspect-[1.414/1] shadow-2xl relative select-none rounded-sm border-double"
-         style="
-            font-family: '<?= e($design['font_family'] ?? 'Playfair Display') ?>', serif;
-            border-color: <?= ($design['border_style'] === 'gold') ? '#d97706' : e($design['primary_color'] ?? '#3b82f6') ?>;
-            border-style: <?= ($design['border_style'] === 'none') ? 'none' : 'double' ?>;
-         ">
+    <?php if (isset($design['is_legacy']) && $design['is_legacy'] && str_ends_with($design['file_path'], '.pdf')): ?>
+        <div class="w-full max-w-3xl bg-white shadow-2xl rounded-2xl overflow-hidden border border-slate-200 flex flex-col items-center p-8 space-y-4">
+            <div class="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-650">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <h3 class="text-base font-bold text-slate-800">Certificate PDF Document</h3>
+            <p class="text-xs text-slate-500">Your certificate document is loaded below. You can download it directly to print.</p>
+            <iframe src="<?= url(ltrim($design['file_path'], '/')) ?>" class="w-full h-[500px] border rounded-xl" frameborder="0"></iframe>
+            <a href="<?= url(ltrim($design['file_path'], '/')) ?>" download class="w-full text-center py-2.5 bg-indigo-600 text-white font-bold rounded-xl text-xs hover:bg-indigo-700 shadow transition-all">
+                Download PDF Certificate
+            </a>
+        </div>
+    <?php else: ?>
+        <div class="cert-container w-full max-w-3xl bg-white border-8 p-12 flex flex-col justify-between aspect-[1.414/1] shadow-2xl relative select-none rounded-sm border-double"
+             style="
+                font-family: '<?= e($design['font_family'] ?? 'Playfair Display') ?>', serif;
+                border-color: <?= ($design['border_style'] === 'gold') ? '#d97706' : e($design['primary_color'] ?? '#3b82f6') ?>;
+                border-style: <?= ($design['border_style'] === 'none') ? 'none' : 'double' ?>;
+             ">
 
         <!-- Background Overlay Patterns -->
         <?php if (($design['template'] ?? 'academic') === 'academic'): ?>
@@ -112,6 +125,7 @@
         </div>
 
     </div>
+    <?php endif; ?>
 
 </body>
 </html>

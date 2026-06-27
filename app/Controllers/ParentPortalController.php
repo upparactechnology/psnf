@@ -95,7 +95,8 @@ class ParentPortalController extends Controller
 
     public function dashboard(): string
     {
-        $context = $this->getContext();
+        $childId = Application::$app->request->get('child_id');
+        $context = $this->getContext($childId !== null ? (int)$childId : null);
         $student = $context['active_student'];
 
         // 1. Fetch attendance summary
@@ -462,17 +463,53 @@ class ParentPortalController extends Controller
             [$student['id']]
         );
 
-        // Fetch certificates too
-        $certificates = $this->db()->select(
-            "SELECT * FROM certificates
-             WHERE student_id = ?
-             ORDER BY issued_at DESC",
-            [$student['id']]
-        );
+        // Fetch generated certificates from the sub-app module
+        $certificates = $this->db()->select("
+            SELECT 
+                gc.id,
+                ct.name AS title,
+                ct.name AS certificate_type,
+                gc.pdf_path AS file_path,
+                gc.generated_at AS issued_at,
+                'generated' AS source,
+                p.id AS participant_id
+            FROM generated_certificates gc
+            JOIN participants p ON p.id = gc.participant_id
+            JOIN certificate_types ct ON ct.id = p.certificate_type_id
+            WHERE p.student_id = ?
+            ORDER BY issued_at DESC
+        ", [$student['id']]);
 
         return View::render('parent/exams', array_merge($context, [
             'title'        => 'Evaluations & Certificates',
             'results'      => $results,
+            'certificates' => $certificates,
+        ]));
+    }
+
+    public function certificates(string $id): string
+    {
+        $context = $this->getContext((int)$id);
+        $student = $context['active_student'];
+
+        $certificates = $this->db()->select("
+            SELECT 
+                gc.id,
+                ct.name AS title,
+                ct.name AS certificate_type,
+                gc.pdf_path AS file_path,
+                gc.generated_at AS issued_at,
+                'generated' AS source,
+                p.id AS participant_id
+            FROM generated_certificates gc
+            JOIN participants p ON p.id = gc.participant_id
+            JOIN certificate_types ct ON ct.id = p.certificate_type_id
+            WHERE p.student_id = ?
+            ORDER BY issued_at DESC
+        ", [$student['id']]);
+
+        return View::render('parent/certificates', array_merge($context, [
+            'title'        => 'Student Certificates',
             'certificates' => $certificates,
         ]));
     }

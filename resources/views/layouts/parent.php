@@ -91,6 +91,159 @@
         .htmx-indicator { opacity: 0; transition: opacity 200ms; }
         .htmx-request .htmx-indicator { opacity: 1; }
         .htmx-request.htmx-indicator { opacity: 1; }
+        /* Light Mode CSS Overrides */
+        html:not(.dark) body {
+            background-color: #f8fafc !important;
+            color: #1e293b !important;
+        }
+        
+        /* Background Overrides */
+        html:not(.dark) [class*="bg-slate-950"] { background-color: #f8fafc !important; }
+        html:not(.dark) [class*="bg-slate-900"] { background-color: #ffffff !important; }
+        html:not(.dark) [class*="bg-slate-850"] { background-color: #ffffff !important; }
+        html:not(.dark) [class*="bg-slate-800"] { background-color: #f1f5f9 !important; }
+        html:not(.dark) [class*="bg-slate-700"] { background-color: #cbd5e1 !important; }
+        html:not(.dark) [class*="bg-white/5"] { background-color: rgba(0, 0, 0, 0.03) !important; }
+        html:not(.dark) [class*="bg-white/10"] { background-color: rgba(0, 0, 0, 0.06) !important; }
+        html:not(.dark) [class*="bg-white/20"] { background-color: rgba(0, 0, 0, 0.1) !important; }
+
+        /* Text Overrides */
+        html:not(.dark) [class*="text-slate-100"] { color: #1e293b !important; }
+        html:not(.dark) [class*="text-slate-200"] { color: #334155 !important; }
+        html:not(.dark) [class*="text-slate-300"] { color: #475569 !important; }
+        html:not(.dark) [class*="text-slate-400"] { color: #64748b !important; }
+        html:not(.dark) [class*="text-slate-500"] { color: #64748b !important; }
+        html:not(.dark) [class*="text-white"]:not(button):not([class*="bg-brand"]):not([class*="bg-indigo"]):not([class*="bg-purple"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="badge-"]):not(.rounded-2xl) {
+            color: #0f172a !important;
+        }
+
+        /* Hover Text Overrides */
+        html:not(.dark) [class*="hover:text-white"]:hover { color: #0f172a !important; }
+        html:not(.dark) [class*="hover:text-slate-100"]:hover { color: #1e293b !important; }
+        html:not(.dark) [class*="hover:text-slate-200"]:hover { color: #334155 !important; }
+        html:not(.dark) [class*="hover:text-slate-300"]:hover { color: #475569 !important; }
+
+        /* Brand / Accent colors */
+        html:not(.dark) [class*="text-brand-400"] { color: #4f46e5 !important; }
+        html:not(.dark) [class*="text-brand-300"] { color: #4338ca !important; }
+        html:not(.dark) [class*="hover:text-brand-300"]:hover { color: #4338ca !important; }
+
+        /* Borders Overrides */
+        html:not(.dark) [class*="border-slate-"] { border-color: #e2e8f0 !important; }
+        html:not(.dark) [class*="border-white/5"] { border-color: rgba(0, 0, 0, 0.06) !important; }
+        html:not(.dark) [class*="border-white/10"] { border-color: rgba(0, 0, 0, 0.08) !important; }
+        html:not(.dark) [class*="border-white/20"] { border-color: rgba(0, 0, 0, 0.12) !important; }
+
+        /* Form Inputs */
+        html:not(.dark) input, 
+        html:not(.dark) select, 
+        html:not(.dark) textarea {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+        html:not(.dark) input::placeholder,
+        html:not(.dark) textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+        html:not(.dark) input[type="checkbox"] {
+            background-color: #ffffff !important;
+            border-color: #cbd5e1 !important;
+            color: #4f46e5 !important;
+        }
+
+        /* Glass Panel */
+        html:not(.dark) .glass {
+            background: rgba(255, 255, 255, 0.8) !important;
+            border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        }
+
+        /* Sidebar Navigation */
+        html:not(.dark) .sidebar-link {
+            color: #475569 !important;
+        }
+        html:not(.dark) .sidebar-link:hover {
+            color: #0f172a !important;
+            background-color: rgba(0, 0, 0, 0.04) !important;
+        }
+        html:not(.dark) .sidebar-link.active {
+            background-color: rgba(99, 102, 241, 0.1) !important;
+            color: #4f46e5 !important;
+            border-color: rgba(99, 102, 241, 0.2) !important;
+        }
+
+        /* Badges */
+        html:not(.dark) .badge-applied { background-color: #f1f5f9 !important; color: #475569 !important; border-color: #cbd5e1 !important; }
+        html:not(.dark) .badge-review { background-color: #fef9c3 !important; color: #854d0e !important; border-color: #fef08a !important; }
+        html:not(.dark) .badge-assessment { background-color: #dbeafe !important; color: #1e40af !important; border-color: #bfdbfe !important; }
+        html:not(.dark) .badge-approved { background-color: #d1fae5 !important; color: #065f46 !important; border-color: #a7f3d0 !important; }
+        html:not(.dark) .badge-enrolled { background-color: #e0e9ff !important; color: #3730a3 !important; border-color: #c7d7fe !important; }
+        html:not(.dark) .badge-withdrawn { background-color: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; }
+
+        /* Tables */
+        html:not(.dark) table {
+            border-color: #e2e8f0 !important;
+        }
+        html:not(.dark) thead tr {
+            background-color: #f8fafc !important;
+        }
+        html:not(.dark) th {
+            color: #475569 !important;
+        }
+        html:not(.dark) td {
+            color: #334155 !important;
+            border-color: #e2e8f0 !important;
+        }
+        html:not(.dark) tr:hover {
+            background-color: rgba(241, 245, 249, 0.5) !important;
+        }
+
+        html:not(.dark) button[type="submit"]:not(.bg-red-600):not(.bg-emerald-600) {
+            color: #ffffff !important;
+        }
+
+        /* Color panel overrides for light mode */
+        html:not(.dark) [class*="bg-blue-"]:not(button) { background-color: #eff6ff !important; }
+        html:not(.dark) [class*="border-blue-"] { border-color: #bfdbfe !important; }
+        html:not(.dark) [class*="text-blue-"] { color: #1d4ed8 !important; }
+
+        html:not(.dark) [class*="bg-red-"]:not(button) { background-color: #fef2f2 !important; }
+        html:not(.dark) [class*="border-red-"] { border-color: #fca5a5 !important; }
+        html:not(.dark) [class*="text-red-"] { color: #b91c1c !important; }
+
+        html:not(.dark) [class*="bg-emerald-"]:not(button) { background-color: #ecfdf5 !important; }
+        html:not(.dark) [class*="border-emerald-"] { border-color: #a7f3d0 !important; }
+        html:not(.dark) [class*="text-emerald-"] { color: #047857 !important; }
+
+        html:not(.dark) [class*="bg-yellow-"]:not(button) { background-color: #fefce8 !important; }
+        html:not(.dark) [class*="border-yellow-"] { border-color: #fef08a !important; }
+        html:not(.dark) [class*="text-yellow-"] { color: #a16207 !important; }
+
+        html:not(.dark) [class*="bg-amber-"]:not(button) { background-color: #fffbeb !important; }
+        html:not(.dark) [class*="border-amber-"] { border-color: #fde68a !important; }
+        html:not(.dark) [class*="text-amber-"] { color: #b45309 !important; }
+
+        /* Dropdown/Menu Items inside slate containers */
+        html:not(.dark) [class*="bg-slate-"] button,
+        html:not(.dark) [class*="bg-slate-"] a {
+            color: #475569 !important;
+        }
+        html:not(.dark) [class*="bg-slate-"] button:hover,
+        html:not(.dark) [class*="bg-slate-"] a:hover {
+            color: #0f172a !important;
+            background-color: #f1f5f9 !important;
+        }
+
+        /* Explicit Dropdown Menu button styles inside absolute containers */
+        html:not(.dark) [class*="absolute"] button,
+        html:not(.dark) [class*="absolute"] a {
+            color: #1e293b !important;
+        }
+        html:not(.dark) [class*="absolute"] button:hover,
+        html:not(.dark) [class*="absolute"] a:hover {
+            color: #ffffff !important;
+            background-color: #4f46e5 !important;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-surface-950 dark:text-slate-200 font-sans antialiased min-h-screen" x-data="{ sidebarOpen: true, mobileNav: false, isDark: window.isDark, toggleTheme() { this.isDark = !this.isDark; if (this.isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); } } }">
@@ -166,7 +319,7 @@
                         if (str_contains($currentPath, '/parent/students/')) {
                             $switchUrl = str_replace('/parent/students/' . $active_student['id'], '/parent/students/' . $std['id'], $currentPath);
                         } else {
-                            $switchUrl = url("parent/dashboard");
+                            $switchUrl = url("parent/dashboard?child_id=" . $std['id']);
                         }
 
                         $classes = $isActive
@@ -210,6 +363,8 @@
                 'timetable' => '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
                 'homework'  => '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>',
                 'exams'     => '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+                'certificates' => '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+                'report_card'  => '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
                 'medical'   => '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>',
                 'transport' => '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4"/></svg>',
                 'fees'      => '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>',
@@ -229,6 +384,8 @@
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/timetable', $ic['timetable'], 'Weekly Timetable', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/homework', $ic['homework'], 'Active Homework', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/exams', $ic['exams'], 'Exams & Progress', $currentPath, $sidebarOpen); ?>
+            <?php parentNavLink('/parent/students/' . $active_student['id'] . '/certificates', $ic['certificates'], 'Certificates', $currentPath, $sidebarOpen); ?>
+            <?php parentNavLink('/parent/students/' . $active_student['id'] . '/report-card', $ic['report_card'], 'Report Card', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/medical', $ic['medical'], 'Medical Warnings', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/transport', $ic['transport'], 'Bus Transport', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/fees', $ic['fees'], 'Fee Invoices', $currentPath, $sidebarOpen); ?>
@@ -287,7 +444,11 @@
                     <svg x-show="isDark" class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 </button>
 
-                <span class="text-xs text-slate-500 font-medium"><?= date('D, d M Y') ?></span>
+                <span class="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+                    <span><?= date('D, d M Y') ?></span>
+                    <span class="text-slate-300 dark:text-slate-700">|</span>
+                    <span class="live-header-clock font-mono">--:--:--</span>
+                </span>
             </div>
         </header>
 
@@ -316,6 +477,21 @@
         const flash = document.getElementById('flash-container');
         if (flash) flash.style.opacity = '0';
     }, 5000);
+
+    // Live Clock script
+    function startHeaderClock() {
+        const clockElements = document.querySelectorAll('.live-header-clock');
+        if (clockElements.length === 0) return;
+        function update() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            clockElements.forEach(el => el.textContent = timeStr);
+        }
+        update();
+        setInterval(update, 1000);
+    }
+    document.addEventListener('DOMContentLoaded', startHeaderClock);
+    document.body.addEventListener('htmx:afterSwap', startHeaderClock);
 </script>
 </body>
 </html>

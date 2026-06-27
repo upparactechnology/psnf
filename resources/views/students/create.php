@@ -40,7 +40,7 @@ $fn      = fn($key) => $old[$key] ?? '';
         <?php endforeach; ?>
     </div>
 
-    <form method="POST" action="<?= url('students') ?>" enctype="multipart/form-data" class="space-y-5">
+    <form method="POST" action="<?= url('students') ?>" enctype="multipart/form-data" class="space-y-5" @submit="loading = true">
         <?= \Core\View::csrf() ?>
 
         <!-- Step 0: Personal Info -->
@@ -126,7 +126,7 @@ $fn      = fn($key) => $old[$key] ?? '';
             </div>
 
             <div class="flex justify-end">
-                <button type="button" @click="step = 1" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+                <button type="button" @click="validateStep(1)" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff !important;">
                     Next: Disability & Care <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </button>
             </div>
@@ -173,7 +173,7 @@ $fn      = fn($key) => $old[$key] ?? '';
 
             <div class="flex items-center justify-between">
                 <button type="button" @click="step = 0" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-all">← Back</button>
-                <button type="button" @click="step = 2" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+                <button type="button" @click="validateStep(2)" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff !important;">
                     Next: Guardian <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </button>
             </div>
@@ -219,7 +219,7 @@ $fn      = fn($key) => $old[$key] ?? '';
 
             <div class="flex items-center justify-between">
                 <button type="button" @click="step = 1" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-all">← Back</button>
-                <button type="button" @click="step = 3" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+                <button type="button" @click="validateStep(3)" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff !important;">
                     Next: Medical <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </button>
             </div>
@@ -248,10 +248,10 @@ $fn      = fn($key) => $old[$key] ?? '';
 
             <div class="flex items-center justify-between">
                 <button type="button" @click="step = 2" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-all">← Back</button>
-                <button type="submit" x-data="{ loading: false }" @click="loading = true" :disabled="loading"
+                <button type="submit" :disabled="loading"
                         class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90"
-                        style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-                    <svg x-show="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        style="background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff !important;">
+                    <svg x-show="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" x-cloak><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                     Submit Application
                 </button>
             </div>
@@ -279,10 +279,30 @@ function errorMsg(string $field, array $errors): string {
 function studentForm() {
     return {
         step: <?= empty($errors) ? 0 : 0 ?>,
+        loading: false,
         selectedBranch: '',
         allBranches: <?= json_encode($branches) ?>,
         loadBranches(schoolId) {
             // Filter branches by school (already loaded)
+        },
+        validateStep(targetStep) {
+            const stepEl = document.querySelector(`[x-show="step === ${this.step}"]`);
+            if (stepEl) {
+                const inputs = stepEl.querySelectorAll('input, select, textarea');
+                let isValid = true;
+                for (let input of inputs) {
+                    if (!input.checkValidity()) {
+                        input.reportValidity();
+                        isValid = false;
+                        break;
+                    }
+                }
+                if (isValid) {
+                    this.step = targetStep;
+                }
+            } else {
+                this.step = targetStep;
+            }
         }
     }
 }

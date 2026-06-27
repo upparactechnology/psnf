@@ -79,6 +79,118 @@
         }
     });
     </script>
+    <style>
+        /* Light Mode CSS Overrides */
+        html:not(.dark) body {
+            background-color: #f8fafc !important;
+            color: #1e293b !important;
+        }
+        
+        /* Background Overrides */
+        html:not(.dark) [class*="bg-slate-950"] { background-color: #f8fafc !important; }
+        html:not(.dark) [class*="bg-slate-900"] { background-color: #ffffff !important; }
+        html:not(.dark) [class*="bg-slate-850"] { background-color: #ffffff !important; }
+        html:not(.dark) [class*="bg-slate-800"] { background-color: #f1f5f9 !important; }
+        html:not(.dark) [class*="bg-slate-700"] { background-color: #cbd5e1 !important; }
+        html:not(.dark) [class*="bg-white/5"] { background-color: rgba(0, 0, 0, 0.03) !important; }
+        html:not(.dark) [class*="bg-white/10"] { background-color: rgba(0, 0, 0, 0.06) !important; }
+        html:not(.dark) [class*="bg-white/20"] { background-color: rgba(0, 0, 0, 0.1) !important; }
+
+        /* Text Overrides */
+        html:not(.dark) [class*="text-slate-100"] { color: #1e293b !important; }
+        html:not(.dark) [class*="text-slate-200"] { color: #334155 !important; }
+        html:not(.dark) [class*="text-slate-300"] { color: #475569 !important; }
+        html:not(.dark) [class*="text-slate-400"] { color: #64748b !important; }
+        html:not(.dark) [class*="text-slate-500"] { color: #64748b !important; }
+        html:not(.dark) [class*="text-white"]:not(button):not([class*="bg-brand"]):not([class*="bg-indigo"]):not([class*="bg-purple"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="badge-"]):not(.rounded-2xl) {
+            color: #0f172a !important;
+        }
+
+        /* Hover Text Overrides */
+        html:not(.dark) [class*="hover:text-white"]:hover { color: #0f172a !important; }
+        html:not(.dark) [class*="hover:text-slate-100"]:hover { color: #1e293b !important; }
+        html:not(.dark) [class*="hover:text-slate-200"]:hover { color: #334155 !important; }
+        html:not(.dark) [class*="hover:text-slate-300"]:hover { color: #475569 !important; }
+
+        /* Brand / Accent colors */
+        html:not(.dark) [class*="text-brand-400"] { color: #4f46e5 !important; }
+        html:not(.dark) [class*="text-brand-300"] { color: #4338ca !important; }
+        html:not(.dark) [class*="hover:text-brand-300"]:hover { color: #4338ca !important; }
+
+        /* Borders Overrides */
+        html:not(.dark) [class*="border-slate-"] { border-color: #e2e8f0 !important; }
+        html:not(.dark) [class*="border-white/5"] { border-color: rgba(0, 0, 0, 0.06) !important; }
+        html:not(.dark) [class*="border-white/10"] { border-color: rgba(0, 0, 0, 0.08) !important; }
+        html:not(.dark) [class*="border-white/20"] { border-color: rgba(0, 0, 0, 0.12) !important; }
+
+        /* Form Inputs */
+        html:not(.dark) input, 
+        html:not(.dark) select, 
+        html:not(.dark) textarea {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+        html:not(.dark) input::placeholder,
+        html:not(.dark) textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+        html:not(.dark) input[type="checkbox"] {
+            background-color: #ffffff !important;
+            border-color: #cbd5e1 !important;
+            color: #4f46e5 !important;
+        }
+
+        /* Glass Panel */
+        html:not(.dark) .glass {
+            background: rgba(255, 255, 255, 0.8) !important;
+            border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        }
+
+        /* Sidebar Navigation */
+        html:not(.dark) .sidebar-link {
+            color: #475569 !important;
+        }
+        html:not(.dark) .sidebar-link:hover {
+            color: #0f172a !important;
+            background-color: rgba(0, 0, 0, 0.04) !important;
+        }
+        html:not(.dark) .sidebar-link.active {
+            background-color: rgba(99, 102, 241, 0.1) !important;
+            color: #4f46e5 !important;
+            border-color: rgba(99, 102, 241, 0.2) !important;
+        }
+
+        /* Badges */
+        html:not(.dark) .badge-applied { background-color: #f1f5f9 !important; color: #475569 !important; border-color: #cbd5e1 !important; }
+        html:not(.dark) .badge-review { background-color: #fef9c3 !important; color: #854d0e !important; border-color: #fef08a !important; }
+        html:not(.dark) .badge-assessment { background-color: #dbeafe !important; color: #1e40af !important; border-color: #bfdbfe !important; }
+        html:not(.dark) .badge-approved { background-color: #d1fae5 !important; color: #065f46 !important; border-color: #a7f3d0 !important; }
+        html:not(.dark) .badge-enrolled { background-color: #e0e9ff !important; color: #3730a3 !important; border-color: #c7d7fe !important; }
+        html:not(.dark) .badge-withdrawn { background-color: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; }
+
+        /* Tables */
+        html:not(.dark) table {
+            border-color: #e2e8f0 !important;
+        }
+        html:not(.dark) thead tr {
+            background-color: #f8fafc !important;
+        }
+        html:not(.dark) th {
+            color: #475569 !important;
+        }
+        html:not(.dark) td {
+            color: #334155 !important;
+            border-color: #e2e8f0 !important;
+        }
+        html:not(.dark) tr:hover {
+            background-color: rgba(241, 245, 249, 0.5) !important;
+        }
+
+        html:not(.dark) button[type="submit"]:not(.bg-red-600):not(.bg-emerald-600) {
+            color: #ffffff !important;
+        }
+    </style>
 </head>
 <body class="min-h-screen font-sans antialiased bg-slate-50 text-slate-800 dark:bg-[#080d1a] dark:text-slate-200 transition-colors duration-300" 
       x-data="{ isDark: window.isDark, toggleTheme() { this.isDark = !this.isDark; if (this.isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); } } }"

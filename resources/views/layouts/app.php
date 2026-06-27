@@ -108,6 +108,161 @@
         .htmx-request .htmx-indicator { opacity: 1; }
         .htmx-request.htmx-indicator { opacity: 1; }
     </style>
+    <style>
+        /* Light Mode CSS Overrides */
+        html:not(.dark) body {
+            background-color: #f8fafc !important;
+            color: #1e293b !important;
+        }
+        
+        /* Background Overrides */
+        html:not(.dark) [class*="bg-slate-950"] { background-color: #f8fafc !important; }
+        html:not(.dark) [class*="bg-slate-900"] { background-color: #ffffff !important; }
+        html:not(.dark) [class*="bg-slate-850"] { background-color: #ffffff !important; }
+        html:not(.dark) [class*="bg-slate-800"] { background-color: #f1f5f9 !important; }
+        html:not(.dark) [class*="bg-slate-700"] { background-color: #cbd5e1 !important; }
+        html:not(.dark) [class*="bg-white/5"] { background-color: rgba(0, 0, 0, 0.03) !important; }
+        html:not(.dark) [class*="bg-white/10"] { background-color: rgba(0, 0, 0, 0.06) !important; }
+        html:not(.dark) [class*="bg-white/20"] { background-color: rgba(0, 0, 0, 0.1) !important; }
+
+        /* Text Overrides */
+        html:not(.dark) [class*="text-slate-100"] { color: #1e293b !important; }
+        html:not(.dark) [class*="text-slate-200"] { color: #334155 !important; }
+        html:not(.dark) [class*="text-slate-300"] { color: #475569 !important; }
+        html:not(.dark) [class*="text-slate-400"] { color: #64748b !important; }
+        html:not(.dark) [class*="text-slate-500"] { color: #64748b !important; }
+        html:not(.dark) [class*="text-white"]:not(button):not([class*="bg-brand"]):not([class*="bg-indigo"]):not([class*="bg-purple"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="badge-"]):not(.rounded-2xl) {
+            color: #0f172a !important;
+        }
+
+        /* Hover Text Overrides */
+        html:not(.dark) [class*="hover:text-white"]:hover { color: #0f172a !important; }
+        html:not(.dark) [class*="hover:text-slate-100"]:hover { color: #1e293b !important; }
+        html:not(.dark) [class*="hover:text-slate-200"]:hover { color: #334155 !important; }
+        html:not(.dark) [class*="hover:text-slate-300"]:hover { color: #475569 !important; }
+
+        /* Brand / Accent colors */
+        html:not(.dark) [class*="text-brand-400"] { color: #4f46e5 !important; }
+        html:not(.dark) [class*="text-brand-300"] { color: #4338ca !important; }
+        html:not(.dark) [class*="hover:text-brand-300"]:hover { color: #4338ca !important; }
+
+        /* Borders Overrides */
+        html:not(.dark) [class*="border-slate-"] { border-color: #e2e8f0 !important; }
+        html:not(.dark) [class*="border-white/5"] { border-color: rgba(0, 0, 0, 0.06) !important; }
+        html:not(.dark) [class*="border-white/10"] { border-color: rgba(0, 0, 0, 0.08) !important; }
+        html:not(.dark) [class*="border-white/20"] { border-color: rgba(0, 0, 0, 0.12) !important; }
+
+        /* Form Inputs */
+        html:not(.dark) input, 
+        html:not(.dark) select, 
+        html:not(.dark) textarea {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+        }
+        html:not(.dark) input::placeholder,
+        html:not(.dark) textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+        html:not(.dark) input[type="checkbox"] {
+            background-color: #ffffff !important;
+            border-color: #cbd5e1 !important;
+            color: #4f46e5 !important;
+        }
+
+        /* Glass Panel */
+        html:not(.dark) .glass {
+            background: rgba(255, 255, 255, 0.8) !important;
+            border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        }
+
+        /* Sidebar Navigation */
+        html:not(.dark) .sidebar-link {
+            color: #475569 !important;
+        }
+        html:not(.dark) .sidebar-link:hover {
+            color: #0f172a !important;
+            background-color: rgba(0, 0, 0, 0.04) !important;
+        }
+        html:not(.dark) .sidebar-link.active {
+            background-color: rgba(99, 102, 241, 0.1) !important;
+            color: #4f46e5 !important;
+            border-color: rgba(99, 102, 241, 0.2) !important;
+        }
+
+        /* Badges */
+        html:not(.dark) .badge-applied { background-color: #f1f5f9 !important; color: #475569 !important; border-color: #cbd5e1 !important; }
+        html:not(.dark) .badge-review { background-color: #fef9c3 !important; color: #854d0e !important; border-color: #fef08a !important; }
+        html:not(.dark) .badge-assessment { background-color: #dbeafe !important; color: #1e40af !important; border-color: #bfdbfe !important; }
+        html:not(.dark) .badge-approved { background-color: #d1fae5 !important; color: #065f46 !important; border-color: #a7f3d0 !important; }
+        html:not(.dark) .badge-enrolled { background-color: #e0e9ff !important; color: #3730a3 !important; border-color: #c7d7fe !important; }
+        html:not(.dark) .badge-withdrawn { background-color: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; }
+
+        /* Tables */
+        html:not(.dark) table {
+            border-color: #e2e8f0 !important;
+        }
+        html:not(.dark) thead tr {
+            background-color: #f8fafc !important;
+        }
+        html:not(.dark) th {
+            color: #475569 !important;
+        }
+        html:not(.dark) td {
+            color: #334155 !important;
+            border-color: #e2e8f0 !important;
+        }
+        html:not(.dark) tr:hover {
+            background-color: rgba(241, 245, 249, 0.5) !important;
+        }
+
+        html:not(.dark) button[type="submit"]:not(.bg-red-600):not(.bg-emerald-600) {
+            color: #ffffff !important;
+        }
+
+        /* Color panel overrides for light mode */
+        html:not(.dark) [class*="bg-blue-"]:not(button) { background-color: #eff6ff !important; }
+        html:not(.dark) [class*="border-blue-"] { border-color: #bfdbfe !important; }
+        html:not(.dark) [class*="text-blue-"] { color: #1d4ed8 !important; }
+
+        html:not(.dark) [class*="bg-red-"]:not(button) { background-color: #fef2f2 !important; }
+        html:not(.dark) [class*="border-red-"] { border-color: #fca5a5 !important; }
+        html:not(.dark) [class*="text-red-"] { color: #b91c1c !important; }
+
+        html:not(.dark) [class*="bg-emerald-"]:not(button) { background-color: #ecfdf5 !important; }
+        html:not(.dark) [class*="border-emerald-"] { border-color: #a7f3d0 !important; }
+        html:not(.dark) [class*="text-emerald-"] { color: #047857 !important; }
+
+        html:not(.dark) [class*="bg-yellow-"]:not(button) { background-color: #fefce8 !important; }
+        html:not(.dark) [class*="border-yellow-"] { border-color: #fef08a !important; }
+        html:not(.dark) [class*="text-yellow-"] { color: #a16207 !important; }
+
+        html:not(.dark) [class*="bg-amber-"]:not(button) { background-color: #fffbeb !important; }
+        html:not(.dark) [class*="border-amber-"] { border-color: #fde68a !important; }
+        html:not(.dark) [class*="text-amber-"] { color: #b45309 !important; }
+
+        /* Dropdown/Menu Items inside slate containers */
+        html:not(.dark) [class*="bg-slate-"] button,
+        html:not(.dark) [class*="bg-slate-"] a {
+            color: #475569 !important;
+        }
+        html:not(.dark) [class*="bg-slate-"] button:hover,
+        html:not(.dark) [class*="bg-slate-"] a:hover {
+            color: #0f172a !important;
+            background-color: #f1f5f9 !important;
+        }
+
+        /* Explicit Dropdown Menu button styles inside absolute containers */
+        html:not(.dark) [class*="absolute"] button,
+        html:not(.dark) [class*="absolute"] a {
+            color: #1e293b !important;
+        }
+        html:not(.dark) [class*="absolute"] button:hover,
+        html:not(.dark) [class*="absolute"] a:hover {
+            color: #ffffff !important;
+            background-color: #4f46e5 !important;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-surface-950 dark:text-slate-200 font-sans antialiased min-h-screen" x-data="{ sidebarOpen: true, mobileNav: false, isDark: window.isDark, toggleTheme() { this.isDark = !this.isDark; if (this.isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); } } }">
 
@@ -145,13 +300,13 @@ if ($user) {
             if ($rawApp === 'staff_dashboard') {
                 $assignedApps = array_merge($assignedApps, [
                     'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
-                    'transport', 'file_manager', 'games', 'config'
+                    'transport', 'file_manager', 'games', 'config', 'report_cards'
                 ]);
             } elseif ($rawApp === 'driver_app') {
                 $assignedApps[] = 'transport';
             } elseif ($rawApp === 'teacher_app') {
                 $assignedApps = array_merge($assignedApps, [
-                    'academic', 'academic_summary', 'medical', 'games'
+                    'academic', 'academic_summary', 'medical', 'games', 'report_cards'
                 ]);
             } elseif ($rawApp === 'parents_dashboard') {
                 // Parents dashboard doesn't need admin launcher items
@@ -161,10 +316,10 @@ if ($user) {
         }
         $assignedApps = array_unique($assignedApps);
     } else {
-        if (has_role('super_admin') || has_role('school_admin') || has_role('manager')) {
+        if (has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher')) {
             $assignedApps = [
                 'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
-                'transport', 'file_manager', 'games', 'config'
+                'transport', 'file_manager', 'games', 'config', 'report_cards'
             ];
         }
     }
@@ -248,7 +403,9 @@ if ($user) {
 
             // Determine active module from path
             $module = '';
-            if (str_starts_with($currentPath, '/students') || str_starts_with($currentPath, '/admissions')) {
+            if (str_starts_with($currentPath, '/report-cards') || str_contains($currentPath, '/report-card')) {
+                $module = 'report_cards';
+            } elseif (str_starts_with($currentPath, '/students') || str_starts_with($currentPath, '/admissions')) {
                 $module = 'academic';
             } elseif (str_starts_with($currentPath, '/classes') || str_starts_with($currentPath, '/attendance') || str_starts_with($currentPath, '/certificates') || str_starts_with($currentPath, '/timetables') || str_starts_with($currentPath, '/exams')) {
                 $module = 'academic_summary';
@@ -267,13 +424,19 @@ if ($user) {
             <div class="mb-4 pb-3 border-b border-slate-200 dark:border-slate-800/60">
                 <?php navLink(dashboard_url(), $ic['launcher'], 'Back to Apps', $currentPath, $sidebarOpen); ?>
             </div>
+            <?php if ($module === 'report_cards'): ?>
+                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Report Cards</div>
+                <?php navLink('/report-cards', $ic['certificates'], 'Report Cards Panel', $currentPath, $sidebarOpen); ?>
+                <?php if (in_array('academic', $assignedApps)): ?>
+                    <?php navLink('/students', $ic['students'], 'Students Registry', $currentPath, $sidebarOpen); ?>
+                <?php endif; ?>
 
-            <?php if ($module === 'academic'): ?>
+            <?php elseif ($module === 'academic'): ?>
                 <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic</div>
                 <?php if (in_array('academic', $assignedApps)): ?>
                     <?php navLink('/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/report-cards', $ic['certificates'], 'Report Cards', $currentPath, $sidebarOpen); ?>
                 <?php endif; ?>
-
             <?php elseif ($module === 'academic_summary'): ?>
                 <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic Summary</div>
                 <?php if (in_array('academic_summary', $assignedApps) || in_array('academic', $assignedApps)): ?>
@@ -290,6 +453,7 @@ if ($user) {
                     <?php navLink('/fees', $ic['fees'], 'Fees & Invoices', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/receipts', $ic['receipts'], 'Receipts', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/scholarships', $ic['scholarships'], 'Scholarships', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/receipts/settings', $ic['settings'], 'Receipt Settings', $currentPath, $sidebarOpen); ?>
                 <?php endif; ?>
 
             <?php elseif ($module === 'transport'): ?>
@@ -361,7 +525,11 @@ if ($user) {
                     <!-- Moon (dark mode: click to switch to light) -->
                     <svg x-show="isDark" class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 </button>
-                <span class="text-xs text-slate-500"><?= date('D, d M Y') ?></span>
+                <span class="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+                    <span><?= date('D, d M Y') ?></span>
+                    <span class="text-slate-300 dark:text-slate-700">|</span>
+                    <span class="live-header-clock font-mono">--:--:--</span>
+                </span>
                 <div class="flex items-center gap-2">
                     <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
                         <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
@@ -405,7 +573,11 @@ if ($user) {
                     <svg x-show="isDark" class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 </button>
 
-                <span class="text-xs text-slate-500"><?= date('D, d M Y') ?></span>
+                <span class="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+                    <span><?= date('D, d M Y') ?></span>
+                    <span class="text-slate-300 dark:text-slate-700">|</span>
+                    <span class="live-header-clock font-mono">--:--:--</span>
+                </span>
             </div>
         </header>
         <?php endif; ?>
@@ -428,6 +600,21 @@ setTimeout(() => {
     const flash = document.getElementById('flash-container');
     if (flash) flash.style.opacity = '0';
 }, 5000);
+
+// Live Clock script
+function startHeaderClock() {
+    const clockElements = document.querySelectorAll('.live-header-clock');
+    if (clockElements.length === 0) return;
+    function update() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        clockElements.forEach(el => el.textContent = timeStr);
+    }
+    update();
+    setInterval(update, 1000);
+}
+document.addEventListener('DOMContentLoaded', startHeaderClock);
+document.body.addEventListener('htmx:afterSwap', startHeaderClock);
 </script>
 
 </body>

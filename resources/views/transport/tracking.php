@@ -369,7 +369,10 @@ function liveTracking() {
             const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="18" fill="${color}" opacity="0.15"/>
                 <circle cx="18" cy="18" r="13" fill="${color}"/>
-                <text x="18" y="22" text-anchor="middle" font-size="14" fill="white">🚌</text>
+                <g transform="translate(10, 10) scale(0.67)">
+                    <path d="M19 17a2 2 0 11-4 0 2 2 0 014 0zM9 17a2 2 0 11-4 0 2 2 0 014 0z" stroke="white" stroke-width="2" fill="none"/>
+                    <path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4" stroke="white" stroke-width="2" fill="none"/>
+                </g>
             </svg>`;
             return L.divIcon({
                 html: svg,
@@ -384,25 +387,43 @@ function liveTracking() {
             const speedColor = route.speed === 0 ? '#64748b' : (route.speed <= 60 ? '#10b981' : (route.speed <= 80 ? '#f59e0b' : '#ef4444'));
             const speedText = route.speed === 0 ? 'Stopped' : `${Math.round(route.speed)} km/h`;
             const popup = `
-                <div style="min-width:180px;font-family:Inter,sans-serif;">
-                    <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${route.name}</div>
-                    <div style="font-size:12px;color:#64748b;margin-bottom:2px;">🚌 ${route.bus}</div>
-                    <div style="font-size:12px;color:#64748b;margin-bottom:2px;">👤 ${route.driver}</div>
-                    <div style="font-size:12px;color:#64748b;margin-bottom:2px;">📞 ${route.phone}</div>
-                    <div style="font-size:12px;color:#64748b;margin-bottom:4px;">🎒 ${route.students} students</div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                <div style="min-width:180px;font-family:Inter,sans-serif;color:#1e293b;">
+                    <div style="font-weight:700;font-size:14px;margin-bottom:8px;color:#0f172a;">${route.name}</div>
+                    
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;margin-bottom:6px;">
+                        <svg style="width:14px;height:14px;color:#64748b;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4"/><circle cx="6" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+                        <span><strong>Bus:</strong> ${route.bus}</span>
+                    </div>
+                    
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;margin-bottom:6px;">
+                        <svg style="width:14px;height:14px;color:#64748b;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span><strong>Driver:</strong> ${route.driver}</span>
+                    </div>
+                    
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;margin-bottom:6px;">
+                        <svg style="width:14px;height:14px;color:#64748b;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.948V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        <span><strong>Phone:</strong> ${route.phone}</span>
+                    </div>
+                    
+                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;margin-bottom:8px;">
+                        <svg style="width:14px;height:14px;color:#64748b;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                        <span><strong>Students:</strong> ${route.students}</span>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
                         <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;display:inline-block;
                              background:${route.status === 'en_route' ? '#d1fae5' : '#f1f5f9'};
-                             color:${route.status === 'en_route' ? '#065f46' : '#64748b'};">
+                             color:${route.status === 'en_route' ? '#065f46' : '#64748b'}; border: 1px solid ${route.status === 'en_route' ? '#a7f3d0' : '#e2e8f0'};">
                             ${route.status === 'en_route' ? 'EN ROUTE' : route.status.toUpperCase()}
                         </span>
-                        <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;display:inline-block;
+                        <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;
                              background:${route.speed === 0 ? '#f1f5f9' : (route.speed <= 60 ? '#d1fae5' : (route.speed <= 80 ? '#fef3c7' : '#fee2e2'))};
-                             color:${speedColor};">
-                            ⚡ ${speedText}
+                             color:${speedColor}; border: 1px solid ${route.speed === 0 ? '#e2e8f0' : (route.speed <= 60 ? '#a7f3d0' : (route.speed <= 80 ? '#fde68a' : '#fca5a5'))};">
+                            <svg style="width:10px;height:10px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            ${speedText}
                         </span>
                     </div>
-                    ${route.updated_at ? `<div style="margin-top:6px;font-size:10px;color:#94a3b8;">Updated: ${route.updated_at}</div>` : ''}
+                    ${route.updated_at ? `<div style="margin-top:8px;font-size:10px;color:#94a3b8;">Updated: ${route.updated_at}</div>` : ''}
                 </div>`;
 
             if (this.markers[route.id]) {

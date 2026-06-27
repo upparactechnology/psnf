@@ -99,6 +99,9 @@ if (!function_exists('flash')) {
 if (!function_exists('url')) {
     function url(string $path = ''): string
     {
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '//')) {
+            return $path;
+        }
         $base = rtrim(config('app.base_url', ''), '/');
         return $base . '/' . ltrim($path, '/');
     }
@@ -225,6 +228,9 @@ if (!function_exists('e')) {
 if (!function_exists('dashboard_url')) {
     function dashboard_url(): string
     {
+        if (has_role('super_admin') || has_role('school_admin') || has_role('manager')) {
+            return '/dashboard';
+        }
         if (has_role('teacher')) {
             return '/teacher/dashboard';
         }

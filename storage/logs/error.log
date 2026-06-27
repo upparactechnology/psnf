@@ -554,3 +554,58 @@
 [21-Jun-2026 12:15:00 Asia/Kolkata] PHP Deprecated:  urlencode(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\classes\index.php on line 29
 [21-Jun-2026 13:13:58 Asia/Kolkata] PHP Deprecated:  urlencode(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\classes\index.php on line 29
 [21-Jun-2026 13:14:09 Asia/Kolkata] PHP Deprecated:  urlencode(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\psnf\resources\views\classes\index.php on line 29
+[23-Jun-2026 15:46:50 Asia/Kolkata] PHP Warning:  Undefined array key "allergies" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 36
+[23-Jun-2026 15:46:50 Asia/Kolkata] PHP Warning:  Undefined array key "triggers" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 41
+[23-Jun-2026 15:46:50 Asia/Kolkata] PHP Warning:  Undefined array key "current_medications" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 56
+[23-Jun-2026 15:46:50 Asia/Kolkata] PHP Warning:  Undefined array key "hospital" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 60
+[23-Jun-2026 15:46:50 Asia/Kolkata] PHP Warning:  Undefined array key "doctor_name" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 69
+[23-Jun-2026 15:46:50 Asia/Kolkata] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 70
+[23-Jun-2026 15:46:50 Asia/Kolkata] PHP Warning:  Undefined array key "doctor_phone" in C:\xampp\htdocs\psnf\resources\views\parent\medical.php on line 72
+[23-Jun-2026 16:08:08 Asia/Kolkata] PHP Warning:  Attempt to read property "first_name" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 154
+[23-Jun-2026 16:08:08 Asia/Kolkata] PHP Warning:  Attempt to read property "last_name" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 154
+[23-Jun-2026 16:08:19 Asia/Kolkata] PHP Warning:  Attempt to read property "tenant_id" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 112
+[23-Jun-2026 16:08:19 Asia/Kolkata] PHP Warning:  Attempt to read property "school_id" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 113
+[23-Jun-2026 16:08:19 Asia/Kolkata] PHP Warning:  Attempt to read property "branch_id" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 114
+[23-Jun-2026 16:09:29 Asia/Kolkata] PHP Warning:  Attempt to read property "first_name" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 154
+[23-Jun-2026 16:09:29 Asia/Kolkata] PHP Warning:  Attempt to read property "last_name" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 154
+[23-Jun-2026 16:09:32 Asia/Kolkata] PHP Warning:  Attempt to read property "first_name" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 154
+[23-Jun-2026 16:09:32 Asia/Kolkata] PHP Warning:  Attempt to read property "last_name" on array in C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php on line 154
+[23-Jun-2026 16:11:18 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:11:51 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:11:52 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:12:28 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:12:29 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:12:55 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:12:56 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:13:02 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:13:03 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:13:05 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:13:06 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:13:08 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:13:09 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:13:29 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 533
+[23-Jun-2026 16:14:48 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 538
+[23-Jun-2026 16:16:57 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 584
+[23-Jun-2026 16:17:37 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 584
+[23-Jun-2026 16:17:54 Asia/Kolkata] PHP Warning:  Undefined variable $name in C:\xampp\htdocs\psnf\resources\views\report-cards\view.php on line 584
+[23-Jun-2026 16:53:58 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:02 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:03 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:03 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:04 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:05 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:05 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:06 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:06 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:07 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:07 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:07 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:08 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:15 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:20 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:21 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:22 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:22 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:33 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:33 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature
+[23-Jun-2026 16:54:33 Asia/Kolkata] DEBUG: uploadSignature called! POST keys: _csrf FILES keys: signature

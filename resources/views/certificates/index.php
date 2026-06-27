@@ -53,17 +53,19 @@ ob_start();
                     <span class="text-3xs text-slate-400">Issued: <?= e($c['issued_at']) ?></span>
                     
                     <div class="flex items-center gap-2">
-                        <a href="<?= url("certificates/{$c['id']}/view") ?>" target="_blank"
+                        <a href="<?= $c['source'] === 'generated' ? url('../certificate_generator/index.php?page=download-file&participant_id=' . (int)$c['participant_id'] . '&format=pdf') : url("certificates/{$c['id']}/view") ?>" target="_blank"
                            class="px-2.5 py-1 text-2xs font-semibold text-brand-650 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/20 hover:bg-brand-100 dark:hover:bg-brand-900/30 rounded-lg transition-all"
                            title="View Certificate">
                             Print / View
                         </a>
+                        <?php if ($c['source'] !== 'generated'): ?>
                         <form action="<?= url("certificates/{$c['id']}/delete") ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this certificate?')">
                             <?= \Core\View::csrf() ?>
                             <button type="submit" class="p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </button>
                         </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
