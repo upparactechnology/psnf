@@ -617,6 +617,7 @@ class ParentPortalController extends Controller
             'payment_method' => $method,
             'payment_ref'    => $ref,
             'paid_at'        => now(),
+            'payment_source' => 'parent_online',
         ]);
 
         // Log to Student Timeline

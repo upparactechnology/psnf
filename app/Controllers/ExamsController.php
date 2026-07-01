@@ -20,13 +20,27 @@ class ExamsController extends Controller
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
 
+        // Ensure classes table exists
+        $db->query("
+            CREATE TABLE IF NOT EXISTS `classes` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `tenant_id` INT UNSIGNED NOT NULL,
+                `school_id` INT UNSIGNED NOT NULL,
+                `branch_id` INT UNSIGNED NOT NULL,
+                `name` VARCHAR(100) NOT NULL,
+                `section` VARCHAR(50) NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY `uq_class_section` (`tenant_id`, `name`, `section`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
         // Fetch all classes & sections to populate filter dropdowns
         $classes = $db->select(
-            "SELECT class, section 
-             FROM students 
-             WHERE tenant_id = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
-             GROUP BY class, section 
-             ORDER BY class ASC, section ASC",
+            "SELECT name as class, section 
+             FROM classes 
+             WHERE tenant_id = ?
+             ORDER BY name ASC, section ASC",
             [$tenantId]
         );
 

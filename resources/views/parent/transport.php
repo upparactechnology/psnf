@@ -20,78 +20,85 @@
         <!-- Left Column: Bus Status and Progress Tracker (2 cols wide) -->
         <div class="lg:col-span-2 space-y-6">
 
-            <!-- Route Details & Visual Map Simulation -->
+            <!-- Route Details & Live Map Tracking -->
             <div class="rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/20 p-6 space-y-6 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div class="space-y-0.5">
-                        <h4 class="text-sm font-bold text-slate-800 dark:text-white"><?= e($transport['route_name']) ?></h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">Bus Number: <span class="text-indigo-650 dark:text-indigo-400 font-semibold"><?= e($transport['bus_number']) ?></span></p>
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-white" id="live-route-name"><?= e($transport['route_name']) ?></h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Bus Number: <span class="text-indigo-650 dark:text-indigo-400 font-semibold" id="live-bus-number"><?= e($transport['bus_number']) ?></span></p>
                     </div>
                     <?php
                     $isEnRoute = $transport['status'] === 'en_route';
                     $statusColor = $isEnRoute ? 'text-emerald-605 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/10' : 'text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800';
                     ?>
-                    <span class="px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 <?= $statusColor ?>">
+                    <span class="px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 <?= $statusColor ?>" id="live-status-badge">
                         <?php if ($isEnRoute): ?>
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" id="live-status-ping"></span>
                         <?php endif; ?>
-                        <?= $isEnRoute ? 'En Route' : 'Inactive' ?>
+                        <span id="live-status-text"><?= $isEnRoute ? 'En Route' : ($transport['status'] === 'completed' ? 'Completed' : 'Inactive') ?></span>
                     </span>
                 </div>
 
-                <!-- Bus Route Progress Tracker (Simulated Map Route) -->
-                <div class="p-6 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-955/40 relative overflow-hidden shadow-inner">
-                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">Bus Stop Schedule & Tracking</p>
-
-                    <div class="relative pl-8 space-y-6">
-                        <!-- Vertical timeline bar -->
-                        <div class="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800"></div>
-
-                        <!-- Stops -->
-                        <div class="relative flex items-center justify-between gap-4">
-                            <!-- Node dot -->
-                            <div class="absolute -left-7 w-2.5 h-2.5 rounded-full bg-slate-350 dark:bg-slate-700 border-4 border-white dark:border-slate-950"></div>
-                            <div>
-                                <h5 class="text-xs font-bold text-slate-500 dark:text-slate-400">Stop 1: Society Main Gate</h5>
-                                <p class="text-[10px] text-slate-450 dark:text-slate-500">Scheduled: 08:15 AM &nbsp;|&nbsp; Actual: 08:16 AM</p>
-                            </div>
-                            <span class="text-[9px] font-semibold text-emerald-650 dark:text-emerald-400 uppercase tracking-wider">Passed</span>
-                        </div>
-
-                        <div class="relative flex items-center justify-between gap-4">
-                            <!-- Active node dot (flashing) -->
-                            <div class="absolute -left-8 w-4 h-4 rounded-full bg-indigo-500 border-4 border-white dark:border-slate-950 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                                <span class="absolute w-full h-full rounded-full bg-indigo-400 animate-ping opacity-70"></span>
-                            </div>
-                            <div>
-                                <h5 class="text-xs font-bold text-slate-800 dark:text-white">Stop 2: Western Express Crossroad</h5>
-                                <p class="text-[10px] text-slate-500 dark:text-slate-400">Scheduled: 08:30 AM &nbsp;|&nbsp; Est: 08:32 AM</p>
-                            </div>
-                            <span class="text-[9px] font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-wider animate-pulse">Current Position</span>
-                        </div>
-
-                        <div class="relative flex items-center justify-between gap-4">
-                            <!-- Node dot -->
-                            <div class="absolute -left-7 w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-white dark:border-slate-950"></div>
-                            <div>
-                                <h5 class="text-xs font-bold text-slate-400 dark:text-slate-500">Stop 3: Link Road Flyover</h5>
-                                <p class="text-[10px] text-slate-450 dark:text-slate-500">Scheduled: 08:42 AM</p>
-                            </div>
-                            <span class="text-[9px] font-semibold text-slate-450 dark:text-slate-600 uppercase tracking-wider">Pending</span>
-                        </div>
-
-                        <div class="relative flex items-center justify-between gap-4">
-                            <!-- Node dot -->
-                            <div class="absolute -left-7 w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-white dark:border-slate-950"></div>
-                            <div>
-                                <h5 class="text-xs font-bold text-slate-450 dark:text-slate-500">Stop 4: PSNF Main School</h5>
-                                <p class="text-[10px] text-slate-450 dark:text-slate-500">Scheduled: 08:55 AM</p>
-                            </div>
-                            <span class="text-[9px] font-semibold text-slate-450 dark:text-slate-600 uppercase tracking-wider">School</span>
-                        </div>
-                    </div>
+                <!-- Live Map Container -->
+                <div class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800/80 shadow-sm bg-slate-100 dark:bg-slate-950" style="height: 350px; position: relative;">
+                    <div id="live-map" style="width:100%; height:100%; z-index:1;"></div>
                 </div>
 
+                <!-- Live Details Info Grid -->
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div class="p-3 bg-slate-50 dark:bg-slate-955/30 border border-slate-150 dark:border-slate-800/40 rounded-xl shadow-inner">
+                        <span class="text-slate-500 dark:text-slate-450 uppercase text-[9px] font-bold tracking-wider">Live Speed</span>
+                        <p class="text-sm font-bold text-slate-800 dark:text-white mt-0.5" id="live-speed-text"><?= round($transport['current_speed'] ?? 0) ?> km/h</p>
+                    </div>
+                    <div class="p-3 bg-slate-50 dark:bg-slate-955/30 border border-slate-150 dark:border-slate-800/40 rounded-xl shadow-inner">
+                        <span class="text-slate-500 dark:text-slate-450 uppercase text-[9px] font-bold tracking-wider">Last Position Update</span>
+                        <p class="text-sm font-bold text-slate-800 dark:text-white mt-0.5" id="live-updated-text"><?= $transport['last_updated_at'] ? date('h:i:s A', strtotime($transport['last_updated_at'])) : '—' ?></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bus Route Progress Tracker (Dynamic Stops) -->
+            <div class="p-6 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-955/40 relative overflow-hidden shadow-inner">
+                <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">Bus Stops & Schedule</p>
+
+                <div class="relative pl-8 space-y-6">
+                    <!-- Vertical timeline bar -->
+                    <div class="absolute left-3 top-2 bottom-2 w-0.5 bg-slate-200 dark:bg-slate-800"></div>
+
+                    <!-- Route Start -->
+                    <div class="relative flex items-center justify-between gap-4">
+                        <div class="absolute -left-7 w-2.5 h-2.5 rounded-full bg-emerald-500 border-4 border-white dark:border-slate-950"></div>
+                        <div>
+                            <h5 class="text-xs font-bold text-slate-700 dark:text-slate-350">Route Start: Depot</h5>
+                            <p class="text-[10px] text-slate-500">Scheduled: 08:00 AM</p>
+                        </div>
+                        <span class="text-[9px] font-semibold text-emerald-600 dark:text-emerald-450 uppercase tracking-wider">Departed</span>
+                    </div>
+
+                    <!-- Student's Pickup Stop -->
+                    <div class="relative flex items-center justify-between gap-4">
+                        <div class="absolute -left-7 w-2.5 h-2.5 rounded-full bg-indigo-500 border-4 border-white dark:border-slate-950" id="pickup-node-dot"></div>
+                        <div>
+                            <h5 class="text-xs font-bold text-slate-805 dark:text-white">Your Pickup Stop: <?= e($transport['pickup_point']) ?></h5>
+                            <p class="text-[10px] text-slate-500">Scheduled: <?= date('h:i A', strtotime($transport['pickup_time'])) ?></p>
+                        </div>
+                        <span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider" id="live-timeline-status">
+                            <?= $transport['status'] === 'en_route' ? 'En Route' : ($transport['status'] === 'completed' ? 'Arrived' : 'Scheduled') ?>
+                        </span>
+                    </div>
+
+                    <!-- Destination School -->
+                    <div class="relative flex items-center justify-between gap-4">
+                        <div class="absolute -left-7 w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-white dark:border-slate-950" id="school-node-dot"></div>
+                        <div>
+                            <h5 class="text-xs font-bold text-slate-550 dark:text-slate-400">Destination: PSNF School</h5>
+                            <p class="text-[10px] text-slate-450 dark:text-slate-500">Expected: 08:55 AM</p>
+                        </div>
+                        <span class="text-[9px] font-semibold text-slate-455 dark:text-slate-600 uppercase tracking-wider" id="live-school-status">
+                            <?= $transport['status'] === 'completed' ? 'Arrived' : 'Pending' ?>
+                        </span>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -141,3 +148,119 @@
     <?php endif; ?>
 
 </div>
+
+<?php if ($transport): ?>
+<!-- Leaflet CSS + JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const routeId = <?= (int)$transport['id'] ?>;
+    let currentLat = <?= (float)($transport['current_latitude'] ?? 19.076090) ?>;
+    let currentLng = <?= (float)($transport['current_longitude'] ?? 72.877426) ?>;
+    let currentStatus = "<?= e($transport['status']) ?>";
+    
+    // Initialize Leaflet Map
+    const map = L.map('live-map').setView([currentLat, currentLng], 14);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+    }).addTo(map);
+
+    // Custom Icon for Bus
+    function busIcon(status) {
+        const color = status === 'en_route' ? '#10b981' : '#94a3b8';
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="18" fill="${color}" opacity="0.15"/>
+            <circle cx="18" cy="18" r="13" fill="${color}"/>
+            <g transform="translate(10, 10) scale(0.67)">
+                <path d="M19 17a2 2 0 11-4 0 2 2 0 014 0zM9 17a2 2 0 11-4 0 2 2 0 014 0z" stroke="white" stroke-width="2" fill="none"/>
+                <path d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4" stroke="white" stroke-width="2" fill="none"/>
+            </g>
+        </svg>`;
+        return L.divIcon({
+            html: svg,
+            iconSize:   [36, 36],
+            iconAnchor: [18, 18],
+            popupAnchor:[0, -20],
+            className:  '',
+        });
+    }
+
+    // Add Bus Marker
+    const marker = L.marker([currentLat, currentLng], { icon: busIcon(currentStatus) }).addTo(map);
+    marker.bindPopup(`
+        <div style="font-family:Inter,sans-serif;color:#1e293b;min-width:140px;">
+            <div style="font-weight:700;font-size:12px;margin-bottom:4px;color:#0f172a;"><?= e($transport['route_name']) ?></div>
+            <div style="font-size:10px;color:#64748b;margin-bottom:4px;">Bus: <?= e($transport['bus_number']) ?></div>
+            <div style="font-size:10px;color:#64748b;">Driver: <?= e($transport['driver_name']) ?></div>
+        </div>
+    `).openPopup();
+
+    // Start Polling for location updates
+    setInterval(async () => {
+        try {
+            const res = await fetch('<?= url("transport/live-data") ?>', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            if (data.success && data.routes) {
+                const route = data.routes.find(r => r.id === routeId);
+                if (route) {
+                    currentLat = route.lat;
+                    currentLng = route.lng;
+                    currentStatus = route.status;
+                    
+                    // Update Map Marker position & icon
+                    marker.setLatLng([currentLat, currentLng]);
+                    marker.setIcon(busIcon(currentStatus));
+                    map.panTo([currentLat, currentLng]);
+
+                    // Update UI text values dynamically
+                    document.getElementById('live-speed-text').innerText = Math.round(route.speed) + ' km/h';
+                    const lastUpdated = new Date(route.updated_at || new Date());
+                    document.getElementById('live-updated-text').innerText = lastUpdated.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    
+                    // Update Status Badge
+                    const badge = document.getElementById('live-status-badge');
+                    const statusText = document.getElementById('live-status-text');
+                    const statusPing = document.getElementById('live-status-ping');
+                    const timelineStatus = document.getElementById('live-timeline-status');
+                    const schoolStatus = document.getElementById('live-school-status');
+                    const schoolDot = document.getElementById('school-node-dot');
+
+                    if (currentStatus === 'en_route') {
+                        badge.className = "px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 text-emerald-605 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/10";
+                        statusText.innerText = "En Route";
+                        if (!statusPing) {
+                            badge.insertAdjacentHTML('afterbegin', '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" id="live-status-ping"></span>');
+                        }
+                        if (timelineStatus) timelineStatus.innerText = "En Route";
+                        if (schoolStatus) schoolStatus.innerText = "Pending";
+                        if (schoolDot) schoolDot.className = "absolute -left-7 w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-white dark:border-slate-950";
+                    } else if (currentStatus === 'completed') {
+                        badge.className = "px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 text-emerald-605 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/10";
+                        statusText.innerText = "Completed";
+                        if (statusPing) statusPing.remove();
+                        if (timelineStatus) timelineStatus.innerText = "Arrived";
+                        if (schoolStatus) schoolStatus.innerText = "Arrived";
+                        if (schoolDot) schoolDot.className = "absolute -left-7 w-2.5 h-2.5 rounded-full bg-emerald-500 border-4 border-white dark:border-slate-950";
+                    } else {
+                        badge.className = "px-3 py-1 rounded-full border text-xs font-bold flex items-center gap-1.5 text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-800";
+                        statusText.innerText = "Inactive";
+                        if (statusPing) statusPing.remove();
+                        if (timelineStatus) timelineStatus.innerText = "Scheduled";
+                        if (schoolStatus) schoolStatus.innerText = "Pending";
+                        if (schoolDot) schoolDot.className = "absolute -left-7 w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700 border-4 border-white dark:border-slate-950";
+                    }
+                </div>
+            }
+        } catch (e) {
+            console.error("Failed to fetch live tracking data", e);
+        }
+    }, 5000);
+});
+</script>
+<?php endif; ?>

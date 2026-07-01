@@ -67,7 +67,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Academic Summary</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Classes, Attendance & More</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_classes'] ?? 0 ?> Active Classes</span>
             </a>
             <?php endif; ?>
 
@@ -93,7 +93,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Roles & Permissions</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Roles & Perms</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_roles'] ?? 0 ?> Roles</span>
             </a>
             <?php endif; ?>
 
@@ -106,7 +106,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Finance & Fees</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Invoicing Admin</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_invoices'] ?? 0 ?> Invoices</span>
             </a>
             <?php endif; ?>
 
@@ -119,7 +119,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">Medical Logs</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Care Profiles</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_medical_logs'] ?? 0 ?> Care Profiles</span>
             </a>
             <?php endif; ?>
 
@@ -132,7 +132,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors">Transport & Bus</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Route Assigns</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_routes'] ?? 0 ?> Transit Routes</span>
             </a>
             <?php endif; ?>
 
@@ -147,7 +147,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">File Manager</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Secure DRM</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_files'] ?? 0 ?> DRM Files</span>
             </a>
             <?php endif; ?>
 
@@ -161,7 +161,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-fuchsia-600 dark:group-hover:text-fuchsia-400 transition-colors">Learning Games</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Interactive Play</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_game_sessions'] ?? 0 ?> Play Sessions</span>
             </a>
             <?php endif; ?>
 

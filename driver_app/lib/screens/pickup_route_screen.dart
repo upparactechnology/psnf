@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../models/student.dart';
+import '../services/api_service.dart';
 import 'next_stop_screen.dart';
 import 'students_onboard_screen.dart';
 import 'school_arrival_screen.dart';
@@ -66,6 +68,29 @@ class _PickupRouteScreenState extends State<PickupRouteScreen> {
   ];
 
   int _currentStopIndex = 0;
+  Timer? _locationTimer;
+  double _currentLat = 19.076090;
+  double _currentLng = 72.877426;
+
+  @override
+  void initState() {
+    super.initState();
+    // Mark status as en_route in backend
+    ApiService.updateRouteStatus('en_route');
+    // Start background location updates simulation
+    _locationTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _currentLat += 0.00015;
+      _currentLng += 0.00012;
+      double speed = 30.0 + (timer.tick % 5) * 5.0;
+      ApiService.updateLocation(_currentLat, _currentLng, speed);
+    });
+  }
+
+  @override
+  void dispose() {
+    _locationTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

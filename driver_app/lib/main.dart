@@ -50,7 +50,7 @@ class DriverApp extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            cardTheme: CardThemeData(
+            cardTheme: CardTheme(
               color: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
@@ -91,7 +91,7 @@ class DriverApp extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            cardTheme: CardThemeData(
+            cardTheme: CardTheme(
               color: const Color(0xFF1E293B).withOpacity(0.4),
               elevation: 0,
               shape: RoundedRectangleBorder(

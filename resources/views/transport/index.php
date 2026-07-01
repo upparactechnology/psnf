@@ -27,12 +27,20 @@ ob_start();
             <h2 class="text-xl font-bold text-slate-900 dark:text-white">Routes & Vehicles</h2>
             <p class="text-sm text-slate-500 mt-0.5">Manage vehicles, drivers, and student route configurations.</p>
         </div>
-        <a href="<?= url('transport/create') ?>"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md hover:opacity-90"
-           style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Add Route
-        </a>
+        <div class="flex items-center gap-3">
+            <a href="<?= url('transport/driver/create') ?>"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md hover:opacity-90"
+               style="background: linear-gradient(135deg, #10b981, #059669);">
+                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                Add Driver
+            </a>
+            <a href="<?= url('transport/create') ?>"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md hover:opacity-90"
+               style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Route
+            </a>
+        </div>
     </div>
 
     <!-- Main Grid: Left is Routes List, Right is Map Student -->
@@ -136,6 +144,53 @@ ob_start();
                                 </td>
                                 <td class="px-5 py-3.5">
                                     <span class="text-xs font-mono text-slate-650 dark:text-slate-400"><?= e($a['pickup_time'] ? date('h:i A', strtotime($a['pickup_time'])) : '—') ?></span>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Registered Drivers List -->
+            <div class="mt-8">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Registered Drivers</h3>
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/30 overflow-hidden shadow-sm">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900/20">
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Driver Name</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Username / Email</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-slate-800/40">
+                            <?php if (empty($drivers)): ?>
+                            <tr>
+                                <td colspan="4" class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                                    No registered drivers yet. Click "Add Driver" to create one.
+                                </td>
+                            </tr>
+                            <?php else: ?>
+                            <?php foreach ($drivers as $d): ?>
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/10 transition-colors">
+                                <td class="px-5 py-3.5">
+                                    <div class="text-sm font-semibold text-slate-800 dark:text-white">
+                                        <?= e($d['name']) ?>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3.5 text-xs text-slate-600 dark:text-slate-400 font-mono">
+                                    <?= e($d['email']) ?>
+                                </td>
+                                <td class="px-5 py-3.5 text-xs font-semibold text-brand-600 dark:text-brand-400">
+                                    <a href="tel:<?= e($d['phone']) ?>"><?= e($d['phone']) ?></a>
+                                </td>
+                                <td class="px-5 py-3.5">
+                                    <span class="text-3xs px-2 py-0.5 rounded-full font-bold border <?= $d['is_active'] ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/30 dark:text-emerald-400' : 'bg-slate-50 text-slate-700 border-slate-200' ?>">
+                                        <?= $d['is_active'] ? 'ACTIVE' : 'INACTIVE' ?>
+                                    </span>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

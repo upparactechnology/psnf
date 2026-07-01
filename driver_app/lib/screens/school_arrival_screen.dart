@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
+import '../services/api_service.dart';
 import 'dashboard_screen.dart';
 
 class SchoolArrivalScreen extends StatelessWidget {
@@ -120,10 +121,9 @@ class SchoolArrivalScreen extends StatelessWidget {
 
               // Complete Arrival Button
               ElevatedButton(
-                onPressed: () {
-                  // Mark the morning pickup route as completed
+                onPressed: () async {
+                  await ApiService.updateRouteStatus('completed');
                   DashboardScreen.isPickupCompleted = true;
-                  // Navigate back to the dashboard and clear the navigation history
                   Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false);
                 },
                 style: ElevatedButton.styleFrom(

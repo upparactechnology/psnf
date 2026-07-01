@@ -35,26 +35,39 @@ ob_start();
                 $displayClass = $c['class'] ?: 'Unassigned';
                 $classUrl = url('classes/' . urlencode((string)$displayClass));
             ?>
-            <a href="<?= $classUrl ?>" class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5 hover:border-indigo-500/30 hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group flex flex-col justify-between shadow-sm hover:shadow-md">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md group-hover:scale-105 transition-transform duration-300">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
+            <div class="relative group">
+                <a href="<?= $classUrl ?>" class="block rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5 hover:border-indigo-500/30 hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between shadow-sm hover:shadow-md h-full">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md group-hover:scale-105 transition-transform duration-300">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-base font-bold text-white group-hover:text-indigo-400 transition-colors"><?= e($displayClass) ?></h4>
+                            <p class="text-xs text-slate-500">Section: <span class="text-slate-300 font-semibold font-mono"><?= e($c['section'] ?: 'Default') ?></span></p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="text-base font-bold text-white group-hover:text-indigo-400 transition-colors"><?= e($displayClass) ?></h4>
-                        <p class="text-xs text-slate-500">Section: <span class="text-slate-300 font-semibold font-mono"><?= e($c['section'] ?: 'Default') ?></span></p>
+                    <div class="mt-6 flex items-center justify-between border-t border-slate-800/60 pt-3">
+                        <span class="text-xs text-slate-400"><?= $c['student_count'] ?> Enrolled</span>
+                        <span class="text-xs text-brand-400 hover:text-brand-300 font-medium flex items-center gap-0.5">
+                            Students
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </span>
                     </div>
-                </div>
-                <div class="mt-6 flex items-center justify-between border-t border-slate-800/60 pt-3">
-                    <span class="text-xs text-slate-400"><?= $c['student_count'] ?> Enrolled</span>
-                    <span class="text-xs text-brand-400 hover:text-brand-300 font-medium flex items-center gap-0.5">
-                        Students
-                        <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </span>
-                </div>
-            </a>
+                </a>
+                
+                <?php if ($c['class'] && $displayClass !== 'Unassigned'): ?>
+                <form action="<?= url('classes/delete') ?>" method="POST" class="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <?= \Core\View::csrf() ?>
+                    <input type="hidden" name="class" value="<?= e($c['class']) ?>">
+                    <input type="hidden" name="section" value="<?= e($c['section']) ?>">
+                    <button type="submit" onclick="event.stopPropagation(); return confirm('Are you sure you want to delete this class? This will also unassign all enrolled students.')" class="text-slate-400 hover:text-red-500 transition-colors p-1.5 bg-slate-950/80 hover:bg-slate-950 rounded-lg border border-slate-850 shadow-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </form>
+                <?php endif; ?>
+            </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>

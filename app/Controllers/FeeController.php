@@ -21,43 +21,69 @@ class FeeController extends Controller
         $status = $this->request->get('status', '');
         $search = $this->request->get('search', '');
         $view   = $this->request->get('view', 'pending');
-        
-        $where = ["fi.tenant_id = ?"];
-        $params = [\Core\Database::getTenantId()];
-        
+        $tenantId = \Core\Database::getTenantId();
+
+        // Ensure payment_source column exists
+        try {
+            $this->db()->query("ALTER TABLE fee_payments ADD COLUMN IF NOT EXISTS payment_source VARCHAR(20) NOT NULL DEFAULT 'staff' COMMENT 'staff or parent_online'");
+        } catch (\Throwable $e) { /* column may already exist */ }
+
+        $where  = ['fi.tenant_id = ?'];
+        $params = [$tenantId];
+
         if ($status) {
-            $where[] = "fi.status = ?";
+            $where[]  = 'fi.status = ?';
             $params[] = $status;
         }
-        
+
         if ($search) {
-            $where[] = "(s.first_name LIKE ? OR s.last_name LIKE ? OR fi.invoice_number LIKE ?)";
+            $where[]  = '(s.first_name LIKE ? OR s.last_name LIKE ? OR fi.invoice_number LIKE ?)';
             $params[] = "%$search%";
             $params[] = "%$search%";
             $params[] = "%$search%";
         }
-        
-        $whereClause = implode(" AND ", $where);
-        
+
+        $whereClause = implode(' AND ', $where);
+
         $invoices = $this->db()->select("
-            SELECT fi.*, s.first_name, s.last_name, s.admission_number
+            SELECT fi.*,
+                   s.first_name, s.last_name, s.admission_number,
+                   (
+                       SELECT fp2.payment_source
+                       FROM fee_payments fp2
+                       WHERE fp2.invoice_id = fi.id
+                       ORDER BY fp2.paid_at DESC LIMIT 1
+                   ) AS last_payment_source
             FROM fee_invoices fi
             JOIN students s ON s.id = fi.student_id
             WHERE $whereClause
-            ORDER BY fi.due_date DESC
+            ORDER BY fi.updated_at DESC, fi.due_date DESC
         ", $params);
- 
+
         $stats = $this->db()->selectOne("
-            SELECT 
-                COALESCE(SUM(amount), 0) as total_invoiced,
-                COALESCE(SUM(paid_amount), 0) as total_paid,
-                COALESCE(SUM(amount - paid_amount), 0) as total_unpaid,
-                COUNT(CASE WHEN status != 'paid' AND due_date < CURRENT_DATE THEN 1 END) as overdue_count
+            SELECT
+                COALESCE(SUM(amount), 0)            AS total_invoiced,
+                COALESCE(SUM(paid_amount), 0)       AS total_paid,
+                COALESCE(SUM(amount - paid_amount), 0) AS total_unpaid,
+                COUNT(CASE WHEN status != 'paid' AND due_date < CURRENT_DATE THEN 1 END) AS overdue_count
             FROM fee_invoices
             WHERE tenant_id = ?
-        ", [\Core\Database::getTenantId()]);
- 
-        return $this->view('fees/index', compact('invoices', 'stats', 'status', 'search', 'view'));
+        ", [$tenantId]);
+
+        // Recent payments from Parent Portal (online)
+        $recentParentPayments = $this->db()->select("
+            SELECT fp.*, fi.title AS invoice_title, fi.invoice_number,
+                   s.first_name, s.last_name, s.admission_number
+            FROM fee_payments fp
+            JOIN fee_invoices fi ON fi.id = fp.invoice_id
+            JOIN students s ON s.id = fi.student_id
+            WHERE fi.tenant_id = ?
+              AND (fp.payment_source = 'parent_online' OR fp.payment_ref LIKE 'SIM-%')
+            ORDER BY fp.paid_at DESC
+            LIMIT 10
+        ", [$tenantId]);
+
+        return $this->view('fees/index', compact('invoices', 'stats', 'status', 'search', 'view', 'recentParentPayments'));
     }
 
     public function create(): string
@@ -143,6 +169,7 @@ class FeeController extends Controller
             'payment_method' => $method,
             'payment_ref'    => $ref ?: 'Manual-' . strtoupper(substr(md5(uniqid()), 0, 8)),
             'paid_at'        => now(),
+            'payment_source' => 'staff',
         ]);
 
         // Log to timeline

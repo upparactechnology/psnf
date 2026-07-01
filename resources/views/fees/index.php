@@ -177,6 +177,12 @@ ob_start();
                         <span class="inline-flex text-3xs px-2 py-0.5 rounded-full font-semibold border <?= $sc ?>">
                             <?= strtoupper($inv['status']) ?>
                         </span>
+                        <?php if (($inv['last_payment_source'] ?? '') === 'parent_online' || str_starts_with($inv['payment_ref'] ?? '', 'SIM-')): ?>
+                        <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200/40 dark:border-indigo-800/30">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            Online
+                        </span>
+                        <?php endif; ?>
                     </td>
                     <td class="px-5 py-4 text-right">
                         <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -407,7 +413,81 @@ ob_start();
     </div>
     <?php endif; ?>
 
-    <!-- Slide-over/Modal Backdrop -->
+    <!-- ── Parent Online Payments Panel ──────────────────────────────────── -->
+    <div class="rounded-2xl border border-indigo-200/50 dark:border-indigo-900/30 bg-white dark:bg-slate-900/30 overflow-hidden shadow-sm">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-indigo-100 dark:border-indigo-900/20 bg-indigo-50/50 dark:bg-indigo-950/20">
+            <div class="flex items-center gap-2.5">
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                </span>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-white">Parent Online Payments</h3>
+                    <p class="text-xs text-slate-500">Payments made directly by parents through the Parent Portal</p>
+                </div>
+            </div>
+            <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/40">
+                <?= count($recentParentPayments ?? []) ?> recent
+            </span>
+        </div>
+
+        <?php if (empty($recentParentPayments)): ?>
+        <div class="px-5 py-10 text-center">
+            <svg class="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="text-sm text-slate-500">No online payments from parents yet.</p>
+            <p class="text-xs text-slate-400 mt-1">Payments will appear here once parents pay via the Parent Portal.</p>
+        </div>
+        <?php else: ?>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/20">
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Student</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Invoice</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Method</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reference</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Paid At</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Source</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40">
+                    <?php foreach ($recentParentPayments as $pay): ?>
+                    <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/10 transition-colors">
+                        <td class="px-5 py-3.5">
+                            <div class="text-sm font-semibold text-slate-800 dark:text-white"><?= e($pay['first_name'] . ' ' . $pay['last_name']) ?></div>
+                            <div class="text-xs text-slate-500 font-mono"><?= e($pay['admission_number']) ?></div>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <div class="text-sm text-slate-700 dark:text-slate-300 font-medium"><?= e($pay['invoice_title']) ?></div>
+                            <div class="text-xs font-mono text-slate-500"><?= e($pay['invoice_number']) ?></div>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-sm font-bold text-emerald-700 dark:text-emerald-400"><?= number_format((float)$pay['amount'], 2) ?> INR</span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs text-slate-600 dark:text-slate-400"><?= e($pay['payment_method']) ?></span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs font-mono text-slate-600 dark:text-slate-400"><?= e($pay['payment_ref']) ?></span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs text-slate-500"><?= $pay['paid_at'] ? date('d M Y, h:i A', strtotime($pay['paid_at'])) : '—' ?></span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/40 dark:border-indigo-800/30">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                Parent Online
+                            </span>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+
+
     <div x-show="paymentModal" class="fixed inset-0 overflow-hidden z-[9999]" x-cloak>
         <div class="absolute inset-0 overflow-hidden">
             <!-- Backdrop transition -->

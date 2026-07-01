@@ -49,7 +49,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Academic Summary</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Classes, Attendance & More</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_classes'] ?? 0 ?> Active Classes</span>
             </a>
             <?php endif; ?>
 
@@ -75,10 +75,10 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Roles & Permissions</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Roles & Perms</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_roles'] ?? 0 ?> Roles</span>
             </a>
             <?php endif; ?>
-
+ 
             <!-- 5. Finance & Fees -->
             <?php if (in_array('finance', $assignedApps)): ?>
             <a href="<?= url('fees') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-amber-500/30 dark:hover:border-amber-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
@@ -88,10 +88,10 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Finance & Fees</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Invoicing Admin</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_invoices'] ?? 0 ?> Invoices</span>
             </a>
             <?php endif; ?>
-
+ 
             <!-- 6. Medical Log -->
             <?php if (in_array('medical', $assignedApps)): ?>
             <a href="<?= url('medical') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-red-500/30 dark:hover:border-red-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
@@ -101,10 +101,10 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">Medical Logs</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Care Profiles</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_medical_logs'] ?? 0 ?> Care Profiles</span>
             </a>
             <?php endif; ?>
-
+ 
             <!-- 7. Transport & Bus -->
             <?php if (in_array('transport', $assignedApps)): ?>
             <a href="<?= url('transport') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-yellow-500/30 dark:hover:border-yellow-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
@@ -114,12 +114,12 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors">Transport & Bus</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Route Assigns</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_routes'] ?? 0 ?> Transit Routes</span>
             </a>
             <?php endif; ?>
-
-
-
+ 
+ 
+ 
             <!-- 8b. File Manager -->
             <?php if (in_array('file_manager', $assignedApps)): ?>
             <a href="/psnf/file%20manager/public/" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-teal-500/30 dark:hover:border-teal-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
@@ -129,10 +129,10 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">File Manager</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Secure DRM</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_files'] ?? 0 ?> DRM Files</span>
             </a>
             <?php endif; ?>
-
+ 
             <!-- 8c. Learning Games -->
             <?php if (in_array('games', $assignedApps)): ?>
             <a href="/psnf/game/index.html" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-fuchsia-500/30 dark:hover:border-fuchsia-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
@@ -143,10 +143,10 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-fuchsia-600 dark:group-hover:text-fuchsia-400 transition-colors">Learning Games</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Interactive Play</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_game_sessions'] ?? 0 ?> Play Sessions</span>
             </a>
             <?php endif; ?>
-
+ 
             <!-- 8d. Certificate Generator -->
             <?php if (has_role('super_admin') || has_role('school_admin') || has_role('manager')): ?>
             <a href="/psnf/certificate_generator/" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-pink-500/30 dark:hover:border-pink-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
@@ -156,10 +156,10 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">Certificates</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Issue Credentials</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_certificates'] ?? 0 ?> Credentials</span>
             </a>
             <?php endif; ?>
-
+ 
             <!-- Report Cards -->
             <?php if (in_array('report_cards', $assignedApps)): ?>
             <a href="<?= url('report-cards') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
@@ -169,7 +169,7 @@ ob_start();
                     </svg>
                 </div>
                 <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Report Cards</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Academic Reports</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_report_cards'] ?? 0 ?> Generated</span>
             </a>
             <?php endif; ?>
 

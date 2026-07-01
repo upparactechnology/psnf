@@ -48,7 +48,16 @@ class AuthController extends Controller
         }
 
         if ($this->request->wantsJson()) {
-            return $this->json(['success' => true, 'token' => $result['token']]);
+            return $this->json([
+                'success' => true,
+                'token' => $result['token'],
+                'user' => [
+                    'id' => $result['user']['id'],
+                    'name' => $result['user']['name'],
+                    'email' => $result['user']['email'],
+                    'phone' => $result['user']['phone'],
+                ]
+            ]);
         }
 
         return $this->redirect(dashboard_url());

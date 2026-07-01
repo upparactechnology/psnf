@@ -42,7 +42,7 @@
                     </div>
 
                     <?php if ($hw['file_path']): ?>
-                    <a href="#" onclick="alert('Download simulated: ' + '<?= e(basename($hw['file_path'])) ?>')"
+                    <a href="<?= url($hw['file_path']) ?>" download
                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-white border border-slate-200 dark:border-slate-700/60 hover:border-slate-650 dark:hover:border-slate-600 transition-all font-bold">
                         <svg class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         Download PDF

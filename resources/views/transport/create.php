@@ -49,6 +49,18 @@ ob_start();
                 </div>
             </div>
 
+            <!-- Select Registered Driver User Dropdown -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Select Registered Driver (Optional)</label>
+                <select id="driver_select" onchange="fillDriverDetails(this)"
+                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-white rounded-xl py-2.5 px-3.5 text-sm focus:outline-none focus:border-brand-500 transition-all">
+                    <option value="">-- Choose Driver User --</option>
+                    <?php foreach ($drivers as $d): ?>
+                    <option value="<?= e($d['name']) ?>" data-phone="<?= e($d['phone']) ?>"><?= e($d['name']) ?> (<?= e($d['email']) ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <!-- Driver Name -->
                 <div>
@@ -101,6 +113,18 @@ ob_start();
         </form>
     </div>
 </div>
+
+<script>
+function fillDriverDetails(select) {
+    const selectedOption = select.options[select.selectedIndex];
+    const nameInput = document.querySelector('input[name="driver_name"]');
+    const phoneInput = document.querySelector('input[name="driver_phone"]');
+    if (selectedOption.value) {
+        nameInput.value = selectedOption.value;
+        phoneInput.value = selectedOption.getAttribute('data-phone') || '';
+    }
+}
+</script>
 
 <?php
 $content = ob_get_clean();

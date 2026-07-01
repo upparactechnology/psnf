@@ -51,6 +51,26 @@ ob_start();
     }
 }" class="space-y-6">
 
+    <!-- ── Live Stats Cards ─────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <?php
+        $statCards = [
+            ['label' => 'Total Students',   'value' => $stats['total_students']  ?? 0, 'color' => 'text-slate-200',   'bg' => 'bg-slate-800/40',   'border' => 'border-slate-700/50'],
+            ['label' => 'Care Profiles',    'value' => $stats['with_profile']    ?? 0, 'color' => 'text-brand-400',   'bg' => 'bg-brand-950/20',   'border' => 'border-brand-900/30'],
+            ['label' => 'With Allergies',   'value' => $stats['with_allergies']  ?? 0, 'color' => 'text-amber-400',   'bg' => 'bg-amber-950/20',   'border' => 'border-amber-900/30'],
+            ['label' => 'Severe Allergy',   'value' => $stats['severe_allergy']  ?? 0, 'color' => 'text-red-400',     'bg' => 'bg-red-950/20',     'border' => 'border-red-900/30'],
+            ['label' => 'On Medications',   'value' => $stats['on_medications']  ?? 0, 'color' => 'text-purple-400',  'bg' => 'bg-purple-950/20',  'border' => 'border-purple-900/30'],
+            ['label' => 'Emergency Plans',  'value' => $stats['has_emergency_plan'] ?? 0, 'color' => 'text-emerald-400', 'bg' => 'bg-emerald-950/20', 'border' => 'border-emerald-900/30'],
+        ];
+        ?>
+        <?php foreach ($statCards as $card): ?>
+        <div class="p-4 rounded-2xl border <?= $card['border'] ?> <?= $card['bg'] ?> flex flex-col gap-1.5">
+            <p class="text-xs font-semibold text-slate-500 leading-tight"><?= $card['label'] ?></p>
+            <p class="text-2xl font-extrabold <?= $card['color'] ?>"><?= number_format((int)$card['value']) ?></p>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
     <!-- View Switcher Tabs -->
     <div class="flex items-center border-b border-slate-800 gap-6">
         <a href="<?= url('medical') ?>"
@@ -63,17 +83,22 @@ ob_start();
         </a>
     </div>
 
+    <!-- Main content + sidebar -->
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <!-- Left: Table (3/4 width) -->
+        <div class="xl:col-span-3 space-y-4">
+
     <!-- Header section (Dynamic filters only, main heading rendered by layout app.php) -->
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <form method="GET" action="<?= url('medical') ?>" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
-            <div class="relative flex-1 max-w-md">
+        <form method="GET" action="<?= url('medical') ?>" class="flex flex-col sm:flex-row gap-3 w-full flex-wrap">
+            <div class="relative flex-1 min-w-[200px]">
                 <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                     <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </span>
-                <input type="text" name="search" placeholder="Search by student name or ADM no..." value="<?= e($search) ?>"
+                <input type="text" name="search" placeholder="Search by name or ADM no..." value="<?= e($search) ?>"
                        class="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
             </div>
-            
+
             <select name="class" onchange="this.form.submit()"
                     class="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
                 <option value="">All Classes</option>
@@ -81,7 +106,7 @@ ob_start();
                     <option value="<?= e($c) ?>" <?= $classFilter === $c ? 'selected' : '' ?>><?= e($c) ?></option>
                 <?php endforeach; ?>
             </select>
-            
+
             <select name="disability" onchange="this.form.submit()"
                     class="bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
                 <option value="">All Special Needs</option>
@@ -89,6 +114,20 @@ ob_start();
                     <option value="<?= $d ?>" <?= $disability === $d ? 'selected' : '' ?>><?= $d ?></option>
                 <?php endforeach; ?>
             </select>
+
+            <select name="blood_group" onchange="this.form.submit()"
+                    class="bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
+                <option value="">All Blood Groups</option>
+                <?php foreach (['A+','A-','B+','B-','AB+','AB-','O+','O-'] as $bg): ?>
+                    <option value="<?= $bg ?>" <?= ($bloodFilter ?? '') === $bg ? 'selected' : '' ?>><?= $bg ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <?php if ($search || $classFilter || $disability || ($bloodFilter ?? '')): ?>
+            <a href="<?= url('medical') ?>" class="px-3 py-2.5 rounded-xl border border-slate-700 text-slate-400 text-xs font-medium hover:text-white hover:border-slate-500 transition-all">
+                ✕ Clear
+            </a>
+            <?php endif; ?>
         </form>
     </div>
 
@@ -274,8 +313,66 @@ ob_start();
     </div>
     <?php endif; ?>
 
+        </div><!-- /xl:col-span-3 -->
+
+        <!-- Sidebar: Blood Groups + Recent Updates -->
+        <div class="space-y-5">
+
+            <!-- Blood Group Distribution -->
+            <div class="rounded-2xl border border-slate-800/60 bg-slate-900/30 p-5">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Blood Group Distribution</h4>
+                <?php if (empty($bloodGroups)): ?>
+                <p class="text-xs text-slate-500 text-center py-4">No blood group data recorded.</p>
+                <?php else: ?>
+                <?php
+                $maxBg = max(array_column($bloodGroups, 'cnt'));
+                $bgColors = ['A+'=>'bg-red-500','A-'=>'bg-red-400','B+'=>'bg-orange-500','B-'=>'bg-orange-400','AB+'=>'bg-purple-500','AB-'=>'bg-purple-400','O+'=>'bg-blue-500','O-'=>'bg-blue-400'];
+                ?>
+                <div class="space-y-2.5">
+                    <?php foreach ($bloodGroups as $bg): ?>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <a href="?blood_group=<?= urlencode($bg['blood_group']) ?>" class="text-xs font-bold text-slate-300 hover:text-white transition-colors"><?= e($bg['blood_group']) ?></a>
+                            <span class="text-xs text-slate-500"><?= $bg['cnt'] ?> students</span>
+                        </div>
+                        <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full <?= $bgColors[$bg['blood_group']] ?? 'bg-slate-500' ?>" style="width:<?= $maxBg > 0 ? round($bg['cnt']/$maxBg*100) : 0 ?>%"></div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Recent Medical Updates -->
+            <div class="rounded-2xl border border-slate-800/60 bg-slate-900/30 p-5">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Recently Updated</h4>
+                <?php if (empty($recentUpdates)): ?>
+                <p class="text-xs text-slate-500 text-center py-4">No recent updates.</p>
+                <?php else: ?>
+                <div class="space-y-3">
+                    <?php foreach ($recentUpdates as $ru): ?>
+                    <div class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-800/40 bg-slate-900/20 hover:border-slate-700/60 transition-colors">
+                        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-white text-3xs font-bold shrink-0 mt-0.5">
+                            <?= strtoupper(substr($ru['first_name'],0,1).substr($ru['last_name'],0,1)) ?>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-white truncate"><?= e($ru['first_name'].' '.$ru['last_name']) ?></p>
+                            <p class="text-3xs text-slate-500 font-mono"><?= e($ru['admission_number']) ?><?= $ru['class'] ? ' · '.$ru['class'] : '' ?></p>
+                            <p class="text-3xs text-slate-600 mt-0.5"><?= $ru['updated_at'] ? date('d M, h:i A', strtotime($ru['updated_at'])) : '—' ?></p>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
+        </div><!-- /sidebar -->
+    </div><!-- /grid -->
+
     <!-- Edit Medical Modal Dialog -->
     <div x-show="showEditModal" class="fixed inset-0 overflow-y-auto z-[9999]" x-cloak>
+
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <!-- Backdrop -->
             <div x-show="showEditModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" @click="showEditModal = false"></div>

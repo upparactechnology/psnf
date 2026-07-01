@@ -47,7 +47,16 @@ class TransportController extends Controller
             ORDER BY first_name ASC
         ", [$tenantId]);
 
-        return $this->view('transport/index', compact('routes', 'assignments', 'unassignedStudents'));
+        $drivers = $this->db()->select("
+            SELECT u.id, u.name, u.phone, u.email, u.is_active 
+            FROM users u
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN roles r ON ur.role_id = r.id
+            WHERE u.tenant_id = ? AND r.slug = 'driver' AND u.deleted_at IS NULL
+            ORDER BY u.name ASC
+        ", [$tenantId]);
+
+        return $this->view('transport/index', compact('routes', 'assignments', 'unassignedStudents', 'drivers'));
     }
 
     public function tracking(): string
@@ -159,7 +168,21 @@ class TransportController extends Controller
 
     public function create(): string
     {
-        return $this->view('transport/create');
+        $tenantId = \Core\Database::getTenantId();
+        file_put_contents(ROOT_PATH . '/session_debug.txt', json_encode([
+            'session' => $_SESSION ?? null,
+            'tenantId' => $tenantId,
+            'schoolId' => \Core\Database::getSchoolId(),
+            'branchId' => \Core\Database::getBranchId(),
+        ]));
+        $drivers = $this->db()->select("
+            SELECT u.id, u.name, u.phone, u.email 
+            FROM users u
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN roles r ON ur.role_id = r.id
+            WHERE u.tenant_id = ? AND r.slug = 'driver' AND u.deleted_at IS NULL
+        ", [$tenantId]);
+        return $this->view('transport/create', compact('drivers'));
     }
 
     public function store(): string
@@ -204,7 +227,16 @@ class TransportController extends Controller
             return $this->redirect('/transport');
         }
 
-        return $this->view('transport/edit', compact('route'));
+        $tenantId = \Core\Database::getTenantId();
+        $drivers = $this->db()->select("
+            SELECT u.id, u.name, u.phone, u.email 
+            FROM users u
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN roles r ON ur.role_id = r.id
+            WHERE u.tenant_id = ? AND r.slug = 'driver' AND u.deleted_at IS NULL
+        ", [$tenantId]);
+
+        return $this->view('transport/edit', compact('route', 'drivers'));
     }
 
     public function update(string $id): string
@@ -301,6 +333,70 @@ class TransportController extends Controller
             Session::flash('success', 'Route deleted.');
         }
 
+        return $this->redirect('/transport');
+    }
+
+    public function createDriver(): string
+    {
+        return $this->view('transport/create_driver');
+    }
+
+    public function storeDriver(): string
+    {
+        $data = $this->request->getBody();
+        unset($data['_csrf']);
+
+        $rules = [
+            'name'     => 'required|min:2',
+            'email'    => 'required|email|unique:users,email',
+            'phone'    => 'required',
+            'password' => 'required|min:8',
+        ];
+
+        $validator = new \Core\Validator($data, $rules);
+        if ($validator->fails()) {
+            Session::flash('errors', $validator->errors());
+            Session::flash('old', $data);
+            return $this->redirect('/transport/driver/create');
+        }
+
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        $schoolId = \Core\Database::getSchoolId() ?: 1;
+        $branchId = \Core\Database::getBranchId() ?: 1;
+
+        $userId = $db->insert('users', [
+            'uuid'              => str_uuid(),
+            'tenant_id'         => $tenantId,
+            'school_id'         => $schoolId,
+            'branch_id'         => $branchId,
+            'name'              => $data['name'],
+            'email'             => $data['email'],
+            'phone'             => $data['phone'],
+            'password'          => password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]),
+            'designation'       => 'Driver',
+            'is_active'         => 1,
+            'email_verified_at' => now(),
+            'created_at'        => now(),
+        ]);
+
+        // Assign Driver role (ID 7)
+        $driverRole = $db->selectOne("SELECT id FROM roles WHERE slug = 'driver'");
+        if ($driverRole) {
+            $db->insert('user_roles', [
+                'user_id' => $userId,
+                'role_id' => $driverRole['id']
+            ]);
+        }
+
+        // Assign driver_app in user_apps
+        $db->insert('user_apps', [
+            'user_id'  => $userId,
+            'app_name' => 'driver_app'
+        ]);
+
+        ActivityLog::log('user_created', auth_id(), ['user_id' => $userId, 'role' => 'driver']);
+        Session::flash('success', "Driver user '{$data['name']}' created successfully.");
         return $this->redirect('/transport');
     }
 }

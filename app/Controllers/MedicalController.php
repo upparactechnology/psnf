@@ -17,49 +17,59 @@ class MedicalController extends Controller
 
     public function index(): string
     {
-        $search   = $this->request->get('search', '');
-        $page     = (int) $this->request->get('page', 1);
-        $disability = $this->request->get('disability', '');
+        $search      = $this->request->get('search', '');
+        $page        = (int) $this->request->get('page', 1);
+        $disability  = $this->request->get('disability', '');
         $classFilter = $this->request->get('class', '');
-        
-        $perPage = 15;
-        $offset = ($page - 1) * $perPage;
+        $bloodFilter = $this->request->get('blood_group', '');
+
+        $perPage  = 15;
+        $offset   = ($page - 1) * $perPage;
         $tenantId = \Core\Database::getTenantId();
-        
-        $where = ["s.tenant_id = ?", "s.deleted_at IS NULL"];
+
+        $where  = ['s.tenant_id = ?', 's.deleted_at IS NULL'];
         $params = [$tenantId];
-        
+
         if ($search) {
-            $like = "%$search%";
-            $where[] = "(s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_number LIKE ?)";
+            $like     = "%$search%";
+            $where[]  = '(s.first_name LIKE ? OR s.last_name LIKE ? OR s.admission_number LIKE ?)';
             $params[] = $like;
             $params[] = $like;
             $params[] = $like;
         }
-        
+
         if ($disability) {
-            $where[] = "s.disability_type = ?";
+            $where[]  = 's.disability_type = ?';
             $params[] = $disability;
         }
 
         if ($classFilter) {
-            $where[] = "s.class = ?";
+            $where[]  = 's.class = ?';
             $params[] = $classFilter;
         }
-        
-        $whereClause = implode(" AND ", $where);
-        
+
+        if ($bloodFilter) {
+            $where[]  = 's.blood_group = ?';
+            $params[] = $bloodFilter;
+        }
+
+        $whereClause = implode(' AND ', $where);
+
         $total = (int) ($this->db()->selectOne("
-            SELECT COUNT(*) as cnt 
-            FROM students s 
+            SELECT COUNT(*) as cnt
+            FROM students s
             WHERE $whereClause
         ", $params)['cnt'] ?? 0);
-        
+
         $students = $this->db()->select("
-            SELECT s.id, s.first_name, s.last_name, s.dob, s.gender, s.admission_number, s.blood_group, s.disability_type, s.photo, s.class,
-                   sm.allergies, sm.allergy_severity, sm.triggers, sm.current_medications, sm.medical_conditions, 
-                   sm.care_instructions, sm.emergency_protocols, sm.doctor_name, sm.doctor_phone, sm.hospital_name,
-                   sm.insurance_provider, sm.insurance_number, sm.blood_pressure, sm.weight_kg, sm.height_cm, sm.dietary_restrictions
+            SELECT s.id, s.first_name, s.last_name, s.dob, s.gender, s.admission_number,
+                   s.blood_group, s.disability_type, s.photo, s.class,
+                   sm.allergies, sm.allergy_severity, sm.triggers, sm.current_medications,
+                   sm.medical_conditions, sm.care_instructions, sm.emergency_protocols,
+                   sm.doctor_name, sm.doctor_phone, sm.hospital_name,
+                   sm.insurance_provider, sm.insurance_number,
+                   sm.blood_pressure, sm.weight_kg, sm.height_cm, sm.dietary_restrictions,
+                   sm.updated_at AS medical_updated_at
             FROM students s
             LEFT JOIN student_medical sm ON s.id = sm.student_id
             WHERE $whereClause
@@ -69,20 +79,59 @@ class MedicalController extends Controller
 
         $lastPage = (int) ceil($total / $perPage);
 
-        // Fetch list of disability types for filter dropdown
+        // ── Live Stats ─────────────────────────────────────────────────────────
+        $stats = $this->db()->selectOne("
+            SELECT
+                COUNT(DISTINCT s.id)                                          AS total_students,
+                COUNT(DISTINCT sm.student_id)                                 AS with_profile,
+                COUNT(DISTINCT CASE WHEN sm.allergies IS NOT NULL AND sm.allergies != '' THEN sm.student_id END) AS with_allergies,
+                COUNT(DISTINCT CASE WHEN sm.allergy_severity = 'severe' THEN sm.student_id END)                 AS severe_allergy,
+                COUNT(DISTINCT CASE WHEN sm.current_medications IS NOT NULL AND sm.current_medications != '' THEN sm.student_id END) AS on_medications,
+                COUNT(DISTINCT CASE WHEN sm.emergency_protocols IS NOT NULL AND sm.emergency_protocols != '' THEN sm.student_id END) AS has_emergency_plan
+            FROM students s
+            LEFT JOIN student_medical sm ON s.id = sm.student_id
+            WHERE s.tenant_id = ? AND s.deleted_at IS NULL
+        ", [$tenantId]);
+
+        // Blood group distribution
+        $bloodGroups = $this->db()->select("
+            SELECT blood_group, COUNT(*) as cnt
+            FROM students
+            WHERE tenant_id = ? AND deleted_at IS NULL
+              AND blood_group IS NOT NULL AND blood_group != '' AND blood_group != 'Unknown'
+            GROUP BY blood_group
+            ORDER BY cnt DESC
+        ", [$tenantId]);
+
+        // Recent medical profile updates
+        $recentUpdates = $this->db()->select("
+            SELECT s.first_name, s.last_name, s.admission_number, s.class, sm.updated_at
+            FROM student_medical sm
+            JOIN students s ON s.id = sm.student_id
+            WHERE s.tenant_id = ? AND s.deleted_at IS NULL AND sm.updated_at IS NOT NULL
+            ORDER BY sm.updated_at DESC
+            LIMIT 5
+        ", [$tenantId]);
+
+        // Disability types for filter
         $disabilities = ['ASD', 'ADHD', 'Down Syndrome', 'Cerebral Palsy', 'Dyslexia', 'Intellectual Disability', 'Hearing Impairment', 'Visual Impairment', 'Multiple Disabilities', 'Other'];
 
-        // Fetch list of distinct classes
+        // Distinct classes
         $classList = $this->db()->select("
-            SELECT DISTINCT class 
-            FROM students 
+            SELECT DISTINCT class
+            FROM students
             WHERE tenant_id = ? AND deleted_at IS NULL AND class IS NOT NULL AND class != ''
             ORDER BY class ASC
         ", [$tenantId]);
         $classes = array_column($classList, 'class');
 
-        return $this->view('medical/index', compact('students', 'total', 'page', 'lastPage', 'search', 'disability', 'disabilities', 'offset', 'perPage', 'classFilter', 'classes'));
+        return $this->view('medical/index', compact(
+            'students', 'total', 'page', 'lastPage', 'search', 'disability',
+            'disabilities', 'offset', 'perPage', 'classFilter', 'classes',
+            'stats', 'bloodGroups', 'recentUpdates', 'bloodFilter'
+        ));
     }
+
 
     public function store(string $id): string
     {

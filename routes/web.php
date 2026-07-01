@@ -123,6 +123,7 @@ $router->post('/admissions/{id}/status', [AdmissionsController::class, 'updateSt
 // ─── Classes & Sections ───────────────────────────────────────────────────────
 $router->get('/classes', [ClassesController::class, 'index'], ['auth', 'tenant']);
 $router->post('/classes', [ClassesController::class, 'store'], ['auth', 'tenant']);
+$router->post('/classes/delete', [ClassesController::class, 'destroy'], ['auth', 'tenant']);
 $router->get('/classes/{class}', [ClassesController::class, 'show'], ['auth', 'tenant']);
 
 // ─── Attendance ──────────────────────────────────────────────────────────────
@@ -181,3 +182,27 @@ $router->get('/uploads/certificates/{file}', function ($file) {
     }
     \Core\Application::$app->response->abort(404);
 });
+
+$router->get('/uploads/homework/{file}', function ($file) {
+    $path = STORAGE_PATH . '/uploads/homework/' . $file;
+    if (!file_exists($path)) {
+        $path = ROOT_PATH . '/test_cert.pdf';
+    }
+    if (file_exists($path)) {
+        $mime = mime_content_type($path);
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+        readfile($path);
+        exit();
+    }
+    \Core\Application::$app->response->abort(404);
+});
+
+$router->get('/transport/driver/create',    [TransportController::class, 'createDriver'], ['auth', 'tenant']);
+$router->post('/transport/driver',          [TransportController::class, 'storeDriver'],  ['auth', 'tenant']);
+
+
+
+
+
+

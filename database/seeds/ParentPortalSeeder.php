@@ -52,6 +52,36 @@ class ParentPortalSeeder
             $puid = (int) $existsParent['id'];
         }
 
+        // 2b. Create Driver User if not exists
+        $driverEmail = 'driver@psnf.edu';
+        $existsDriver = $this->db->selectOne("SELECT id FROM users WHERE email = ?", [$driverEmail]);
+        if (!$existsDriver) {
+            $duid = $this->db->insert('users', [
+                'uuid'              => str_uuid(),
+                'tenant_id'         => $tid,
+                'school_id'         => $sid,
+                'branch_id'         => $bid,
+                'name'              => 'Rajendra Singh',
+                'email'             => $driverEmail,
+                'password'          => password_hash('Driver@1234', PASSWORD_BCRYPT, ['cost' => 12]),
+                'phone'             => '+91-9123456789',
+                'designation'       => 'Driver',
+                'is_active'         => 1,
+                'email_verified_at' => now(),
+                'created_at'        => now()
+            ]);
+
+            // Assign Driver role
+            $driverRole = $this->db->selectOne("SELECT id FROM roles WHERE slug = 'driver'");
+            if ($driverRole) {
+                $this->db->insert('user_roles', [
+                    'user_id' => $duid,
+                    'role_id' => $driverRole['id']
+                ]);
+            }
+        }
+
+
         // 3. Create Guardian profile
         $existsGuardian = $this->db->selectOne("SELECT id FROM guardians WHERE user_id = ?", [$puid]);
         if (!$existsGuardian) {
