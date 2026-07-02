@@ -71,7 +71,9 @@ async def match_face(
 
     # 3. Log attendance event via AttendanceEngine
     engine = AttendanceEngine(db)
-    log = await engine.log_clock_event(best_match_employee.id, req_in.timestamp, req_in.device_id)
+    # Convert UTC timestamp from kiosk device to server local time for correct shift comparison and display
+    local_timestamp = req_in.timestamp.replace(tzinfo=datetime.timezone.utc).astimezone().replace(tzinfo=None)
+    log = await engine.log_clock_event(best_match_employee.id, local_timestamp, req_in.device_id)
     if not log:
          raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -162,7 +164,7 @@ async def verify_image_file(
 
     # 4. Log attendance event via AttendanceEngine
     engine = AttendanceEngine(db)
-    log = await engine.log_clock_event(best_match_employee.id, datetime.datetime.utcnow(), "WEB_DASHBOARD")
+    log = await engine.log_clock_event(best_match_employee.id, datetime.datetime.now(), "WEB_DASHBOARD")
     if not log:
          raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -117,22 +117,30 @@ class ApiService {
 
   Future<Map<String, dynamic>?> verifyImage(String imagePath) async {
     final host = await getBaseUrl();
-    if (host == null) return null;
+    if (host == null) {
+      return {'error': true, 'detail': 'No host URL configured. Open Settings (gear icon) to set Backend Host URL.'};
+    }
 
     try {
       final uri = Uri.parse('$host/api/v1/recognition/verify-image');
       final request = http.MultipartRequest('POST', uri);
       request.files.add(await http.MultipartFile.fromPath('file', imagePath));
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 15));
+      final response = await http.Response.fromStream(streamedResponse).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
-      return null;
+      // Server returned an error — extract the detail message
+      try {
+        final body = jsonDecode(response.body);
+        return {'error': true, 'detail': body['detail'] ?? 'Server error (${response.statusCode})'};
+      } catch (_) {
+        return {'error': true, 'detail': 'Server error (${response.statusCode})'};
+      }
     } catch (e) {
-      return null;
+      return {'error': true, 'detail': 'Connection failed: $e'};
     }
   }
 
@@ -146,7 +154,12 @@ class ApiService {
   }) async {
     final host = await getBaseUrl();
     final token = await getToken();
-    if (host == null || token == null) return null;
+    if (host == null) {
+      return {'error': 'No host URL configured. Open Settings (gear icon) to set Backend Host URL.'};
+    }
+    if (token == null) {
+      return {'error': 'Not authorized. Open Settings (gear icon) and login with Admin credentials first.'};
+    }
 
     try {
       final uri = Uri.parse('$host/api/v1/employees/register-with-face');
@@ -165,14 +178,20 @@ class ApiService {
       // Add image file
       request.files.add(await http.MultipartFile.fromPath('file', imagePath));
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 15));
+      final response = await http.Response.fromStream(streamedResponse).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 201) {
         return jsonDecode(response.body);
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        return {'error': 'Authorization expired. Open Settings and re-login with Admin credentials.'};
       } else {
-        final err = jsonDecode(response.body);
-        return {'error': err['detail'] ?? 'Registration failed'};
+        try {
+          final err = jsonDecode(response.body);
+          return {'error': err['detail'] ?? 'Registration failed (${response.statusCode})'};
+        } catch (_) {
+          return {'error': 'Registration failed (${response.statusCode})'};
+        }
       }
     } catch (e) {
       return {'error': 'Network connection failed: $e'};

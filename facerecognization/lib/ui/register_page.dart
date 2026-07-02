@@ -38,7 +38,6 @@ class _RegisterPageState extends State<RegisterPage> {
       final cameras = await availableCameras();
       if (cameras.isEmpty) return;
 
-      // Select front camera as default for registration on kiosk
       final frontCamera = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
@@ -113,7 +112,7 @@ class _RegisterPageState extends State<RegisterPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Staff '${_firstNameController.text}' registered successfully!"),
-            backgroundColor: Colors.green,
+            backgroundColor: const Color(0xFF22C55E),
           ),
         );
         Navigator.pop(context);
@@ -124,7 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Registration failed: $errMsg"),
-            backgroundColor: Colors.red,
+            backgroundColor: const Color(0xFFDC2626),
           ),
         );
       }
@@ -145,12 +144,16 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Register Staff & Face Profile", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E293B),
-        foregroundColor: Colors.white,
+        title: const Text("Register Staff"),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF111111),
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE5E5E5), height: 1),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
@@ -159,25 +162,18 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Camera Frame / Capture Preview
+              // Camera Frame
               Center(
                 child: Container(
-                  width: 260,
-                  height: 260,
+                  width: 200,
+                  height: 200,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(130),
-                    border: Border.all(color: const Color(0xFF64FFDA), width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF64FFDA).withOpacity(0.15),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      )
-                    ],
+                    color: const Color(0xFFF7F7F7),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(color: const Color(0xFF111111), width: 2),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(130),
+                    borderRadius: BorderRadius.circular(100),
                     child: _capturedImage != null
                         ? Image.file(
                             File(_capturedImage!.path),
@@ -189,145 +185,89 @@ class _RegisterPageState extends State<RegisterPage> {
                                 child: CameraPreview(_cameraController!),
                               )
                             : const Center(
-                                child: CircularProgressIndicator(color: Color(0xFF64FFDA)),
+                                child: CircularProgressIndicator(color: Color(0xFF111111), strokeWidth: 2),
                               )),
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              // Camera Actions Button
+              // Camera Actions
               Center(
                 child: _capturedImage == null
                     ? ElevatedButton.icon(
                         onPressed: _takePhoto,
-                        icon: const Icon(Icons.camera_alt),
+                        icon: const Icon(Icons.camera_alt, size: 18),
                         label: const Text("Capture Face"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF64FFDA),
-                          foregroundColor: const Color(0xFF0F172A),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
                       )
                     : OutlinedButton.icon(
                         onPressed: _retakePhoto,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text("Retake Photo"),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF64FFDA),
-                          side: const BorderSide(color: Color(0xFF64FFDA)),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        ),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text("Retake"),
                       ),
               ),
               const SizedBox(height: 32),
 
-              // 2. Input Fields Card
-              Card(
-                color: const Color(0xFF1E293B),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        controller: _employeeIdController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          labelText: "Employee ID / Staff ID",
-                          labelStyle: TextStyle(color: Colors.grey),
-                          focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF64FFDA)),
-                          ),
-                        ),
-                        validator: (v) => v == null || v.isEmpty ? "Required" : null,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _firstNameController,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                labelText: "First Name",
-                                labelStyle: TextStyle(color: Colors.grey),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: Color(0xFF64FFDA)),
-                                ),
-                              ),
-                              validator: (v) => v == null || v.isEmpty ? "Required" : null,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _lastNameController,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                labelText: "Last Name",
-                                labelStyle: TextStyle(color: Colors.grey),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: Color(0xFF64FFDA)),
-                                ),
-                              ),
-                              validator: (v) => v == null || v.isEmpty ? "Required" : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _emailController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          labelText: "Email Address (Matches Main Portal User)",
-                          labelStyle: TextStyle(color: Colors.grey),
-                          focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF64FFDA)),
-                          ),
-                        ),
-                        validator: (v) => v == null || v.isEmpty ? "Required" : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _phoneController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          labelText: "Phone (Optional)",
-                          labelStyle: TextStyle(color: Colors.grey),
-                          focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Color(0xFF64FFDA)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+              // Section Label
+              const Text(
+                "STAFF DETAILS",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.5,
+                  color: Color(0xFF999999),
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Input Fields
+              TextFormField(
+                controller: _employeeIdController,
+                decoration: const InputDecoration(labelText: "Staff ID"),
+                validator: (v) => v == null || v.isEmpty ? "Required" : null,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _firstNameController,
+                      decoration: const InputDecoration(labelText: "First Name"),
+                      validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(labelText: "Last Name"),
+                      validator: (v) => v == null || v.isEmpty ? "Required" : null,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: "Email Address"),
+                validator: (v) => v == null || v.isEmpty ? "Required" : null,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: "Phone (Optional)"),
+              ),
               const SizedBox(height: 32),
 
-              // 3. Submit Registration Button
+              // Submit Button
               ElevatedButton(
                 onPressed: _isRegistering ? null : _registerStaff,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF64FFDA),
-                  foregroundColor: const Color(0xFF0F172A),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  disabledBackgroundColor: Colors.grey.withOpacity(0.3),
-                ),
                 child: _isRegistering
                     ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(color: Color(0xFF0F172A), strokeWidth: 2),
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
-                    : const Text(
-                        "Register Staff & Profile",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                    : const Text("Register Staff"),
               ),
             ],
           ),

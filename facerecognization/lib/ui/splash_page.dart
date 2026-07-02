@@ -18,7 +18,6 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _checkAuthentication() async {
-    // Add brief artificial delay for splash logo branding presentation
     await Future.delayed(const Duration(seconds: 2));
 
     final prefs = await SharedPreferences.getInstance();
@@ -42,33 +41,52 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF0F172A),
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.camera_front,
-              size: 80,
-              color: Color(0xFF64FFDA),
-            ),
-            SizedBox(height: 24),
-            Text(
-              "AI Attendance Kiosk",
-              style: TextStyle(
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF111111),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Icon(
+                Icons.face_retouching_natural,
+                size: 44,
                 color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.8,
               ),
             ),
-            SizedBox(height: 12),
-            SizedBox(
-              width: 150,
+            const SizedBox(height: 32),
+            const Text(
+              "PSNF",
+              style: TextStyle(
+                color: Color(0xFF111111),
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "ATTENDANCE SYSTEM",
+              style: TextStyle(
+                color: Color(0xFF999999),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 3,
+              ),
+            ),
+            const SizedBox(height: 40),
+            const SizedBox(
+              width: 120,
               child: LinearProgressIndicator(
-                color: Color(0xFF64FFDA),
-                backgroundColor: Colors.white12,
+                color: Color(0xFF111111),
+                backgroundColor: Color(0xFFEEEEEE),
+                minHeight: 2,
               ),
             ),
           ],

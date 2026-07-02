@@ -11,6 +11,15 @@ from app.repositories.employee import EmployeeRepository
 
 router = APIRouter(prefix="/reports", tags=["Reporting Services"])
 
+def format_local_time(dt: Optional[datetime.datetime]) -> str:
+    """Format a datetime stored in local time to 12-hour AM/PM string."""
+    if not dt:
+        return "N/A"
+    try:
+        return dt.strftime("%I:%M %p")
+    except Exception:
+        return "N/A"
+
 async def get_report_records(db: AsyncSession, date: datetime.date) -> List[dict]:
     # Query database records and format for exporters
     attendance_repo = AttendanceRepository(db)
@@ -21,8 +30,8 @@ async def get_report_records(db: AsyncSession, date: datetime.date) -> List[dict
     
     for emp in employees:
         logs = await attendance_repo.get_employee_logs_for_day(emp.id, date)
-        check_in = next((l.clock_time.strftime("%I:%M %p") for l in logs if l.clock_type == "CHECK_IN"), "N/A")
-        check_out = next((l.clock_time.strftime("%I:%M %p") for l in logs if l.clock_type == "CHECK_OUT"), "N/A")
+        check_in = next((format_local_time(l.clock_time) for l in logs if l.clock_type == "CHECK_IN"), "N/A")
+        check_out = next((format_local_time(l.clock_time) for l in logs if l.clock_type == "CHECK_OUT"), "N/A")
         status_val = logs[0].status if logs else "ABSENT"
         
         # Calculate total hours worked if both exist

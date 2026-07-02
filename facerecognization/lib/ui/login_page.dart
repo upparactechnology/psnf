@@ -38,7 +38,6 @@ class _LoginPageState extends State<LoginPage> {
     final prefs = await SharedPreferences.getInstance();
     final savedHost = prefs.getString('host_url');
     
-    // Probe local Wi-Fi network subnet
     final discoveredHost = await _apiService.discoverBackend();
     
     if (mounted) {
@@ -48,21 +47,21 @@ class _LoginPageState extends State<LoginPage> {
           _hostController.text = discoveredHost;
           _isDiscovering = false;
           _showHostField = false;
-          _discoveryStatus = "Auto-connected to $discoveredHost";
+          _discoveryStatus = "Connected to $discoveredHost";
         });
       } else if (savedHost != null) {
         setState(() {
           _hostController.text = savedHost;
           _isDiscovering = false;
           _showHostField = false;
-          _discoveryStatus = "Linked: $savedHost (Last Active)";
+          _discoveryStatus = "Using saved: $savedHost";
         });
       } else {
         setState(() {
           _hostController.text = "http://192.168.1.5:8000";
           _isDiscovering = false;
           _showHostField = true;
-          _discoveryStatus = "Auto-discovery offline. Use manual entry.";
+          _discoveryStatus = "Server not found. Enter manually.";
         });
       }
     }
@@ -106,8 +105,8 @@ class _LoginPageState extends State<LoginPage> {
         );
       } else {
         setState(() {
-          _errorMessage = "Authentication failed. Check credentials and router Wi-Fi.";
-          _showHostField = true; // Always display IP field on failure for easy manual verification
+          _errorMessage = "Authentication failed. Check credentials and server connection.";
+          _showHostField = true;
         });
       }
     }
@@ -124,112 +123,93 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
-            padding: const EdgeInsets.all(32.0),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E293B),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white12),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                )
-              ],
-            ),
+            constraints: const BoxConstraints(maxWidth: 380),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.lock_person,
-                  size: 64,
-                  color: Color(0xFF64FFDA),
+                // Logo
+                Center(
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111111),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Icon(Icons.face_retouching_natural, size: 30, color: Colors.white),
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 const Text(
-                  "Kiosk Auth Console",
+                  "Sign in",
                   style: TextStyle(
                     fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF111111),
+                    letterSpacing: -0.5,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 const Text(
-                  "Enter admin credentials to authorize this tablet",
-                  style: TextStyle(color: Colors.white54, fontSize: 13),
+                  "Authorize this device as a kiosk terminal",
+                  style: TextStyle(color: Color(0xFF888888), fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 
-                // Discovery Status Badge
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _isDiscovering 
-                          ? Colors.blue.withOpacity(0.08) 
-                          : (_hostController.text.isNotEmpty ? Colors.green.withOpacity(0.08) : Colors.orange.withOpacity(0.08)),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _isDiscovering 
-                            ? Colors.blue.withOpacity(0.2) 
-                            : (_hostController.text.isNotEmpty ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2)),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 10,
-                          height: 10,
-                          child: _isDiscovering 
-                            ? const CircularProgressIndicator(strokeWidth: 1.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.blue))
-                            : Icon(
-                                _hostController.text.isNotEmpty ? Icons.wifi : Icons.wifi_off, 
-                                size: 12, 
-                                color: _hostController.text.isNotEmpty ? Colors.greenAccent : Colors.orangeAccent
-                              ),
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            _discoveryStatus,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: _isDiscovering 
-                                  ? Colors.blueAccent 
-                                  : (_hostController.text.isNotEmpty ? Colors.greenAccent : Colors.orangeAccent),
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold
+                // Discovery Status
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7F7F7),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFFE5E5E5)),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: _isDiscovering 
+                          ? const CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF111111))
+                          : Icon(
+                              _hostController.text.isNotEmpty ? Icons.check_circle : Icons.error_outline, 
+                              size: 14, 
+                              color: _hostController.text.isNotEmpty ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
                             ),
-                          ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _discoveryStatus,
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 
                 const SizedBox(height: 24),
+
                 if (_errorMessage != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: const Color(0xFFFCA5A5)),
                     ),
                     child: Text(
                       _errorMessage!,
-                      style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 13),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -239,92 +219,49 @@ class _LoginPageState extends State<LoginPage> {
                 if (_showHostField) ...[
                   TextField(
                     controller: _hostController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelText: "Backend Host URL",
-                      labelStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white24),
-                      ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFF64FFDA)),
-                      ),
-                    ),
+                    decoration: const InputDecoration(labelText: "Server URL"),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                 ],
                 
                 TextField(
                   controller: _usernameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Admin Username",
-                    labelStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white24),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF64FFDA)),
-                    ),
-                  ),
+                  decoration: const InputDecoration(labelText: "Username"),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 TextField(
                   controller: _passwordController,
-                  style: const TextStyle(color: Colors.white),
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: "Admin Password",
-                    labelStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white24),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF64FFDA)),
-                    ),
-                  ),
+                  decoration: const InputDecoration(labelText: "Password"),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
                 ElevatedButton(
                   onPressed: (_isLoading || _isDiscovering) ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF64FFDA),
-                    foregroundColor: const Color(0xFF0F172A),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
                   child: _isLoading
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0F172A)),
-                          ),
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text(
-                          "Authorize Tablet",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
+                      : const Text("Authorize Tablet"),
                 ),
                 
-                // Manual Config Trigger
                 if (!_showHostField && !_isDiscovering) ...[
                   const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _showHostField = true;
-                      });
-                    },
-                    child: const Text(
-                      "Configure IP Address Manually",
-                      style: TextStyle(
-                        color: Color(0xFF64FFDA),
-                        fontSize: 12,
-                        decoration: TextDecoration.underline
+                  Center(
+                    child: TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _showHostField = true;
+                        });
+                      },
+                      child: const Text(
+                        "Configure server manually",
+                        style: TextStyle(
+                          color: Color(0xFF888888),
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
                   ),

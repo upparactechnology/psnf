@@ -36,7 +36,7 @@ ob_start();
             <span class="px-3 py-1 bg-emerald-950/45 text-emerald-400 border border-emerald-900/50 rounded-full text-xs font-bold">Connected</span>
         </div>
         <div class="w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-950" style="height: 600px;">
-            <iframe src="http://localhost:5173/" style="width: 100%; height: 100%; border: none;"></iframe>
+            <iframe src="<?= url('kiosk_dashboard/index.html') ?>" style="width: 100%; height: 100%; border: none;"></iframe>
         </div>
     </div>
 

@@ -24,6 +24,7 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   FaceDetector? _faceDetector;
   bool _isDetecting = false;
   bool _cameraInitialized = false;
+  String? _cameraError;
   
   // Kiosk Scan state
   String _statusMessage = "Stand in front of the camera to verify";
@@ -74,8 +75,16 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
 
   Future<void> _initializeCamera() async {
     try {
+      setState(() {
+        _cameraError = null;
+      });
       final cameras = await availableCameras();
-      if (cameras.isEmpty) return;
+      if (cameras.isEmpty) {
+        setState(() {
+          _cameraError = "No cameras detected on this device.";
+        });
+        return;
+      }
       
       // Default to front-facing camera for kiosk
       final frontCamera = cameras.firstWhere(
@@ -102,82 +111,103 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
       _startImageStream();
     } catch (e) {
       debugPrint("Camera initialization failed: $e");
+      if (mounted) {
+        setState(() {
+          _cameraError = e.toString();
+        });
+      }
     }
   }
 
-  void _startImageStream() {
+  Future<void> _startImageStream() async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) return;
-    if (_cameraController!.value.isStreamingImages) return;
-
-    _cameraController!.startImageStream((CameraImage image) async {
-      if (_isDetecting || _isProcessingMatch) return;
-      _isDetecting = true;
-
+    
+    // Stop the image stream first if the controller reports it is streaming,
+    // to prevent any inconsistent/stuck state in the camera plugin.
+    if (_cameraController!.value.isStreamingImages) {
       try {
-        final bytes = yuv420ToNv21(image);
+        await _cameraController!.stopImageStream();
+      } catch (e) {
+        debugPrint("Error stopping image stream before restart: $e");
+      }
+    }
 
-        final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
-        final InputImageRotation imageRotation = InputImageRotation.rotation270deg; // Front camera standard
-        
-        final InputImageFormat inputImageFormat = image.planes.length < 3
-            ? (InputImageFormatValue.fromRawValue(image.format.raw) ?? InputImageFormat.nv21)
-            : (Platform.isAndroid ? InputImageFormat.nv21 : InputImageFormat.bgra8888);
+    try {
+      await _cameraController!.startImageStream((CameraImage image) async {
+        if (_isDetecting || _isProcessingMatch) return;
+        _isDetecting = true;
 
-        final inputImageData = InputImageMetadata(
-          size: imageSize,
-          rotation: imageRotation,
-          format: inputImageFormat,
-          bytesPerRow: image.planes[0].bytesPerRow,
-        );
+        try {
+          final bytes = yuv420ToNv21(image);
 
-        final inputImage = InputImage.fromBytes(
-          bytes: bytes,
-          metadata: inputImageData,
-        );
-
-        final faces = await _faceDetector!.processImage(inputImage);
-        
-        if (faces.isNotEmpty) {
-          _faceGoneTimer?.cancel();
-          if (!_isFacePresent) {
-            setState(() {
-              _isFacePresent = true;
-            });
-          }
+          final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
+          final InputImageRotation imageRotation = InputImageRotation.rotation270deg; // Front camera standard
           
-          if (!_isProcessingMatch) {
-            // Process the primary face (largest bounding box)
-            final primaryFace = faces.reduce((a, b) => 
+          final InputImageFormat inputImageFormat = image.planes.length < 3
+              ? (InputImageFormatValue.fromRawValue(image.format.raw) ?? InputImageFormat.nv21)
+              : (Platform.isAndroid ? InputImageFormat.nv21 : InputImageFormat.bgra8888);
+
+          final inputImageData = InputImageMetadata(
+            size: imageSize,
+            rotation: imageRotation,
+            format: inputImageFormat,
+            bytesPerRow: image.planes[0].bytesPerRow,
+          );
+
+          final inputImage = InputImage.fromBytes(
+            bytes: bytes,
+            metadata: inputImageData,
+          );
+
+          final faces = await _faceDetector!.processImage(inputImage);
+          
+          // Find the primary face (largest bounding box) if any faces are detected
+          Face? primaryFace;
+          if (faces.isNotEmpty) {
+            primaryFace = faces.reduce((a, b) => 
               (a.boundingBox.width * a.boundingBox.height) > (b.boundingBox.width * b.boundingBox.height) ? a : b
             );
+          }
+
+          // We consider a face "present" only if a face is detected and it is close enough to verify
+          final bool hasValidFace = primaryFace != null && primaryFace.boundingBox.width > 120;
+
+          if (hasValidFace) {
+            _faceGoneTimer?.cancel();
+            if (!_isFacePresent) {
+              setState(() {
+                _isFacePresent = true;
+              });
+            }
             
-            // Verify if the face is well-centered (bounding box within screen area parameters)
-            final double faceWidth = primaryFace.boundingBox.width;
-            if (faceWidth > 120) {
+            if (!_isProcessingMatch) {
               await _onFaceDetected(primaryFace);
             }
+          } else {
+            // No valid close face detected
+            if (!_isProcessingMatch && _isFacePresent && (_faceGoneTimer == null || !_faceGoneTimer!.isActive)) {
+              _faceGoneTimer = Timer(const Duration(seconds: 1), () {
+                if (mounted) {
+                  setState(() {
+                    _isFacePresent = false;
+                  });
+                }
+              });
+            }
           }
-        } else {
-          // No faces detected
-          if (_isFacePresent && (_faceGoneTimer == null || !_faceGoneTimer!.isActive)) {
-            _faceGoneTimer = Timer(const Duration(milliseconds: 300), () {
-              if (mounted) {
-                setState(() {
-                  _isFacePresent = false;
-                });
-              }
-            });
-          }
+        } catch (e) {
+          debugPrint("Error processing frame: $e");
+        } finally {
+          _isDetecting = false;
         }
-      } catch (e) {
-        debugPrint("Error processing frame: $e");
-      } finally {
-        _isDetecting = false;
-      }
-    });
+      });
+    } catch (e) {
+      debugPrint("Error starting image stream: $e");
+    }
   }
 
   Future<void> _onFaceDetected(Face face) async {
+    _faceGoneTimer?.cancel(); // Cancel any pending face-gone timers
     setState(() {
       _isProcessingMatch = true;
       _statusMessage = "Face detected! Snapping photo...";
@@ -224,6 +254,10 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
 
             _statusMessage = "Welcome ${emp['first_name']} ${emp['last_name']}!\n${log['clock_type']} at $formattedTime";
             _statusColor = Colors.green;
+          } else if (result != null && result['error'] == true) {
+            // Show specific error from server/network
+            _statusMessage = "${result['detail'] ?? 'Unknown error'}";
+            _statusColor = Colors.red;
           } else {
             _statusMessage = "Access Denied.\nFace profile match not found.";
             _statusColor = Colors.red;
@@ -252,6 +286,7 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         _statusMessage = "Stand in front of the camera to verify";
         _statusColor = Colors.grey;
         _isProcessingMatch = false;
+        _isFacePresent = false; // Reset face presence state to turn screen off if no one is in front
       });
       // Restart image stream for next scan
       _startImageStream();
@@ -291,106 +326,108 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
 
     return Positioned.fill(
       child: Container(
-        color: Colors.black.withOpacity(0.65),
+        color: Colors.black.withOpacity(0.7),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Center(
-            child: Card(
-              color: const Color(0xFF1E293B),
-              elevation: 24,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: const BorderSide(color: Color(0xFF64FFDA), width: 1.5),
+            child: Container(
+              width: 320,
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFFE5E5E5)),
               ),
-              child: Container(
-                width: 320,
-                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withOpacity(0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF10B981), width: 3),
-                      ),
-                      child: const Icon(
-                        Icons.check_circle_rounded,
-                        color: Color(0xFF10B981),
-                        size: 48,
-                      ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111111),
+                      borderRadius: BorderRadius.circular(32),
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      clockType == "CHECK_IN" ? "CHECK-IN SUCCESS" : "CHECK-OUT SUCCESS",
-                      style: const TextStyle(
-                        color: Color(0xFF64FFDA),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 36,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      "${emp['first_name']} ${emp['last_name']}",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    clockType == "CHECK_IN" ? "CHECK-IN" : "CHECK-OUT",
+                    style: const TextStyle(
+                      color: Color(0xFF111111),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 2,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "ID: ${emp['employee_id']}",
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "${emp['first_name']} ${emp['last_name']}",
+                    style: const TextStyle(
+                      color: Color(0xFF111111),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
                     ),
-                    const Divider(color: Color(0xFF334155), height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Time:", style: TextStyle(color: Colors.grey, fontSize: 14)),
-                        Text(timeStr, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-                      ],
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    emp['employee_id'],
+                    style: const TextStyle(
+                      color: Color(0xFF999999),
+                      fontSize: 13,
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Date:", style: TextStyle(color: Colors.grey, fontSize: 14)),
-                        Text(dateStr, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Status:", style: TextStyle(color: Colors.grey, fontSize: 14)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isLate ? Colors.red.withOpacity(0.15) : Colors.green.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: isLate ? Colors.red : Colors.green),
-                          ),
-                          child: Text(
-                            status,
-                            style: TextStyle(
-                              color: isLate ? Colors.red : Colors.green,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    height: 1,
+                    color: const Color(0xFFE5E5E5),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Time", style: TextStyle(color: Color(0xFF999999), fontSize: 13)),
+                      Text(timeStr, style: const TextStyle(color: Color(0xFF111111), fontSize: 14, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Date", style: TextStyle(color: Color(0xFF999999), fontSize: 13)),
+                      Text(dateStr, style: const TextStyle(color: Color(0xFF111111), fontSize: 14, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Status", style: TextStyle(color: Color(0xFF999999), fontSize: 13)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isLate ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(2),
+                          border: Border.all(color: isLate ? const Color(0xFFFCA5A5) : const Color(0xFF86EFAC)),
+                        ),
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            color: isLate ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -408,10 +445,10 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         child: AnimatedBuilder(
           animation: _scanLineController!,
           builder: (context, child) {
-            final pulseOpacity = 0.35 + (_scanLineController!.value * 0.65);
+            final pulseOpacity = 0.3 + (_scanLineController!.value * 0.7);
 
             return Container(
-              color: const Color(0xFF020617),
+              color: const Color(0xFF111111),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -419,20 +456,13 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
                     Opacity(
                       opacity: pulseOpacity,
                       child: Container(
-                        width: 100,
-                        height: 100,
+                        width: 90,
+                        height: 90,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF64FFDA).withOpacity(0.5), width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF64FFDA).withOpacity(0.15 * pulseOpacity),
-                              blurRadius: 24,
-                              spreadRadius: 2,
-                            )
-                          ]
+                          border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
                         ),
-                        child: const Icon(Icons.face, color: Color(0xFF64FFDA), size: 54),
+                        child: Icon(Icons.face, color: Colors.white.withOpacity(0.7), size: 48),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -441,10 +471,10 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
                       child: const Text(
                         "APPROACH TO SCAN",
                         style: TextStyle(
-                          color: Color(0xFF64FFDA),
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 3.0,
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 4.0,
                         ),
                       ),
                     ),
@@ -503,8 +533,8 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
                         MaterialPageRoute(builder: (context) => const RegisterPage()),
                       );
                     },
-                    icon: const Icon(Icons.person_add, color: Colors.greenAccent),
-                    label: const Text("Register Staff & Face", style: TextStyle(color: Colors.greenAccent)),
+                    icon: const Icon(Icons.person_add, color: Color(0xFF111111)),
+                    label: const Text("Register Staff & Face", style: TextStyle(color: Color(0xFF111111))),
                   ),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
@@ -567,15 +597,19 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("PSNF Attendance", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1)),
-        backgroundColor: const Color(0xFF1E293B),
+        title: const Text("PSNF Attendance", style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.5, fontSize: 16)),
+        backgroundColor: Colors.white,
         elevation: 0,
-        foregroundColor: Colors.white,
+        foregroundColor: const Color(0xFF111111),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFE5E5E5), height: 1),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, size: 22),
             onPressed: _showSettingsDialog,
           )
         ],
@@ -631,13 +665,32 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         else
           Container(
             color: Colors.black87,
-            child: const Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.videocam_off, size: 80, color: Colors.grey),
-                  SizedBox(height: 10),
-                  Text("Initializing camera stream...", style: TextStyle(color: Colors.white70)),
+                  Icon(
+                    _cameraError != null && _cameraError!.contains("cameraPermissionDenied")
+                        ? Icons.security
+                        : Icons.videocam_off,
+                    size: 80,
+                    color: _cameraError != null && _cameraError!.contains("cameraPermissionDenied")
+                        ? Colors.orange
+                        : Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      _cameraError != null
+                          ? (_cameraError!.contains("cameraPermissionDenied")
+                              ? "Camera Permission Denied.\n\nPlease go to Settings > Apps > PSNF Attendance > Permissions and turn ON Camera permission."
+                              : "Camera Error:\n$_cameraError")
+                          : "Initializing camera stream...",
+                      style: const TextStyle(color: Colors.white70),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -660,23 +713,24 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
           top: 16,
           left: 16,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: _isLoggedIn ? Colors.green.withOpacity(0.8) : Colors.red.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(20),
+              color: _isLoggedIn ? Colors.white : Colors.white,
+              borderRadius: BorderRadius.circular(2),
+              border: Border.all(color: _isLoggedIn ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  _isLoggedIn ? Icons.cloud_done : Icons.cloud_off,
-                  size: 16,
-                  color: Colors.white,
+                  _isLoggedIn ? Icons.check_circle : Icons.error_outline,
+                  size: 14,
+                  color: _isLoggedIn ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _isLoggedIn ? "Authorized" : "Unauthorized Settings Gear Required",
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                  _isLoggedIn ? "Authorized" : "Not Authorized",
+                  style: TextStyle(color: _isLoggedIn ? const Color(0xFF16A34A) : const Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -687,45 +741,55 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   }
 
   Widget _buildStatusPanel({required bool isLandscape}) {
-    return Padding(
+    return Container(
       padding: EdgeInsets.all(isLandscape ? 32.0 : 16.0),
       key: isLandscape ? const Key("status_panel") : null,
+      color: Colors.white,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            "Verification Status",
+            "Status",
             style: TextStyle(
-              fontSize: isLandscape ? 22 : 18, 
-              fontWeight: FontWeight.bold, 
-              color: Colors.white
+              fontSize: isLandscape ? 16 : 13, 
+              fontWeight: FontWeight.w600, 
+              color: const Color(0xFF999999),
+              letterSpacing: 1,
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: isLandscape ? 30 : 12),
+          SizedBox(height: isLandscape ? 20 : 10),
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
-            padding: EdgeInsets.all(isLandscape ? 32 : 16),
+            padding: EdgeInsets.all(isLandscape ? 24 : 14),
             decoration: BoxDecoration(
-              color: _statusColor.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _statusColor, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: _statusColor.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: _statusColor == Colors.grey 
+                  ? const Color(0xFFF7F7F7) 
+                  : (_statusColor == Colors.green 
+                      ? const Color(0xFFF0FDF4) 
+                      : const Color(0xFFFEF2F2)),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: _statusColor == Colors.grey 
+                    ? const Color(0xFFE5E5E5) 
+                    : (_statusColor == Colors.green 
+                        ? const Color(0xFF86EFAC) 
+                        : const Color(0xFFFCA5A5)),
+                width: 1,
+              ),
             ),
             child: Text(
               _statusMessage,
               style: TextStyle(
-                fontSize: isLandscape ? 18 : 14,
-                fontWeight: FontWeight.bold,
-                color: _statusColor == Colors.grey ? Colors.white70 : _statusColor,
+                fontSize: isLandscape ? 16 : 13,
+                fontWeight: FontWeight.w600,
+                color: _statusColor == Colors.grey 
+                    ? const Color(0xFF666666) 
+                    : (_statusColor == Colors.green 
+                        ? const Color(0xFF16A34A) 
+                        : const Color(0xFFDC2626)),
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -802,18 +866,18 @@ class _OvalHUDPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final backgroundPaint = Paint()
-      ..color = Colors.black.withOpacity(0.55)
+      ..color = Colors.black.withOpacity(0.5)
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()
-      ..color = const Color(0xFF64FFDA)
+      ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
+      ..strokeWidth = 2.0;
 
     // Outer full bounding rectangle
     final Path backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
 
-    // Inner Oval cutout (adapted dynamically based on orientation / aspect ratio)
+    // Inner Oval cutout
     final bool isPortrait = size.width < size.height;
     final double ovalWidth = isPortrait ? size.width * 0.65 : size.width * 0.45;
     final double ovalHeight = isPortrait ? size.height * 0.55 : size.height * 0.7;
@@ -825,7 +889,6 @@ class _OvalHUDPainter extends CustomPainter {
     );
     final Path ovalPath = Path()..addOval(ovalRect);
 
-    // Subtract oval path from full rect using Path.combine
     final Path resultPath = Path.combine(
       PathOperation.difference,
       backgroundPath,
@@ -835,27 +898,25 @@ class _OvalHUDPainter extends CustomPainter {
     canvas.drawPath(resultPath, backgroundPaint);
     canvas.drawOval(ovalRect, borderPaint);
 
-    // Draw scanning laser line
+    // Scanning line
     final double laserY = ovalRect.top + (ovalRect.height * scanLinePercent);
     
-    // Draw outer glow
     final laserGlowPaint = Paint()
       ..shader = LinearGradient(
         colors: [
-          const Color(0xFF64FFDA).withOpacity(0.0),
-          const Color(0xFF64FFDA).withOpacity(0.3),
-          const Color(0xFF64FFDA).withOpacity(0.3),
-          const Color(0xFF64FFDA).withOpacity(0.0),
+          Colors.white.withOpacity(0.0),
+          Colors.white.withOpacity(0.2),
+          Colors.white.withOpacity(0.2),
+          Colors.white.withOpacity(0.0),
         ],
-      ).createShader(Rect.fromLTRB(ovalRect.left, laserY - 8, ovalRect.right, laserY + 8))
+      ).createShader(Rect.fromLTRB(ovalRect.left, laserY - 6, ovalRect.right, laserY + 6))
       ..style = PaintingStyle.fill;
 
-    canvas.drawRect(Rect.fromLTRB(ovalRect.left + 16, laserY - 6, ovalRect.right - 16, laserY + 6), laserGlowPaint);
+    canvas.drawRect(Rect.fromLTRB(ovalRect.left + 16, laserY - 4, ovalRect.right - 16, laserY + 4), laserGlowPaint);
 
-    // Draw central bright line
     final laserLinePaint = Paint()
-      ..color = const Color(0xFF64FFDA)
-      ..strokeWidth = 2.0
+      ..color = Colors.white.withOpacity(0.8)
+      ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
     canvas.drawLine(Offset(ovalRect.left + 16, laserY), Offset(ovalRect.right - 16, laserY), laserLinePaint);

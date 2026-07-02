@@ -169,7 +169,11 @@ const Terminals = () => {
                       <TableCell>
                         <Chip label={`${term.logsSynced} logs uploaded`} size="small" color="primary" variant="outlined" />
                       </TableCell>
-                      <TableCell>{term.lastSeen}</TableCell>
+                      <TableCell>
+                        {term.lastSeen && term.lastSeen !== 'No communication yet'
+                          ? new Date(term.lastSeen).toLocaleString()
+                          : term.lastSeen}
+                      </TableCell>
                       <TableCell>
                         <Box
                           sx={{

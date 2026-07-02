@@ -45,7 +45,7 @@ async def get_attendance(
                 "employee_id": log.employee.employee_id,
                 "name": f"{log.employee.first_name} {log.employee.last_name}"
             },
-            "clock_time": log.clock_time.isoformat() + "Z",
+            "clock_time": log.clock_time.isoformat(),
             "clock_type": log.clock_type,
             "status": log.status,
             "device_id": log.device_id
