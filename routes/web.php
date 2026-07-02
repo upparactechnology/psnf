@@ -31,7 +31,7 @@ $router->get('/dashboard', [DashboardController::class, 'index'], ['auth', 'tena
 $router->get('/teacher/dashboard', [TeacherPortalController::class, 'dashboard'], ['auth', 'role:teacher']);
 
 // ─── Users ────────────────────────────────────────────────────────────────────
-$router->get('/users/attendance',  [UserController::class, 'attendanceLog'],['auth', 'permission:view_users']);
+$router->get('/staff/attendance',  [UserController::class, 'staffAttendanceLog'],['auth', 'permission:view_users']);
 $router->get('/users',             [UserController::class, 'index'],   ['auth', 'permission:view_users']);
 $router->get('/users/create',      [UserController::class, 'create'],  ['auth', 'permission:create_users']);
 $router->post('/users',            [UserController::class, 'store'],   ['auth', 'permission:create_users']);

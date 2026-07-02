@@ -413,7 +413,7 @@ if ($user) {
                 $module = 'finance';
             } elseif (str_starts_with($currentPath, '/transport')) {
                 $module = 'transport';
-            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/settings')) {
+            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/staff') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/settings')) {
                 $module = 'administration';
             } elseif (str_starts_with($currentPath, '/medical')) {
                 $module = 'medical';
@@ -464,10 +464,10 @@ if ($user) {
                 <?php endif; ?>
 
             <?php elseif ($module === 'administration'): ?>
-                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">H.R Directory</div>
+                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Staff Attendance</div>
                 <?php if (in_array('hr', $assignedApps)): ?>
-                    <?php navLink('/users', $ic['users'], 'Users Management', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/users/attendance', $ic['attendance'], 'Teacher Attendance', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/users', $ic['users'], 'Staff Members', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/staff/attendance', $ic['attendance'], 'Attendance Logs', $currentPath, $sidebarOpen); ?>
                 <?php endif; ?>
                 <?php if (in_array('access_control', $assignedApps)): ?>
                     <?php navLink('/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>

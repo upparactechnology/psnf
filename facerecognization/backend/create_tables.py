@@ -13,6 +13,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("db_init")
 
 async def init_db():
+    logger.info("Auto-creating database if not exists...")
+    # 0. Automatically create database using raw pymysql connection
+    import pymysql
+    try:
+        conn = pymysql.connect(host="127.0.0.1", user="root", password="", port=3306)
+        with conn.cursor() as cursor:
+            cursor.execute("CREATE DATABASE IF NOT EXISTS psnf_drm")
+        conn.close()
+        logger.info("Database 'psnf_drm' checked/created successfully.")
+    except Exception as e:
+        logger.warning(f"Auto-create database skipped: {e}")
+
     logger.info("Initializing database tables...")
     async with engine.begin() as conn:
         # Create all tables
@@ -21,20 +33,6 @@ async def init_db():
 
     # Create active session to insert seed data
     async with AsyncSession(engine) as session:
-        # Check if default admin exists
-        result = await session.execute(select(User).where(User.username == "admin_main"))
-        admin = result.scalar_one_or_none()
-        
-        if not admin:
-            logger.info("Seeding default admin user: admin_main...")
-            admin_user = User(
-                username="admin_main",
-                password_hash=get_password_hash("SecurePassword123"),
-                role="SUPER_ADMIN"
-            )
-            session.add(admin_user)
-        else:
-            logger.info("Admin user admin_main already exists.")
 
         # Check if default shift exists
         shift_result = await session.execute(select(Shift).where(Shift.name == "Default Shift"))

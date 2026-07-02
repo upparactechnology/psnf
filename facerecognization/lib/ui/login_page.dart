@@ -15,23 +15,64 @@ class _LoginPageState extends State<LoginPage> {
   final _hostController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  
   bool _isLoading = false;
+  bool _isDiscovering = false;
+  bool _showHostField = false;
+  String _discoveryStatus = "Searching for server...";
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedHost();
+    _startAutoDiscovery();
   }
 
-  Future<void> _loadSavedHost() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _startAutoDiscovery() async {
     setState(() {
-      _hostController.text = prefs.getString('host_url') ?? "http://10.0.2.2:8000";
+      _isDiscovering = true;
+      _errorMessage = null;
+      _discoveryStatus = "Auto-discovering server on Wi-Fi...";
     });
+    
+    final prefs = await SharedPreferences.getInstance();
+    final savedHost = prefs.getString('host_url');
+    
+    // Probe local Wi-Fi network subnet
+    final discoveredHost = await _apiService.discoverBackend();
+    
+    if (mounted) {
+      if (discoveredHost != null) {
+        await prefs.setString('host_url', discoveredHost);
+        setState(() {
+          _hostController.text = discoveredHost;
+          _isDiscovering = false;
+          _showHostField = false;
+          _discoveryStatus = "Auto-connected to $discoveredHost";
+        });
+      } else if (savedHost != null) {
+        setState(() {
+          _hostController.text = savedHost;
+          _isDiscovering = false;
+          _showHostField = false;
+          _discoveryStatus = "Linked: $savedHost (Last Active)";
+        });
+      } else {
+        setState(() {
+          _hostController.text = "http://192.168.1.5:8000";
+          _isDiscovering = false;
+          _showHostField = true;
+          _discoveryStatus = "Auto-discovery offline. Use manual entry.";
+        });
+      }
+    }
   }
 
   Future<void> _handleLogin() async {
+    if (_hostController.text.trim().isEmpty) {
+      await _startAutoDiscovery();
+    }
+
     final host = _hostController.text.trim();
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
@@ -65,7 +106,8 @@ class _LoginPageState extends State<LoginPage> {
         );
       } else {
         setState(() {
-          _errorMessage = "Authentication failed. Check credentials and server connection.";
+          _errorMessage = "Authentication failed. Check credentials and router Wi-Fi.";
+          _showHostField = true; // Always display IP field on failure for easy manual verification
         });
       }
     }
@@ -126,6 +168,56 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(color: Colors.white54, fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 16),
+                
+                // Discovery Status Badge
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _isDiscovering 
+                          ? Colors.blue.withOpacity(0.08) 
+                          : (_hostController.text.isNotEmpty ? Colors.green.withOpacity(0.08) : Colors.orange.withOpacity(0.08)),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _isDiscovering 
+                            ? Colors.blue.withOpacity(0.2) 
+                            : (_hostController.text.isNotEmpty ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2)),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: _isDiscovering 
+                            ? const CircularProgressIndicator(strokeWidth: 1.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.blue))
+                            : Icon(
+                                _hostController.text.isNotEmpty ? Icons.wifi : Icons.wifi_off, 
+                                size: 12, 
+                                color: _hostController.text.isNotEmpty ? Colors.greenAccent : Colors.orangeAccent
+                              ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            _discoveryStatus,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: _isDiscovering 
+                                  ? Colors.blueAccent 
+                                  : (_hostController.text.isNotEmpty ? Colors.greenAccent : Colors.orangeAccent),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
                 const SizedBox(height: 24),
                 if (_errorMessage != null) ...[
                   Container(
@@ -143,21 +235,25 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-                TextField(
-                  controller: _hostController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Backend Host URL",
-                    labelStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white24),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF64FFDA)),
+                
+                if (_showHostField) ...[
+                  TextField(
+                    controller: _hostController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: "Backend Host URL",
+                      labelStyle: TextStyle(color: Colors.white70),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white24),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF64FFDA)),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                ],
+                
                 TextField(
                   controller: _usernameController,
                   style: const TextStyle(color: Colors.white),
@@ -190,7 +286,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
+                  onPressed: (_isLoading || _isDiscovering) ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF64FFDA),
                     foregroundColor: const Color(0xFF0F172A),
@@ -213,6 +309,26 @@ class _LoginPageState extends State<LoginPage> {
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                 ),
+                
+                // Manual Config Trigger
+                if (!_showHostField && !_isDiscovering) ...[
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _showHostField = true;
+                      });
+                    },
+                    child: const Text(
+                      "Configure IP Address Manually",
+                      style: TextStyle(
+                        color: Color(0xFF64FFDA),
+                        fontSize: 12,
+                        decoration: TextDecoration.underline
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -9,6 +9,18 @@ class EmployeeRepository(BaseRepository[Employee]):
     def __init__(self, db: AsyncSession):
         super().__init__(Employee, db)
 
+    async def get(self, id: int) -> Optional[Employee]:
+        from app.models.shift import EmployeeShift
+        result = await self.db.execute(
+            select(Employee)
+            .filter(Employee.id == id)
+            .options(
+                selectinload(Employee.shifts)
+                .selectinload(EmployeeShift.shift)
+            )
+        )
+        return result.scalars().first()
+
     async def get_by_employee_id(self, employee_id: str) -> Optional[Employee]:
         result = await self.db.execute(
             select(Employee)

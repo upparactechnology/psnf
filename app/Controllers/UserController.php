@@ -173,7 +173,7 @@ class UserController extends Controller
         return $this->redirect('/users');
     }
 
-    public function attendanceLog(): string
+    public function staffAttendanceLog(): string
     {
         $db = \Core\Application::$app->db;
         $search = $this->request->get('search', '');
@@ -181,16 +181,16 @@ class UserController extends Controller
         $clause = "";
         $params = [];
         if ($search) {
-            $clause = "WHERE u.name LIKE ? OR u.email LIKE ? OR ta.status LIKE ?";
-            $params = ["%$search%", "%$search%", "%$search%"];
+            $clause = "WHERE e.first_name LIKE ? OR e.last_name LIKE ? OR al.status LIKE ? OR e.employee_id LIKE ?";
+            $params = ["%$search%", "%$search%", "%$search%", "%$search%"];
         }
 
         $records = $db->select("
-            SELECT ta.*, u.name as teacher_name, u.email as teacher_email
-            FROM teacher_attendance ta
-            JOIN users u ON ta.user_id = u.id
+            SELECT al.*, e.first_name, e.last_name, e.employee_id as emp_code, e.email as emp_email
+            FROM attendance_logs al
+            JOIN employees e ON al.employee_id = e.id
             $clause
-            ORDER BY ta.attendance_date DESC, ta.opened_at DESC
+            ORDER BY al.clock_time DESC
         ", $params);
 
         return $this->view('users/attendance_log', compact('records', 'search'));

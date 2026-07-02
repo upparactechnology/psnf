@@ -104,14 +104,24 @@ async def verify_image_file(
     
     # 1. Read bytes and decode image
     contents = await file.read()
+    print(f"[DIAGNOSTIC] Received file upload: size={len(contents)} bytes")
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if img is None:
+        print("[DIAGNOSTIC] OpenCV failed to decode the image bytes!")
         raise HTTPException(status_code=400, detail="Invalid image file format.")
+    print(f"[DIAGNOSTIC] Decoded image resolution: {img.shape}")
 
     # 2. Extract embedding using FaceAIPipeline
     pipeline = FaceAIPipeline(model_dir="models")
     embedding = pipeline.extract_embedding(img)
+    if embedding is None:
+        print("[DIAGNOSTIC] Extract embedding returned None!")
+        raise HTTPException(
+            status_code=400,
+            detail="No face detected in the photo. Please align your face inside the circle."
+        )
+    print("[DIAGNOSTIC] Successfully extracted embedding vector.")
     embedding_list = embedding.tolist()
 
     # 3. Perform matching
@@ -124,6 +134,7 @@ async def verify_image_file(
     )
     embeddings = result.scalars().all()
 
+    print(f"[DIAGNOSTIC] Total registered face profiles to check: {len(embeddings)}")
     best_match_employee = None
     highest_score = 0.0
     matching_threshold = 0.65
@@ -132,11 +143,16 @@ async def verify_image_file(
         try:
             stored_vector = json.loads(item.embedding_vector)
             score = FaceAIPipeline.calculate_cosine_similarity(embedding_list, stored_vector)
+            emp_name = f"{item.employee.first_name} {item.employee.last_name}" if item.employee else "Unknown Employee"
+            print(f"[DIAGNOSTIC] Comparing face with {emp_name} (ID: {item.employee_id}) -> Match Score: {score:.4f}")
             if score > highest_score:
                 highest_score = score
                 best_match_employee = item.employee
-        except Exception:
+        except Exception as ex:
+            print(f"[DIAGNOSTIC] Failed to compare face profile ID {item.id}: {ex}")
             continue
+
+    print(f"[DIAGNOSTIC] Best Match: {best_match_employee.first_name if best_match_employee else None} | Score: {highest_score:.4f} (Threshold: {matching_threshold})")
 
     if not best_match_employee or highest_score < matching_threshold:
         raise HTTPException(

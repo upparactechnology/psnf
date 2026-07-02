@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from app.models.auth import User, AuditLog
 
 async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User]:
-    result = await db.execute(select(User).filter(User.username == username))
+    result = await db.execute(select(User).filter(User.email == username))
     return result.scalars().first()
 
 async def create_audit_log(db: AsyncSession, user_id: int, action: str, details: Optional[str] = None) -> AuditLog:

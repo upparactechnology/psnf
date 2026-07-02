@@ -42,6 +42,24 @@ async def startup_event():
     print(f"     http://{ip}:8000")
     print("="*65 + "\n")
 
+    # DB diagnostics
+    from app.core.database import SessionLocal
+    from sqlalchemy import text
+    try:
+        async with SessionLocal() as db:
+            res_emp = await db.execute(text("SELECT COUNT(*) FROM employees"))
+            count_emp = res_emp.scalar()
+            res_face = await db.execute(text("SELECT COUNT(*) FROM face_embeddings"))
+            count_face = res_face.scalar()
+            print(f"[DIAGNOSTIC] Registered Employees: {count_emp}")
+            print(f"[DIAGNOSTIC] Enrolled Face Profiles: {count_face}")
+            if count_face > 0:
+                res_v = await db.execute(text("SELECT id, employee_id, CHAR_LENGTH(embedding_vector) FROM face_embeddings LIMIT 3"))
+                for row in res_v.fetchall():
+                    print(f"  - FaceEmbedding ID {row[0]}: Employee FK {row[1]}, Vector length: {row[2]} chars")
+    except Exception as e:
+        print(f"[DIAGNOSTIC] DB Diagnostic query failed: {e}")
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,

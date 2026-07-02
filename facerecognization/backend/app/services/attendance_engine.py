@@ -100,4 +100,59 @@ class AttendanceEngine:
             is_synced=True
         )
         
-        return await self.attendance_repo.create(log)
+        saved_log = await self.attendance_repo.create(log)
+
+        # 4. Cross-database synchronization: Log teacher attendance in psnf_drm if employee is a registered teacher
+        try:
+            from sqlalchemy import text
+            user_query = text("""
+                SELECT id, tenant_id, school_id, branch_id, lecture_time, grace_period 
+                FROM psnf_drm.users 
+                WHERE email = :email AND deleted_at IS NULL
+            """)
+            user_res = await self.db.execute(user_query, {"email": employee.email})
+            user_row = user_res.fetchone()
+            
+            if user_row:
+                user_id, tenant_id, school_id, branch_id, lecture_time, grace_period = user_row
+                
+                # Check if log already exists for today
+                log_check = text("""
+                    SELECT id FROM psnf_drm.teacher_attendance 
+                    WHERE user_id = :user_id AND attendance_date = :att_date
+                """)
+                check_res = await self.db.execute(log_check, {"user_id": user_id, "att_date": timestamp.date()})
+                
+                if not check_res.fetchone():
+                    lec_time = lecture_time or datetime.time(9, 0)
+                    gp = grace_period if grace_period is not None else 5
+                    
+                    # Calculate late vs on_time status based on teacher schedule
+                    lec_datetime = datetime.datetime.combine(timestamp.date(), lec_time)
+                    grace_boundary = lec_datetime + datetime.timedelta(minutes=gp)
+                    t_status = "late" if timestamp > grace_boundary else "on_time"
+                    
+                    insert_query = text("""
+                        INSERT INTO psnf_drm.teacher_attendance 
+                        (tenant_id, school_id, branch_id, user_id, attendance_date, opened_at, status, lecture_time, grace_period)
+                        VALUES 
+                        (:tenant_id, :school_id, :branch_id, :user_id, :att_date, :opened_at, :status, :lec_time, :grace_period)
+                    """)
+                    await self.db.execute(insert_query, {
+                        "tenant_id": tenant_id,
+                        "school_id": school_id,
+                        "branch_id": branch_id,
+                        "user_id": user_id,
+                        "att_date": timestamp.date(),
+                        "opened_at": timestamp,
+                        "status": t_status,
+                        "lec_time": lec_time,
+                        "grace_period": gp
+                    })
+                    await self.db.commit()
+        except Exception as e:
+            # Prevent logging synchronization errors from blocking the primary kiosk response
+            import logging
+            logging.getLogger("attendance_backend").warning(f"Cross-db teacher sync skipped: {e}")
+
+        return saved_log

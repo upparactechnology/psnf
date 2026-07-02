@@ -12,17 +12,18 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 async def login(request_data: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
     request_id = getattr(request.state, "request_id", "unknown")
     user = await get_user_by_username(db, request_data.username)
-    if not user or not verify_password(request_data.password, user.password_hash):
+    
+    if not user or not verify_password(request_data.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password"
         )
     
-    access_token = create_access_token(data={"sub": user.username, "role": user.role})
-    refresh_token = create_refresh_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user.email, "role": "SUPER_ADMIN"})
+    refresh_token = create_refresh_token(data={"sub": user.email})
     
     # Audit log entry
-    await create_audit_log(db, user_id=user.id, action="USER_LOGIN", details=f"Successful login for user: {user.username}")
+    await create_audit_log(db, user_id=user.id, action="USER_LOGIN", details=f"Successful login for user: {user.email}")
     
     return {
         "access_token": access_token,
@@ -48,8 +49,8 @@ async def refresh_token(request_data: RefreshRequest, request: Request, db: Asyn
             detail="User not found"
         )
     
-    access_token = create_access_token(data={"sub": user.username, "role": user.role})
-    new_refresh_token = create_refresh_token(data={"sub": user.username})
+    access_token = create_access_token(data={"sub": user.email, "role": "SUPER_ADMIN"})
+    new_refresh_token = create_refresh_token(data={"sub": user.email})
     
     return {
         "access_token": access_token,

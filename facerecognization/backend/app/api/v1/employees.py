@@ -132,3 +132,78 @@ async def enroll_employee_face(
         "total_embeddings_enrolled": len(req_in.embeddings),
         "status": "ENROLLED"
     }
+
+from fastapi import UploadFile, File, Form
+
+@router.post("/register-with-face", status_code=status.HTTP_201_CREATED)
+async def register_with_face(
+    employee_id: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    email: str = Form(...),
+    phone: Optional[str] = Form(None),
+    department_id: Optional[int] = Form(None),
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    # 1. Check if employee already exists
+    existing_code = await get_employee_by_company_id(db, employee_id)
+    if existing_code:
+        raise HTTPException(status_code=400, detail="Employee ID already exists.")
+    
+    existing_email = await get_employee_by_email(db, email)
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already registered.")
+        
+    # 2. Extract embedding from image
+    import cv2
+    import numpy as np
+    import json
+    from app.ai.pipeline import FaceAIPipeline
+    from app.models.employee import FaceEmbedding
+    
+    contents = await file.read()
+    nparr = np.frombuffer(contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    if img is None:
+        raise HTTPException(status_code=400, detail="Invalid image file format.")
+        
+    pipeline = FaceAIPipeline(model_dir="models")
+    embedding = pipeline.extract_embedding(img)
+    if embedding is None:
+        raise HTTPException(status_code=400, detail="No face detected in the image. Please take a clearer photo.")
+    embedding_list = embedding.tolist()
+    
+    # 3. Create employee
+    db_employee = Employee(
+        employee_id=employee_id,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        phone=phone,
+        department_id=department_id
+    )
+    db.add(db_employee)
+    await db.commit()
+    await db.refresh(db_employee)
+    
+    # 4. Save face embedding
+    new_embedding = FaceEmbedding(
+        employee_id=db_employee.id,
+        embedding_vector=json.dumps(embedding_list),
+        capture_angle="front"
+    )
+    db.add(new_embedding)
+    await db.commit()
+    
+    return {
+        "status": "SUCCESS",
+        "employee": {
+            "id": db_employee.id,
+            "employee_id": db_employee.employee_id,
+            "first_name": db_employee.first_name,
+            "last_name": db_employee.last_name,
+            "email": db_employee.email
+        }
+    }
