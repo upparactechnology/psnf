@@ -1,7 +1,8 @@
 import math
 from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
+from typing import Optional, List
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.api.deps import get_current_user
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeOut, PaginatedEmployeeOut
@@ -90,3 +91,44 @@ async def remove_employee(
     if not success:
         raise HTTPException(status_code=404, detail="Employee not found.")
     return None
+
+class EnrollmentEmbeddingItem(BaseModel):
+    angle: str
+    vector: List[float]
+
+class EnrollRequest(BaseModel):
+    embeddings: List[EnrollmentEmbeddingItem]
+
+@router.post("/{id}/enroll", status_code=status.HTTP_200_OK)
+async def enroll_employee_face(
+    id: int,
+    req_in: EnrollRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    employee = await get_employee_by_id(db, id)
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found.")
+        
+    import json
+    from app.models.employee import FaceEmbedding
+    from sqlalchemy import delete
+    
+    # Remove existing embeddings for this employee first to allow re-enrollment
+    await db.execute(delete(FaceEmbedding).where(FaceEmbedding.employee_id == id))
+    
+    for item in req_in.embeddings:
+        new_embedding = FaceEmbedding(
+            employee_id=id,
+            embedding_vector=json.dumps(item.vector),
+            capture_angle=item.angle
+        )
+        db.add(new_embedding)
+        
+    await db.commit()
+    
+    return {
+        "employee_id": id,
+        "total_embeddings_enrolled": len(req_in.embeddings),
+        "status": "ENROLLED"
+    }

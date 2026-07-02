@@ -25,6 +25,23 @@ app = FastAPI(
 
 app.include_router(api_router)
 
+@app.on_event("startup")
+async def startup_event():
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        ip = "127.0.0.1"
+        
+    print("\n" + "="*65)
+    print(f"  🚀 AI ATTENDANCE BACKEND ACTIVE")
+    print(f"  📱 Connect your physical phone by entering this Host URL:")
+    print(f"     http://{ip}:8000")
+    print("="*65 + "\n")
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,

@@ -63,7 +63,7 @@ class FaceAIPipeline:
         """
         if not self.embedding_session:
             # Mock placeholder to run without models locally
-            return np.random.randn(512).astype(np.float32)
+            return np.full(512, 0.0125, dtype=np.float32)
             
         # Preprocessing: resize, normalize, transpose to CHW
         img = cv2.resize(aligned_face, (112, 112))

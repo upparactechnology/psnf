@@ -3,6 +3,7 @@ package com.attendance.data.local
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
+import androidx.room.Index
 
 @Entity(tableName = "employees")
 data class EmployeeEntity(
@@ -23,7 +24,8 @@ data class EmployeeEntity(
             childColumns = ["employeeId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [Index(value = ["employeeId"])]
 )
 data class FaceEmbeddingEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
