@@ -52,6 +52,22 @@ async def init_db():
         else:
             logger.info("Default shift profile already exists.")
 
+        # Check and seed system settings
+        from app.models.setting import SystemSetting
+        default_settings = {
+            "company_name": "My Company",
+            "similarity_threshold": "0.65",
+            "liveness_threshold": "0.85",
+            "cooldown_seconds": "10",
+            "voice_enabled": "true"
+        }
+        for key, val in default_settings.items():
+            setting_result = await session.execute(select(SystemSetting).where(SystemSetting.key == key))
+            db_setting = setting_result.scalar_one_or_none()
+            if not db_setting:
+                logger.info(f"Seeding default setting: {key} -> {val}...")
+                session.add(SystemSetting(key=key, value=val))
+
         await session.commit()
     logger.info("Database seeding completed.")
 

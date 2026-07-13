@@ -22,21 +22,10 @@ const Shifts = () => {
     setLoading(true);
     setError(null);
     try {
-      // Mock fetch / mock data if backend has no explicit shifts router yet
-      // Since shifts are database-backed, let's query backend.
-      // Wait, does backend have a shifts router? Let's check router.py again.
-      // It has only auth, employees, recognition, reports!
-      // So shifts endpoint is not exposed in the API router.
-      // To prevent dashboard crashes, we will mock shift data in the frontend dashboard view or fetch it safely.
-      // Let's implement a fallback to mock data if the API fails, which ensures the dashboard displays beautifully.
-      const mockShifts = [
-        { id: 1, name: 'Default Shift', start_time: '09:00:00', end_time: '18:00:00', grace_period_minutes: 15, half_day_minutes: 240 },
-        { id: 2, name: 'Night Shift', start_time: '22:00:00', end_time: '06:00:00', grace_period_minutes: 10, half_day_minutes: 240 },
-        { id: 3, name: 'Half Day Shift', start_time: '09:00:00', end_time: '13:00:00', grace_period_minutes: 10, half_day_minutes: 120 },
-      ];
-      setShifts(mockShifts);
+      const res = await api.get('/api/v1/shifts');
+      setShifts(res.data || []);
     } catch (err) {
-      setError('Failed to fetch shifts.');
+      setError(err.response?.data?.detail || 'Failed to fetch shifts.');
     } finally {
       setLoading(false);
     }
@@ -46,31 +35,31 @@ const Shifts = () => {
     fetchShifts();
   }, []);
 
-  const handleAddShift = (e) => {
+  const handleAddShift = async (e) => {
     e.preventDefault();
     setActionLoading(true);
     setFormError(null);
     
-    // Create new shift entry locally for presentation
-    const newShift = {
-      id: shifts.length + 1,
-      name,
-      start_time: startTime + ':00',
-      end_time: endTime + ':00',
-      grace_period_minutes: parseInt(gracePeriod),
-      half_day_minutes: parseInt(halfDay)
-    };
-    
-    setTimeout(() => {
-      setShifts([...shifts, newShift]);
+    try {
+      await api.post('/api/v1/shifts', {
+        name,
+        start_time: startTime.length === 5 ? startTime + ':00' : startTime,
+        end_time: endTime.length === 5 ? endTime + ':00' : endTime,
+        grace_period_minutes: parseInt(gracePeriod),
+        half_day_minutes: parseInt(halfDay)
+      });
       setOpenAdd(false);
       setName('');
       setStartTime('09:00');
       setEndTime('18:00');
       setGracePeriod(15);
       setHalfDay(240);
+      fetchShifts();
+    } catch (err) {
+      setFormError(err.response?.data?.detail || 'Failed to create shift.');
+    } finally {
       setActionLoading(false);
-    }, 400);
+    }
   };
 
   return (

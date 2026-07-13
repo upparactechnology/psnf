@@ -30,8 +30,21 @@ async def match_face(
 ):
     request_id = getattr(request.state, "request_id", "unknown")
     
+    # Fetch threshold values from database
+    from app.models.setting import SystemSetting
+    from sqlalchemy.future import select
+    from sqlalchemy.orm import selectinload
+    
+    res_live = await db.execute(select(SystemSetting).where(SystemSetting.key == "liveness_threshold"))
+    setting_live = res_live.scalar_one_or_none()
+    liveness_threshold = float(setting_live.value) if setting_live else 0.85
+
+    res_sim = await db.execute(select(SystemSetting).where(SystemSetting.key == "similarity_threshold"))
+    setting_sim = res_sim.scalar_one_or_none()
+    matching_threshold = float(setting_sim.value) if setting_sim else 0.65
+    
     # 1. Reject spoofing attempts
-    if req_in.liveness_score < 0.85:
+    if req_in.liveness_score < liveness_threshold:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Face liveness check failed. Spoofing detected."
@@ -39,9 +52,6 @@ async def match_face(
 
     # Fetch active face embeddings from the database
     # For a scaling deployment, we load vectors in-memory or query spatial tables.
-    from sqlalchemy.future import select
-    from sqlalchemy.orm import selectinload
-    
     result = await db.execute(
         select(FaceEmbedding)
         .options(selectinload(FaceEmbedding.employee))
@@ -50,7 +60,6 @@ async def match_face(
 
     best_match_employee = None
     highest_score = 0.0
-    matching_threshold = 0.65
 
     # 2. Iterate and evaluate vectors
     for item in embeddings:
@@ -129,7 +138,12 @@ async def verify_image_file(
     # 3. Perform matching
     from sqlalchemy.future import select
     from sqlalchemy.orm import selectinload
+    from app.models.setting import SystemSetting
     
+    res_sim = await db.execute(select(SystemSetting).where(SystemSetting.key == "similarity_threshold"))
+    setting_sim = res_sim.scalar_one_or_none()
+    matching_threshold = float(setting_sim.value) if setting_sim else 0.65
+
     result = await db.execute(
         select(FaceEmbedding)
         .options(selectinload(FaceEmbedding.employee))
@@ -139,7 +153,6 @@ async def verify_image_file(
     print(f"[DIAGNOSTIC] Total registered face profiles to check: {len(embeddings)}")
     best_match_employee = None
     highest_score = 0.0
-    matching_threshold = 0.65
 
     for item in embeddings:
         try:

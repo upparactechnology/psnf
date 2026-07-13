@@ -8,29 +8,66 @@ const Settings = () => {
   const [companyName, setCompanyName] = useState('My Company');
   const [recThreshold, setRecThreshold] = useState(0.65);
   const [livenessThreshold, setLivenessThreshold] = useState(0.85);
-  const [cooldown, setCooldown] = useState(5);
+  const [cooldown, setCooldown] = useState(10);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   
   const [alertMsg, setAlertMsg] = useState(null);
   const [alertSeverity, setAlertSeverity] = useState('success');
   const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load audit logs on start
+  // Fetch settings & logs on start
+  const fetchSettingsAndLogs = async () => {
+    try {
+      setLoading(true);
+      const [settingsRes, logsRes] = await Promise.all([
+        api.get('/api/v1/settings'),
+        api.get('/api/v1/audit-logs')
+      ]);
+      
+      const s = settingsRes.data;
+      if (s) {
+        setCompanyName(s.company_name);
+        setRecThreshold(s.similarity_threshold);
+        setLivenessThreshold(s.liveness_threshold);
+        setCooldown(s.cooldown_seconds);
+        setVoiceEnabled(s.voice_enabled);
+      }
+      
+      setLogs(logsRes.data || []);
+    } catch (err) {
+      setAlertMsg(err.response?.data?.detail || 'Failed to fetch global configurations.');
+      setAlertSeverity('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Generate mock audit logs for display in the administration panel
-    const mockLogs = [
-      { id: 1, timestamp: new Date().toISOString(), action: 'USER_LOGIN', details: 'Successful login for user: admin_main' },
-      { id: 2, timestamp: new Date(Date.now() - 3600000).toISOString(), action: 'FACE_ENROLLMENT', details: 'Face template registered for employee John Doe' },
-      { id: 3, timestamp: new Date(Date.now() - 7200000).toISOString(), action: 'SHIFT_ASSIGN', details: 'Assigned Default Shift to John Doe' },
-    ];
-    setLogs(mockLogs);
+    fetchSettingsAndLogs();
   }, []);
 
-  const handleSaveSettings = (e) => {
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
-    setAlertMsg('System configuration values saved successfully!');
-    setAlertSeverity('success');
-    setTimeout(() => setAlertMsg(null), 4000);
+    setAlertMsg(null);
+    try {
+      await api.post('/api/v1/settings', {
+        company_name: companyName,
+        similarity_threshold: recThreshold,
+        liveness_threshold: livenessThreshold,
+        cooldown_seconds: parseInt(cooldown),
+        voice_enabled: voiceEnabled
+      });
+      
+      setAlertMsg('System configuration values saved successfully!');
+      setAlertSeverity('success');
+      fetchSettingsAndLogs(); // Reload logs
+    } catch (err) {
+      setAlertMsg(err.response?.data?.detail || 'Failed to save system settings.');
+      setAlertSeverity('error');
+    } finally {
+      setTimeout(() => setAlertMsg(null), 4000);
+    }
   };
 
   const handleBackup = () => {
@@ -100,7 +137,7 @@ const Settings = () => {
 
                 <TextField
                   fullWidth
-                  label="Duplicate Scan Cooldown (Minutes)"
+                  label="Duplicate Scan Cooldown (Seconds)"
                   type="number"
                   value={cooldown}
                   onChange={(e) => setCooldown(e.target.value)}

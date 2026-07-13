@@ -8,8 +8,6 @@ from app.repositories.attendance import AttendanceRepository
 from app.repositories.employee import EmployeeRepository
 
 class AttendanceEngine:
-    COOLDOWN_MINUTES = 5
-
     def __init__(self, db: AsyncSession):
         self.db = db
         self.attendance_repo = AttendanceRepository(db)
@@ -17,17 +15,24 @@ class AttendanceEngine:
 
     async def check_duplicate_event(self, employee_id: int, timestamp: datetime.datetime) -> bool:
         """
-        Verifies if the employee clocked within the cooldown window (default: 5 minutes).
+        Verifies if the employee clocked within the cooldown window (dynamic from system settings in seconds).
         Returns True if a duplicate exists, else False.
         """
         logs = await self.attendance_repo.get_employee_logs_for_day(employee_id, timestamp.date())
         if not logs:
             return False
         
+        # Get dynamic cooldown from system settings table
+        from app.models.setting import SystemSetting
+        from sqlalchemy.future import select
+        res = await self.db.execute(select(SystemSetting).where(SystemSetting.key == "cooldown_seconds"))
+        setting = res.scalar_one_or_none()
+        cooldown_sec = int(setting.value) if setting else 10
+        
         # Check last log timestamp
         last_log = logs[-1]
-        time_diff = (timestamp - last_log.clock_time).total_seconds() / 60.0
-        return abs(time_diff) < self.COOLDOWN_MINUTES
+        time_diff_seconds = (timestamp - last_log.clock_time).total_seconds()
+        return abs(time_diff_seconds) < cooldown_sec
 
     def calculate_status(self, clock_time: datetime.datetime, shift: Shift, clock_type: str) -> str:
         """

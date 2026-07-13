@@ -37,8 +37,8 @@ async def startup_event():
         ip = "127.0.0.1"
         
     print("\n" + "="*65)
-    print(f"  🚀 AI ATTENDANCE BACKEND ACTIVE")
-    print(f"  📱 Connect your physical phone by entering this Host URL:")
+    print(f"  [STARTUP] AI ATTENDANCE BACKEND ACTIVE")
+    print(f"  [STARTUP] Connect your physical phone by entering this Host URL:")
     print(f"     http://{ip}:8000")
     print("="*65 + "\n")
 

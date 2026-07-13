@@ -39,6 +39,10 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   String _hostUrl = "http://192.168.1.5:8000";
   bool _isLoggedIn = false;
 
+  // Flash and Flip Camera state
+  bool _isFrontCamera = true;
+  bool _flashOn = false;
+
   @override
   void initState() {
     super.initState();
@@ -86,14 +90,14 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         return;
       }
       
-      // Default to front-facing camera for kiosk
-      final frontCamera = cameras.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.front,
+      final targetLens = _isFrontCamera ? CameraLensDirection.front : CameraLensDirection.back;
+      final selectedCamera = cameras.firstWhere(
+        (c) => c.lensDirection == targetLens,
         orElse: () => cameras.first,
       );
 
       _cameraController = CameraController(
-        frontCamera,
+        selectedCamera,
         ResolutionPreset.medium,
         enableAudio: false,
         imageFormatGroup: Platform.isAndroid
@@ -103,6 +107,11 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
 
       await _cameraController!.initialize();
       if (!mounted) return;
+
+      try {
+        await _cameraController!.setFlashMode(FlashMode.off);
+        _flashOn = false;
+      } catch (_) {}
 
       setState(() {
         _cameraInitialized = true;
@@ -117,6 +126,31 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         });
       }
     }
+  }
+
+  Future<void> _toggleFlash() async {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+    try {
+      final newMode = _flashOn ? FlashMode.off : FlashMode.torch;
+      await _cameraController!.setFlashMode(newMode);
+      setState(() {
+        _flashOn = !_flashOn;
+      });
+    } catch (e) {
+      debugPrint("Flash toggle failed: $e");
+    }
+  }
+
+  Future<void> _flipCamera() async {
+    if (_cameraController != null) {
+      await _cameraController!.dispose();
+      _cameraController = null;
+    }
+    setState(() {
+      _isFrontCamera = !_isFrontCamera;
+      _cameraInitialized = false;
+    });
+    await _initializeCamera();
   }
 
   Future<void> _startImageStream() async {
@@ -186,7 +220,7 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
           } else {
             // No valid close face detected
             if (!_isProcessingMatch && _isFacePresent && (_faceGoneTimer == null || !_faceGoneTimer!.isActive)) {
-              _faceGoneTimer = Timer(const Duration(seconds: 1), () {
+              _faceGoneTimer = Timer(const Duration(seconds: 10), () {
                 if (mounted) {
                   setState(() {
                     _isFacePresent = false;
@@ -206,7 +240,7 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
     }
   }
 
-  Future<void> _onFaceDetected(Face face) async {
+  Future<void> _onFaceDetected([Face? face]) async {
     _faceGoneTimer?.cancel(); // Cancel any pending face-gone timers
     setState(() {
       _isProcessingMatch = true;
@@ -597,53 +631,34 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("PSNF Attendance", style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.5, fontSize: 16)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        foregroundColor: const Color(0xFF111111),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFE5E5E5), height: 1),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, size: 22),
-            onPressed: _showSettingsDialog,
-          )
-        ],
+      backgroundColor: const Color(0xFF021513),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(68),
+        child: _buildCustomAppBar(),
       ),
       body: Stack(
         children: [
-          OrientationBuilder(
-            builder: (context, orientation) {
-              final isLandscape = orientation == Orientation.landscape;
-              if (isLandscape) {
-                return Row(
-                  children: [
-                    Expanded(
-                      flex: 6,
-                      child: _buildCameraView(),
-                    ),
-                    Expanded(
-                      flex: 4,
-                      child: _buildStatusPanel(isLandscape: true),
-                    ),
-                  ],
-                );
-              } else {
-                return Column(
-                  children: [
-                    Expanded(
-                      flex: 7,
-                      child: _buildCameraView(),
-                    ),
-                    _buildStatusPanel(isLandscape: false),
-                  ],
-                );
-              }
-            },
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF032220),
+                  Color(0xFF011413),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: OrientationBuilder(
+              builder: (context, orientation) {
+                final isLandscape = orientation == Orientation.landscape;
+                if (isLandscape) {
+                  return _buildLandscapeLayout();
+                } else {
+                  return _buildPortraitLayout();
+                }
+              },
+            ),
           ),
           _buildSuccessOverlay(),
           _buildBlankScreenOverlay(),
@@ -652,86 +667,199 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildCameraView() {
-    return Stack(
-      children: [
-        if (_cameraInitialized && _cameraController != null)
-          Positioned.fill(
-            child: AspectRatio(
-              aspectRatio: _cameraController!.value.aspectRatio,
-              child: CameraPreview(_cameraController!),
-            ),
-          )
-        else
+  Widget _buildCustomAppBar() {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      backgroundColor: const Color(0xFFF8FAFC),
+      elevation: 0,
+      titleSpacing: 16,
+      toolbarHeight: 68,
+      title: Row(
+        children: [
           Container(
-            color: Colors.black87,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _cameraError != null && _cameraError!.contains("cameraPermissionDenied")
-                        ? Icons.security
-                        : Icons.videocam_off,
-                    size: 80,
-                    color: _cameraError != null && _cameraError!.contains("cameraPermissionDenied")
-                        ? Colors.orange
-                        : Colors.red,
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      _cameraError != null
-                          ? (_cameraError!.contains("cameraPermissionDenied")
-                              ? "Camera Permission Denied.\n\nPlease go to Settings > Apps > PSNF Attendance > Permissions and turn ON Camera permission."
-                              : "Camera Error:\n$_cameraError")
-                          : "Initializing camera stream...",
-                      style: const TextStyle(color: Colors.white70),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFDCFCE7),
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF86EFAC), width: 1),
+            ),
+            child: const Icon(
+              Icons.spa,
+              color: Color(0xFF15803D),
+              size: 24,
             ),
           ),
-        
-        // Oval Target Cutout Painter with scan line animation
-        Positioned.fill(
-          child: IgnorePointer(
-            child: AnimatedBuilder(
-              animation: _scanLineController!,
-              builder: (context, child) {
-                return OvalHUDOverlay(scanLinePercent: _scanLineController!.value);
-              },
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text(
+                  "PSNF",
+                  style: TextStyle(
+                    color: Color(0xFF15803D),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  "Pearl Special Needs Foundation",
+                  style: TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+                Text(
+                  "Staff Attendance",
+                  style: TextStyle(
+                    color: Color(0xFF16A34A),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.wifi,
+              color: Color(0xFF16A34A),
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              "Online",
+              style: TextStyle(
+                color: Color(0xFF16A34A),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: Color(0xFF22C55E),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        IconButton(
+          icon: const Icon(Icons.menu, color: Color(0xFF1E293B), size: 24),
+          onPressed: _showSettingsDialog,
+        ),
+        const SizedBox(width: 8),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(color: const Color(0xFFE2E8F0), height: 1),
+      ),
+    );
+  }
+
+  Widget _buildPortraitLayout() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text(
+            "Scan to Mark Attendance",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            "Align your face within the frame",
+            style: TextStyle(
+              color: Color(0xFF94A3B8),
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _buildCameraCard(isLandscape: false),
+          const SizedBox(height: 20),
+          _buildStatusBox(),
+          const SizedBox(height: 24),
+          _buildTapToScanButton(),
+          const SizedBox(height: 28),
+          _buildFooterInfoPill(),
+          const SizedBox(height: 20),
+          _buildBottomStatusBar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLandscapeLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 6,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Scan to Mark Attendance",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  "Align your face within the frame",
+                  style: TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildCameraCard(isLandscape: true),
+              ],
             ),
           ),
         ),
-        
-        // Connection indicator status
-        Positioned(
-          top: 16,
-          left: 16,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: _isLoggedIn ? Colors.white : Colors.white,
-              borderRadius: BorderRadius.circular(2),
-              border: Border.all(color: _isLoggedIn ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+        Expanded(
+          flex: 5,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(
-                  _isLoggedIn ? Icons.check_circle : Icons.error_outline,
-                  size: 14,
-                  color: _isLoggedIn ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _isLoggedIn ? "Authorized" : "Not Authorized",
-                  style: TextStyle(color: _isLoggedIn ? const Color(0xFF16A34A) : const Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.w600),
-                ),
+                const SizedBox(height: 10),
+                _buildStatusBox(),
+                const SizedBox(height: 24),
+                _buildTapToScanButton(),
+                const SizedBox(height: 24),
+                _buildFooterInfoPill(),
+                const SizedBox(height: 32),
+                _buildBottomStatusBar(),
               ],
             ),
           ),
@@ -740,63 +868,335 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildStatusPanel({required bool isLandscape}) {
+  Widget _buildCameraCard({required bool isLandscape}) {
+    final double cardHeight = isLandscape ? 360 : 280;
+    
     return Container(
-      padding: EdgeInsets.all(isLandscape ? 32.0 : 16.0),
-      key: isLandscape ? const Key("status_panel") : null,
-      color: Colors.white,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "Status",
-            style: TextStyle(
-              fontSize: isLandscape ? 16 : 13, 
-              fontWeight: FontWeight.w600, 
-              color: const Color(0xFF999999),
-              letterSpacing: 1,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: isLandscape ? 20 : 10),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: EdgeInsets.all(isLandscape ? 24 : 14),
-            decoration: BoxDecoration(
-              color: _statusColor == Colors.grey 
-                  ? const Color(0xFFF7F7F7) 
-                  : (_statusColor == Colors.green 
-                      ? const Color(0xFFF0FDF4) 
-                      : const Color(0xFFFEF2F2)),
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(
-                color: _statusColor == Colors.grey 
-                    ? const Color(0xFFE5E5E5) 
-                    : (_statusColor == Colors.green 
-                        ? const Color(0xFF86EFAC) 
-                        : const Color(0xFFFCA5A5)),
-                width: 1,
-              ),
-            ),
-            child: Text(
-              _statusMessage,
-              style: TextStyle(
-                fontSize: isLandscape ? 16 : 13,
-                fontWeight: FontWeight.w600,
-                color: _statusColor == Colors.grey 
-                    ? const Color(0xFF666666) 
-                    : (_statusColor == Colors.green 
-                        ? const Color(0xFF16A34A) 
-                        : const Color(0xFFDC2626)),
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
+      height: cardHeight,
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F2624),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1E3D3A), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: _cameraInitialized && _cameraController != null
+                  ? AspectRatio(
+                      aspectRatio: _cameraController!.value.aspectRatio,
+                      child: CameraPreview(_cameraController!),
+                    )
+                  : Container(
+                      color: const Color(0xFF031614),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _cameraError != null && _cameraError!.contains("cameraPermissionDenied")
+                                  ? Icons.security
+                                  : Icons.videocam_off,
+                              size: 48,
+                              color: const Color(0xFFEF4444),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _cameraError != null ? "Camera Error" : "Loading camera feed...",
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: FaceSilhouettePainter(),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: RoundedCornerPainter(),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    _flashOn ? Icons.flash_on : Icons.flash_off,
+                    color: _flashOn ? const Color(0xFF22C55E) : Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: _toggleFlash,
+                  tooltip: "Toggle Flashlight",
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.flip_camera_ios,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: _flipCamera,
+                  tooltip: "Flip Camera",
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBox() {
+    IconData statusIcon = Icons.verified_user_outlined;
+    String statusTitle = "Ready to Scan";
+    String statusSub = "Look at the camera to mark your attendance";
+    Color accentColor = const Color(0xFF10B981);
+    Color boxBgColor = const Color(0xFF0A2B27);
+    Color boxBorderColor = const Color(0xFF1E3D3A);
+
+    if (_statusColor == Colors.red) {
+      statusIcon = Icons.error_outline_sharp;
+      statusTitle = "Scan Failed";
+      statusSub = _statusMessage;
+      accentColor = const Color(0xFFEF4444);
+      boxBgColor = const Color(0xFF2B0A0D);
+      boxBorderColor = const Color(0xFF3D1E21);
+    } else if (_statusColor == Colors.green) {
+      statusIcon = Icons.check_circle_outline;
+      statusTitle = "Scan Success";
+      statusSub = _statusMessage;
+      accentColor = const Color(0xFF10B981);
+      boxBgColor = const Color(0xFF0A2B27);
+      boxBorderColor = const Color(0xFF1E3D3A);
+    } else if (_isProcessingMatch) {
+      statusIcon = Icons.hourglass_empty;
+      statusTitle = "Processing";
+      statusSub = _statusMessage;
+      accentColor = const Color(0xFFF59E0B);
+      boxBgColor = const Color(0xFF2B210A);
+      boxBorderColor = const Color(0xFF3D331E);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: boxBgColor,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: boxBorderColor, width: 1.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(statusIcon, color: accentColor, size: 24),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  statusTitle,
+                  style: TextStyle(
+                    color: accentColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  statusSub,
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTapToScanButton() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: () {
+            if (!_isProcessingMatch && _cameraInitialized && _cameraController != null) {
+              _cameraController!.value.isStreamingImages 
+                ? _onFaceDetected()
+                : _initializeCamera();
+            }
+          },
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF10B981).withOpacity(0.4),
+                      const Color(0xFF10B981).withOpacity(0.0),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x3F10B981),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.face_retouching_natural_rounded,
+                  color: Color(0xFF10B981),
+                  size: 32,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          "Tap to Scan",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFooterInfoPill() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF061A18),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF122C2A), width: 1),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.verified_outlined, color: Colors.white, size: 20),
+                  SizedBox(height: 4),
+                  Text("Secure", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text("Your data is safe", style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                ],
+              ),
+            ),
+            Container(width: 1, color: const Color(0xFF1E3D3A)),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.track_changes_rounded, color: Colors.white, size: 20),
+                  SizedBox(height: 4),
+                  Text("Accurate", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text("99.9% accuracy", style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                ],
+              ),
+            ),
+            Container(width: 1, color: const Color(0xFF1E3D3A)),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.bolt_outlined, color: Colors.white, size: 20),
+                  SizedBox(height: 4),
+                  Text("Real-time", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text("Instant recording", style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomStatusBar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.lock_outline_rounded, color: Color(0xFF10B981), size: 14),
+            SizedBox(width: 6),
+            Text(
+              "Connected to PSNF Admin Panel",
+              style: TextStyle(
+                color: Color(0xFF10B981),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const Text(
+          "v1.0.0",
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 
@@ -822,7 +1222,6 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
     final numPixels = width * height;
     final nv21 = Uint8List(numPixels + (numPixels ~/ 2));
 
-    // Y plane
     int idY = 0;
     int rowStrideY = yPlane.bytesPerRow;
     for (int y = 0; y < height; y++) {
@@ -830,7 +1229,6 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
       idY += width;
     }
 
-    // UV planes (interleaved)
     int idUV = numPixels;
     int rowStrideUV = uPlane.bytesPerRow;
     int pixelStrideUV = uPlane.bytesPerPixel ?? 1;
@@ -846,83 +1244,132 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   }
 }
 
-// Oval Target custom overlay painter
-class OvalHUDOverlay extends StatelessWidget {
-  final double scanLinePercent;
-  const OvalHUDOverlay({super.key, required this.scanLinePercent});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _OvalHUDPainter(scanLinePercent: scanLinePercent),
-    );
-  }
-}
-
-class _OvalHUDPainter extends CustomPainter {
-  final double scanLinePercent;
-  _OvalHUDPainter({required this.scanLinePercent});
-
+class RoundedCornerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final backgroundPaint = Paint()
-      ..color = Colors.black.withOpacity(0.5)
-      ..style = PaintingStyle.fill;
-
-    final borderPaint = Paint()
-      ..color = Colors.white
+    final paint = Paint()
+      ..color = const Color(0xFF22C55E)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round;
 
-    // Outer full bounding rectangle
-    final Path backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final double r = 16.0;
+    final double l = 28.0;
 
-    // Inner Oval cutout
-    final bool isPortrait = size.width < size.height;
-    final double ovalWidth = isPortrait ? size.width * 0.65 : size.width * 0.45;
-    final double ovalHeight = isPortrait ? size.height * 0.55 : size.height * 0.7;
+    Path tlPath = Path()
+      ..moveTo(0, l)
+      ..lineTo(0, r)
+      ..arcToPoint(Offset(r, 0), radius: Radius.circular(r), clockwise: true)
+      ..lineTo(l, 0);
+    canvas.drawPath(tlPath, paint);
 
-    final Rect ovalRect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height / 2),
-      width: ovalWidth,
-      height: ovalHeight,
-    );
-    final Path ovalPath = Path()..addOval(ovalRect);
+    Path trPath = Path()
+      ..moveTo(size.width - l, 0)
+      ..lineTo(size.width - r, 0)
+      ..arcToPoint(Offset(size.width, r), radius: Radius.circular(r), clockwise: true)
+      ..lineTo(size.width, l);
+    canvas.drawPath(trPath, paint);
 
-    final Path resultPath = Path.combine(
-      PathOperation.difference,
-      backgroundPath,
-      ovalPath,
-    );
+    Path blPath = Path()
+      ..moveTo(0, size.height - l)
+      ..lineTo(0, size.height - r)
+      ..arcToPoint(Offset(r, size.height), radius: Radius.circular(r), clockwise: false)
+      ..lineTo(l, size.height);
+    canvas.drawPath(blPath, paint);
 
-    canvas.drawPath(resultPath, backgroundPaint);
-    canvas.drawOval(ovalRect, borderPaint);
-
-    // Scanning line
-    final double laserY = ovalRect.top + (ovalRect.height * scanLinePercent);
-    
-    final laserGlowPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.white.withOpacity(0.0),
-          Colors.white.withOpacity(0.2),
-          Colors.white.withOpacity(0.2),
-          Colors.white.withOpacity(0.0),
-        ],
-      ).createShader(Rect.fromLTRB(ovalRect.left, laserY - 6, ovalRect.right, laserY + 6))
-      ..style = PaintingStyle.fill;
-
-    canvas.drawRect(Rect.fromLTRB(ovalRect.left + 16, laserY - 4, ovalRect.right - 16, laserY + 4), laserGlowPaint);
-
-    final laserLinePaint = Paint()
-      ..color = Colors.white.withOpacity(0.8)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(Offset(ovalRect.left + 16, laserY), Offset(ovalRect.right - 16, laserY), laserLinePaint);
+    Path brPath = Path()
+      ..moveTo(size.width - l, size.height)
+      ..lineTo(size.width - r, size.height)
+      ..arcToPoint(Offset(size.width, size.height - r), radius: Radius.circular(r), clockwise: false)
+      ..lineTo(size.width, size.height - l);
+    canvas.drawPath(brPath, paint);
   }
 
   @override
-  bool shouldRepaint(covariant _OvalHUDPainter oldDelegate) => 
-      oldDelegate.scanLinePercent != scanLinePercent;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class FaceSilhouettePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final fillPaint = Paint()
+      ..color = Colors.white.withOpacity(0.02)
+      ..style = PaintingStyle.fill;
+
+    final centerX = size.width / 2;
+    final centerY = size.height * 0.45;
+    final headWidth = size.width * 0.42;
+    final headHeight = size.height * 0.45;
+
+    final shoulderPath = Path()
+      ..moveTo(centerX - headWidth * 0.3, centerY + headHeight * 0.45)
+      ..lineTo(centerX - headWidth * 0.3, centerY + headHeight * 0.6)
+      ..quadraticBezierTo(
+        centerX - headWidth * 0.9, centerY + headHeight * 0.7,
+        centerX - headWidth * 1.2, size.height,
+      )
+      ..lineTo(centerX + headWidth * 1.2, size.height)
+      ..quadraticBezierTo(
+        centerX + headWidth * 0.9, centerY + headHeight * 0.7,
+        centerX + headWidth * 0.3, centerY + headHeight * 0.6,
+      )
+      ..lineTo(centerX + headWidth * 0.3, centerY + headHeight * 0.45)
+      ..close();
+
+    canvas.drawPath(shoulderPath, fillPaint);
+    canvas.drawPath(shoulderPath, paint);
+
+    final headRect = Rect.fromCenter(
+      center: Offset(centerX, centerY),
+      width: headWidth,
+      height: headHeight,
+    );
+    canvas.drawOval(headRect, fillPaint);
+    canvas.drawOval(headRect, paint);
+
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.05)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+
+    final dotPaint = Paint()
+      ..color = Colors.white.withOpacity(0.12)
+      ..style = PaintingStyle.fill;
+
+    final points = [
+      Offset(centerX, centerY - headHeight * 0.3),
+      Offset(centerX - headWidth * 0.25, centerY - headHeight * 0.15),
+      Offset(centerX + headWidth * 0.25, centerY - headHeight * 0.15),
+      Offset(centerX - headWidth * 0.35, centerY),
+      Offset(centerX, centerY),
+      Offset(centerX + headWidth * 0.35, centerY),
+      Offset(centerX - headWidth * 0.2, centerY + headHeight * 0.2),
+      Offset(centerX + headWidth * 0.2, centerY + headHeight * 0.2),
+      Offset(centerX, centerY + headHeight * 0.35),
+    ];
+
+    final connections = [
+      [0, 1], [0, 2], [1, 2],
+      [1, 3], [1, 4], [2, 4], [2, 5],
+      [3, 4], [4, 5],
+      [3, 6], [4, 6], [4, 7], [5, 7],
+      [6, 7], [6, 8], [7, 8], [4, 8]
+    ];
+
+    for (var conn in connections) {
+      canvas.drawLine(points[conn[0]], points[conn[1]], gridPaint);
+    }
+
+    for (var pt in points) {
+      canvas.drawCircle(pt, 2.0, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
