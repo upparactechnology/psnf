@@ -4,7 +4,8 @@ import '../data/api_service.dart';
 import 'kiosk_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final Widget? redirectPage;
+  const LoginPage({super.key, this.redirectPage});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -12,71 +13,17 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final ApiService _apiService = ApiService();
-  final _hostController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   
   bool _isLoading = false;
-  bool _isDiscovering = false;
-  bool _showHostField = false;
-  String _discoveryStatus = "Searching for server...";
   String? _errorMessage;
 
-  @override
-  void initState() {
-    super.initState();
-    _startAutoDiscovery();
-  }
-
-  Future<void> _startAutoDiscovery() async {
-    setState(() {
-      _isDiscovering = true;
-      _errorMessage = null;
-      _discoveryStatus = "Auto-discovering server on Wi-Fi...";
-    });
-    
-    final prefs = await SharedPreferences.getInstance();
-    final savedHost = prefs.getString('host_url');
-    
-    final discoveredHost = await _apiService.discoverBackend();
-    
-    if (mounted) {
-      if (discoveredHost != null) {
-        await prefs.setString('host_url', discoveredHost);
-        setState(() {
-          _hostController.text = discoveredHost;
-          _isDiscovering = false;
-          _showHostField = false;
-          _discoveryStatus = "Connected to $discoveredHost";
-        });
-      } else if (savedHost != null) {
-        setState(() {
-          _hostController.text = savedHost;
-          _isDiscovering = false;
-          _showHostField = false;
-          _discoveryStatus = "Using saved: $savedHost";
-        });
-      } else {
-        setState(() {
-          _hostController.text = "http://192.168.1.5:8000";
-          _isDiscovering = false;
-          _showHostField = true;
-          _discoveryStatus = "Server not found. Enter manually.";
-        });
-      }
-    }
-  }
-
   Future<void> _handleLogin() async {
-    if (_hostController.text.trim().isEmpty) {
-      await _startAutoDiscovery();
-    }
-
-    final host = _hostController.text.trim();
     final username = _usernameController.text.trim();
     final password = _passwordController.text;
 
-    if (host.isEmpty || username.isEmpty || password.isEmpty) {
+    if (username.isEmpty || password.isEmpty) {
       setState(() {
         _errorMessage = "Please fill in all fields.";
       });
@@ -88,9 +35,6 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = null;
     });
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('host_url', host);
-
     final success = await _apiService.login(username, password);
 
     if (mounted) {
@@ -101,12 +45,11 @@ class _LoginPageState extends State<LoginPage> {
       if (success) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const KioskPage()),
+          MaterialPageRoute(builder: (context) => widget.redirectPage ?? const KioskPage()),
         );
       } else {
         setState(() {
           _errorMessage = "Authentication failed. Check credentials and server connection.";
-          _showHostField = true;
         });
       }
     }
@@ -114,7 +57,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _hostController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -163,41 +105,6 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-                
-                // Discovery Status
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F7),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: const Color(0xFFE5E5E5)),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: _isDiscovering 
-                          ? const CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF111111))
-                          : Icon(
-                              _hostController.text.isNotEmpty ? Icons.check_circle : Icons.error_outline, 
-                              size: 14, 
-                              color: _hostController.text.isNotEmpty ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
-                            ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _discoveryStatus,
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
 
                 if (_errorMessage != null) ...[
                   Container(
@@ -216,14 +123,6 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 16),
                 ],
                 
-                if (_showHostField) ...[
-                  TextField(
-                    controller: _hostController,
-                    decoration: const InputDecoration(labelText: "Server URL"),
-                  ),
-                  const SizedBox(height: 14),
-                ],
-                
                 TextField(
                   controller: _usernameController,
                   decoration: const InputDecoration(labelText: "Username"),
@@ -236,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 28),
                 ElevatedButton(
-                  onPressed: (_isLoading || _isDiscovering) ? null : _handleLogin,
+                  onPressed: (_isLoading) ? null : _handleLogin,
                   child: _isLoading
                       ? const SizedBox(
                           width: 18,
@@ -245,27 +144,6 @@ class _LoginPageState extends State<LoginPage> {
                         )
                       : const Text("Authorize Tablet"),
                 ),
-                
-                if (!_showHostField && !_isDiscovering) ...[
-                  const SizedBox(height: 16),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _showHostField = true;
-                        });
-                      },
-                      child: const Text(
-                        "Configure server manually",
-                        style: TextStyle(
-                          color: Color(0xFF888888),
-                          fontSize: 12,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

@@ -93,6 +93,7 @@ class DashboardController extends Controller
             'total_game_sessions' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM game_sessions")['c'] ?? 0)),
             'total_certificates' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM certificates")['c'] ?? 0)),
             'total_report_cards' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM student_report_cards")['c'] ?? 0)),
+            'total_guardians' => (int) ($db->selectOne("SELECT COUNT(*) as c FROM guardians WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
         ];
 
         $statusCounts = Student::statusCounts();

@@ -132,6 +132,7 @@ class TeacherPortalController extends Controller
             'total_game_sessions' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM game_sessions WHERE tenant_id = ?", [$tenantId])['c'] ?? 0)),
             'total_certificates' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM certificates WHERE tenant_id = ?", [$tenantId])['c'] ?? 0)),
             'total_report_cards' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM student_report_cards WHERE tenant_id = ?", [$tenantId])['c'] ?? 0)),
+            'total_guardians' => (int) ($db->selectOne("SELECT COUNT(*) as c FROM guardians WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
         ];
 
         // Fetch teacher's timetable schedule for today

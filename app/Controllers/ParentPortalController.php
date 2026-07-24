@@ -28,14 +28,36 @@ class ParentPortalController extends Controller
             exit();
         }
 
-        // Find the guardian record linked to user_id
-        $guardian = $this->db()->selectOne(
-            "SELECT * FROM guardians WHERE user_id = ? AND deleted_at IS NULL LIMIT 1",
-            [$userId]
-        );
+        $guardian = null;
+        $isAdminOrStaff = has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher');
+
+        if ($isAdminOrStaff) {
+            $sessGuardianId = Session::get('parent.impersonated_guardian_id');
+            if ($sessGuardianId) {
+                $guardian = $this->db()->selectOne(
+                    "SELECT * FROM guardians WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+                    [(int)$sessGuardianId]
+                );
+            }
+            if (!$guardian) {
+                // Default to the first available guardian in the database
+                $guardian = $this->db()->selectOne(
+                    "SELECT * FROM guardians WHERE deleted_at IS NULL ORDER BY id ASC LIMIT 1"
+                );
+                if ($guardian) {
+                    Session::set('parent.impersonated_guardian_id', $guardian['id']);
+                }
+            }
+        } else {
+            // Find the guardian record linked to user_id
+            $guardian = $this->db()->selectOne(
+                "SELECT * FROM guardians WHERE user_id = ? AND deleted_at IS NULL LIMIT 1",
+                [$userId]
+            );
+        }
 
         if (!$guardian) {
-            Application::$app->response->abort(403);
+            Application::$app->response->abort(403, "No parent/guardian profiles found in the system.");
             exit();
         }
 
@@ -48,8 +70,11 @@ class ParentPortalController extends Controller
         );
 
         if (empty($students)) {
-            Application::$app->response->abort(403);
-            exit();
+            return [
+                'guardian'       => $guardian,
+                'all_students'   => [],
+                'active_student' => null,
+            ];
         }
 
         $activeStudent = null;
@@ -89,6 +114,29 @@ class ParentPortalController extends Controller
         ];
     }
 
+    public function impersonate(string $id): void
+    {
+        $isAdminOrStaff = has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher');
+        if (!$isAdminOrStaff) {
+            Application::$app->response->abort(403);
+            exit();
+        }
+
+        $guardian = $this->db()->selectOne(
+            "SELECT id FROM guardians WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+            [(int)$id]
+        );
+
+        if ($guardian) {
+            Session::set('parent.impersonated_guardian_id', $guardian['id']);
+            Session::remove('parent.active_student_id'); // reset active student context so it recalculates
+            Session::flash('success', "Switched view to parent: " . $id);
+        }
+
+        Application::$app->response->redirect('/parent/dashboard');
+        exit();
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // WEB CONTROLLER METHODS
     // ─────────────────────────────────────────────────────────────────────────
@@ -98,6 +146,19 @@ class ParentPortalController extends Controller
         $childId = Application::$app->request->get('child_id');
         $context = $this->getContext($childId !== null ? (int)$childId : null);
         $student = $context['active_student'];
+
+        if (!$student) {
+            return View::render('parent/dashboard', array_merge($context, [
+                'title'             => 'Parent Dashboard',
+                'attendanceRate'    => 0,
+                'recentAttendance'  => [],
+                'announcements'     => [],
+                'homeworks'         => [],
+                'unpaidTotal'       => 0.0,
+                'transport'         => null,
+                'recentMessages'    => [],
+            ]));
+        }
 
         // 1. Fetch attendance summary
         $totalAtt = (int)($this->db()->selectOne(
@@ -767,10 +828,15 @@ class ParentPortalController extends Controller
         $staffId = $staffUser ? (int)$staffUser['id'] : 1;
 
         if ($message) {
+            $activeStudent = $context['active_student'];
+            $tenantId = $activeStudent ? $activeStudent['tenant_id'] : $context['guardian']['tenant_id'];
+            $schoolId = $activeStudent ? $activeStudent['school_id'] : 1;
+            $branchId = $activeStudent ? $activeStudent['branch_id'] : 1;
+
             $this->db()->insert('communication_messages', [
-                'tenant_id'   => $context['active_student']['tenant_id'],
-                'school_id'   => $context['active_student']['school_id'],
-                'branch_id'   => $context['active_student']['branch_id'],
+                'tenant_id'   => $tenantId,
+                'school_id'   => $schoolId,
+                'branch_id'   => $branchId,
                 'sender_id'   => $parentUserId,
                 'receiver_id' => $staffId,
                 'subject'     => 'Parent Portal Inquiry',
@@ -1038,10 +1104,15 @@ class ParentPortalController extends Controller
             return $this->respondJson(['success' => false, 'message' => 'Empty message content'], 400);
         }
 
+        $activeStudent = $context['active_student'];
+        $tenantId = $activeStudent ? $activeStudent['tenant_id'] : $context['guardian']['tenant_id'];
+        $schoolId = $activeStudent ? $activeStudent['school_id'] : 1;
+        $branchId = $activeStudent ? $activeStudent['branch_id'] : 1;
+
         $this->db()->insert('communication_messages', [
-            'tenant_id'   => $context['active_student']['tenant_id'],
-            'school_id'   => $context['active_student']['school_id'],
-            'branch_id'   => $context['active_student']['branch_id'],
+            'tenant_id'   => $tenantId,
+            'school_id'   => $schoolId,
+            'branch_id'   => $branchId,
             'sender_id'   => $parentUserId,
             'receiver_id' => $staffId,
             'subject'     => 'API message',
@@ -1054,5 +1125,144 @@ class ParentPortalController extends Controller
             'success' => true,
             'message' => 'Message sent successfully'
         ]);
+    }
+
+    public function addStudent(): string
+    {
+        $context = $this->getContext();
+        $db = $this->db();
+        $tenantId = (int)$context['guardian']['tenant_id'];
+
+        $schools  = $db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [$tenantId]);
+        $branches = $db->select("SELECT id, name, school_id FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [$tenantId]);
+
+        $errors = Session::getFlash('errors') ?? [];
+        $old    = Session::getFlash('old') ?? [];
+
+        return View::render('parent/add_student', array_merge($context, [
+            'title'     => 'Register Student Details',
+            'schools'   => $schools,
+            'branches'  => $branches,
+            'errors'    => $errors,
+            'old'       => $old,
+        ]));
+    }
+
+    public function storeStudent(): void
+    {
+        $userId = auth_id();
+        $guardian = $this->db()->selectOne(
+            "SELECT * FROM guardians WHERE user_id = ? AND deleted_at IS NULL LIMIT 1",
+            [$userId]
+        );
+
+        if (!$guardian) {
+            Application::$app->response->abort(403);
+            exit();
+        }
+
+        $data = $this->request->getBody();
+
+        $rules = [
+            'first_name'            => 'required|min:2|max:100',
+            'last_name'             => 'required|min:2|max:100',
+            'gender'                => 'required|in:male,female,other',
+            'dob'                   => 'required|date',
+            'blood_group'           => 'nullable|in:Unknown,A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'aadhar_number'         => 'nullable|max:20',
+            'mother_tongue'         => 'nullable|max:100',
+            'address'               => 'nullable',
+            'disability_type'       => 'required|in:ASD,ADHD,Down Syndrome,Cerebral Palsy,Dyslexia,Intellectual Disability,Hearing Impairment,Visual Impairment,Multiple Disabilities,Other',
+            'disability_detail'     => 'nullable',
+            'care_instructions'     => 'nullable',
+            'special_needs_summary' => 'nullable',
+            'school_id'             => 'required|exists:schools,id',
+            'branch_id'             => 'required|exists:branches,id',
+        ];
+
+        $validator = new \Core\Validator($data, $rules);
+        if ($validator->fails()) {
+            Session::flash('errors', $validator->errors());
+            Session::flash('old', $data);
+            Application::$app->response->redirect('/parent/students/add');
+            exit();
+        }
+
+        $validated = $validator->validated();
+
+        // Build Student Data
+        $studentData = [
+            'uuid'                  => str_uuid(),
+            'tenant_id'             => (int)$guardian['tenant_id'],
+            'school_id'             => (int)$validated['school_id'],
+            'branch_id'             => (int)$validated['branch_id'],
+            'admission_number'      => admission_number((int)$validated['school_id']),
+            'gr_number'             => gr_number((int)$validated['school_id']),
+            'first_name'            => $validated['first_name'],
+            'middle_name'           => '',
+            'last_name'             => $validated['last_name'],
+            'gender'                => $validated['gender'],
+            'dob'                   => $validated['dob'],
+            'blood_group'           => $validated['blood_group'] ?? 'Unknown',
+            'nationality'           => 'Indian',
+            'mother_tongue'         => $validated['mother_tongue'] ?? null,
+            'aadhar_number'         => $validated['aadhar_number'] ?? null,
+            'disability_type'       => $validated['disability_type'],
+            'disability_detail'     => $validated['disability_detail'] ?? null,
+            'care_instructions'     => $validated['care_instructions'] ?? null,
+            'special_needs_summary' => $validated['special_needs_summary'] ?? null,
+            'address'               => $validated['address'] ?? null,
+            'admission_status'      => 'applied',
+            'is_active'             => 1,
+            'created_by'            => $userId,
+        ];
+
+        try {
+            $this->db()->transaction(function ($db) use ($studentData, $guardian, $userId) {
+                // 1. Create Student
+                $studentId = (int) Student::create($studentData);
+
+                // 2. Create medical record
+                StudentMedical::create([
+                    'student_id'          => $studentId,
+                    'allergies'           => null,
+                    'triggers'            => null,
+                    'current_medications' => null,
+                    'care_instructions'   => $studentData['care_instructions'] ?? null,
+                    'created_by'          => $userId,
+                ]);
+
+                // 3. Link guardian to student
+                $this->db()->insert('guardian_student', [
+                    'guardian_id' => $guardian['id'],
+                    'student_id'  => $studentId,
+                    'is_primary'  => 1,
+                    'can_pickup'  => 1,
+                ]);
+
+                // 4. Log Timeline
+                \App\Models\StudentTimeline::logEvent(
+                    $studentId,
+                    'admission',
+                    'Application submitted by Parent',
+                    ['status' => 'applied'],
+                    $userId,
+                    'purple',
+                    'user-plus'
+                );
+
+                // 5. Log Activity
+                \App\Models\ActivityLog::log('student_created', $userId, ['student_id' => $studentId]);
+            });
+
+            Session::flash('success', 'Student details added and linked successfully! Your application has been sent for admin review.');
+            Application::$app->response->redirect('/parent/dashboard');
+            exit();
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Failed to save student details: ' . $e->getMessage());
+            Session::flash('old', $data);
+            Application::$app->response->redirect('/parent/students/add');
+            exit();
+        }
     }
 }

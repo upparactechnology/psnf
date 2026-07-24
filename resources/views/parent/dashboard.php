@@ -2,6 +2,30 @@
 
 <div class="space-y-6" x-data="{ emergencyModal: false }">
 
+    <?php if (!$active_student): ?>
+    <!-- Empty State for new Parent (No Children Enrolled yet) -->
+    <div class="p-8 md:p-12 rounded-2xl border bg-white dark:bg-slate-900/40 border-slate-200 dark:border-white/5 shadow-sm text-center max-w-2xl mx-auto space-y-6 my-10 relative overflow-hidden">
+        <div class="absolute -right-24 -top-24 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-24 -bottom-24 w-80 h-80 rounded-full bg-purple-500/5 blur-3xl pointer-events-none"></div>
+        
+        <div class="w-20 h-20 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 flex items-center justify-center mx-auto shadow-sm">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+        </div>
+        
+        <div class="space-y-2">
+            <h2 class="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Welcome, <?= e($guardian['name']) ?>!</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">It looks like you don't have any children linked to your parent portal account yet. To connect with the database and track attendance, progress, and reports, please submit your child's details.</p>
+        </div>
+        
+        <div>
+            <a href="<?= url('parent/students/add') ?>"
+               class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-xs font-bold text-white transition-all shadow-lg hover:shadow-indigo-600/25">
+                ➕ Add Student Details
+            </a>
+        </div>
+    </div>
+    <?php else: ?>
+
     <!-- Top Summary Banner -->
     <div class="p-6 rounded-2xl border bg-white dark:bg-slate-900/40 border-slate-200 dark:border-white/5 shadow-sm dark:shadow-2xl relative overflow-hidden">
         <!-- Background accents -->
@@ -327,5 +351,5 @@
             </div>
         </div>
     </div>
-
+    <?php endif; ?>
 </div>

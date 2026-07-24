@@ -20,23 +20,12 @@ class _SplashPageState extends State<SplashPage> {
   Future<void> _checkAuthentication() async {
     await Future.delayed(const Duration(seconds: 2));
 
-    final prefs = await SharedPreferences.getInstance();
-    final hasToken = prefs.containsKey('access_token');
-    final hasHost = prefs.containsKey('host_url');
-
     if (!mounted) return;
 
-    if (hasToken && hasHost) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const KioskPage()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const KioskPage()),
+    );
   }
 
   @override

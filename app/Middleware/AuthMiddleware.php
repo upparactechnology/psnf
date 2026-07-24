@@ -16,6 +16,15 @@ class AuthMiddleware
             $payload = \Core\JWT::decode($token);
             if ($payload) {
                 Database::setTenantScope($payload['tenant_id'], $payload['school_id'], $payload['branch_id']);
+                // Mock session user for JWT API requests so auth_id() and auth() helpers work
+                if (!Session::has('user')) {
+                    $db = \Core\Application::$app->db;
+                    $user = $db->selectOne("SELECT id, name, email, phone, tenant_id, school_id, branch_id, is_active FROM users WHERE id = ? AND deleted_at IS NULL", [$payload['sub']]);
+                    if ($user) {
+                        $user['roles'] = $payload['roles'] ?? [];
+                        Session::set('user', $user);
+                    }
+                }
                 return null; // Authorized via JWT
             }
         }

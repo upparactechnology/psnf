@@ -25,35 +25,35 @@ def test_connection():
             password="",
             port=3306
         )
-        print("✅ 1. MySQL Server Connection: SUCCESSFUL")
+        print(" [OK] 1. MySQL Server Connection: SUCCESSFUL")
     except Exception as e:
-        print(f"❌ 1. MySQL Server Connection: FAILED\n   Error: {e}")
+        print(f" [FAIL] 1. MySQL Server Connection: FAILED\n   Error: {e}")
         return
 
     # 2. Query user from psnf_drm.users
     try:
         with conn.cursor() as cursor:
             cursor.execute("USE psnf_drm")
-            print("✅ 2. Select Database 'psnf_drm': SUCCESSFUL")
+            print(" [OK] 2. Select Database 'psnf_drm': SUCCESSFUL")
             
             cursor.execute("SELECT id, password, name FROM users WHERE email = 'admin@psnf.edu' AND deleted_at IS NULL")
             row = cursor.fetchone()
             
             if row:
                 user_id, pwd_hash, name = row
-                print(f"✅ 3. Find user 'admin@psnf.edu': FOUND (ID: {user_id}, Name: {name})")
+                print(f" [OK] 3. Find user 'admin@psnf.edu': FOUND (ID: {user_id}, Name: {name})")
                 print(f"   Hash: {pwd_hash}")
                 
                 # 3. Test verification
                 test_pw = "admin123"
                 if verify_password(test_pw, pwd_hash):
-                    print(f"✅ 4. Password verification for '{test_pw}': SUCCESSFUL!")
+                    print(f" [OK] 4. Password verification for '{test_pw}': SUCCESSFUL!")
                 else:
-                    print(f"❌ 4. Password verification for '{test_pw}': FAILED (Hash did not match)")
+                    print(f" [FAIL] 4. Password verification for '{test_pw}': FAILED (Hash did not match)")
             else:
-                print("❌ 3. Find user 'admin@psnf.edu': NOT FOUND in table 'users'")
+                print(" [FAIL] 3. Find user 'admin@psnf.edu': NOT FOUND in table 'users'")
     except Exception as e:
-        print(f"❌ Database Query Process: FAILED\n   Error: {e}")
+        print(f" [FAIL] Database Query Process: FAILED\n   Error: {e}")
     finally:
         if conn:
             conn.close()

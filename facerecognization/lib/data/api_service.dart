@@ -4,9 +4,17 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
+  // CONFIGURATION: Set your backend API server IP and port here
+  static const String serverIp = "127.0.0.1";
+  static const String serverPort = "8000";
+
   Future<String?> getBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('host_url');
+    final host = prefs.getString('host_url');
+    if (host != null && host.isNotEmpty) {
+      return host;
+    }
+    return "http://$serverIp:$serverPort";
   }
 
   Future<String?> getToken() async {
@@ -88,16 +96,21 @@ class ApiService {
 
   Future<Map<String, dynamic>?> matchFace(List<double> embedding, String deviceId) async {
     final host = await getBaseUrl();
+    if (host == null) return null;
+
     final token = await getToken();
-    if (host == null || token == null) return null;
 
     try {
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token != null) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       final response = await http.post(
         Uri.parse('$host/api/v1/recognition/match'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token'
-        },
+        headers: headers,
         body: jsonEncode({
           'embedding': embedding,
           'timestamp': DateTime.now().toUtc().toIso8601String(),

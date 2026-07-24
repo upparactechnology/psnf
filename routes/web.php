@@ -150,7 +150,10 @@ $router->get('/migrate', function () {
 });
 
 // ─── Parent Portal — Module 3 ────────────────────────────────────────────────
+$router->get('/parent/impersonate/{id}',           [ParentPortalController::class, 'impersonate'],   ['auth']);
 $router->get('/parent/dashboard',                  [ParentPortalController::class, 'dashboard'],     ['auth', 'role:parent']);
+$router->get('/parent/students/add',               [ParentPortalController::class, 'addStudent'],    ['auth', 'role:parent']);
+$router->post('/parent/students/add',              [ParentPortalController::class, 'storeStudent'],   ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/attendance',   [ParentPortalController::class, 'attendance'],    ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/attendance/check-date', [ParentPortalController::class, 'checkDateAttendance'], ['auth', 'role:parent']);
 $router->post('/parent/students/{id}/attendance/declare', [ParentPortalController::class, 'submitTomorrowAttendance'], ['auth', 'role:parent']);

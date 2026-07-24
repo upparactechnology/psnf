@@ -11,7 +11,7 @@ def print_ip():
         print("\n" + "="*50)
         print("           YOUR COMPUTER'S NETWORK IP")
         print("="*50)
-        print(f"  👉  http://{ip}:8000")
+        print(f"  ->  http://{ip}:8000")
         print("="*50)
         print("\nType the URL above into the 'Backend Host URL' field on your phone screen!\n")
     except Exception as e:

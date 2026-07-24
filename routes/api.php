@@ -28,3 +28,13 @@ $router->post('/api/v1/parent/students/{id}/emergency',     [App\Controllers\Par
 $router->get('/api/v1/parent/announcements',              [App\Controllers\ParentPortalController::class, 'apiAnnouncements'],    ['auth', 'role:parent']);
 $router->get('/api/v1/parent/messages',                   [App\Controllers\ParentPortalController::class, 'apiMessages'],         ['auth', 'role:parent']);
 $router->post('/api/v1/parent/messages',                  [App\Controllers\ParentPortalController::class, 'apiSendMessage'],      ['auth', 'role:parent']);
+
+// ─── Staff Portal API ────────────────────────────────────────────────────────
+$router->get('/api/v1/staff/attendance/today',  [App\Controllers\StaffAppController::class, 'getTodayAttendance'], ['auth']);
+$router->post('/api/v1/staff/attendance/check-in', [App\Controllers\StaffAppController::class, 'checkIn'], ['auth']);
+$router->post('/api/v1/staff/attendance/check-out', [App\Controllers\StaffAppController::class, 'checkOut'], ['auth']);
+$router->get('/api/v1/staff/attendance/history', [App\Controllers\StaffAppController::class, 'getAttendanceHistory'], ['auth']);
+$router->get('/api/v1/staff/early-students',    [App\Controllers\StaffAppController::class, 'getEarlyStudents'], ['auth']);
+$router->get('/api/v1/staff/summary',           [App\Controllers\StaffAppController::class, 'getSummary'], ['auth']);
+$router->get('/api/v1/staff/guardians',         [App\Controllers\StaffAppController::class, 'getGuardians'], ['auth']);
+

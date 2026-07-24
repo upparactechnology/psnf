@@ -173,6 +173,19 @@ ob_start();
             </a>
             <?php endif; ?>
 
+            <!-- Parents Portal -->
+            <?php if (in_array('parents_dashboard', $assignedApps) || has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('parent')): ?>
+            <a href="<?= url('parent/dashboard') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-violet-500/30 dark:hover:border-violet-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg group-hover:scale-105 transition-transform duration-300 mb-3.5">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">Parents Portal</span>
+                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30"><?= $stats['total_guardians'] ?? 0 ?> Registered Parents</span>
+            </a>
+            <?php endif; ?>
+
             <!-- 9. System Config -->
             <?php if (in_array('config', $assignedApps)): ?>
             <a href="<?= url('roles') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-slate-500/30 dark:hover:border-slate-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:workmanager/workmanager.dart';
@@ -14,11 +15,13 @@ void main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  // Initialize Workmanager background execution dispatcher
-  await Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: true,
-  );
+  // Initialize Workmanager background execution dispatcher on mobile platforms
+  if (!kIsWeb) {
+    await Workmanager().initialize(
+      callbackDispatcher,
+      isInDebugMode: true,
+    );
+  }
 
   runApp(const AttendanceApp());
 }

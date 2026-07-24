@@ -31,12 +31,12 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   Color _statusColor = Colors.grey;
   bool _isProcessingMatch = false;
   Map<String, dynamic>? _matchResult;
-  bool _isFacePresent = false;
+  bool _isFacePresent = kIsWeb;
   Timer? _faceGoneTimer;
   AnimationController? _scanLineController;
 
   // Settings
-  String _hostUrl = "http://192.168.1.5:8000";
+  String _hostUrl = "http://192.168.1.10:8000";
   bool _isLoggedIn = false;
 
   // Flash and Flip Camera state
@@ -48,12 +48,14 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
     super.initState();
     _loadSettings();
     _initializeCamera();
-    _faceDetector = FaceDetector(
-      options: FaceDetectorOptions(
-        enableLandmarks: true,
-        performanceMode: FaceDetectorMode.accurate,
-      ),
-    );
+    if (!kIsWeb) {
+      _faceDetector = FaceDetector(
+        options: FaceDetectorOptions(
+          enableLandmarks: true,
+          performanceMode: FaceDetectorMode.accurate,
+        ),
+      );
+    }
     _scanLineController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -72,7 +74,7 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _hostUrl = prefs.getString('host_url') ?? "http://192.168.1.5:8000";
+      _hostUrl = prefs.getString('host_url') ?? "http://192.168.1.10:8000";
       _isLoggedIn = prefs.containsKey('access_token');
     });
   }
@@ -100,9 +102,9 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         selectedCamera,
         ResolutionPreset.medium,
         enableAudio: false,
-        imageFormatGroup: Platform.isAndroid
-            ? ImageFormatGroup.nv21
-            : ImageFormatGroup.bgra8888,
+        imageFormatGroup: kIsWeb
+            ? null
+            : (Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888),
       );
 
       await _cameraController!.initialize();
@@ -117,7 +119,9 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         _cameraInitialized = true;
       });
 
-      _startImageStream();
+      if (!kIsWeb) {
+        _startImageStream();
+      }
     } catch (e) {
       debugPrint("Camera initialization failed: $e");
       if (mounted) {
@@ -154,6 +158,7 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
   }
 
   Future<void> _startImageStream() async {
+    if (kIsWeb) return;
     if (_cameraController == null || !_cameraController!.value.isInitialized) return;
     
     // Stop the image stream first if the controller reports it is streaming,
@@ -250,7 +255,9 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
 
     try {
       // 1. Stop image stream so we can take picture without camera resource conflicts
-      await _cameraController!.stopImageStream();
+      if (!kIsWeb && _cameraController!.value.isStreamingImages) {
+        await _cameraController!.stopImageStream();
+      }
 
       // 2. Take the picture
       final XFile file = await _cameraController!.takePicture();
@@ -320,10 +327,12 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         _statusMessage = "Stand in front of the camera to verify";
         _statusColor = Colors.grey;
         _isProcessingMatch = false;
-        _isFacePresent = false; // Reset face presence state to turn screen off if no one is in front
+        _isFacePresent = kIsWeb; // Reset face presence state (keep true on web)
       });
       // Restart image stream for next scan
-      _startImageStream();
+      if (!kIsWeb) {
+        _startImageStream();
+      }
     }
   }
 
@@ -482,7 +491,7 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
             final pulseOpacity = 0.3 + (_scanLineController!.value * 0.7);
 
             return Container(
-              color: const Color(0xFF111111),
+              color: const Color(0xFF021513),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -490,26 +499,45 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
                     Opacity(
                       opacity: pulseOpacity,
                       child: Container(
-                        width: 90,
-                        height: 90,
+                        width: 100,
+                        height: 100,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+                          border: Border.all(color: const Color(0xFF22C55E).withOpacity(0.4), width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF22C55E).withOpacity(0.1),
+                              blurRadius: 16,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
-                        child: Icon(Icons.face, color: Colors.white.withOpacity(0.7), size: 48),
+                        child: const Icon(
+                          Icons.face_retouching_natural_rounded,
+                          color: Color(0xFF22C55E),
+                          size: 48,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     Opacity(
                       opacity: pulseOpacity,
                       child: const Text(
-                        "APPROACH TO SCAN",
+                        "APPROACH TO VERIFY",
                         style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 4.0,
+                          color: Color(0xFF22C55E),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 6.0,
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Double tap screen for settings",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.2),
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -520,6 +548,44 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
         ),
       ),
     );
+  }
+
+  Future<void> _navigateToRegister() async {
+    // Release the camera before navigating to avoid resource locks
+    if (_cameraController != null) {
+      try {
+        await _cameraController!.dispose();
+      } catch (e) {
+        debugPrint("Error disposing camera: $e");
+      }
+      _cameraController = null;
+      setState(() {
+        _cameraInitialized = false;
+      });
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.containsKey('access_token');
+
+    if (!mounted) return;
+
+    if (isLoggedIn) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const RegisterPage()),
+      );
+    } else {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LoginPage(redirectPage: RegisterPage()),
+        ),
+      );
+    }
+
+    // Re-initialize when returning to this page
+    await _loadSettings();
+    await _initializeCamera();
   }
 
   Future<void> _showSettingsDialog() async {
@@ -562,10 +628,7 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
                   TextButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const RegisterPage()),
-                      );
+                      _navigateToRegister();
                     },
                     icon: const Icon(Icons.person_add, color: Color(0xFF111111)),
                     label: const Text("Register Staff & Face", style: TextStyle(color: Color(0xFF111111))),
@@ -630,571 +693,504 @@ class _KioskPageState extends State<KioskPage> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final bool hasCamera = _cameraInitialized && _cameraController != null;
+    
     return Scaffold(
       backgroundColor: const Color(0xFF021513),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(68),
-        child: _buildCustomAppBar(),
-      ),
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF032220),
-                  Color(0xFF011413),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+          // 1. Fullscreen Camera Preview / Fallback Loading
+          Positioned.fill(
+            child: hasCamera
+                ? FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: _cameraController!.value.previewSize?.height ?? 1080,
+                      height: _cameraController!.value.previewSize?.width ?? 1920,
+                      child: CameraPreview(_cameraController!),
+                    ),
+                  )
+                : Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF032220), Color(0xFF011413)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _cameraError != null && _cameraError!.contains("cameraPermissionDenied")
+                                ? Icons.security
+                                : Icons.videocam_off,
+                            size: 64,
+                            color: const Color(0xFFEF4444),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _cameraError != null ? "Camera Error: $_cameraError" : "Loading camera feed...",
+                            style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+
+          // 2. Custom Silhouette Scanning Overlay Mask
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: FaceSilhouettePainter(),
               ),
             ),
-            child: OrientationBuilder(
-              builder: (context, orientation) {
-                final isLandscape = orientation == Orientation.landscape;
-                if (isLandscape) {
-                  return _buildLandscapeLayout();
-                } else {
-                  return _buildPortraitLayout();
-                }
-              },
+          ),
+          
+          // 3. Scan Line Sweep Animation
+          if (hasCamera && !_isProcessingMatch && _isFacePresent)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _scanLineController!,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      painter: ScanLinePainter(progress: _scanLineController!.value),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+          // 4. Floating Premium Top Header
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
+            right: 16,
+            child: _buildFloatingKioskHeader(),
+          ),
+
+          // 5. Floating Camera Controls (Flash, Flip)
+          Positioned(
+            right: 16,
+            top: MediaQuery.of(context).padding.top + 100,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildFloatingIconButton(
+                  icon: _flashOn ? Icons.flash_on : Icons.flash_off,
+                  color: _flashOn ? const Color(0xFF22C55E) : Colors.white,
+                  onPressed: _toggleFlash,
+                  tooltip: "Toggle Flashlight",
+                ),
+                const SizedBox(height: 12),
+                _buildFloatingIconButton(
+                  icon: Icons.flip_camera_ios_rounded,
+                  color: Colors.white,
+                  onPressed: _flipCamera,
+                  tooltip: "Flip Camera",
+                ),
+              ],
             ),
           ),
-          _buildSuccessOverlay(),
+
+          // 6. Modern Bottom Drawer Overlay (Status & Matched Result)
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 24,
+            left: 20,
+            right: 20,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: _buildBottomStatusDrawer(),
+              ),
+            ),
+          ),
+
+          // 7. Screen Saver Blank Screen Overlay (Energy Saver when no face is present)
           _buildBlankScreenOverlay(),
         ],
       ),
     );
   }
 
-  Widget _buildCustomAppBar() {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: const Color(0xFFF8FAFC),
-      elevation: 0,
-      titleSpacing: 16,
-      toolbarHeight: 68,
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDCFCE7),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF86EFAC), width: 1),
-            ),
-            child: const Icon(
-              Icons.spa,
-              color: Color(0xFF15803D),
-              size: 24,
-            ),
+  Widget _buildFloatingKioskHeader() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  "PSNF",
-                  style: TextStyle(
-                    color: Color(0xFF15803D),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Text(
-                  "Pearl Special Needs Foundation",
-                  style: TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-                Text(
-                  "Staff Attendance",
-                  style: TextStyle(
-                    color: Color(0xFF16A34A),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.wifi,
-              color: Color(0xFF16A34A),
-              size: 16,
-            ),
-            const SizedBox(width: 6),
-            const Text(
-              "Online",
-              style: TextStyle(
-                color: Color(0xFF16A34A),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Color(0xFF22C55E),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(width: 12),
-        IconButton(
-          icon: const Icon(Icons.menu, color: Color(0xFF1E293B), size: 24),
-          onPressed: _showSettingsDialog,
-        ),
-        const SizedBox(width: 8),
-      ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(color: const Color(0xFFE2E8F0), height: 1),
-      ),
-    );
-  }
-
-  Widget _buildPortraitLayout() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            "Scan to Mark Attendance",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            "Align your face within the frame",
-            style: TextStyle(
-              color: Color(0xFF94A3B8),
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          _buildCameraCard(isLandscape: false),
-          const SizedBox(height: 20),
-          _buildStatusBox(),
-          const SizedBox(height: 24),
-          _buildTapToScanButton(),
-          const SizedBox(height: 28),
-          _buildFooterInfoPill(),
-          const SizedBox(height: 20),
-          _buildBottomStatusBar(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLandscapeLayout() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 6,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Scan to Mark Attendance",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  "Align your face within the frame",
-                  style: TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildCameraCard(isLandscape: true),
-              ],
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 5,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 10),
-                _buildStatusBox(),
-                const SizedBox(height: 24),
-                _buildTapToScanButton(),
-                const SizedBox(height: 24),
-                _buildFooterInfoPill(),
-                const SizedBox(height: 32),
-                _buildBottomStatusBar(),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCameraCard({required bool isLandscape}) {
-    final double cardHeight = isLandscape ? 360 : 280;
-    
-    return Container(
-      height: cardHeight,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F2624),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E3D3A), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: _cameraInitialized && _cameraController != null
-                  ? AspectRatio(
-                      aspectRatio: _cameraController!.value.aspectRatio,
-                      child: CameraPreview(_cameraController!),
-                    )
-                  : Container(
-                      color: const Color(0xFF031614),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _cameraError != null && _cameraError!.contains("cameraPermissionDenied")
-                                  ? Icons.security
-                                  : Icons.videocam_off,
-                              size: 48,
-                              color: const Color(0xFFEF4444),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              _cameraError != null ? "Camera Error" : "Loading camera feed...",
-                              style: const TextStyle(color: Colors.white70, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-            ),
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: FaceSilhouettePainter(),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: RoundedCornerPainter(),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 16,
-              left: 16,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    _flashOn ? Icons.flash_on : Icons.flash_off,
-                    color: _flashOn ? const Color(0xFF22C55E) : Colors.white,
-                    size: 20,
-                  ),
-                  onPressed: _toggleFlash,
-                  tooltip: "Toggle Flashlight",
-                ),
-              ),
-            ),
-            Positioned(
-              top: 16,
-              right: 16,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.flip_camera_ios,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  onPressed: _flipCamera,
-                  tooltip: "Flip Camera",
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBox() {
-    IconData statusIcon = Icons.verified_user_outlined;
-    String statusTitle = "Ready to Scan";
-    String statusSub = "Look at the camera to mark your attendance";
-    Color accentColor = const Color(0xFF10B981);
-    Color boxBgColor = const Color(0xFF0A2B27);
-    Color boxBorderColor = const Color(0xFF1E3D3A);
-
-    if (_statusColor == Colors.red) {
-      statusIcon = Icons.error_outline_sharp;
-      statusTitle = "Scan Failed";
-      statusSub = _statusMessage;
-      accentColor = const Color(0xFFEF4444);
-      boxBgColor = const Color(0xFF2B0A0D);
-      boxBorderColor = const Color(0xFF3D1E21);
-    } else if (_statusColor == Colors.green) {
-      statusIcon = Icons.check_circle_outline;
-      statusTitle = "Scan Success";
-      statusSub = _statusMessage;
-      accentColor = const Color(0xFF10B981);
-      boxBgColor = const Color(0xFF0A2B27);
-      boxBorderColor = const Color(0xFF1E3D3A);
-    } else if (_isProcessingMatch) {
-      statusIcon = Icons.hourglass_empty;
-      statusTitle = "Processing";
-      statusSub = _statusMessage;
-      accentColor = const Color(0xFFF59E0B);
-      boxBgColor = const Color(0xFF2B210A);
-      boxBorderColor = const Color(0xFF3D331E);
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      decoration: BoxDecoration(
-        color: boxBgColor,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: boxBorderColor, width: 1.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(statusIcon, color: accentColor, size: 24),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  statusTitle,
-                  style: TextStyle(
-                    color: accentColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  statusSub,
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTapToScanButton() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: () {
-            if (!_isProcessingMatch && _cameraInitialized && _cameraController != null) {
-              _cameraController!.value.isStreamingImages 
-                ? _onFaceDetected()
-                : _initializeCamera();
-            }
-          },
-          child: Stack(
-            alignment: Alignment.center,
+          child: Row(
             children: [
               Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F5B3C),
                   shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      const Color(0xFF10B981).withOpacity(0.4),
-                      const Color(0xFF10B981).withOpacity(0.0),
-                    ],
-                  ),
+                ),
+                child: const Icon(
+                  Icons.spa_rounded,
+                  color: Color(0xFF4ADE80),
+                  size: 22,
                 ),
               ),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x3F10B981),
-                      blurRadius: 12,
-                      spreadRadius: 2,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      "PSNF KIOSK",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Text(
+                      "Pearl Special Needs Foundation",
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 10,
+                      ),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.face_retouching_natural_rounded,
-                  color: Color(0xFF10B981),
-                  size: 32,
-                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.wifi_rounded,
+                    color: Color(0xFF22C55E),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    "ONLINE",
+                    style: TextStyle(
+                      color: Color(0xFF22C55E),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    icon: const Icon(Icons.person_add_rounded, color: Colors.white, size: 14),
+                    label: const Text(
+                      "Register",
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: _navigateToRegister,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.settings_rounded, color: Colors.white, size: 20),
+                    onPressed: _showSettingsDialog,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
-          "Tap to Scan",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  Widget _buildFloatingIconButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+    required String tooltip,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.5),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.2),
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: color, size: 22),
+        onPressed: onPressed,
+        tooltip: tooltip,
+      ),
+    );
+  }
+
+  Widget _buildBottomStatusDrawer() {
+    IconData statusIcon = Icons.face_retouching_natural_rounded;
+    String statusTitle = "Ready to Scan";
+    String statusSub = "Position your face inside the green frame";
+    Color accentColor = const Color(0xFF22C55E);
+    Color cardBgColor = const Color(0xCC05201E); // Semi-transparent dark green
+    Color borderColor = const Color(0xFF1E3D3A);
+    bool showProfile = _matchResult != null;
+
+    if (_statusColor == Colors.red) {
+      statusIcon = Icons.error_outline_rounded;
+      statusTitle = "Access Denied";
+      statusSub = _statusMessage;
+      accentColor = const Color(0xFFEF4444);
+      cardBgColor = const Color(0xCC2D0B0E); // Soft red background
+      borderColor = const Color(0xFF5F1E24);
+    } else if (_statusColor == Colors.green) {
+      statusIcon = Icons.verified_rounded;
+      statusTitle = "Scan Success";
+      statusSub = "Attendance recorded successfully";
+      accentColor = const Color(0xFF22C55E);
+      cardBgColor = const Color(0xCC05201E);
+      borderColor = const Color(0xFF1E3D3A);
+    } else if (_isProcessingMatch) {
+      statusIcon = Icons.hourglass_top_rounded;
+      statusTitle = "Processing";
+      statusSub = _statusMessage;
+      accentColor = const Color(0xFFF59E0B);
+      cardBgColor = const Color(0xCC2B1B04); // Soft orange background
+      borderColor = const Color(0xFF523B18);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cardBgColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: borderColor, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showProfile) ...[
+                _buildDrawerProfileContent(),
+              ] else ...[
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: accentColor.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(statusIcon, color: accentColor, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                statusTitle,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                statusSub,
+                                style: const TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (kIsWeb && !_isProcessingMatch) ...[
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          if (_cameraInitialized && _cameraController != null) {
+                            _onFaceDetected();
+                          }
+                        },
+                        icon: const Icon(Icons.face_retouching_natural_rounded),
+                        label: const Text("TAP TO VERIFY", style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: accentColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 44),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildFooterInfoPill() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF061A18),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF122C2A), width: 1),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.verified_outlined, color: Colors.white, size: 20),
-                  SizedBox(height: 4),
-                  Text("Secure", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                  Text("Your data is safe", style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
-                ],
-              ),
-            ),
-            Container(width: 1, color: const Color(0xFF1E3D3A)),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.track_changes_rounded, color: Colors.white, size: 20),
-                  SizedBox(height: 4),
-                  Text("Accurate", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                  Text("99.9% accuracy", style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
-                ],
-              ),
-            ),
-            Container(width: 1, color: const Color(0xFF1E3D3A)),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.bolt_outlined, color: Colors.white, size: 20),
-                  SizedBox(height: 4),
-                  Text("Real-time", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                  Text("Instant recording", style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildBottomStatusBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildDrawerProfileContent() {
+    final emp = _matchResult!['employee'];
+    final log = _matchResult!['attendance_log'];
+    final clockType = log['clock_type'] ?? 'CHECK_IN';
+    final status = log['status'] ?? 'PRESENT';
+
+    // Format clock time
+    String timeStr = "just now";
+    String dateStr = "";
+    try {
+      final t = log['clock_time'];
+      if (t != null) {
+        DateTime dt = DateTime.parse(t).toLocal();
+        int hour = dt.hour;
+        String period = "AM";
+        if (hour >= 12) {
+          period = "PM";
+          if (hour > 12) hour -= 12;
+        }
+        if (hour == 0) hour = 12;
+        timeStr = "${hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')} $period";
+        
+        final months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        dateStr = "${dt.day} ${months[dt.month - 1]}, ${dt.year}";
+      }
+    } catch (_) {}
+
+    final bool isLate = status == "LATE";
+    final Color badgeBg = isLate ? const Color(0xFFFCE8E6) : const Color(0xFFE6F4EA);
+    final Color badgeText = isLate ? const Color(0xFFC5221F) : const Color(0xFF137333);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.lock_outline_rounded, color: Color(0xFF10B981), size: 14),
-            SizedBox(width: 6),
-            Text(
-              "Connected to PSNF Admin Panel",
-              style: TextStyle(
-                color: Color(0xFF10B981),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F5B3C).withOpacity(0.2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF22C55E), width: 1.5),
+              ),
+              child: const Icon(
+                Icons.person_rounded,
+                color: Color(0xFF22C55E),
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${emp['first_name']} ${emp['last_name']}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "ID: ${emp['employee_id']}",
+                    style: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: clockType == "CHECK_IN" ? const Color(0xFFE8F0FE) : const Color(0xFFFEF7E0),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                clockType == "CHECK_IN" ? "CHECK-IN" : "CHECK-OUT",
+                style: TextStyle(
+                  color: clockType == "CHECK_IN" ? const Color(0xFF1A73E8) : const Color(0xFFB06000),
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ],
         ),
-        const Text(
-          "v1.0.0",
-          style: TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
+        const SizedBox(height: 16),
+        Container(height: 1, color: Colors.white.withOpacity(0.1)),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.access_time_rounded, color: Colors.white.withOpacity(0.6), size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  timeStr,
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 12),
+                Icon(Icons.calendar_month_rounded, color: Colors.white.withOpacity(0.6), size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  dateStr,
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: badgeBg,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                status,
+                style: TextStyle(
+                  color: badgeText,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1372,4 +1368,59 @@ class FaceSilhouettePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class ScanLinePainter extends CustomPainter {
+  final double progress;
+  ScanLinePainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centerX = size.width / 2;
+    final centerY = size.height * 0.45;
+    final headWidth = size.width * 0.42;
+    final headHeight = size.height * 0.45;
+
+    // Laser glow gradient
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.green.withOpacity(0.0),
+          const Color(0xFF22C55E).withOpacity(0.3),
+          const Color(0xFF22C55E),
+          const Color(0xFF22C55E).withOpacity(0.3),
+          Colors.green.withOpacity(0.0),
+        ],
+      ).createShader(Rect.fromLTWH(centerX - headWidth * 0.5, 0, headWidth, 4))
+      ..style = PaintingStyle.fill;
+
+    // Scan sweep line bounds inside the head silhouette
+    final double startY = centerY - headHeight * 0.4;
+    final double endY = centerY + headHeight * 0.4;
+    final double currentY = startY + (endY - startY) * progress;
+
+    final rect = Rect.fromLTWH(
+      centerX - headWidth * 0.45,
+      currentY - 2,
+      headWidth * 0.9,
+      4,
+    );
+
+    // Draw the glow bar
+    canvas.drawRect(rect, paint);
+
+    // Draw active bright core line
+    final linePaint = Paint()
+      ..color = const Color(0xFF4ADE80)
+      ..strokeWidth = 1.2;
+    canvas.drawLine(
+      Offset(centerX - headWidth * 0.45, currentY),
+      Offset(centerX + headWidth * 0.45, currentY),
+      linePaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant ScanLinePainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
