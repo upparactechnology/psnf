@@ -176,23 +176,57 @@ class UserController extends Controller
     public function staffAttendanceLog(): string
     {
         $db = \Core\Application::$app->db;
-        $search = $this->request->get('search', '');
+        $search = trim($this->request->get('search', ''));
+        $date = trim($this->request->get('date', ''));
+        $status = trim($this->request->get('status', ''));
+        $employee_id = trim($this->request->get('employee_id', ''));
 
-        $clause = "";
+        $conditions = [];
         $params = [];
-        if ($search) {
-            $clause = "WHERE e.first_name LIKE ? OR e.last_name LIKE ? OR al.status LIKE ? OR e.employee_id LIKE ?";
-            $params = ["%$search%", "%$search%", "%$search%", "%$search%"];
+
+        if ($search !== '') {
+            $conditions[] = "(e.name LIKE ? OR e.first_name LIKE ? OR e.last_name LIKE ? OR a.status LIKE ? OR e.employee_code LIKE ? OR e.employee_id LIKE ? OR e.email LIKE ?)";
+            $params = array_merge($params, ["%$search%", "%$search%", "%$search%", "%$search%", "%$search%", "%$search%", "%$search%"]);
         }
 
+        if ($date !== '') {
+            $conditions[] = "(DATE(a.check_in) = ? OR a.attendance_date = ?)";
+            $params[] = $date;
+            $params[] = $date;
+        }
+
+        if ($status !== '') {
+            $conditions[] = "LOWER(a.status) = LOWER(?)";
+            $params[] = $status;
+        }
+
+        if ($employee_id !== '') {
+            $conditions[] = "a.employee_id = ?";
+            $params[] = $employee_id;
+        }
+
+        $clause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
         $records = $db->select("
-            SELECT al.*, e.first_name, e.last_name, e.employee_id as emp_code, e.email as emp_email
-            FROM attendance_logs al
-            JOIN employees e ON al.employee_id = e.id
+            SELECT 
+                a.id,
+                a.employee_id,
+                a.check_in as clock_time,
+                'CHECK_IN' as clock_type,
+                COALESCE(a.status, 'present') as status,
+                COALESCE(a.ip_address, 'Face Kiosk') as device_id,
+                COALESCE(e.name, NULLIF(TRIM(CONCAT(IFNULL(e.first_name,''), ' ', IFNULL(e.last_name,''))), ''), 'Staff Member') as first_name,
+                '' as last_name,
+                COALESCE(e.employee_code, e.employee_id, CONCAT('EMP-', e.id)) as emp_code,
+                COALESCE(e.email, '') as emp_email
+            FROM attendance a
+            JOIN employees e ON a.employee_id = e.id
             $clause
-            ORDER BY al.clock_time DESC
+            ORDER BY a.check_in DESC, a.id DESC
         ", $params);
 
-        return $this->view('users/attendance_log', compact('records', 'search'));
+        $employeesList = $db->select("SELECT id, name, employee_code FROM employees ORDER BY name ASC");
+
+        return $this->view('users/attendance_log', compact('records', 'search', 'date', 'status', 'employee_id', 'employeesList'));
     }
 }

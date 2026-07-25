@@ -98,8 +98,8 @@
     <!-- Header Navbar -->
     <nav class="navbar navbar-dark bg-dark border-bottom border-secondary px-3 py-2">
         <div class="container-fluid px-0">
-            <a class="navbar-brand fw-bold text-info text-truncate" href="index.php" style="max-width: 55%;">
-                <i class="fa-solid fa-arrow-left me-2"></i>Attendance Kiosk
+            <a class="navbar-brand fw-bold text-info text-truncate" href="verify.php" style="max-width: 55%;">
+                <i class="fa-solid fa-user-check me-2"></i>Attendance Kiosk
             </a>
             <div class="d-flex align-items-center gap-1">
                 <a href="../../dashboard" class="btn btn-outline-warning btn-sm fw-bold me-1" title="Super Admin Portal"><i class="fa-solid fa-crown me-1 text-warning"></i>Admin</a>

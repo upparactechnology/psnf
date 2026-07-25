@@ -1,3 +1,23 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_name('PSNF_SESSION');
+    session_start();
+}
+
+$isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']);
+
+if (!$isLoggedIn && session_name() !== 'PHPSESSID') {
+    session_write_close();
+    session_name('PHPSESSID');
+    session_start();
+    $isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']);
+}
+
+if (!$isLoggedIn) {
+    header("Location: ../login");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,7 +58,7 @@
     <!-- Header Navbar -->
     <nav class="navbar navbar-dark bg-dark border-bottom border-secondary px-3 py-2">
         <div class="container-fluid px-0">
-            <a class="navbar-brand fw-bold text-info text-truncate" href="index.php" style="max-width: 65%;">
+            <a class="navbar-brand fw-bold text-info text-truncate" href="verify.php" style="max-width: 65%;">
                 <i class="fa-solid fa-arrow-left me-2"></i>Attendance Logs
             </a>
             <div class="d-flex align-items-center gap-1">

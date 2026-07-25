@@ -317,6 +317,24 @@ try {
     }
 
     if (strpos($endpoint, 'register-face') !== false) {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_name('PSNF_SESSION');
+            session_start();
+        }
+        $isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']);
+        if (!$isLoggedIn && session_name() !== 'PHPSESSID') {
+            session_write_close();
+            session_name('PHPSESSID');
+            session_start();
+            $isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']);
+        }
+        if (!$isLoggedIn) {
+            ob_end_clean();
+            http_response_code(401);
+            echo json_encode(["success" => false, "message" => "Authentication required to register new employee face."]);
+            exit();
+        }
+
         $input = json_decode($requestBody, true);
         $empCode = trim($input['employee_code'] ?? '');
         $name = trim($input['name'] ?? '');
@@ -525,6 +543,22 @@ try {
 
             $stmtAtt = $pdo->prepare("INSERT INTO attendance ({$colNamesStr}) VALUES ({$placeholders})");
             $stmtAtt->execute($insertVals);
+
+            // Sync with attendance_logs table for Super Admin module
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS `attendance_logs` (
+                    `id` INT AUTO_INCREMENT PRIMARY KEY,
+                    `employee_id` INT NOT NULL,
+                    `clock_time` DATETIME NOT NULL,
+                    `clock_type` VARCHAR(20) DEFAULT 'CHECK_IN',
+                    `status` VARCHAR(50) DEFAULT 'PRESENT',
+                    `ip_address` VARCHAR(45) DEFAULT NULL,
+                    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+                $stmtLog = $pdo->prepare("INSERT INTO attendance_logs (employee_id, clock_time, clock_type, status, ip_address) VALUES (?, ?, 'CHECK_IN', 'PRESENT', ?)");
+                $stmtLog->execute([$empId, $nowStr, $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1']);
+            } catch (Throwable $e) {}
 
             ob_end_clean();
             echo json_encode([
