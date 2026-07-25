@@ -129,6 +129,9 @@ $router->get('/classes/{class}', [ClassesController::class, 'show'], ['auth', 't
 // ─── Attendance ──────────────────────────────────────────────────────────────
 $router->get('/attendance', [AttendanceController::class, 'index'], ['auth', 'tenant']);
 $router->post('/attendance/save', [AttendanceController::class, 'save'], ['auth', 'tenant']);
+$router->get('/attendance/face-kiosk', [App\Controllers\FaceRecognitionController::class, 'verifyView']);
+$router->get('/attendance/face-register', [App\Controllers\FaceRecognitionController::class, 'registerView']);
+$router->get('/attendance/face-history', [App\Controllers\FaceRecognitionController::class, 'historyView']);
 
 // ─── Timetables ──────────────────────────────────────────────────────────────
 $router->get('/timetables', [TimetablesController::class, 'index'], ['auth', 'tenant']);
