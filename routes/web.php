@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController, SettingsController, ReportCardController};
+use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, EnrollmentAdminController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController, SettingsController, ReportCardController};
 
 // ─── Auth (Guest Only) ────────────────────────────────────────────────────────
 $router->get('/login',           [AuthController::class, 'showLogin'],          ['guest']);
@@ -52,6 +52,11 @@ $router->post('/roles/{id}',       [RoleController::class, 'update'],  ['auth', 
 $router->delete('/roles/{id}',     [RoleController::class, 'destroy'], ['auth', 'permission:delete_roles']);
 
 // ─── Students — Module 2 ─────────────────────────────────────────────────────
+$router->get('/students/enrollments',              [EnrollmentAdminController::class, 'index'],    ['auth', 'permission:view_students']);
+$router->get('/students/enrollments/{id}',         [EnrollmentAdminController::class, 'show'],     ['auth', 'permission:view_students']);
+$router->post('/students/enrollments/{id}/approve', [EnrollmentAdminController::class, 'approve'],  ['auth', 'permission:create_students']);
+$router->post('/students/enrollments/{id}/reject',  [EnrollmentAdminController::class, 'reject'],   ['auth', 'permission:create_students']);
+
 $router->get('/students',                          [StudentController::class, 'index'],              ['auth', 'permission:view_students']);
 $router->get('/students/create',                   [StudentController::class, 'create'],             ['auth', 'permission:create_students']);
 $router->post('/students',                         [StudentController::class, 'store'],              ['auth', 'permission:create_students']);

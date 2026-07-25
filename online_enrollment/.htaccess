@@ -1,0 +1,5 @@
+# Allow direct web access to PHP files inside online_enrollment
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>

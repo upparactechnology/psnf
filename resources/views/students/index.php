@@ -32,14 +32,20 @@ $statusClasses = [
             <h2 class="text-xl font-bold text-slate-900 dark:text-white">Student Registry</h2>
             <p class="text-sm text-slate-500 mt-0.5"><?= number_format($total ?? 0) ?> students total</p>
         </div>
-        <?php if (has_permission('create_students')): ?>
-        <a href="<?= url('students/create') ?>"
-           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90"
-           style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            New Student
-        </a>
-        <?php endif; ?>
+        <div class="flex items-center gap-2">
+            <a href="<?= url('students/enrollments') ?>"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-indigo-400 bg-indigo-600/10 border border-indigo-500/30 hover:bg-indigo-600/20 transition-all">
+                📋 Online Applications
+            </a>
+            <?php if (has_permission('create_students')): ?>
+            <a href="<?= url('students/create') ?>"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90"
+               style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                New Student
+            </a>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Status Pipeline Tabs -->
