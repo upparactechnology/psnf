@@ -1,3 +1,64 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_name('PSNF_SESSION');
+    session_start();
+}
+
+// Handle AJAX Login Request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
+    header('Content-Type: application/json');
+    $email = trim($_POST['email'] ?? '');
+    $password = trim($_POST['password'] ?? '');
+
+    if (empty($email) || empty($password)) {
+        echo json_encode(['success' => false, 'message' => 'Please enter both email and password.']);
+        exit();
+    }
+
+    try {
+        $pdo = new PDO("mysql:host=127.0.0.1;dbname=psnf_drm;charset=utf8mb4", "root", "", [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1");
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($password, $user['password'])) {
+            unset($user['password']);
+            $_SESSION['user'] = $user;
+            $_SESSION['admin_id'] = $user['id'];
+            $_SESSION['admin_name'] = $user['name'] ?? 'Admin';
+            $_SESSION['face_reg_authenticated'] = true;
+            $_SESSION['face_reg_user'] = $user['name'] ?? 'Admin';
+            echo json_encode(['success' => true, 'message' => 'Authentication successful!', 'userName' => $user['name']]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Invalid email or password.']);
+        }
+    } catch (\Throwable $e) {
+        echo json_encode(['success' => false, 'message' => 'Database authentication error: ' . $e->getMessage()]);
+    }
+    exit();
+}
+
+// Handle AJAX Logout / Lock Request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'logout') {
+    header('Content-Type: application/json');
+    unset($_SESSION['face_reg_authenticated'], $_SESSION['face_reg_user']);
+    echo json_encode(['success' => true]);
+    exit();
+}
+
+// Clear registration auth token on GET so login is required every time Add Employee is clicked
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    unset($_SESSION['face_reg_authenticated'], $_SESSION['face_reg_user']);
+}
+
+// Check single-action registration login status
+$isLoggedIn = !empty($_SESSION['face_reg_authenticated']);
+$userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -96,6 +157,14 @@
             text-align: center;
             padding: 3px 0;
         }
+        .emp-avatar-thumb {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #38bdf8;
+            background-color: #0f172a;
+        }
         @media (max-width: 768px) {
             .navbar-brand { font-size: 1rem; }
             .card-custom { padding: 1.25rem !important; border-radius: 12px; }
@@ -109,17 +178,58 @@
     <!-- Header Navbar -->
     <nav class="navbar navbar-dark bg-dark border-bottom border-secondary px-3 py-2">
         <div class="container-fluid px-0">
-            <a class="navbar-brand fw-bold text-info text-truncate" href="index.php" style="max-width: 60%;">
+            <a class="navbar-brand fw-bold text-info text-truncate" href="verify.php" style="max-width: 50%;">
                 <i class="fa-solid fa-arrow-left me-2"></i>Face Registration
             </a>
-            <div class="d-flex align-items-center gap-1">
-                <a href="../../dashboard" class="btn btn-outline-warning btn-sm fw-bold me-1"><i class="fa-solid fa-crown me-1 text-warning"></i>Admin</a>
-                <button type="button" id="btnResetPhotos" class="btn btn-outline-danger btn-sm">
-                    <i class="fa-solid fa-rotate-right me-1"></i>Reset
+            <div class="d-flex align-items-center gap-2" id="authBadgeContainer">
+                <?php if ($isLoggedIn): ?>
+                    <span class="badge bg-success px-2 py-2 text-truncate small" style="max-width: 170px;" title="Authenticated User"><i class="fa-solid fa-user-check me-1"></i><?= htmlspecialchars($userName) ?></span>
+                    <button type="button" class="btn btn-outline-danger btn-sm fw-bold me-1" onclick="handleAuthLogout()" title="Lock Kiosk Registration"><i class="fa-solid fa-lock me-1"></i>Lock</button>
+                <?php else: ?>
+                    <button type="button" class="btn btn-warning btn-sm fw-bold me-1" onclick="showAuthModal()"><i class="fa-solid fa-right-to-bracket me-1"></i>Admin Login</button>
+                <?php endif; ?>
+                <a href="../../dashboard" class="btn btn-outline-warning btn-sm fw-bold me-1" title="Super Admin Portal"><i class="fa-solid fa-crown text-warning"></i></a>
+                <button type="button" id="btnResetPhotos" class="btn btn-outline-secondary btn-sm" title="Reset Camera Scanner">
+                    <i class="fa-solid fa-rotate-right"></i>
                 </button>
             </div>
         </div>
     </nav>
+
+    <!-- Admin Authentication Required Modal -->
+    <div class="modal fade <?php if (!$isLoggedIn) echo 'show d-block'; ?>" id="authModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" style="<?php if (!$isLoggedIn) echo 'background: rgba(15, 23, 42, 0.94); z-index: 1055;'; ?>">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-secondary px-4 pt-4 pb-2">
+                    <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-shield-halved me-2 text-warning"></i>Admin Authentication Required</h5>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-secondary small mb-3">Please enter Admin / Staff credentials to unlock adding a new employee face.</p>
+                    <div id="authAlert" class="alert alert-danger d-none small mb-3"></div>
+                    <form id="authLoginForm" onsubmit="handleAuthLogin(event)">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">EMAIL ADDRESS</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-secondary border-secondary text-white"><i class="fa-solid fa-envelope"></i></span>
+                                <input type="email" id="authEmail" class="form-control bg-dark text-white border-secondary" placeholder="e.g. admin@psnf.edu" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">PASSWORD</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-secondary border-secondary text-white"><i class="fa-solid fa-key"></i></span>
+                                <input type="password" id="authPassword" class="form-control bg-dark text-white border-secondary" placeholder="••••••••" required>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-4">
+                            <a href="verify.php" class="btn btn-outline-secondary w-50 fw-bold"><i class="fa-solid fa-arrow-left me-1"></i>Cancel</a>
+                            <button type="submit" id="authSubmitBtn" class="btn btn-info w-50 fw-bold"><i class="fa-solid fa-right-to-bracket me-1"></i>Login & Unlock</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="container my-3">
         <div class="row g-3">
@@ -193,6 +303,45 @@
 
                     <!-- Result Status Alert Banner -->
                     <div id="statusAlert" class="alert d-none mt-3 text-start" role="alert"></div>
+                </div>
+        </div>
+
+        <!-- Registered Employees Directory Section -->
+        <div class="row g-3 mt-3">
+            <div class="col-12">
+                <div class="card-custom p-3 p-md-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-info"><i class="fa-solid fa-users me-2"></i>Registered Employees Directory</h5>
+                            <p class="text-secondary small mb-0">View all registered employee IDs, names, and face photos</p>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="text" id="regEmpSearch" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Search ID or Name..." oninput="filterRegisteredEmps()">
+                            <span class="badge bg-primary px-3 py-2 text-nowrap" id="regEmpCountBadge">0 Registered</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle mb-0 border-secondary">
+                            <thead>
+                                <tr class="text-secondary small text-uppercase border-secondary">
+                                    <th style="width: 40px;">#</th>
+                                    <th style="width: 70px;">FACE PHOTO</th>
+                                    <th>EMPLOYEE ID</th>
+                                    <th>FULL NAME</th>
+                                    <th>REGISTERED DATE</th>
+                                    <th class="text-center" style="width: 80px;">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="registeredEmpsBody">
+                                <tr>
+                                    <td colspan="6" class="text-center py-3 text-secondary">
+                                        <span class="spinner-border spinner-border-sm me-2"></span>Loading registered employees...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -344,7 +493,14 @@
 
                 if (response.ok && data && data.success) {
                     showAlert('success', `<i class="fa-solid fa-circle-check me-2"></i><b>Registration Successful!</b> ${data.message}`);
-                    setTimeout(() => { window.location.href = 'index.php'; }, 2000);
+                    fetchRegisteredEmps();
+                    // Lock kiosk again so next Add Employee requires login every time
+                    try {
+                        const logoutForm = new FormData();
+                        logoutForm.append('action', 'logout');
+                        await fetch('register.php', { method: 'POST', body: logoutForm });
+                    } catch (err) {}
+                    setTimeout(() => { window.location.href = 'verify.php'; }, 2000);
                 } else {
                     const msg = (data && (data.detail || data.message)) || 'Registration failed.';
                     showAlert('danger', `<i class="fa-solid fa-circle-exclamation me-2"></i>${msg}`);
@@ -362,7 +518,164 @@
             statusAlert.classList.remove('d-none');
         }
 
+        async function handleAuthLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const alertDiv = document.getElementById('authAlert');
+            const btn = document.getElementById('authSubmitBtn');
+
+            alertDiv.classList.add('d-none');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Authenticating...';
+
+            try {
+                const formData = new FormData();
+                formData.append('action', 'login');
+                formData.append('email', email);
+                formData.append('password', password);
+
+                const res = await fetch('register.php', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (data.success) {
+                    const modal = document.getElementById('authModal');
+                    if (modal) {
+                        modal.classList.remove('show', 'd-block');
+                        modal.style.display = 'none';
+                    }
+                    const badgeContainer = document.getElementById('authBadgeContainer');
+                    if (badgeContainer) {
+                        badgeContainer.innerHTML = `<span class="badge bg-success px-2 py-2 text-truncate small" style="max-width: 170px;"><i class="fa-solid fa-user-check me-1"></i>${data.userName}</span><button type="button" class="btn btn-outline-danger btn-sm fw-bold me-1" onclick="handleAuthLogout()" title="Lock Kiosk Registration"><i class="fa-solid fa-lock me-1"></i>Lock</button><a href="../../dashboard" class="btn btn-outline-warning btn-sm fw-bold me-1" title="Super Admin Portal"><i class="fa-solid fa-crown text-warning"></i></a><button type="button" id="btnResetPhotos" class="btn btn-outline-secondary btn-sm" title="Reset Camera Scanner"><i class="fa-solid fa-rotate-right"></i></button>`;
+                    }
+                    initWebcam();
+                } else {
+                    alertDiv.innerText = data.message || 'Invalid email or password.';
+                    alertDiv.classList.remove('d-none');
+                }
+            } catch (err) {
+                alertDiv.innerText = 'Authentication error: ' + err.message;
+                alertDiv.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-right-to-bracket me-1"></i>Login & Unlock';
+            }
+        }
+
+        async function handleAuthLogout() {
+            if (confirm('Lock registration kiosk and log out?')) {
+                const formData = new FormData();
+                formData.append('action', 'logout');
+                await fetch('register.php', { method: 'POST', body: formData });
+                window.location.reload();
+            }
+        }
+
+        function showAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) {
+                modal.style.background = 'rgba(15, 23, 42, 0.94)';
+                modal.classList.add('show', 'd-block');
+            }
+        }
+
+        const EMP_LIST_URL = "api.php?endpoint=/api/employees/list";
+        const EMP_DELETE_URL = "api.php?endpoint=/api/employees/delete";
+
+        let allRegisteredEmps = [];
+
+        async function fetchRegisteredEmps() {
+            const body = document.getElementById('registeredEmpsBody');
+            if (!body) return;
+
+            try {
+                const res = await fetch(EMP_LIST_URL);
+                const data = await res.json();
+                if (res.ok && data && data.success) {
+                    allRegisteredEmps = data.data || [];
+                    renderRegisteredEmps(allRegisteredEmps);
+                } else {
+                    body.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-secondary">No registered employees found.</td></tr>`;
+                }
+            } catch (err) {
+                body.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-secondary">No registered employees found.</td></tr>`;
+            }
+        }
+
+        function renderRegisteredEmps(list) {
+            const body = document.getElementById('registeredEmpsBody');
+            const badge = document.getElementById('regEmpCountBadge');
+            if (!body) return;
+
+            if (badge) badge.innerText = `${list.length} Registered`;
+
+            if (!list || list.length === 0) {
+                body.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-secondary">No matching employees found.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = '';
+            list.forEach((emp, i) => {
+                const tr = document.createElement('tr');
+
+                const imageHtml = emp.image_path 
+                    ? `<a href="../../backend/${emp.image_path}" target="_blank" title="View Full Photo"><img src="../../backend/${emp.image_path}" class="emp-avatar-thumb" alt="Face Photo"></a>` 
+                    : `<div class="emp-avatar-thumb bg-dark d-flex align-items-center justify-content-center text-secondary small"><i class="fa-solid fa-user"></i></div>`;
+
+                let regDate = emp.photo_created_at || emp.created_at || '';
+                if (!regDate || regDate.includes('0000-00-00')) {
+                    regDate = 'Recently';
+                }
+
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${imageHtml}</td>
+                    <td><span class="badge bg-dark border border-secondary text-info px-2 py-1 fs-6">${emp.employee_code || ('EMP-' + emp.id)}</span></td>
+                    <td class="fw-bold text-white fs-6">${emp.name}</td>
+                    <td class="small text-secondary">${regDate}</td>
+                    <td class="text-center">
+                        <button class="btn btn-outline-danger btn-sm px-2 py-1" onclick="deleteEmp(${emp.id}, '${emp.name}')" title="Delete Face Profile">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        function filterRegisteredEmps() {
+            const query = (document.getElementById('regEmpSearch').value || '').toLowerCase().trim();
+            if (!query) {
+                renderRegisteredEmps(allRegisteredEmps);
+                return;
+            }
+            const filtered = allRegisteredEmps.filter(e => 
+                (e.employee_code || '').toLowerCase().includes(query) || 
+                (e.name || '').toLowerCase().includes(query)
+            );
+            renderRegisteredEmps(filtered);
+        }
+
+        async function deleteEmp(id, name) {
+            if (!confirm(`Are you sure you want to delete registered face for ${name}?`)) return;
+            try {
+                const res = await fetch(`${EMP_DELETE_URL}&id=${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (res.ok && data && data.success) {
+                    fetchRegisteredEmps();
+                } else {
+                    alert(data.message || 'Delete failed.');
+                }
+            } catch (err) {
+                alert('Delete error: ' + err.message);
+            }
+        }
+
+        fetchRegisteredEmps();
+
+        <?php if ($isLoggedIn): ?>
         initWebcam();
+        <?php endif; ?>
     </script>
 </body>
 </html>

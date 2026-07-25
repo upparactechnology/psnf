@@ -66,17 +66,6 @@ ob_start();
             </a>
             <?php endif; ?>
 
-            <!-- 2b. AI Face Attendance Kiosk Portal -->
-            <a href="<?= url('public/attendance/index.php') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-cyan-500/30 dark:hover:border-cyan-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
-                <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg group-hover:scale-105 transition-transform duration-300 mb-3.5">
-                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                    </svg>
-                </div>
-                <span class="text-sm font-semibold text-slate-800 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">AI Face Attendance</span>
-                <span class="text-2xs text-slate-500 mt-1 font-medium bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700/30">Camera Kiosk Active</span>
-            </a>
-
             <!-- 3. Access Control (Roles) -->
             <?php if (in_array('access_control', $assignedApps)): ?>
             <a href="<?= url('roles') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-emerald-500/30 dark:hover:border-emerald-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
