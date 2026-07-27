@@ -36,8 +36,7 @@ $isStaffLayout = $isStaff || $isStaffLogin;
     (function(){
       let saved = null;
       try { saved = localStorage.getItem('psnf_theme'); } catch (e) { saved = null; }
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initial = saved || (prefersDark ? 'dark' : 'light');
+      const initial = saved || 'light';
       document.documentElement.setAttribute('data-theme', initial);
     })();
   </script>
