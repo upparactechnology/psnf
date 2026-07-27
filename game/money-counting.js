@@ -22,7 +22,7 @@ function generateRandomLevels(count = 10) {
 }
 
 const LEVELS = generateRandomLevels(7);
-const START_TIME_SECONDS = 105;
+const START_TIME_SECONDS = 300;
 const XP_PER_LEVEL = 50;
 const STARS_PER_LEVEL = 10;
 const XP_MAX = LEVELS.length * XP_PER_LEVEL;
@@ -240,7 +240,11 @@ function renderMoneyGrid() {
       card.classList.remove("dragging");
     });
 
+    let lastClickTime = 0;
     card.addEventListener("click", () => {
+      const now = Date.now();
+      if (now - lastClickTime < 300) return;
+      lastClickTime = now;
       const item = MONEY_ITEMS.find((entry) => entry.id === card.dataset.moneyId);
       if (!item || state.isComplete) return;
       state.dropped.push(item);
@@ -324,6 +328,23 @@ function playFeedback(kind) {
       osc.start(now + index * 0.08);
       osc.stop(now + index * 0.08 + 0.4);
     });
+
+    // Play Applause Audio File for max 3 seconds with a smooth fade-out
+    const applause = new Audio("vvqne-applause-383901.mp3");
+    applause.volume = 1.0;
+    applause.play().then(() => {
+      setTimeout(() => {
+        let fadeInterval = setInterval(() => {
+          if (applause.volume > 0.1) {
+            applause.volume -= 0.1;
+          } else {
+            clearInterval(fadeInterval);
+            applause.pause();
+            applause.currentTime = 0;
+          }
+        }, 50);
+      }, 2500);
+    }).catch(err => console.error("Error playing applause sound:", err));
   } else {
     // Failure Buzzer: Descending triangle wave with slide
     const osc = audioContext.createOscillator();

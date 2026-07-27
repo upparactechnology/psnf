@@ -29,7 +29,7 @@ $usagePct = $storageLimitBytes > 0 ? min(100, round(($storageUsedBytes / $storag
   <div class="kpi-card card-glass"><div class="kpi-icon bg-green"><i class="bi bi-link-45deg"></i></div><div><small>Assigned Files</small><div class="metric"><?= (int)($kpi['assigned_files'] ?? 0) ?></div></div></div>
   <div class="kpi-card card-glass"><div class="kpi-icon bg-gold"><i class="bi bi-folder-check"></i></div><div><small>Assigned Folders</small><div class="metric"><?= (int)($kpi['assigned_folders'] ?? 0) ?></div></div></div>
   <div class="kpi-card card-glass"><div class="kpi-icon bg-purple"><i class="bi bi-people"></i></div><div><small>Users</small><div class="metric"><?= (int)($kpi['users'] ?? 0) ?></div></div></div>
-  <div class="kpi-card card-glass"><div class="storage-ring" style="--p:<?= $usagePct ?>"><span><?= $usagePct ?>%</span></div><div><small>Storage Used</small><div class="metric-sm"><?= $formatBytes((int)($kpi['storage_used_bytes'] ?? 0)) ?></div></div></div>
+  <div class="kpi-card card-glass"><div class="storage-ring" style="--p:<?= $usagePct ?>"><span><?= $usagePct ?>%</span></div><div><small>Storage Used</small><div class="metric-sm"><?= number_format((int)($kpi['storage_used_bytes'] ?? 0) / (1024 * 1024 * 1024), 2) . ' GB' ?></div></div></div>
 </div>
 
 <div class="dash-layout mb-3">

@@ -12,12 +12,12 @@ class Resource {
   }
 
   public static function all(): array {
-    $sql='SELECT r.*,f.name folder_name FROM resources r LEFT JOIN folders f ON f.id=r.folder_id ORDER BY r.id DESC';
+    $sql='SELECT r.*,f.name folder_name FROM resources r LEFT JOIN folders f ON f.id=r.folder_id ORDER BY r.sort_order ASC, r.id DESC';
     return Database::conn()->query($sql)->fetchAll();
   }
 
   public static function byFolder(int $folderId): array {
-    $sql='SELECT r.*,f.name folder_name FROM resources r LEFT JOIN folders f ON f.id=r.folder_id WHERE r.folder_id=? ORDER BY r.id DESC';
+    $sql='SELECT r.*,f.name folder_name FROM resources r LEFT JOIN folders f ON f.id=r.folder_id WHERE r.folder_id=? ORDER BY r.sort_order ASC, r.id DESC';
     $stmt=Database::conn()->prepare($sql);
     $stmt->execute([$folderId]);
     return $stmt->fetchAll();
@@ -45,7 +45,7 @@ class Resource {
       $sql = 'SELECT DISTINCT r.*, f.name folder_name FROM resources r
         INNER JOIN resource_staff rs ON rs.resource_id=r.id
         LEFT JOIN folders f ON f.id=r.folder_id
-        WHERE rs.staff_id=? ORDER BY r.id DESC';
+        WHERE rs.staff_id=? ORDER BY r.sort_order ASC, r.id DESC';
       $stmt = Database::conn()->prepare($sql);
       $stmt->execute([$staffId]);
       return $stmt->fetchAll();
@@ -55,7 +55,7 @@ class Resource {
         LEFT JOIN resource_staff rs ON rs.resource_id=r.id
         LEFT JOIN folders f ON f.id=r.folder_id
         WHERE rs.staff_id=? OR r.folder_id IN ($placeholders)
-        ORDER BY r.id DESC";
+        ORDER BY r.sort_order ASC, r.id DESC";
       $stmt = Database::conn()->prepare($sql);
       $stmt->execute(array_merge([$staffId], $folderIds));
       return $stmt->fetchAll();
@@ -71,7 +71,7 @@ class Resource {
       INNER JOIN resource_staff rs ON rs.resource_id=r.id
       LEFT JOIN folders f ON f.id=r.folder_id
       WHERE r.folder_id=? AND rs.staff_id=?
-      ORDER BY r.id DESC';
+      ORDER BY r.sort_order ASC, r.id DESC';
     $stmt = Database::conn()->prepare($sql);
     $stmt->execute([$folderId, $staffId]);
     return $stmt->fetchAll();

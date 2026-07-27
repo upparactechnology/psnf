@@ -58,7 +58,7 @@ html,body{margin:0;background:var(--bg-grad);color:var(--text);font-family:Inter
 .table-modern tbody tr td{background:color-mix(in oklab,var(--surface) 88%,transparent)!important}
 .table-modern tbody tr:nth-child(even) td{background:color-mix(in oklab,var(--surface-2) 82%,transparent)!important}
 .table-modern tr:hover td,.table tr:hover td{background:color-mix(in oklab,var(--surface-2) 70%,var(--primary) 30%)!important}
-.table-wrap{max-height:440px;overflow:auto;border:1px solid var(--line);border-radius:14px}
+.table-wrap{min-height:calc(100vh - 260px);max-height:calc(100vh - 260px);overflow:auto;border:1px solid var(--line);border-radius:14px;background:color-mix(in oklab,var(--surface) 60%,transparent)}
 .chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:color-mix(in oklab,var(--surface) 86%,var(--indigo) 14%);font-size:.78rem}
 .panel{border-radius:18px}
 .kpi-card{display:flex;align-items:center;gap:14px;padding:16px}
@@ -319,3 +319,261 @@ body.shield-active > :not(#securityShield):not(script):not(style) {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   color: #64748b;
 }
+
+/* Custom Select Dropdown Styling */
+.custom-select-dropdown {
+  border-radius: var(--radius-md) !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  padding: 6px !important;
+  box-shadow: var(--shadow-2) !important;
+}
+.custom-select-dropdown .dropdown-item {
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  font-size: 0.9rem !important;
+}
+
+/* Double-clickable Rows styling */
+.clickable-row {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ==========================================================================
+   Responsive Scaling & Smart Board Compatibility (Staff Side Only)
+   ========================================================================== */
+
+/* Locked global layout dimensions to prevent page-level scrolling */
+html.staff-layout,
+html.staff-layout body {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* App Shell Sizing for Staff */
+.staff-layout .staff-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Lock container height and hide overflow to prevent external scrolls */
+.staff-layout .staff-shell > .container {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  padding-top: clamp(8px, 1.5vh, 16px) !important;
+  padding-bottom: clamp(8px, 1.5vh, 16px) !important;
+  gap: clamp(8px, 1.5vh, 16px) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.staff-layout .staff-shell > :not(.staff-topbar) {
+  /* For cases outside the .container wrapper */
+  min-height: 0 !important;
+}
+
+/* Make rows in dashboard share the container height and prevent them from expanding */
+.staff-layout .staff-shell > .container > .row {
+  flex: 1 !important;
+  min-height: 0 !important;
+  margin-bottom: 0 !important;
+}
+.staff-layout .staff-shell > .container > .row.mb-3 {
+  margin-bottom: 0 !important;
+}
+
+/* Ensure columns within dashboard rows take full available height */
+.staff-layout .staff-shell > .container > .row > [class*="col-"] {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+/* Set up panels as column flexboxes that fit 100% height of parent */
+.staff-layout .panel {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Panels inside dashboard grid rows take full height */
+.staff-layout .staff-shell > .container > .row > [class*="col-"] > .panel {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+/* Lock panels in details views (like folder info panel and files table) */
+.staff-layout .staff-shell > .container > .panel {
+  height: auto !important;
+  flex-shrink: 0 !important;
+  margin-bottom: 0 !important;
+}
+.staff-layout .staff-shell > .container > .panel:last-child {
+  flex: 1 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Force inner content area of panels to be scrollable internally */
+.staff-layout .panel > :not(.panel-head) {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+/* Ensure table-wrap fills the remaining area and is scrollable */
+.staff-layout .table-wrap {
+  flex: 1 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+
+/* Prevent multi-column wrapping inside landscape viewport bounds */
+@media (min-width: 981px) {
+  .staff-layout .sidebar,
+  .staff-layout .main-panel,
+  .staff-layout .details-panel {
+    grid-column: auto !important;
+    height: 100% !important;
+  }
+}
+
+/* Prevent Sizing Collapse on Headers and Toolbars */
+.staff-layout .staff-topbar,
+.staff-layout .panel-head {
+  flex-shrink: 0 !important;
+}
+
+/* Responsive Font & Text Clamping */
+.staff-layout h1 { font-size: clamp(1.1rem, 2.3vh, 1.6rem) !important; }
+.staff-layout h2 { font-size: clamp(0.95rem, 1.9vh, 1.3rem) !important; }
+.staff-layout h3 { font-size: clamp(0.85rem, 1.7vh, 1.15rem) !important; }
+.staff-layout h4 { font-size: clamp(0.8rem, 1.5vh, 1.05rem) !important; }
+.staff-layout h5 { font-size: clamp(0.75rem, 1.4vh, 0.95rem) !important; }
+.staff-layout h6 { font-size: clamp(0.7rem, 1.3vh, 0.85rem) !important; }
+
+.staff-layout .metric {
+  font-size: clamp(1.2rem, 2.5vh, 1.8rem) !important;
+}
+.staff-layout .metric-sm {
+  font-size: clamp(0.95rem, 2vh, 1.25rem) !important;
+  white-space: nowrap !important;
+}
+
+.staff-layout .timeline-item {
+  padding: clamp(6px, 1vh, 10px) !important;
+  gap: clamp(6px, 1.2vw, 10px) !important;
+}
+
+.staff-layout,
+.staff-layout p,
+.staff-layout td,
+.staff-layout th,
+.staff-layout button,
+.staff-layout input,
+.staff-layout select {
+  font-size: clamp(0.75rem, 1.3vh, 0.9rem) !important;
+}
+
+/* Image Assets and Icons Clamping */
+.staff-layout .file-icon {
+  width: clamp(28px, 4vh, 52px) !important;
+  height: clamp(28px, 4vh, 52px) !important;
+  object-fit: contain !important;
+}
+
+/* Buttons Sizing & Padding */
+.staff-layout .btn {
+  padding: clamp(3px, 0.7vh, 8px) clamp(6px, 1vw, 12px) !important;
+  font-size: clamp(0.7rem, 1.2vh, 0.85rem) !important;
+  border-radius: 8px !important;
+}
+
+/* Media Viewers Fitting Constraints */
+.staff-layout .container-fluid {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  padding: clamp(8px, 1.5vh, 16px) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.staff-layout .container-fluid > :not(.viewer-stage) {
+  flex-shrink: 0 !important;
+}
+
+.staff-layout .viewer-stage {
+  flex: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  padding: 4px !important;
+  overflow: auto !important;
+}
+
+.staff-layout .secure-video {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  object-fit: contain !important;
+}
+
+/* Reduced Padding and Margins for Limited Heights */
+@media (max-height: 768px) {
+  .staff-layout .list-group-item {
+    padding: clamp(3px, 0.6vh, 6px) clamp(6px, 1vw, 10px) !important;
+  }
+  .staff-layout .table-modern tr td,
+  .staff-layout .table-modern tr th,
+  .staff-layout .table tr td,
+  .staff-layout .table tr th {
+    padding: clamp(3px, 0.6vh, 6px) clamp(5px, 0.8vw, 8px) !important;
+  }
+  .staff-layout .panel {
+    padding: clamp(6px, 1.2vh, 10px) !important;
+  }
+  .staff-layout .staff-topbar {
+    padding: clamp(6px, 1.2vh, 10px) clamp(8px, 1.5vw, 12px) !important;
+  }
+  .staff-layout .staff-kpi-grid {
+    margin: clamp(6px, 1.2vh, 10px) 0 !important;
+    gap: clamp(6px, 1vw, 12px) !important;
+  }
+  .staff-layout .staff-kpi-card {
+    padding: clamp(4px, 0.9vh, 8px) !important;
+  }
+  .staff-layout .auth-shell {
+    min-height: 100vh !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+  .staff-layout .auth-hero {
+    padding: clamp(16px, 3vh, 32px) !important;
+  }
+  .staff-layout .auth-hero h1 {
+    font-size: clamp(1.3rem, 3vh, 1.8rem) !important;
+  }
+}
+

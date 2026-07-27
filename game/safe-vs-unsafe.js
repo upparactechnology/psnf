@@ -745,7 +745,7 @@ const SAFE_MODES = {
   },
 };
 
-const TIME_PER_MODE = 120;
+const TIME_PER_MODE = 300;
 const XP_PER_CORRECT = 50;
 const STARS_PER_CORRECT = 10;
 const MAX_XP = 500;
@@ -919,6 +919,23 @@ function playFeedback(kind) {
       osc.start(now + index * 0.08);
       osc.stop(now + index * 0.08 + 0.4);
     });
+
+    // Play Applause Audio File for max 3 seconds with a smooth fade-out
+    const applause = new Audio("vvqne-applause-383901.mp3");
+    applause.volume = 1.0;
+    applause.play().then(() => {
+      setTimeout(() => {
+        let fadeInterval = setInterval(() => {
+          if (applause.volume > 0.1) {
+            applause.volume -= 0.1;
+          } else {
+            clearInterval(fadeInterval);
+            applause.pause();
+            applause.currentTime = 0;
+          }
+        }, 50);
+      }, 2500);
+    }).catch(err => console.error("Error playing applause sound:", err));
   } else {
     // Failure Buzzer: Descending triangle wave with slide
     const osc = audioContext.createOscillator();
@@ -1409,14 +1426,24 @@ function renderSafePeopleMode() {
     return;
   }
 
-  el.safeCircleItems.innerHTML = selectedIds
-    .map((id) => {
-      const person = SAFE_PEOPLE_POOL.find((item) => item.id === id);
-      return person
-        ? `<span class="safe-circle-tag"><img src="${person.image}" alt="${person.name}" onerror="this.src='${FALLBACK_IMAGE}'"/> ${person.name}</span>`
-        : "";
-    })
-    .join("");
+  const latestId = selectedIds[selectedIds.length - 1];
+  el.safeCircleItems.innerHTML = latestId
+    ? (() => {
+        const person = SAFE_PEOPLE_POOL.find((item) => item.id === latestId);
+        return person
+          ? `<span class="safe-circle-tag" data-remove-safe="${person.id}"><img src="${person.image}" alt="${person.name}" onerror="this.src='${FALLBACK_IMAGE}'"/> ${person.name} <span class="circle-remove-x">&times;</span></span>`
+          : "";
+      })()
+    : "";
+
+  el.safeCircleItems.querySelectorAll("[data-remove-safe]").forEach((item) => {
+    item.addEventListener("click", () => {
+      state.safePeople.selectedIds = state.safePeople.selectedIds.filter(
+        (id) => id !== item.dataset.removeSafe,
+      );
+      renderMode();
+    });
+  });
 
   el.safePeopleList.innerHTML = selectedIds.length
     ? selectedIds

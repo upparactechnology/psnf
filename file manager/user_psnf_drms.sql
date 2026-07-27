@@ -746,7 +746,7 @@ INSERT INTO `settings` (`id`, `key`, `value`) VALUES
 (4, 'block_mobile', '1'),
 (5, 'debug_mode', '0'),
 (6, 'download_restriction', '1'),
-(7, 'allowed_file_types', 'pdf,jpg,jpeg,png,mp4,mov,webm'),
+(7, 'allowed_file_types', 'pdf,jpg,jpeg,png,mp4,mov,webm,ppt,pptx,doc,docx,xls,xlsx,txt,zip'),
 (8, 'max_upload_mb', '20000'),
 (58, 'access_mon_start', '09:30'),
 (59, 'access_mon_end', '16:00'),

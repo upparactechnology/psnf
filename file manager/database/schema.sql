@@ -114,5 +114,5 @@ INSERT INTO settings (`key`,value) VALUES
 ('access_sun_end','17:00'),
 ('debug_mode','0'),
 ('download_restriction','1'),
-('allowed_file_types','pdf,jpg,jpeg,png,mp4,mov,webm'),
+('allowed_file_types','pdf,jpg,jpeg,png,mp4,mov,webm,ppt,pptx,doc,docx,xls,xlsx,txt,zip'),
 ('max_upload_mb','200');

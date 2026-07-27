@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg: #f4f7fc;
   --surface: #ffffff;
   --text: #16213d;
@@ -408,3 +408,266 @@ h1, h2, p { margin: 0; }
   .money-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
   .drop-items { grid-template-columns: repeat(2, minmax(90px, 1fr)); }
 }
+
+/* Fluid Landscape / Smart Board Compatibility (DPI scale responsive) */
+@media (min-width: 981px) {
+  html, body {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  body {
+    background:
+      radial-gradient(circle at 8% 15%, rgba(104, 109, 224, 0.1), transparent 35%),
+      radial-gradient(circle at 90% 0%, rgba(104, 187, 255, 0.12), transparent 35%),
+      var(--bg);
+  }
+  
+  .app-shell {
+    height: 100vh;
+    padding: clamp(10px, 1.5vh, 20px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  
+  .money-header {
+    padding: clamp(8px, 1.2vh, 16px) clamp(12px, 1.5vw, 18px);
+    border-radius: var(--radius-lg);
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  
+  .header-left {
+    gap: 12px;
+  }
+  .back-btn {
+    width: clamp(36px, 5vh, 54px);
+    height: clamp(36px, 5vh, 54px);
+    border-radius: 10px;
+    font-size: clamp(1.2rem, 2.5vh, 2rem);
+  }
+  .header-left h1 {
+    font-size: clamp(1.2rem, 2.5vh, 1.8rem);
+  }
+  .header-left p {
+    font-size: clamp(0.8rem, 1.3vh, 1rem);
+    margin-top: 0;
+  }
+  
+  .stats-row {
+    gap: 8px;
+  }
+  .stat-card {
+    padding: clamp(4px, 1vh, 12px) clamp(8px, 1.2vw, 16px);
+    border-radius: 12px;
+    min-width: clamp(90px, 10vw, 120px);
+    gap: 8px;
+  }
+  .stat-card strong {
+    font-size: clamp(0.9rem, 1.6vh, 1.2rem);
+  }
+  .stat-card small {
+    font-size: clamp(0.7rem, 1.1vh, 0.9rem);
+  }
+  .stat-icon {
+    width: clamp(28px, 4.5vh, 42px);
+    height: clamp(28px, 4.5vh, 42px);
+    border-radius: 10px;
+    font-size: clamp(0.9rem, 1.8vh, 1.3rem);
+  }
+  .xp-wrap {
+    min-width: clamp(100px, 12vw, 150px);
+  }
+  .xp-track {
+    height: clamp(5px, 0.8vh, 8px);
+    margin-top: 2px;
+  }
+  
+  .money-layout {
+    margin-top: clamp(8px, 1.2vh, 16px);
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - clamp(80px, 12vh, 120px));
+    display: grid;
+    grid-template-columns: 240px 1fr 260px;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .left-panel, .right-panel {
+    gap: 8px;
+    min-height: 0;
+    height: 100%;
+    align-content: stretch;
+    display: flex;
+    flex-direction: column;
+  }
+  .right-panel {
+    grid-column: auto !important;
+  }
+  
+  .card-base {
+    padding: 10px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .card-base h2 {
+    font-size: clamp(1rem, 2vh, 1.3rem);
+    margin-bottom: 4px;
+    flex-shrink: 0;
+  }
+  
+  .label {
+    font-size: clamp(0.8rem, 1.4vh, 1rem);
+    margin-bottom: 2px;
+  }
+  
+  .target-amount {
+    font-size: clamp(1.8rem, 3.5vh, 2.8rem);
+    line-height: 1.2;
+  }
+  
+  .timer-text {
+    font-size: clamp(1.6rem, 3vh, 2.4rem);
+    line-height: 1.2;
+  }
+  
+  .hint-text {
+    font-size: clamp(0.8rem, 1.4vh, 1.05rem);
+    line-height: 1.35;
+  }
+  
+  /* Center Panel layout */
+  .center-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 20px;
+    justify-content: flex-start;
+  }
+  
+  .center-panel h2 {
+    font-size: clamp(1.1rem, 2.2vh, 1.5rem);
+    margin-bottom: 4px;
+    flex-shrink: 0;
+  }
+  
+  .drop-zone {
+    flex: 1;
+    min-height: 120px;
+    padding: 8px;
+    border-radius: 16px;
+    align-content: center;
+  }
+  
+  .drop-placeholder {
+    margin: 8px 0;
+  }
+  
+  .wallet-icon {
+    font-size: clamp(1.8rem, 3.5vh, 2.8rem);
+    margin-bottom: 2px;
+  }
+  
+  .drop-placeholder p {
+    font-size: clamp(0.9rem, 1.6vh, 1.3rem);
+  }
+  
+  .drop-items {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 8px;
+  }
+  
+  .dropped-item {
+    border-radius: 12px;
+  }
+  .dropped-item img {
+    height: clamp(38px, 6vh, 58px);
+  }
+  .dropped-item span {
+    padding: 3px;
+    font-size: clamp(0.75rem, 1.3vh, 0.95rem);
+  }
+  
+  .total-card {
+    margin-top: 0;
+    padding: 8px 12px;
+    border-radius: 14px;
+    flex-shrink: 0;
+  }
+  
+  .total-card p {
+    font-size: clamp(0.85rem, 1.5vh, 1.1rem);
+  }
+  .total-card strong {
+    font-size: clamp(1.4rem, 2.8vh, 2rem);
+  }
+  
+  .available-section {
+    margin-top: 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  
+  .money-grid {
+    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+    gap: 8px;
+    max-height: clamp(120px, 20vh, 180px);
+    padding-right: 2px;
+  }
+  
+  .money-card {
+    padding: 6px;
+    border-radius: 12px;
+  }
+  
+  .money-card img {
+    height: clamp(45px, 8vh, 88px);
+  }
+  
+  .money-card p {
+    font-size: clamp(0.8rem, 1.4vh, 1.1rem);
+    margin-top: 2px;
+  }
+  
+  /* Right panel list and stack styling */
+  .right-panel > .card-base:first-child {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .levels-list {
+    flex: 1;
+    overflow-y: auto;
+    gap: 4px;
+    padding-right: 2px;
+  }
+  .levels-list li {
+    padding: 6px 10px;
+    font-size: clamp(0.8rem, 1.3vh, 1rem);
+    border-radius: 10px;
+  }
+  .button-stack {
+    margin-top: auto;
+    gap: 6px;
+  }
+  .action-btn {
+    padding: clamp(8px, 1.2vh, 14px);
+    font-size: clamp(0.9rem, 1.6vh, 1.1rem);
+    border-radius: 12px;
+  }
+}
+

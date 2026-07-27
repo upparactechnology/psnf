@@ -80,3 +80,198 @@ h1,h2,p{margin:0}
 @media (max-width:1200px){.layout{grid-template-columns:250px 1fr}.right-col{grid-column:span 2}.sign-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:980px){.game-header{flex-direction:column;align-items:flex-start}.stats-row{justify-content:flex-start}.layout{grid-template-columns:1fr}.right-col{grid-column:auto}.sign-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.app-shell{padding:12px}}
+
+/* Fluid Landscape / Smart Board Compatibility (DPI scale responsive) */
+@media (min-width: 981px) {
+  html, body {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  body {
+    background:
+      radial-gradient(circle at 8% 15%, rgba(104, 109, 224, 0.1), transparent 35%),
+      radial-gradient(circle at 90% 0%, rgba(104, 187, 255, 0.12), transparent 35%),
+      var(--bg);
+  }
+  
+  .app-shell {
+    height: 100vh;
+    padding: clamp(10px, 1.5vh, 20px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  
+  .game-header {
+    padding: clamp(8px, 1.2vh, 16px) clamp(12px, 1.5vw, 18px);
+    border-radius: var(--radius-lg);
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  
+  .header-left {
+    gap: 12px;
+  }
+  .back-btn {
+    width: clamp(36px, 5vh, 54px);
+    height: clamp(36px, 5vh, 54px);
+    border-radius: 10px;
+    font-size: clamp(1.2rem, 2.5vh, 2rem);
+  }
+  .header-left h1 {
+    font-size: clamp(1.2rem, 2.5vh, 1.8rem);
+  }
+  .header-left p {
+    font-size: clamp(0.8rem, 1.3vh, 1rem);
+    margin-top: 0;
+  }
+  
+  .stats-row {
+    gap: 8px;
+  }
+  .stat-card {
+    padding: clamp(4px, 1vh, 12px) clamp(8px, 1.2vw, 16px);
+    border-radius: 12px;
+    min-width: clamp(90px, 10vw, 120px);
+    gap: 8px;
+  }
+  .stat-card strong {
+    font-size: clamp(0.9rem, 1.6vh, 1.2rem);
+  }
+  .stat-card small {
+    font-size: clamp(0.7rem, 1.1vh, 0.9rem);
+  }
+  .stat-icon {
+    width: clamp(28px, 4.5vh, 42px);
+    height: clamp(28px, 4.5vh, 42px);
+    border-radius: 10px;
+    font-size: clamp(0.9rem, 1.8vh, 1.3rem);
+  }
+  .xp-wrap {
+    min-width: clamp(100px, 12vw, 150px);
+  }
+  .xp-track {
+    height: clamp(5px, 0.8vh, 8px);
+    margin-top: 2px;
+  }
+  
+  .layout {
+    margin-top: clamp(8px, 1.2vh, 16px);
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - clamp(80px, 12vh, 120px));
+    display: grid;
+    grid-template-columns: 240px 1fr 260px;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .right-col {
+    grid-column: auto !important;
+  }
+  
+  .panel-col {
+    gap: 8px;
+    min-height: 0;
+    height: 100%;
+    align-content: stretch;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .card-base {
+    padding: 10px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .card-base h2 {
+    font-size: clamp(1rem, 2vh, 1.3rem);
+    margin-bottom: 4px;
+    flex-shrink: 0;
+  }
+  
+  .timer-text {
+    font-size: clamp(1.4rem, 2.8vh, 2.2rem);
+    line-height: 1.2;
+  }
+  
+  .label, .hint-text, .progress-text {
+    font-size: clamp(0.8rem, 1.4vh, 1.05rem);
+    line-height: 1.35;
+  }
+  .question-text {
+    font-size: clamp(1.2rem, 2.2vh, 1.8rem);
+    line-height: 1.2;
+  }
+  
+  /* Center col sign grid scrolling */
+  .center-col {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 20px;
+  }
+  .center-col h2 {
+    font-size: clamp(1.1rem, 2vh, 1.4rem);
+    margin-bottom: 4px;
+    flex-shrink: 0;
+  }
+  .sign-grid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    max-height: none;
+    padding-right: 2px;
+  }
+  .sign-card {
+    padding: 8px;
+    border-radius: 14px;
+  }
+  .sign-card img {
+    height: clamp(45px, 8vh, 75px);
+  }
+  .sign-card p {
+    font-size: clamp(0.78rem, 1.3vh, 0.98rem);
+    margin-top: 4px;
+  }
+  
+  /* Right col list and stack styling */
+  .right-col > .card-base:first-child {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .rounds-list {
+    flex: 1;
+    overflow-y: auto;
+    gap: 4px;
+    padding-right: 2px;
+  }
+  .rounds-list li {
+    padding: 6px 10px;
+    font-size: clamp(0.8rem, 1.3vh, 1rem);
+    border-radius: 10px;
+  }
+  .button-stack {
+    margin-top: auto;
+    gap: 6px;
+  }
+  .action-btn {
+    padding: clamp(8px, 1.2vh, 14px);
+    font-size: clamp(0.85rem, 1.5vh, 1.1rem);
+    border-radius: 12px;
+  }
+}
+

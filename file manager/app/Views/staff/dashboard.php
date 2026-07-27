@@ -26,8 +26,8 @@ $access = $accessWindow ?? ['start' => '', 'end' => '', 'label' => 'Today'];
       <div class="text-muted small">Welcome, <?= htmlspecialchars($staffName) ?>. Access window: <?= htmlspecialchars($access['label']) ?> <?= htmlspecialchars($access['start']) ?> - <?= htmlspecialchars($access['end']) ?></div>
     </div>
     <div class="d-flex gap-2 align-items-center">
+      <div id="staffClock" class="me-2 px-2 py-1 rounded card-glass text-muted small fw-semibold" style="letter-spacing: 0.5px;">--:--:--</div>
       <button class="btn btn-light btn-sm" id="themeToggle" type="button" title="Toggle theme"><i class="bi bi-moon-stars"></i></button>
-      <a class="btn btn-outline-info btn-sm" href="/psnf/public/dashboard"><i class="bi bi-arrow-left-circle-fill"></i> Back to ERP</a>
       <a class="btn btn-outline-primary btn-sm" href="<?= $app['base_url'] ?>/staff/profile">Profile</a>
       <a class="btn btn-outline-secondary btn-sm" href="<?= $app['base_url'] ?>/staff/logout">Logout</a>
     </div>
@@ -111,67 +111,8 @@ $access = $accessWindow ?? ['start' => '', 'end' => '', 'label' => 'Today'];
       </div>
 
       <div class="col-xl-6">
-        <div class="panel card-glass p-3 h-100">
-          <div class="panel-head"><h5>Recent Activity</h5><span class="chip">Last 20</span></div>
-          <div class="timeline-list">
-            <?php foreach (($recentActivity ?? []) as $event): ?>
-              <article class="timeline-item">
-                <div class="timeline-dot"><i class="bi bi-shield-check"></i></div>
-                <div>
-                  <div class="d-flex gap-2 align-items-center flex-wrap">
-                    <strong><?= htmlspecialchars((string)$event['event']) ?></strong>
-                    <small class="text-muted"><?= date('M d, H:i', strtotime((string)$event['created_at'])) ?></small>
-                  </div>
-                  <div class="text-muted small"><?= htmlspecialchars((string)($event['meta'] ?? '')) ?></div>
-                </div>
-              </article>
-            <?php endforeach; ?>
-            <?php if (empty($recentActivity)): ?>
-              <div class="text-muted small">No activity yet.</div>
-            <?php endif; ?>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row g-3">
-      <div class="col-xl-6">
-        <div class="panel card-glass p-3">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Assigned Folders</h5>
-            <input class="form-control form-control-sm js-local-search" data-filter-group="staff-folders" style="max-width:220px" placeholder="Search folders">
-          </div>
-          <div class="table-responsive table-wrap">
-            <table class="table table-modern">
-              <thead><tr><th>Folder</th><th>Favorite</th><th>Action</th></tr></thead>
-              <tbody>
-              <?php foreach($folders as $f): ?>
-                <tr data-filter-group="staff-folders" data-search="<?= htmlspecialchars(strtolower($f['name'].' '.$f['id'])) ?>">
-                  <td><?= htmlspecialchars($f['name']) ?></td>
-                  <td>
-                    <form class="ajax-form" action="<?= $app['base_url'] ?>/staff/favorites/toggle" method="post">
-                      <input type="hidden" name="type" value="folder">
-                      <input type="hidden" name="id" value="<?= (int)$f['id'] ?>">
-                      <button class="btn btn-sm <?= isset($favoriteFolderIds[(int)$f['id']]) ? 'btn-warning' : 'btn-outline-warning' ?>">
-                        <i class="bi <?= isset($favoriteFolderIds[(int)$f['id']]) ? 'bi-star-fill' : 'bi-star' ?>"></i>
-                      </button>
-                    </form>
-                  </td>
-                  <td><a class="btn btn-sm btn-primary" href="<?= $app['base_url'] ?>/staff/folder?id=<?= (int)$f['id'] ?>">Open Folder</a></td>
-                </tr>
-              <?php endforeach; ?>
-              <?php if (empty($folders)): ?>
-                <tr><td colspan="3" class="text-muted">No assigned folders.</td></tr>
-              <?php endif; ?>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-6">
-        <div class="panel card-glass p-3">
-          <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="panel card-glass py-2 px-3 d-flex flex-column h-100" style="min-height: 580px;">
+          <div class="panel-head mb-1">
             <h5 class="mb-0">Assigned Files</h5>
             <div class="d-flex gap-2">
               <input class="form-control form-control-sm js-local-search" data-filter-group="staff-files" style="max-width:220px" placeholder="Search files">
@@ -216,6 +157,65 @@ $access = $accessWindow ?? ['start' => '', 'end' => '', 'label' => 'Today'];
               <?php endif; ?>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-xl-6">
+        <div class="panel card-glass p-3" style="min-height: 500px;">
+          <div class="panel-head mb-1">
+            <h5 class="mb-0">Assigned Folders</h5>
+            <input class="form-control form-control-sm js-local-search" data-filter-group="staff-folders" style="max-width:220px" placeholder="Search folders">
+          </div>
+          <div class="table-responsive table-wrap">
+            <table class="table table-modern">
+              <thead><tr><th>Folder</th><th>Favorite</th><th>Action</th></tr></thead>
+              <tbody>
+              <?php foreach($folders as $f): ?>
+                <tr data-filter-group="staff-folders" data-search="<?= htmlspecialchars(strtolower($f['name'].' '.$f['id'])) ?>">
+                  <td><?= htmlspecialchars($f['name']) ?></td>
+                  <td>
+                    <form class="ajax-form" action="<?= $app['base_url'] ?>/staff/favorites/toggle" method="post">
+                      <input type="hidden" name="type" value="folder">
+                      <input type="hidden" name="id" value="<?= (int)$f['id'] ?>">
+                      <button class="btn btn-sm <?= isset($favoriteFolderIds[(int)$f['id']]) ? 'btn-warning' : 'btn-outline-warning' ?>">
+                        <i class="bi <?= isset($favoriteFolderIds[(int)$f['id']]) ? 'bi-star-fill' : 'bi-star' ?>"></i>
+                      </button>
+                    </form>
+                  </td>
+                  <td><a class="btn btn-sm btn-primary" href="<?= $app['base_url'] ?>/staff/folder?id=<?= (int)$f['id'] ?>">Open Folder</a></td>
+                </tr>
+              <?php endforeach; ?>
+              <?php if (empty($folders)): ?>
+                <tr><td colspan="3" class="text-muted">No assigned folders.</td></tr>
+              <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-6">
+        <div class="panel card-glass p-3" style="height: auto !important;">
+          <div class="panel-head"><h5>Recent Activity</h5><span class="chip">Last 20</span></div>
+          <div class="timeline-list" style="max-height: 280px !important;">
+            <?php foreach (($recentActivity ?? []) as $event): ?>
+              <article class="timeline-item">
+                <div class="timeline-dot"><i class="bi bi-shield-check"></i></div>
+                <div>
+                  <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <strong><?= htmlspecialchars((string)$event['event']) ?></strong>
+                    <small class="text-muted"><?= date('M d, H:i', strtotime((string)$event['created_at'] . ' UTC')) ?></small>
+                  </div>
+                  <div class="text-muted small"><?= htmlspecialchars((string)($event['meta'] ?? '')) ?></div>
+                </div>
+              </article>
+            <?php endforeach; ?>
+            <?php if (empty($recentActivity)): ?>
+              <div class="text-muted small">No activity yet.</div>
+            <?php endif; ?>
           </div>
         </div>
       </div>

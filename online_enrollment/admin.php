@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Kolkata');
 
 $config = require __DIR__ . '/config.php';
 
@@ -9,9 +10,11 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
+    $pdo->exec("SET time_zone = '+05:30'");
 } catch (PDOException $e) {
     die("Database Connection Error: " . $e->getMessage());
 }
+
 
 $adminPass = $config['admin_password'] ?? 'admin123';
 $error = '';
@@ -78,6 +81,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
 
 $isAuth = !empty($_SESSION['enrollment_admin_auth']);
 
+if ($isAuth && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $actionType = $_POST['action_type'] ?? '';
+
+    // DELETE ENROLLMENT
+    if ($actionType === 'delete_enrollment') {
+        $id = (int)($_POST['enrollment_id'] ?? 0);
+        if ($id > 0) {
+            $stmt = $pdo->prepare("DELETE FROM online_enrollments WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $_SESSION['admin_msg'] = "Application #{$id} has been deleted successfully.";
+        }
+        $currentStatus = $_GET['status'] ?? 'pending';
+        header("Location: admin.php?status=" . urlencode($currentStatus));
+        exit;
+    }
+
+    // UPDATE ENROLLMENT
+    if ($actionType === 'update_enrollment') {
+        $id = (int)($_POST['enrollment_id'] ?? 0);
+        if ($id > 0) {
+            $stmt = $pdo->prepare("UPDATE online_enrollments SET 
+                student_full_name = :sname,
+                dob = :dob,
+                gender = :gender,
+                student_aadhar = :saadhar,
+                address = :address,
+                father_name = :fname,
+                father_phone = :fphone,
+                father_aadhar = :faadhar,
+                mother_name = :mname,
+                mother_phone = :mphone,
+                mother_aadhar = :maadhar,
+                status = :status,
+                admin_notes = :notes,
+                processed_at = NOW()
+                WHERE id = :id");
+
+            $stmt->execute([
+                ':sname'   => trim($_POST['student_full_name'] ?? ''),
+                ':dob'     => trim($_POST['dob'] ?? ''),
+                ':gender'  => trim($_POST['gender'] ?? 'male'),
+                ':saadhar' => trim($_POST['student_aadhar'] ?? ''),
+                ':address' => trim($_POST['address'] ?? ''),
+                ':fname'   => trim($_POST['father_name'] ?? ''),
+                ':fphone'  => trim($_POST['father_phone'] ?? ''),
+                ':faadhar' => trim($_POST['father_aadhar'] ?? ''),
+                ':mname'   => trim($_POST['mother_name'] ?? ''),
+                ':mphone'  => trim($_POST['mother_phone'] ?? ''),
+                ':maadhar' => trim($_POST['mother_aadhar'] ?? ''),
+                ':status'  => trim($_POST['status'] ?? 'pending'),
+                ':notes'   => trim($_POST['admin_notes'] ?? ''),
+                ':id'      => $id
+            ]);
+            $_SESSION['admin_msg'] = "Application #{$id} updated successfully.";
+        }
+        $currentStatus = $_POST['redirect_status'] ?? $_GET['status'] ?? 'pending';
+        header("Location: admin.php?status=" . urlencode($currentStatus));
+        exit;
+    }
+}
+
+$adminMsg = $_SESSION['admin_msg'] ?? '';
+unset($_SESSION['admin_msg']);
+
 if ($isAuth) {
     $status = $_GET['status'] ?? 'pending';
     $stmt = $pdo->prepare("SELECT * FROM online_enrollments WHERE status = :status ORDER BY created_at DESC");
@@ -107,7 +174,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
         }
     </style>
 </head>
-<body class="min-h-screen p-4 sm:p-8" x-data="{ viewRecord: null }">
+<body class="min-h-screen p-4 sm:p-8" x-data="{ viewRecord: null, editRecord: null, formatDate12h(dStr) { if (!dStr) return ''; const dt = new Date(dStr.replace(/-/g, '/')); return isNaN(dt.getTime()) ? dStr : dt.toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }); } }">
 
     <?php if (!$isAuth): ?>
     <!-- Light Theme Login Box -->
@@ -168,6 +235,15 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                 <a href="admin.php?action=logout" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 border border-red-200">Logout</a>
             </div>
         </div>
+
+        <?php if (!empty($adminMsg)): ?>
+            <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span><?= e($adminMsg) ?></span>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <?php if (empty($enrollments)): ?>
             <div class="text-center py-16 bg-white rounded-2xl border border-slate-200 text-slate-400 text-sm">
@@ -241,15 +317,27 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
 
                                     <!-- Submitted At -->
                                     <td class="py-3.5 px-4 text-center text-slate-500 whitespace-nowrap text-[11px]">
-                                        <?= date('M d, Y H:i', strtotime($row['created_at'])) ?>
+                                        <?= date('M d, Y h:i A', strtotime($row['created_at'])) ?>
                                     </td>
 
-                                    <!-- View Action -->
-                                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                                        <button type="button" @click="viewRecord = <?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs transition-all shadow-sm">
+                                    <!-- Action Column (View, Edit, Delete) -->
+                                    <td class="py-3.5 px-4 text-right whitespace-nowrap space-x-1">
+                                        <button type="button" @click="viewRecord = <?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs transition-all shadow-sm">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                            View Report
+                                            View
                                         </button>
+                                        <button type="button" @click="editRecord = <?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold text-xs transition-all shadow-sm">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                            Edit
+                                        </button>
+                                        <form method="POST" action="admin.php?status=<?= e($status) ?>" onsubmit="return confirm('Are you sure you want to delete this student application permanently?');" class="inline">
+                                            <input type="hidden" name="action_type" value="delete_enrollment">
+                                            <input type="hidden" name="enrollment_id" value="<?= $row['id'] ?>">
+                                            <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl font-semibold text-xs transition-all">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                Delete
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -287,7 +375,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                 <!-- Report Header Title -->
                 <div class="text-center border-b border-slate-200 pb-4">
                     <h2 class="text-2xl font-extrabold text-slate-900">STUDENT ENROLLMENT FORM REPORT</h2>
-                    <p class="text-xs text-slate-500 mt-1">Application Code: <span class="font-mono font-bold text-indigo-600" x-text="viewRecord?.application_code"></span> | Submitted Date: <span x-text="viewRecord?.created_at"></span></p>
+                    <p class="text-xs text-slate-500 mt-1">Application Code: <span class="font-mono font-bold text-indigo-600" x-text="viewRecord?.application_code"></span> | Submitted Date: <span class="font-medium" x-text="formatDate12h(viewRecord?.created_at)"></span></p>
                 </div>
 
                 <!-- 1. Student Personal Details -->
@@ -391,7 +479,119 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
         </div>
     </div>
 
+    <!-- EDIT APPLICATION RECORD MODAL -->
+    <div x-show="editRecord" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 flex items-start justify-center no-print" x-cloak>
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200 relative my-6" @click.outside="editRecord = null">
+            
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Edit Application Details</h2>
+                        <p class="text-xs text-slate-500 font-mono" x-text="editRecord?.application_code"></p>
+                    </div>
+                </div>
+                <button type="button" @click="editRecord = null" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <form method="POST" action="admin.php?status=<?= e($status) ?>" class="space-y-5">
+                <input type="hidden" name="action_type" value="update_enrollment">
+                <input type="hidden" name="enrollment_id" :value="editRecord?.id">
+                <input type="hidden" name="redirect_status" value="<?= e($status) ?>">
+
+                <!-- Status & Notes -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Application Status</label>
+                        <select name="status" :value="editRecord?.status" class="w-full bg-white border border-slate-300 rounded-xl py-2 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-indigo-600">
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Admin Notes</label>
+                        <input type="text" name="admin_notes" :value="editRecord?.admin_notes" placeholder="Optional admin comments..." class="w-full bg-white border border-slate-300 rounded-xl py-2 px-3 text-sm text-slate-800 outline-none focus:border-indigo-600">
+                    </div>
+                </div>
+
+                <!-- Student Info -->
+                <div class="space-y-3 border-t border-slate-200 pt-4">
+                    <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Student Details</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Student Full Name</label>
+                            <input type="text" name="student_full_name" required :value="editRecord?.student_full_name" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Date of Birth</label>
+                            <input type="date" name="dob" required :value="editRecord?.dob" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Gender</label>
+                            <select name="gender" :value="editRecord?.gender" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Student Aadhar Card No.</label>
+                            <input type="text" name="student_aadhar" :value="editRecord?.student_aadhar" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Residential Address</label>
+                            <input type="text" name="address" :value="editRecord?.address" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parents Details -->
+                <div class="space-y-3 border-t border-slate-200 pt-4">
+                    <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Parents Details</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Father Name</label>
+                            <input type="text" name="father_name" :value="editRecord?.father_name" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Father Phone</label>
+                            <input type="text" name="father_phone" :value="editRecord?.father_phone" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Father Aadhar No.</label>
+                            <input type="text" name="father_aadhar" :value="editRecord?.father_aadhar" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Mother Name</label>
+                            <input type="text" name="mother_name" :value="editRecord?.mother_name" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Mother Phone</label>
+                            <input type="text" name="mother_phone" :value="editRecord?.mother_phone" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Mother Aadhar No.</label>
+                            <input type="text" name="mother_aadhar" :value="editRecord?.mother_aadhar" class="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 px-3 text-sm outline-none focus:bg-white focus:border-indigo-600">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-4">
+                    <button type="button" @click="editRecord = null" class="px-5 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-semibold">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <?php endif; ?>
 
 </body>
 </html>
+

@@ -32,7 +32,7 @@ const SIGNS = [
 
 ];
 const ROUNDS = 10;
-const TIME_PER_GAME = 90;
+const TIME_PER_GAME = 300;
 const XP_PER_ROUND = 50;
 const STARS_PER_ROUND = 10;
 const FALLBACK_SIGN = "images/money/main.png";
@@ -183,6 +183,23 @@ function playFeedback(kind) {
       osc.start(now + index * 0.08);
       osc.stop(now + index * 0.08 + 0.4);
     });
+
+    // Play Applause Audio File for max 3 seconds with a smooth fade-out
+    const applause = new Audio("vvqne-applause-383901.mp3");
+    applause.volume = 1.0;
+    applause.play().then(() => {
+      setTimeout(() => {
+        let fadeInterval = setInterval(() => {
+          if (applause.volume > 0.1) {
+            applause.volume -= 0.1;
+          } else {
+            clearInterval(fadeInterval);
+            applause.pause();
+            applause.currentTime = 0;
+          }
+        }, 50);
+      }, 2500);
+    }).catch(err => console.error("Error playing applause sound:", err));
   } else {
     // Failure Buzzer: Descending triangle wave with slide
     const osc = ac.createOscillator();

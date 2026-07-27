@@ -257,6 +257,27 @@ h1,h2,h3,h4,p { margin: 0; }
 }
 
 .header-left { display: flex; gap: 14px; align-items: center; }
+.back-btn {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #7b4dff, #5a32d0);
+  box-shadow: 0 10px 20px rgba(99, 62, 229, 0.28);
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.back-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+.back-btn:active {
+  transform: translateY(0);
+}
 .header-left h2 { font-size: clamp(1.4rem, 2.5vw, 2.1rem); font-weight: 800; }
 .header-left p { color: rgba(255, 255, 255, 0.84); margin-top: 3px; }
 
@@ -532,4 +553,342 @@ h1,h2,h3,h4,p { margin: 0; }
   60% { transform: translateX(-6px); }
   80% { transform: translateX(6px); }
   100% { transform: translateX(0); }
+}
+
+/* Fluid Landscape / Smart Board Compatibility (DPI scale responsive) */
+@media (min-width: 981px) {
+  html, body {
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  body {
+    background:
+      radial-gradient(circle at 8% 15%, rgba(104, 109, 224, 0.1), transparent 35%),
+      radial-gradient(circle at 90% 0%, rgba(104, 187, 255, 0.12), transparent 35%),
+      var(--bg);
+  }
+  
+  .app-shell {
+    height: 100vh;
+    padding: clamp(10px, 1.5vh, 20px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  
+  .screen.active {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+  }
+  
+  /* Home Dashboard Screen */
+  .home-header {
+    padding: clamp(8px, 1.5vh, 20px) clamp(12px, 2vw, 24px);
+    border-radius: var(--radius-lg);
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .brand-logo {
+    width: clamp(36px, 6vh, 60px);
+    height: clamp(36px, 6vh, 60px);
+  }
+  .brand-wrap h1 {
+    font-size: clamp(1.1rem, 2vh, 1.8rem);
+  }
+  .brand-wrap p {
+    font-size: clamp(0.75rem, 1.2vh, 1rem);
+    margin-top: 0;
+  }
+  .stats-row {
+    gap: 8px;
+  }
+  .stat-card {
+    padding: clamp(4px, 1vh, 12px) clamp(8px, 1.2vw, 16px);
+    border-radius: 12px;
+    min-width: clamp(90px, 10vw, 120px);
+    gap: 8px;
+  }
+  .stat-card strong {
+    font-size: clamp(0.9rem, 1.6vh, 1.2rem);
+  }
+  .stat-card small {
+    font-size: clamp(0.7rem, 1.1vh, 0.9rem);
+  }
+  .stat-icon {
+    width: clamp(28px, 4.5vh, 42px);
+    height: clamp(28px, 4.5vh, 42px);
+    border-radius: 10px;
+    font-size: clamp(0.9rem, 1.8vh, 1.3rem);
+  }
+  .xp-wrap {
+    min-width: clamp(100px, 12vw, 150px);
+  }
+  .xp-track {
+    height: clamp(5px, 0.8vh, 8px);
+    margin-top: 2px;
+  }
+  .top-icon-btn {
+    width: clamp(32px, 5vh, 46px);
+    height: clamp(32px, 5vh, 46px);
+    border-radius: 10px;
+    font-size: clamp(1rem, 1.8vh, 1.4rem);
+  }
+  
+  .home-main {
+    margin-top: clamp(8px, 1.5vh, 24px);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    justify-content: space-between;
+  }
+  .hero-copy {
+    padding: 2px 0 clamp(6px, 1.5vh, 18px);
+  }
+  .hero-copy h2 {
+    font-size: clamp(1.4rem, 3.5vh, 2.5rem);
+  }
+  .hero-copy p {
+    margin-top: 3px;
+    font-size: clamp(0.9rem, 1.8vh, 1.3rem);
+  }
+  
+  .game-grid {
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: clamp(10px, 1.2vw, 18px);
+    flex: 1;
+    min-height: 0;
+  }
+  .game-card {
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 16px rgba(30, 56, 104, 0.08);
+  }
+  .game-card img {
+    height: clamp(80px, 15vh, 190px);
+  }
+  .game-badge {
+    width: clamp(36px, 6vh, 68px);
+    height: clamp(36px, 6vh, 68px);
+    font-size: clamp(1rem, 2vh, 1.7rem);
+    top: calc(clamp(80px, 15vh, 190px) - clamp(18px, 3vh, 34px));
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+  .game-card h3 {
+    margin-top: clamp(22px, 4vh, 48px);
+    font-size: clamp(1.1rem, 2.2vh, 1.6rem);
+    padding: 0 10px;
+  }
+  .game-card p {
+    padding: 6px 10px 10px;
+    font-size: clamp(0.8rem, 1.5vh, 1.05rem);
+    line-height: 1.35;
+    min-height: 0;
+  }
+  .cta-btn {
+    padding: clamp(8px, 1.5vh, 16px);
+    font-size: clamp(1rem, 2vh, 1.4rem);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+  
+  .features-strip {
+    margin-top: clamp(8px, 1.5vh, 24px);
+    border-radius: var(--radius-lg);
+    padding: clamp(6px, 1vh, 12px) clamp(10px, 1.5vw, 18px);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .feature-item {
+    padding: 4px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+  .feature-icon {
+    width: clamp(32px, 5vh, 52px);
+    height: clamp(32px, 5vh, 52px);
+    border-radius: 10px;
+    font-size: clamp(1rem, 2vh, 1.4rem);
+  }
+  .feature-item h4 {
+    font-size: clamp(0.85rem, 1.6vh, 1.1rem);
+  }
+  .feature-item p {
+    font-size: clamp(0.72rem, 1.3vh, 0.9rem);
+    margin-top: 1px;
+    line-height: 1.3;
+  }
+  
+  /* Sentence Builder Game Screen */
+  .game-header {
+    padding: clamp(8px, 1.2vh, 16px) clamp(12px, 1.5vw, 18px);
+    border-radius: var(--radius-lg);
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .back-btn {
+    width: clamp(36px, 5vh, 54px);
+    height: clamp(36px, 5vh, 54px);
+    border-radius: 10px;
+    font-size: clamp(1.2rem, 2.5vh, 2rem);
+  }
+  .game-header h2 {
+    font-size: clamp(1.2rem, 2.5vh, 1.8rem);
+  }
+  .game-header p {
+    font-size: clamp(0.8rem, 1.3vh, 1rem);
+    margin-top: 0;
+  }
+  .soft-btn {
+    padding: clamp(6px, 1vh, 12px) clamp(10px, 1.5vw, 16px);
+    border-radius: 10px;
+    font-size: clamp(0.85rem, 1.5vh, 1.05rem);
+  }
+  
+  .game-layout {
+    margin-top: clamp(8px, 1.2vh, 16px);
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - clamp(80px, 12vh, 120px));
+    display: grid;
+    grid-template-columns: 240px 1fr 260px;
+    gap: 12px;
+    align-items: stretch;
+  }
+  .right-sidebar {
+    grid-column: auto !important;
+  }
+  .card-base {
+    padding: 10px;
+    border-radius: 18px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .left-sidebar h3, .starter-section h3, .right-sidebar h3 {
+    font-size: clamp(1rem, 2vh, 1.4rem);
+    margin-bottom: 6px;
+  }
+  
+  /* Image Grid scrolling in Left Sidebar */
+  .left-sidebar .image-grid {
+    flex: 1;
+    overflow-y: auto;
+    gap: 8px;
+    padding-right: 2px;
+  }
+  .draggable-card img, .image-item img {
+    height: clamp(50px, 9vh, 98px);
+  }
+  .draggable-card span, .item-label {
+    padding: 4px;
+    font-size: clamp(0.8rem, 1.4vh, 1.1rem);
+  }
+  
+  /* Center Area flex container */
+  .center-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    height: 100%;
+  }
+  .starter-section {
+    flex-shrink: 0;
+  }
+  .starter-buttons {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .starter-btn {
+    padding: clamp(6px, 1vh, 12px) 4px;
+    font-size: clamp(0.8rem, 1.4vh, 1.1rem);
+  }
+  
+  .drop-area {
+    margin-top: 0;
+    flex: 1;
+    min-height: 90px;
+    border-radius: 16px;
+  }
+  .drop-icon {
+    font-size: clamp(1.4rem, 2.5vh, 2.3rem);
+    margin-bottom: 2px;
+  }
+  .drop-placeholder p {
+    font-size: clamp(1rem, 1.8vh, 1.4rem);
+  }
+  
+  .preview-card {
+    margin-top: 0;
+    padding: 8px;
+    border-radius: 16px;
+    flex-shrink: 0;
+  }
+  .preview-top h4 {
+    font-size: clamp(1.1rem, 2.2vh, 1.6rem);
+  }
+  .mini-icon-btn {
+    width: clamp(28px, 4vh, 44px);
+    height: clamp(28px, 4vh, 44px);
+    font-size: clamp(0.85rem, 1.6vh, 1.2rem);
+  }
+  .preview-image-wrap {
+    margin-top: 4px;
+    min-height: clamp(80px, 12vh, 160px);
+    height: clamp(80px, 12vh, 160px);
+  }
+  .preview-image-wrap img {
+    height: clamp(80px, 12vh, 160px);
+  }
+  .listen-btn {
+    margin-top: 6px;
+    padding: clamp(6px, 1.2vh, 14px);
+    font-size: clamp(0.95rem, 1.7vh, 1.25rem);
+    border-radius: 10px;
+  }
+  
+  /* Instruction Card in Right Sidebar */
+  .instruction-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .instruction-list {
+    flex: 1;
+    overflow-y: auto;
+    gap: 6px;
+    padding-right: 2px;
+  }
+  .instruction-item {
+    grid-template-columns: 24px 1fr;
+    gap: 8px;
+  }
+  .instruction-item span {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+  .instruction-item strong {
+    font-size: 0.88rem;
+  }
+  .instruction-item p {
+    font-size: 0.8rem;
+    margin-top: 1px;
+    line-height: 1.35;
+  }
+  
+  .reset-btn {
+    margin-top: auto;
+    padding: clamp(6px, 1.2vh, 12px);
+    font-size: clamp(0.95rem, 1.7vh, 1.25rem);
+    border-radius: 10px;
+  }
 }

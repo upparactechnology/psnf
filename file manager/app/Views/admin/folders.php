@@ -94,7 +94,7 @@ $renderTree = function(array $nodes, int $depth = 0) use (&$renderTree, $baseUrl
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h5 class="mb-0">Folders</h5>
       <div class="d-flex gap-2">
-        <input class="form-control form-control-sm js-local-search" data-filter-group="folders" style="max-width:220px" placeholder="Search folders">
+        <input class="form-control form-control-sm js-local-search" data-filter-group="folders" style="width: 320px;" placeholder="Search folders">
         <select class="form-select form-select-sm js-filter" data-filter-group="folders" data-filter-key="assigned" style="max-width:180px">
           <option value="all">All assignments</option>
           <option value="assigned">Assigned</option>
@@ -102,32 +102,31 @@ $renderTree = function(array $nodes, int $depth = 0) use (&$renderTree, $baseUrl
         </select>
       </div>
     </div>
-    <div class="table-responsive table-wrap"><table class="table table-modern"><thead><tr><th>ID</th><th>Name</th><th>Assign Users</th><th>Edit</th><th>Actions</th></tr></thead><tbody>
+    <div class="table-responsive table-wrap"><table class="table table-modern js-paginate"><thead><tr><th>ID</th><th>Name</th><th class="text-end">Actions</th></tr></thead><tbody>
       <?php foreach($folders as $f): ?>
       <?php $assigned = $folderAssignments[(int)$f['id']] ?? []; ?>
       <?php $assignedState = count($assigned) ? 'assigned' : 'unassigned'; ?>
-      <tr data-filter-group="folders" data-assigned="<?= $assignedState ?>" data-search="<?= htmlspecialchars(strtolower($f['name'].' '.$f['id'])) ?>">
+      <tr class="clickable-row" data-url="<?= $app['base_url'] ?>/admin/folders/view?id=<?= (int)$f['id'] ?>" data-filter-group="folders" data-assigned="<?= $assignedState ?>" data-search="<?= htmlspecialchars(strtolower($f['name'].' '.$f['id'])) ?>">
         <td><?= (int)$f['id'] ?></td>
         <td><?= htmlspecialchars($f['name']) ?></td>
-        <td>
-          <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#assignFolderModal<?= (int)$f['id'] ?>">
-            <i class="bi bi-person-fill-gear"></i> Assign (<?= count($assigned) ?>)
-          </button>
-        </td>
-        <td>
-          <form class="ajax-form d-flex gap-2" action="<?= $app['base_url'] ?>/admin/folders/update" method="post">
-            <input type="hidden" name="folder_id" value="<?= (int)$f['id'] ?>">
-            <input type="hidden" name="parent_id" value="<?= (int)($f['parent_id'] ?? 0) ?>">
-            <input class="form-control form-control-sm" name="name" value="<?= htmlspecialchars($f['name']) ?>" style="min-width:180px" required>
-            <button class="btn btn-sm btn-outline-primary">Update</button>
-          </form>
-        </td>
-        <td class="d-flex gap-2">
-          <a class="btn btn-sm btn-outline-primary" href="<?= $app['base_url'] ?>/admin/folders/view?id=<?= (int)$f['id'] ?>">View</a>
-          <form class="ajax-form" action="<?= $app['base_url'] ?>/admin/folders/delete" method="post" onsubmit="return confirm('Delete this folder?')">
-            <input type="hidden" name="folder_id" value="<?= (int)$f['id'] ?>">
-            <button class="btn btn-sm btn-outline-danger">Delete</button>
-          </form>
+        <td class="text-end">
+          <div class="dropdown d-inline-block">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
+              Actions
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li><a class="dropdown-item" href="<?= $app['base_url'] ?>/admin/folders/view?id=<?= (int)$f['id'] ?>"><i class="bi bi-eye"></i> View</a></li>
+              <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#assignFolderModal<?= (int)$f['id'] ?>"><i class="bi bi-person-fill-gear"></i> Assign (<?= count($assigned) ?>)</button></li>
+              <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editFolderModal<?= (int)$f['id'] ?>"><i class="bi bi-pencil"></i> Rename</button></li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <form class="ajax-form m-0" action="<?= $app['base_url'] ?>/admin/folders/delete" method="post" onsubmit="return confirm('Delete this folder?')">
+                  <input type="hidden" name="folder_id" value="<?= (int)$f['id'] ?>">
+                  <button type="submit" class="dropdown-item text-danger"><i class="bi bi-trash"></i> Delete</button>
+                </form>
+              </li>
+            </ul>
+          </div>
         </td>
       </tr>
       <?php endforeach; ?>
@@ -136,6 +135,32 @@ $renderTree = function(array $nodes, int $depth = 0) use (&$renderTree, $baseUrl
 </div>
 
 <?php foreach($folders as $f): ?>
+  <!-- Edit Folder Modal -->
+  <div class="modal fade" id="editFolderModal<?= (int)$f['id'] ?>" tabindex="-1" aria-labelledby="editFolderModalLabel<?= (int)$f['id'] ?>" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-glass">
+        <div class="modal-header border-bottom-0">
+          <h5 class="modal-title" id="editFolderModalLabel<?= (int)$f['id'] ?>">Rename Folder: <?= htmlspecialchars($f['name']) ?></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form class="ajax-form" action="<?= $app['base_url'] ?>/admin/folders/update" method="post">
+          <div class="modal-body text-start">
+            <input type="hidden" name="folder_id" value="<?= (int)$f['id'] ?>">
+            <input type="hidden" name="parent_id" value="<?= (int)($f['parent_id'] ?? 0) ?>">
+            <div class="mb-3">
+              <label class="form-label">Folder Name</label>
+              <input class="form-control" name="name" value="<?= htmlspecialchars($f['name']) ?>" required>
+            </div>
+          </div>
+          <div class="modal-footer border-top-0">
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <?php $assigned = $folderAssignments[(int)$f['id']] ?? []; ?>
   <!-- Modal -->
   <div class="modal fade" id="assignFolderModal<?= (int)$f['id'] ?>" tabindex="-1" aria-labelledby="assignFolderModalLabel<?= (int)$f['id'] ?>" aria-hidden="true">

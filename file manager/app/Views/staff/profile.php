@@ -11,6 +11,7 @@ $staffName = $_SESSION['staff_name'] ?? 'Staff';
       <div class="text-muted small">Manage your name and password.</div>
     </div>
     <div class="d-flex gap-2 align-items-center">
+      <div id="staffClock" class="me-2 px-2 py-1 rounded card-glass text-muted small fw-semibold" style="letter-spacing: 0.5px;">--:--:--</div>
       <button class="btn btn-light btn-sm" id="themeToggle" type="button" title="Toggle theme"><i class="bi bi-moon-stars"></i></button>
       <a class="btn btn-outline-secondary btn-sm" href="<?= $app['base_url'] ?>/staff/dashboard">Back to Assignments</a>
       <a class="btn btn-outline-secondary btn-sm" href="<?= $app['base_url'] ?>/staff/logout">Logout</a>

@@ -44,7 +44,6 @@ register_shutdown_function(function () use ($logError): void {
 $appConfig = require __DIR__ . '/../config/app.php';
 date_default_timezone_set($appConfig['timezone']);
 
-session_name('PSNF_SESSION');
 session_start();
 
 if (!empty($_SESSION['last_activity']) && time() - $_SESSION['last_activity'] > $appConfig['session_timeout']) {
