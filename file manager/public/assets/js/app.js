@@ -63,8 +63,69 @@ function openCmdk(){ $('#cmdPalette').removeClass('d-none'); $('#cmdkInput').tri
 function closeCmdk(){ $('#cmdPalette').addClass('d-none'); $('#cmdkInput').val(''); $('.cmdk-item').show(); }
 $(document).on('click','#cmdkToggle',openCmdk);
 $(document).on('click','#cmdPalette',function(e){ if(e.target.id==='cmdPalette') closeCmdk(); });
-$(document).on('keydown',function(e){ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCmdk(); } if(e.key==='Escape') closeCmdk(); });
+$(document).on('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    openCmdk();
+    return;
+  }
+  
+  const key = e.key;
+  if (key === 'Backspace' || key === 'Escape') {
+    const active = document.activeElement;
+    if (active && (
+      active.tagName === 'INPUT' || 
+      active.tagName === 'TEXTAREA' || 
+      active.tagName === 'SELECT' || 
+      active.isContentEditable
+    )) {
+      return;
+    }
+
+    if (document.querySelector('.modal.show')) {
+      return;
+    }
+
+    if (!$('#cmdPalette').hasClass('d-none')) {
+      if (key === 'Escape') {
+        closeCmdk();
+      }
+      return;
+    }
+
+    if (document.querySelector('.dropdown-menu.show')) {
+      return;
+    }
+
+    e.preventDefault();
+
+    const backBtn = Array.from(document.querySelectorAll('a, button')).find(el => {
+      const txt = el.textContent.trim().toLowerCase();
+      return txt === 'back' || txt.includes('back to') || txt === 'cancel';
+    });
+
+    if (backBtn) {
+      if (backBtn.tagName === 'A' && backBtn.href) {
+        window.location.href = backBtn.href;
+      } else {
+        backBtn.click();
+      }
+    } else {
+      window.history.back();
+    }
+  }
+});
 $(document).on('input','#cmdkInput',function(){ const q=this.value.toLowerCase().trim(); $('.cmdk-item').each(function(){ $(this).toggle($(this).text().toLowerCase().includes(q)); }); });
+
+$(document).on('dblclick', '.clickable-row', function(e) {
+  if (e.target.closest('button, a, input, select, textarea, form, .dropdown, .modal')) {
+    return;
+  }
+  const url = this.getAttribute('data-url');
+  if (url) {
+    window.location.href = url;
+  }
+});
 
 document.addEventListener('submit', function(e){
   const form = e.target && e.target.closest ? e.target.closest('.ajax-form') : null;
@@ -99,22 +160,47 @@ function applyFilterGroup(group, queryOverride){
     const val = ($(this).val() || '').toString().toLowerCase().trim();
     if (val && val !== 'all') filters[key] = val;
   });
-  $(rowSelector).each(function(){
-    const txt = (this.getAttribute('data-search') || '').toLowerCase();
-    let ok = !query || txt.includes(query);
-    if (ok) {
-      for (const key in filters) {
-        const rowVal = (this.getAttribute('data-' + key) || '').toLowerCase();
-        if (rowVal !== filters[key]) { ok = false; break; }
-      }
+
+  const hasActiveFilter = query || Object.keys(filters).length > 0;
+  const $table = $('table').has(rowSelector);
+
+  if (hasActiveFilter) {
+    if ($table.data('pagination')) {
+      $table.data('pagination').destroy();
     }
-    this.style.display = ok ? '' : 'none';
-  });
+    $(rowSelector).each(function(){
+      const txt = (this.getAttribute('data-search') || '').toLowerCase();
+      let ok = !query || txt.includes(query);
+      if (ok) {
+        for (const key in filters) {
+          const rowVal = (this.getAttribute('data-' + key) || '').toLowerCase();
+          if (rowVal !== filters[key]) { ok = false; break; }
+        }
+      }
+      this.style.display = ok ? '' : 'none';
+    });
+  } else {
+    $(rowSelector).show();
+    if ($table.data('pagination')) {
+      $table.data('pagination').restore();
+    }
+  }
 }
 
 $(document).on('input','#globalSearch',function(){
- const q=$(this).val().toString().toLowerCase().trim();
- $('[data-search]').each(function(){ const txt=($(this).attr('data-search')||'').toLowerCase(); $(this).toggle(txt.includes(q)); });
+  const q=$(this).val().toString().toLowerCase().trim();
+  const $tables = $('table');
+  if (q) {
+    $tables.each(function() {
+      if ($(this).data('pagination')) $(this).data('pagination').destroy();
+    });
+    $('[data-search]').each(function(){ const txt=($(this).attr('data-search')||'').toLowerCase(); $(this).toggle(txt.includes(q)); });
+  } else {
+    $('[data-search]').show();
+    $tables.each(function() {
+      if ($(this).data('pagination')) $(this).data('pagination').restore();
+    });
+  }
 });
 
 $(document).on('input','.js-local-search',function(){
@@ -195,18 +281,26 @@ function wipeClipboard() {
 }
 
 // Security Shield visibility helpers
+let shieldTimeout = null;
 function showSecurityShield() {
   const shield = document.getElementById('securityShield');
   if (shield) {
-    shield.classList.remove('d-none');
-    document.body.classList.add('shield-active');
-    // Force browser reflow to render and paint changes synchronously
-    void document.body.offsetHeight;
-    void shield.offsetHeight;
+    if (shieldTimeout) clearTimeout(shieldTimeout);
+    shieldTimeout = setTimeout(() => {
+      if (document.hasFocus()) {
+        return;
+      }
+      shield.classList.remove('d-none');
+      document.body.classList.add('shield-active');
+      // Force browser reflow to render and paint changes synchronously
+      void document.body.offsetHeight;
+      void shield.offsetHeight;
+    }, 200);
   }
 }
 
 function hideSecurityShield() {
+  if (shieldTimeout) clearTimeout(shieldTimeout);
   const shield = document.getElementById('securityShield');
   if (shield) {
     shield.classList.add('d-none');
@@ -383,5 +477,83 @@ function hideSecurityShield() {
     $('#bulkRevokeBtn').on('click',()=>toast('Bulk revoke mode enabled','warning'));
   }
 
-  window.addEventListener('load', bootDashboard);
+  function initPagination(tableEl, itemsPerPage = 10) {
+    const $table = $(tableEl);
+    const $tbody = $table.find('tbody');
+    const $rows = $tbody.find('tr:not(.text-muted)');
+    
+    if ($rows.length <= itemsPerPage) {
+      const $prevPager = $table.next('.table-pagination');
+      if ($prevPager.length) $prevPager.remove();
+      $table.removeData('pagination');
+      $rows.show();
+      return;
+    }
+    
+    let $pager = $table.next('.table-pagination');
+    if (!$pager.length) {
+      $pager = $('<div class="table-pagination d-flex justify-content-between align-items-center mt-3"></div>');
+      $table.after($pager);
+    }
+    
+    let currentPage = 1;
+    const totalPages = Math.ceil($rows.length / itemsPerPage);
+    
+    function showPage(page) {
+      currentPage = page;
+      const start = (page - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      
+      $rows.each(function(index) {
+        if (index >= start && index < end) {
+          $(this).show();
+        } else {
+          $(this).hide();
+        }
+      });
+      
+      renderControls();
+    }
+    
+    function renderControls() {
+      let html = `<small class="text-muted">Showing ${Math.min($rows.length, (currentPage - 1) * itemsPerPage + 1)} to ${Math.min($rows.length, currentPage * itemsPerPage)} of ${$rows.length}</small>`;
+      html += '<nav><ul class="pagination pagination-sm m-0">';
+      html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
+      for (let i = 1; i <= totalPages; i++) {
+        html += `<li class="page-item ${currentPage === i ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+      }
+      html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
+      html += '</ul></nav>';
+      $pager.html(html);
+    }
+    
+    $pager.off('click', 'a').on('click', 'a', function(e) {
+      e.preventDefault();
+      const page = parseInt($(this).data('page'));
+      if (page >= 1 && page <= totalPages) {
+        showPage(page);
+      }
+    });
+    
+    $table.data('pagination', {
+      showPage,
+      destroy: function() {
+        $rows.show();
+        $pager.hide();
+      },
+      restore: function() {
+        $pager.show();
+        showPage(currentPage);
+      }
+    });
+    
+    showPage(1);
+  }
+
+  window.addEventListener('load', function() {
+    bootDashboard();
+    $('.js-paginate').each(function() {
+      initPagination(this);
+    });
+  });
 })();

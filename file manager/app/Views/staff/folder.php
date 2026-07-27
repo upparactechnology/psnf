@@ -15,6 +15,7 @@ $favoriteResourceIds = $favoriteResourceIds ?? [];
       <div class="text-muted small">Browse assigned files securely.</div>
     </div>
     <div class="d-flex gap-2 align-items-center">
+      <div id="staffClock" class="me-2 px-2 py-1 rounded card-glass text-muted small fw-semibold" style="letter-spacing: 0.5px;">--:--:--</div>
       <button class="btn btn-light btn-sm" id="themeToggle" type="button" title="Toggle theme"><i class="bi bi-moon-stars"></i></button>
       <a class="btn btn-outline-primary btn-sm" href="<?= $app['base_url'] ?>/staff/profile">Profile</a>
       <a class="btn btn-outline-secondary btn-sm" href="<?= $app['base_url'] ?>/staff/dashboard">Back to Folders</a>
@@ -39,11 +40,11 @@ $favoriteResourceIds = $favoriteResourceIds ?? [];
       </div>
     </div>
 
-    <div class="panel card-glass p-3">
-      <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="panel card-glass py-2 px-3">
+      <div class="panel-head mb-1">
         <h5 class="mb-0">Files</h5>
         <div class="d-flex gap-2">
-          <input class="form-control form-control-sm js-local-search" data-filter-group="staff-folder-files" style="max-width:220px" placeholder="Search files">
+          <input class="form-control form-control-sm js-local-search" data-filter-group="staff-folder-files" style="width: 320px;" placeholder="Search files">
           <select class="form-select form-select-sm js-filter" data-filter-group="staff-folder-files" data-filter-key="type" style="max-width:160px">
             <option value="all">All types</option>
             <option value="pdf">PDF</option>
@@ -62,7 +63,7 @@ $favoriteResourceIds = $favoriteResourceIds ?? [];
           <tbody>
           <?php foreach($resources as $r): ?>
             <?php $ext = strtolower(pathinfo((string)$r['file_name'], PATHINFO_EXTENSION)); ?>
-            <tr data-filter-group="staff-folder-files" data-type="<?= htmlspecialchars($ext) ?>" data-search="<?= htmlspecialchars(strtolower($r['title'].' '.$r['file_name'].' '.$r['mime_type'])) ?>">
+            <tr class="clickable-row" data-url="<?= $app['base_url'] ?>/staff/resource/view?id=<?= (int)$r['id'] ?>" data-filter-group="staff-folder-files" data-type="<?= htmlspecialchars($ext) ?>" data-search="<?= htmlspecialchars(strtolower($r['title'].' '.$r['file_name'].' '.$r['mime_type'])) ?>">
               <td><?= htmlspecialchars($r['title']) ?></td>
               <td><?= htmlspecialchars($r['mime_type']) ?></td>
               <td>

@@ -6,26 +6,25 @@ use App\Models\User;
 use App\Models\Audit;
 
 class StaffAuthController extends Controller {
-  public function loginView(): void {
-    header('Location: /psnf/public/login');
-    exit;
-  }
+  public function loginView(): void { $this->view('auth/staff_login'); }
 
   public function login(): void {
-    header('Location: /psnf/public/login');
-    exit;
+    try {
+      $user = User::staffByEmail($_POST['email'] ?? '');
+      if (!$user || !password_verify($_POST['password'] ?? '', $user['password'])) {
+        Audit::log(null,null,'staff_login_failed',$_POST['email'] ?? '');
+        $this->redirect('/staff-login?e=Invalid credentials');
+      }
+      $_SESSION['staff_id'] = $user['id'];
+      $_SESSION['staff_name'] = $user['name'];
+      Audit::log(null,(int)$user['id'],'staff_login_success');
+      $this->redirect('/staff/dashboard');
+    } catch (\Throwable $e) { $this->redirect('/staff-login?e=System error'); }
   }
 
   public function logout(): void {
-    if (session_status() === PHP_SESSION_NONE) {
-      session_name('PSNF_SESSION');
-      session_start();
-    }
-    Audit::log(null, $_SESSION['staff_id'] ?? null, 'staff_logout');
-    unset($_SESSION['staff_id']);
-    unset($_SESSION['staff_name']);
-    unset($_SESSION['staff_email']);
-    header('Location: /psnf/public/logout');
-    exit;
+    Audit::log(null,$_SESSION['staff_id'] ?? null,'staff_logout');
+    session_destroy();
+    $this->redirect('/staff-login');
   }
 }

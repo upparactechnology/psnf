@@ -121,9 +121,13 @@ class ResourceController extends Controller {
     if (!file_exists($file)) { http_response_code(404); exit; }
 
     Audit::log(null,(int)$_SESSION['staff_id'],'resource_viewed',(string)$id);
+    $downloadRestricted = Setting::get('download_restriction', '1') === '1';
+    $isDownload = isset($_GET['download']) && $_GET['download'] === '1' && !$downloadRestricted;
+    $disposition = $isDownload ? 'attachment' : 'inline';
+
     header('Content-Type: ' . $this->detectType($r));
     header('Content-Length: ' . filesize($file));
-    header('Content-Disposition: inline; filename="resource"');
+    header('Content-Disposition: ' . $disposition . '; filename="' . basename((string)$r['file_name']) . '"');
     readfile($file);
     exit;
   }

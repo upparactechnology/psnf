@@ -1,5 +1,6 @@
 <?php
 session_start();
+date_default_timezone_set('Asia/Kolkata');
 
 $config = require __DIR__ . '/config.php';
 
@@ -9,9 +10,11 @@ try {
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
     ]);
+    $pdo->exec("SET time_zone = '+05:30'");
 } catch (PDOException $e) {
     die("Database Connection Error: " . $e->getMessage());
 }
+
 
 // Ensure table exists automatically
 $pdo->exec("CREATE TABLE IF NOT EXISTS `online_enrollments` (
@@ -203,6 +206,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
+        // Rate limit / duplicate check: If exact same student & father phone was submitted in last 60s, redirect to existing application
+        $dupCheck = $pdo->prepare("SELECT application_code FROM online_enrollments WHERE student_full_name = :sname AND father_phone = :fphone AND created_at >= NOW() - INTERVAL 60 SECOND LIMIT 1");
+        $dupCheck->execute([
+            ':sname'  => trim($_POST['student_full_name']),
+            ':fphone' => trim($_POST['father_phone'])
+        ]);
+        $existingAppCode = $dupCheck->fetchColumn();
+
+        if ($existingAppCode) {
+            header("Location: success.php?code=" . urlencode($existingAppCode));
+            exit;
+        }
+
         $appCode = 'APP-' . date('Y') . '-' . strtoupper(substr(md5(uniqid((string)rand(), true)), 0, 6));
 
         $stmt = $pdo->prepare("INSERT INTO online_enrollments (
@@ -246,39 +262,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UTF-8'); }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Student Enrollment Form</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; -webkit-tap-highlight-color: transparent; }
         .white-card { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
+        /* Prevent iOS input auto-zoom by enforcing 16px minimum font size on mobile */
+        @media (max-width: 640px) {
+            input, select, textarea { font-size: 16px !important; }
+        }
     </style>
 </head>
-<body class="min-h-screen py-10 px-4 sm:px-6">
+<body class="min-h-screen py-4 px-3 sm:py-10 sm:px-6">
 
-    <div x-data="enrollmentForm()" class="max-w-4xl mx-auto space-y-8">
+    <div id="enrollment-form-top" class="scroll-mt-4"></div>
+
+    <div x-data="enrollmentForm()" x-init="$watch('step', () => scrollToTop())" class="max-w-4xl mx-auto space-y-5 sm:space-y-8">
         
         <!-- Header -->
-        <div class="text-center space-y-3 relative">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm mb-2">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <div class="text-center space-y-2 sm:space-y-3 relative">
+            <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm mb-1 sm:mb-2">
+                <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
             </div>
-            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Student Online Enrollment</h1>
-            <p class="text-slate-500 text-sm max-w-xl mx-auto">Please fill in student, parent, and authorized pickup details carefully. Photos and documents can be taken live via camera or uploaded.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Student Online Enrollment</h1>
+            <p class="text-slate-500 text-xs sm:text-sm max-w-xl mx-auto px-2">Please fill in student, parent, and authorized pickup details carefully. Photos and documents can be taken live via camera or uploaded.</p>
         </div>
 
         <?php if (!empty($errors)): ?>
-        <div class="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm space-y-1">
+        <div class="p-3 sm:p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm space-y-1">
             <div class="font-bold flex items-center gap-2">
-                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Please correct the following highlighted errors:
             </div>
-            <ul class="list-disc list-inside space-y-1 text-xs text-red-600 pl-2">
+            <ul class="list-disc list-inside space-y-1 text-xs text-red-600 pl-1 sm:pl-2">
                 <?php foreach ($errors as $field => $err): ?>
                     <li><?= e($err) ?></li>
                 <?php endforeach; ?>
@@ -286,40 +308,52 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
         </div>
         <?php endif; ?>
 
-        <!-- Progress Indicator -->
-        <div class="flex items-center justify-between gap-2 border-b border-slate-200 pb-4">
-            <template x-for="(sName, idx) in ['1. Student Info', '2. Parents Info', '3. Pickup Persons']" :key="idx">
-                <div class="flex items-center gap-2 cursor-pointer" @click="goToStep(idx)">
-                    <div :class="step >= idx ? 'bg-indigo-600 text-white font-bold shadow-sm' : 'bg-slate-200 text-slate-500'" class="w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-all">
-                        <span x-text="idx + 1"></span>
-                    </div>
-                    <span :class="step >= idx ? 'text-slate-900 font-semibold' : 'text-slate-400'" class="text-xs hidden md:inline" x-text="sName"></span>
-                </div>
-            </template>
+        <!-- Mobile First Progress Indicator & Step Bar -->
+        <div class="bg-white p-2.5 sm:p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+            <div class="flex items-center justify-between text-xs text-slate-500 font-semibold px-1 mb-1">
+                <span>Progress</span>
+                <span class="text-indigo-600" x-text="'Step ' + (step + 1) + ' of 3: ' + ['Student Info', 'Parents Info', 'Pickup Persons'][step]"></span>
+            </div>
+            <!-- Progress Line Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden mb-3">
+                <div class="bg-indigo-600 h-1.5 transition-all duration-300 rounded-full" :style="'width: ' + ((step + 1) * 33.33) + '%'"></div>
+            </div>
+            <!-- Tab Buttons -->
+            <div class="grid grid-cols-3 gap-1.5 sm:gap-3">
+                <template x-for="(sName, idx) in ['Student Info', 'Parents Info', 'Pickup Persons']" :key="idx">
+                    <button type="button" @click="goToStep(idx)" 
+                        :class="step === idx ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/20' : (step > idx ? 'bg-indigo-50 text-indigo-700 font-medium' : 'bg-slate-50 text-slate-500 border border-slate-200')"
+                        class="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1.5 sm:py-2.5 sm:px-3 rounded-xl text-[11px] sm:text-xs transition-all active:scale-95 text-center">
+                        <span :class="step === idx ? 'bg-white text-indigo-600' : (step > idx ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600')" 
+                              class="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold flex-shrink-0" x-text="idx + 1"></span>
+                        <span class="truncate w-full sm:w-auto" x-text="sName"></span>
+                    </button>
+                </template>
+            </div>
         </div>
 
-        <form method="POST" action="index.php" enctype="multipart/form-data" class="space-y-6">
+        <form method="POST" action="index.php" enctype="multipart/form-data" @submit="if (isSubmitting) { $event.preventDefault(); return false; } isSubmitting = true;" class="space-y-6">
             
             <!-- SECTION 1: STUDENT INFO -->
-            <div x-show="step === 0" class="white-card rounded-3xl p-6 sm:p-8 space-y-6">
-                <h3 class="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Student Personal Information
+            <div x-show="step === 0" class="white-card rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-5 sm:space-y-6">
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 flex-shrink-0"></span> Student Personal Information
                 </h3>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
                     <div class="sm:col-span-3 space-y-1.5">
                         <label class="block text-xs font-semibold text-slate-700">Student Full Name (First, Middle, Last) <span class="text-red-500">*</span></label>
-                        <input type="text" name="student_full_name" required value="<?= e($old['student_full_name'] ?? '') ?>" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-4 text-sm focus:border-indigo-600 focus:bg-white outline-none" placeholder="e.g. Rahul Ramesh Patel">
+                        <input type="text" name="student_full_name" required value="<?= e($old['student_full_name'] ?? '') ?>" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-3.5 text-base sm:text-sm focus:border-indigo-600 focus:bg-white outline-none" placeholder="e.g. Rahul Ramesh Patel">
                     </div>
 
                     <div class="space-y-1.5">
                         <label class="block text-xs font-semibold text-slate-700">Date of Birth <span class="text-red-500">*</span></label>
-                        <input type="date" name="dob" required value="<?= e($old['dob'] ?? '') ?>" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-4 text-sm focus:border-indigo-600 focus:bg-white outline-none">
+                        <input type="date" name="dob" required value="<?= e($old['dob'] ?? '') ?>" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-3.5 text-base sm:text-sm focus:border-indigo-600 focus:bg-white outline-none">
                     </div>
 
                     <div class="space-y-1.5">
                         <label class="block text-xs font-semibold text-slate-700">Gender <span class="text-red-500">*</span></label>
-                        <select name="gender" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-4 text-sm focus:border-indigo-600 focus:bg-white outline-none">
+                        <select name="gender" required class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-3.5 text-base sm:text-sm focus:border-indigo-600 focus:bg-white outline-none">
                             <option value="">Select Gender</option>
                             <option value="male" <?= ($old['gender'] ?? '') === 'male' ? 'selected' : '' ?>>Male</option>
                             <option value="female" <?= ($old['gender'] ?? '') === 'female' ? 'selected' : '' ?>>Female</option>
@@ -329,24 +363,24 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
 
                     <div class="space-y-1.5">
                         <label class="block text-xs font-semibold text-slate-700">Student Aadhar Card No. <span class="text-slate-400 font-normal">(Optional)</span></label>
-                        <input type="text" name="student_aadhar" value="<?= e($old['student_aadhar'] ?? '') ?>" placeholder="12 Digit Aadhar Number" pattern="[0-9]{12}" minlength="12" maxlength="12" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-4 text-sm focus:border-indigo-600 focus:bg-white outline-none">
+                        <input type="text" name="student_aadhar" value="<?= e($old['student_aadhar'] ?? '') ?>" placeholder="12 Digit Aadhar Number" pattern="[0-9]{12}" minlength="12" maxlength="12" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-3.5 text-base sm:text-sm focus:border-indigo-600 focus:bg-white outline-none">
                     </div>
                 </div>
 
                 <div class="space-y-1.5">
                     <label class="block text-xs font-semibold text-slate-700">Full Residential Address</label>
-                    <textarea name="address" rows="3" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-4 text-sm focus:border-indigo-600 focus:bg-white outline-none" placeholder="House No, Street, City, Pincode..."><?= e($old['address'] ?? '') ?></textarea>
+                    <textarea name="address" rows="3" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-3 px-3.5 text-base sm:text-sm focus:border-indigo-600 focus:bg-white outline-none" placeholder="House No, Street, City, Pincode..."><?= e($old['address'] ?? '') ?></textarea>
                 </div>
 
                 <!-- Student Photo & Aadhar Document with Camera Capture -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-slate-200 pt-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-t border-slate-200 pt-5">
                     <!-- Student Photo -->
-                    <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                    <div class="space-y-3 bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Student Passport Photo <span class="text-red-500">*</span></label>
-                            <input type="file" name="student_photo" accept="image/*" @change="previewImage($event, 'student_prev', 'student_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
-                            <div class="mt-2">
-                                <button type="button" @click="openModal('student_photo_cam', 'student_prev', 'student_placeholder', 'Student Passport Photo')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-600 rounded-xl border border-slate-300 shadow-sm">
+                            <input type="file" name="student_photo" accept="image/*" @change="previewImage($event, 'student_prev', 'student_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                            <div class="mt-2.5">
+                                <button type="button" @click="openModal('student_photo_cam', 'student_prev', 'student_placeholder', 'Student Passport Photo')" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3.5 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-xl border border-slate-300 shadow-sm active:scale-95">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Open Camera
                                 </button>
                                 <input type="hidden" name="student_photo_cam" id="student_photo_cam">
@@ -365,13 +399,13 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                     </div>
 
                     <!-- Student Aadhar Document with Camera Capture -->
-                    <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                    <div class="space-y-3 bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Student Aadhar Document</label>
                             <p class="text-[11px] text-slate-500 mb-1.5">Required if Student Aadhar No. is entered above</p>
-                            <input type="file" name="student_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'student_doc_prev', 'student_doc_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
-                            <div class="mt-2">
-                                <button type="button" @click="openModal('student_aadhar_doc_cam', 'student_doc_prev', 'student_doc_placeholder', 'Student Aadhar Document')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-600 rounded-xl border border-slate-300 shadow-sm">
+                            <input type="file" name="student_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'student_doc_prev', 'student_doc_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                            <div class="mt-2.5">
+                                <button type="button" @click="openModal('student_aadhar_doc_cam', 'student_doc_prev', 'student_doc_placeholder', 'Student Aadhar Document')" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3.5 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-xl border border-slate-300 shadow-sm active:scale-95">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Snap Document
                                 </button>
                                 <input type="hidden" name="student_aadhar_doc_cam" id="student_aadhar_doc_cam">
@@ -391,47 +425,47 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                 </div>
 
                 <div class="flex justify-end pt-4">
-                    <button type="button" @click="goToStep(1)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-2xl transition-all shadow-md shadow-indigo-600/20">Next: Parents Info →</button>
+                    <button type="button" @click="goToStep(1)" class="w-full sm:w-auto px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base sm:text-sm rounded-2xl transition-all shadow-md shadow-indigo-600/20 active:scale-95 text-center">Next: Parents Info →</button>
                 </div>
             </div>
 
             <!-- SECTION 2: PARENTS INFO -->
-            <div x-show="step === 1" class="white-card rounded-3xl p-6 sm:p-8 space-y-6">
-                <h3 class="text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Parents Information & Document Uploads
+            <div x-show="step === 1" class="white-card rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-5 sm:space-y-6">
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 border-b border-slate-200 pb-3 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 flex-shrink-0"></span> Parents Information & Document Uploads
                 </h3>
 
                 <!-- Father Details -->
-                <div class="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <div class="space-y-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200">
                     <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Father Details</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="space-y-1">
                             <label class="block text-xs font-medium text-slate-700">Father's Full Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="father_name" required value="<?= e($old['father_name'] ?? '') ?>" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-sm focus:border-indigo-600 outline-none">
+                            <input type="text" name="father_name" required value="<?= e($old['father_name'] ?? '') ?>" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none">
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-medium text-slate-700">Father Mobile Phone <span class="text-red-500">*</span></label>
-                            <input type="tel" name="father_phone" required value="<?= e($old['father_phone'] ?? '') ?>" placeholder="10 Digit Mobile No." pattern="[0-9]{10}" minlength="10" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-sm focus:border-indigo-600 outline-none">
+                            <input type="tel" name="father_phone" required value="<?= e($old['father_phone'] ?? '') ?>" placeholder="10 Digit Mobile No." pattern="[0-9]{10}" minlength="10" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none">
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-medium text-slate-700">Father Aadhar Card No. <span class="text-red-500">*</span></label>
-                            <input type="text" name="father_aadhar" required value="<?= e($old['father_aadhar'] ?? '') ?>" placeholder="12 Digit Aadhar No." pattern="[0-9]{12}" minlength="12" maxlength="12" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-sm focus:border-indigo-600 outline-none">
+                            <input type="text" name="father_aadhar" required value="<?= e($old['father_aadhar'] ?? '') ?>" placeholder="12 Digit Aadhar No." pattern="[0-9]{12}" minlength="12" maxlength="12" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start pt-2 border-t border-slate-200">
                         <!-- Father Photo -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Father Passport Photo <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-700">Father Passport Photo <span class="text-red-500">*</span></label>
                             <input type="file" name="father_photo" accept="image/*" @change="previewImage($event, 'father_prev', 'father_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
-                            <div class="flex items-center gap-3 mt-2">
-                                <button type="button" @click="openModal('father_photo_cam', 'father_prev', 'father_placeholder', 'Father Passport Photo')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Open Camera
+                            <div class="flex items-center gap-3 pt-1">
+                                <button type="button" @click="openModal('father_photo_cam', 'father_prev', 'father_placeholder', 'Father Passport Photo')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Camera
                                 </button>
-                                <div class="w-20 h-24 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
+                                <div class="w-16 h-20 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm flex-shrink-0">
                                     <img id="father_prev" class="hidden w-full h-full object-cover">
                                     <div id="father_placeholder" class="text-slate-400 text-center p-1">
-                                        <svg class="w-5 h-5 mx-auto mb-0.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        <svg class="w-4 h-4 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                         <span class="text-[9px]">Preview</span>
                                     </div>
                                 </div>
@@ -440,17 +474,17 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                         </div>
 
                         <!-- Father Aadhar Doc -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Father Aadhar Document <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-700">Father Aadhar Document <span class="text-red-500">*</span></label>
                             <input type="file" name="father_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'father_doc_prev', 'father_doc_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
-                            <div class="flex items-center gap-3 mt-2">
-                                <button type="button" @click="openModal('father_aadhar_doc_cam', 'father_doc_prev', 'father_doc_placeholder', 'Father Aadhar Document')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Snap Document
+                            <div class="flex items-center gap-3 pt-1">
+                                <button type="button" @click="openModal('father_aadhar_doc_cam', 'father_doc_prev', 'father_doc_placeholder', 'Father Aadhar Document')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Snap Doc
                                 </button>
-                                <div class="w-28 h-20 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
+                                <div class="w-24 h-16 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm flex-shrink-0">
                                     <img id="father_doc_prev" class="hidden w-full h-full object-cover">
                                     <div id="father_doc_placeholder" class="text-slate-400 text-center p-1">
-                                        <svg class="w-5 h-5 mx-auto mb-0.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 1H7a2 2 0 00-2 2v16a2 2 0 002 2z"/></svg>
+                                        <svg class="w-4 h-4 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 1H7a2 2 0 00-2 2v16a2 2 0 002 2z"/></svg>
                                         <span class="text-[9px]">Doc Preview</span>
                                     </div>
                                 </div>
@@ -461,36 +495,36 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                 </div>
 
                 <!-- Mother Details -->
-                <div class="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                <div class="space-y-4 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200">
                     <h4 class="text-xs font-bold text-pink-600 uppercase tracking-wider">Mother Details</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="space-y-1">
                             <label class="block text-xs font-medium text-slate-700">Mother's Full Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="mother_name" required value="<?= e($old['mother_name'] ?? '') ?>" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-sm focus:border-indigo-600 outline-none">
+                            <input type="text" name="mother_name" required value="<?= e($old['mother_name'] ?? '') ?>" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none">
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-medium text-slate-700">Mother Mobile Phone <span class="text-red-500">*</span></label>
-                            <input type="tel" name="mother_phone" required value="<?= e($old['mother_phone'] ?? '') ?>" placeholder="10 Digit Mobile No." pattern="[0-9]{10}" minlength="10" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-sm focus:border-indigo-600 outline-none">
+                            <input type="tel" name="mother_phone" required value="<?= e($old['mother_phone'] ?? '') ?>" placeholder="10 Digit Mobile No." pattern="[0-9]{10}" minlength="10" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none">
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-medium text-slate-700">Mother Aadhar Card No. <span class="text-red-500">*</span></label>
-                            <input type="text" name="mother_aadhar" required value="<?= e($old['mother_aadhar'] ?? '') ?>" placeholder="12 Digit Aadhar No." pattern="[0-9]{12}" minlength="12" maxlength="12" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-sm focus:border-indigo-600 outline-none">
+                            <input type="text" name="mother_aadhar" required value="<?= e($old['mother_aadhar'] ?? '') ?>" placeholder="12 Digit Aadhar No." pattern="[0-9]{12}" minlength="12" maxlength="12" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start pt-2 border-t border-slate-200">
                         <!-- Mother Photo -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Mother Passport Photo <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-700">Mother Passport Photo <span class="text-red-500">*</span></label>
                             <input type="file" name="mother_photo" accept="image/*" @change="previewImage($event, 'mother_prev', 'mother_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
-                            <div class="flex items-center gap-3 mt-2">
-                                <button type="button" @click="openModal('mother_photo_cam', 'mother_prev', 'mother_placeholder', 'Mother Passport Photo')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Open Camera
+                            <div class="flex items-center gap-3 pt-1">
+                                <button type="button" @click="openModal('mother_photo_cam', 'mother_prev', 'mother_placeholder', 'Mother Passport Photo')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Camera
                                 </button>
-                                <div class="w-20 h-24 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
+                                <div class="w-16 h-20 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm flex-shrink-0">
                                     <img id="mother_prev" class="hidden w-full h-full object-cover">
                                     <div id="mother_placeholder" class="text-slate-400 text-center p-1">
-                                        <svg class="w-5 h-5 mx-auto mb-0.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        <svg class="w-4 h-4 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                         <span class="text-[9px]">Preview</span>
                                     </div>
                                 </div>
@@ -499,17 +533,17 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                         </div>
 
                         <!-- Mother Aadhar Doc -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Mother / Guardian Aadhar Document <span class="text-red-500">*</span></label>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-700">Mother / Guardian Aadhar Document <span class="text-red-500">*</span></label>
                             <input type="file" name="mother_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'mother_doc_prev', 'mother_doc_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
-                            <div class="flex items-center gap-3 mt-2">
-                                <button type="button" @click="openModal('mother_aadhar_doc_cam', 'mother_doc_prev', 'mother_doc_placeholder', 'Mother Aadhar Document')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Snap Document
+                            <div class="flex items-center gap-3 pt-1">
+                                <button type="button" @click="openModal('mother_aadhar_doc_cam', 'mother_doc_prev', 'mother_doc_placeholder', 'Mother Aadhar Document')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Snap Doc
                                 </button>
-                                <div class="w-28 h-20 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
+                                <div class="w-24 h-16 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm flex-shrink-0">
                                     <img id="mother_doc_prev" class="hidden w-full h-full object-cover">
                                     <div id="mother_doc_placeholder" class="text-slate-400 text-center p-1">
-                                        <svg class="w-5 h-5 mx-auto mb-0.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 1H7a2 2 0 00-2 2v16a2 2 0 002 2z"/></svg>
+                                        <svg class="w-4 h-4 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 1H7a2 2 0 00-2 2v16a2 2 0 002 2z"/></svg>
                                         <span class="text-[9px]">Doc Preview</span>
                                     </div>
                                 </div>
@@ -519,45 +553,45 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between pt-4">
-                    <button type="button" @click="step = 0" class="px-5 py-2.5 border border-slate-300 text-slate-600 hover:text-slate-900 rounded-xl text-sm">← Back</button>
-                    <button type="button" @click="goToStep(2)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-2xl transition-all shadow-md shadow-indigo-600/20">Next: Pickup Persons →</button>
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-4">
+                    <button type="button" @click="goToStep(0)" class="w-full sm:w-auto px-5 py-3 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl text-base sm:text-sm font-semibold transition-all text-center">← Back</button>
+                    <button type="button" @click="goToStep(2)" class="w-full sm:w-auto px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base sm:text-sm rounded-2xl transition-all shadow-md shadow-indigo-600/20 active:scale-95 text-center">Next: Pickup Persons →</button>
                 </div>
             </div>
 
             <!-- SECTION 3: AUTHORIZED PICKUP PERSONS (MAX 3) -->
-            <div x-show="step === 2" class="white-card rounded-3xl p-6 sm:p-8 space-y-6">
+            <div x-show="step === 2" class="white-card rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-5 sm:space-y-6">
                 <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Authorized Pickup Persons (Max 3)
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 flex-shrink-0"></span> Pickup Persons (Max 3)
                     </h3>
                     <button type="button" x-show="pickups.length < 3" @click="addPickup()" class="text-xs font-bold px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-200 hover:bg-indigo-100">
-                        + Add Pickup Person
+                        + Add Person
                     </button>
                 </div>
 
                 <div class="space-y-6">
                     <template x-for="(p, index) in pickups" :key="index">
-                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4 relative">
+                        <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-4 relative">
                             <div class="flex items-center justify-between border-b border-slate-200 pb-2">
                                 <span class="text-xs font-bold text-indigo-600 uppercase" x-text="'Pickup Person #' + (index + 1)"></span>
-                                <button type="button" @click="removePickup(index)" class="text-xs text-red-600 hover:text-red-700">Remove</button>
+                                <button type="button" @click="removePickup(index)" class="text-xs text-red-600 hover:text-red-700 font-semibold">Remove</button>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="space-y-1">
                                     <label class="block text-xs font-medium text-slate-700">Full Name <span class="text-red-500">*</span></label>
-                                    <input type="text" :name="'pickups[' + index + '][name]'" required x-model="p.name" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2 px-3 text-sm focus:border-indigo-600 outline-none" placeholder="Full Name">
+                                    <input type="text" :name="'pickups[' + index + '][name]'" required x-model="p.name" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none" placeholder="Full Name">
                                 </div>
                                 <div class="space-y-1">
                                     <label class="block text-xs font-medium text-slate-700">Relationship to Student</label>
-                                    <input type="text" :name="'pickups[' + index + '][relationship]'" x-model="p.relationship" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2 px-3 text-sm focus:border-indigo-600 outline-none" placeholder="e.g. Grandfather, Driver, Uncle">
+                                    <input type="text" :name="'pickups[' + index + '][relationship]'" x-model="p.relationship" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none" placeholder="e.g. Grandfather, Driver, Uncle">
                                 </div>
                                 <div class="space-y-1">
                                     <label class="block text-xs font-medium text-slate-700">Phone Number</label>
-                                    <input type="tel" :name="'pickups[' + index + '][phone]'" x-model="p.phone" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2 px-3 text-sm focus:border-indigo-600 outline-none" placeholder="+91 XXXXX XXXXX">
+                                    <input type="tel" :name="'pickups[' + index + '][phone]'" x-model="p.phone" class="w-full bg-white border border-slate-300 text-slate-900 rounded-xl py-2 px-3 text-base sm:text-sm focus:border-indigo-600 outline-none" placeholder="+91 XXXXX XXXXX">
                                 </div>
-                                <div class="space-y-1 flex items-center pt-5">
+                                <div class="space-y-1 flex items-center pt-2 sm:pt-5">
                                     <label class="inline-flex items-center gap-2 cursor-pointer">
                                         <input type="checkbox" :name="'pickups[' + index + '][is_emergency]'" x-model="p.is_emergency" value="1" class="w-4 h-4 rounded accent-indigo-600">
                                         <span class="text-xs font-medium text-slate-700">Mark as Emergency Contact</span>
@@ -570,16 +604,16 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Passport Photo <span class="text-red-500">*</span></label>
                                     <input type="file" :name="'pickup_photo_' + index" accept="image/*" @change="previewImage($event, 'pickup_prev_' + index, 'pickup_placeholder_' + index)" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
-                                    <button type="button" @click="openModal('pickup_photo_cam_' + index, 'pickup_prev_' + index, 'pickup_placeholder_' + index, 'Pickup Person Photo')" class="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold px-3 py-1 bg-white text-indigo-600 rounded-lg border border-slate-300 shadow-sm">
+                                    <button type="button" @click="openModal('pickup_photo_cam_' + index, 'pickup_prev_' + index, 'pickup_placeholder_' + index, 'Pickup Person Photo')" class="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold px-3 py-1.5 bg-white text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Open Camera
                                     </button>
                                     <input type="hidden" :name="'pickup_photo_cam_' + index" :id="'pickup_photo_cam_' + index">
                                 </div>
                                 <div class="flex justify-start">
-                                    <div class="w-20 h-24 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
+                                    <div class="w-16 h-20 rounded-xl border border-slate-300 bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
                                         <img :id="'pickup_prev_' + index" class="hidden w-full h-full object-cover">
                                         <div :id="'pickup_placeholder_' + index" class="text-slate-400 text-center p-1">
-                                            <svg class="w-5 h-5 mx-auto mb-0.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                            <svg class="w-4 h-4 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                             <span class="text-[9px]">Photo</span>
                                         </div>
                                     </div>
@@ -589,10 +623,14 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                     </template>
                 </div>
 
-                <div class="flex items-center justify-between pt-6 border-t border-slate-200">
-                    <button type="button" @click="step = 1" class="px-5 py-2.5 border border-slate-300 text-slate-600 hover:text-slate-900 rounded-xl text-sm">← Back</button>
-                    <button type="submit" class="px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-sm rounded-2xl transition-all shadow-lg shadow-indigo-600/30">
-                        Submit Enrollment Application
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-6 border-t border-slate-200">
+                    <button type="button" @click="goToStep(1)" class="w-full sm:w-auto px-5 py-3 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl text-base sm:text-sm font-semibold transition-all text-center">← Back</button>
+                    <button type="submit" :disabled="isSubmitting" :class="isSubmitting ? 'opacity-75 cursor-not-allowed pointer-events-none' : 'hover:from-indigo-700 hover:to-purple-700 active:scale-95'" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-base sm:text-sm rounded-2xl transition-all shadow-lg shadow-indigo-600/30 text-center inline-flex items-center justify-center gap-2">
+                        <span x-show="!isSubmitting">Submit Enrollment Application</span>
+                        <span x-show="isSubmitting" class="inline-flex items-center gap-2" x-cloak>
+                            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <span>Submitting Application...</span>
+                        </span>
                     </button>
                 </div>
             </div>
@@ -600,36 +638,36 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
         </form>
 
         <!-- LARGE CAMERA CAPTURE MODAL -->
-        <div x-show="showCamModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4" x-cloak>
-            <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-5 shadow-2xl border border-slate-200 relative">
+        <div x-show="showCamModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-3 sm:p-4" x-cloak>
+            <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 max-w-2xl w-full space-y-4 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
                 
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                    <div class="flex items-center gap-2.5 text-slate-900 font-bold text-lg">
-                        <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <div class="flex items-center gap-2 text-slate-900 font-bold text-base sm:text-lg">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         </div>
-                        <span x-text="modalTitle"></span>
+                        <span x-text="modalTitle" class="truncate"></span>
                     </div>
-                    <button type="button" @click="closeModal()" class="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-all">
+                    <button type="button" @click="closeModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 transition-all flex-shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
                 <!-- Big Video Container -->
-                <div class="w-full h-80 sm:h-96 bg-slate-950 rounded-2xl overflow-hidden relative border-2 border-slate-800 flex items-center justify-center shadow-inner">
-                    <video id="modal_video" class="w-full h-full object-cover" autoplay></video>
+                <div class="w-full h-64 sm:h-80 bg-slate-950 rounded-2xl overflow-hidden relative border-2 border-slate-800 flex items-center justify-center shadow-inner">
+                    <video id="modal_video" class="w-full h-full object-cover" autoplay playsinline></video>
                     <canvas id="modal_canvas" class="hidden"></canvas>
                 </div>
 
                 <!-- Action Controls Bar -->
-                <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" @click="switchCamera()" class="px-5 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-2xl text-xs font-bold border border-indigo-200 inline-flex items-center gap-1.5 transition-all">
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-1">
+                    <button type="button" @click="switchCamera()" class="w-full sm:w-auto px-5 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-200 inline-flex items-center justify-center gap-1.5 transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         <span>Switch Camera</span>
                     </button>
 
-                    <button type="button" @click="captureFromModal()" class="px-7 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition-all active:scale-95">
+                    <button type="button" @click="captureFromModal()" class="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all active:scale-95">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         Capture & Save Photo
                     </button>
@@ -644,6 +682,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
         function enrollmentForm() {
             return {
                 step: 0,
+                isSubmitting: false,
                 pickups: [{ name: '', relationship: '', phone: '', email: '', address: '', is_emergency: true }],
                 showCamModal: false,
                 modalTitle: 'Capture Photo',
@@ -652,9 +691,20 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                 activePlaceholderId: null,
                 mediaStream: null,
 
+                scrollToTop() {
+                    this.$nextTick(() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        const topEl = document.getElementById('enrollment-form-top');
+                        if (topEl) {
+                            topEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    });
+                },
+
                 goToStep(targetStep) {
                     if (targetStep <= this.step) {
                         this.step = targetStep;
+                        this.scrollToTop();
                         return;
                     }
 
@@ -731,6 +781,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                     }
 
                     this.step = targetStep;
+                    this.scrollToTop();
                 },
 
                 addPickup() {
@@ -763,7 +814,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                     this.activeInputId = inputId;
                     this.activeImgId = imgId;
                     this.activePlaceholderId = placeholderId;
-                    this.modalTitle = title || 'Camera Capture';
+                    this.modalTitle = title || 'Capture Photo';
 
                     // Default to 'user' for photos, or 'environment' for documents if specified
                     if (title && title.toLowerCase().includes('document')) {
@@ -867,3 +918,4 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
     </script>
 </body>
 </html>
+

@@ -532,12 +532,17 @@ class AdminController extends Controller {
       $this->redirect('/admin/folders');
     }
 
+    $folderStaffStmt = Database::conn()->prepare('SELECT staff_id FROM folder_staff WHERE folder_id = ?');
+    $folderStaffStmt->execute([$folderId]);
+    $folderStaffList = array_map('intval', $folderStaffStmt->fetchAll(\PDO::FETCH_COLUMN));
+
     $this->view('admin/folder_view', [
       'folder' => $folderRow,
       'subfolders' => Folder::childrenOf($folderId),
       'resources' => Resource::byFolder($folderId),
       'folders' => Folder::all(),
       'staff' => User::allStaff(),
+      'folderStaffList' => $folderStaffList,
       'resourceAssignments' => $this->resourceAssignmentsMapByFolder($folderId),
       'activeNav' => 'folders',
     ]);
@@ -613,7 +618,7 @@ class AdminController extends Controller {
     Auth::guardAdmin();
     try {
       if (empty($_FILES['files'])) throw new \Exception('No files');
-      $allowed = array_map('trim', explode(',', Setting::get('allowed_file_types', 'pdf,jpg,jpeg,png,mp4')));
+      $allowed = array_map('trim', explode(',', Setting::get('allowed_file_types', 'pdf,jpg,jpeg,png,mp4,mov,webm,ppt,pptx,doc,docx,xls,xlsx,txt,zip')));
       $folderId = (int)($_POST['folder_id'] ?? 0);
       $maxUploadMb = (int)Setting::get('max_upload_mb', '200');
       $maxBytes = $maxUploadMb * 1024 * 1024;
@@ -711,6 +716,115 @@ class AdminController extends Controller {
     } catch (\Throwable $e) { $this->json(['ok'=>false,'message'=>'Failed to delete file'],500); }
   }
 
+  public function copyResource(): void {
+    Auth::guardAdmin();
+    try {
+      $folderId = (int)($_POST['folder_id'] ?? 0);
+      $ids = $_POST['resource_ids'] ?? [];
+      if (empty($ids) && isset($_POST['resource_id'])) {
+        $ids = [$_POST['resource_id']];
+      }
+      
+      if (empty($ids)) $this->json(['ok'=>false,'message'=>'No files selected'],422);
+      
+      $storagePath = (require __DIR__ . '/../../config/app.php')['storage_path'];
+      $copiedCount = 0;
+      
+      foreach ($ids as $id) {
+        $id = (int)$id;
+        if ($id <= 0) continue;
+        
+        $resource = Resource::find($id);
+        if (!$resource) continue;
+        
+        $oldFile = $storagePath . '/' . $resource['stored_name'];
+        if (!is_file($oldFile)) continue;
+        
+        $ext = strtolower(pathinfo($resource['file_name'], PATHINFO_EXTENSION));
+        $stored = bin2hex(random_bytes(18)) . '.' . $ext;
+        $newFile = $storagePath . '/' . $stored;
+        
+        if (copy($oldFile, $newFile)) {
+          $newTitle = $resource['title'] . ' - Copy';
+          $newId = Resource::create([
+            'folder_id' => $folderId > 0 ? $folderId : null,
+            'title' => $newTitle,
+            'file_name' => $resource['file_name'],
+            'stored_name' => $stored,
+            'mime_type' => $resource['mime_type'],
+            'file_size' => $resource['file_size'],
+          ]);
+          Audit::log($_SESSION['admin_id'],null,'resource_copied',(string)$newId);
+          $copiedCount++;
+        }
+      }
+      
+      if ($copiedCount === 0) {
+        $this->json(['ok'=>false,'message'=>'No files were successfully copied'],500);
+      }
+      
+      $this->json(['ok'=>true,'message'=>"Successfully copied {$copiedCount} file(s)."]);
+    } catch (\Throwable $e) { $this->json(['ok'=>false,'message'=>'Failed to copy file(s)'],500); }
+  }
+
+  public function moveResource(): void {
+    Auth::guardAdmin();
+    try {
+      $folderId = (int)($_POST['folder_id'] ?? 0);
+      $ids = $_POST['resource_ids'] ?? [];
+      if (empty($ids) && isset($_POST['resource_id'])) {
+        $ids = [$_POST['resource_id']];
+      }
+      
+      if (empty($ids)) $this->json(['ok'=>false,'message'=>'No files selected'],422);
+      
+      $movedCount = 0;
+      foreach ($ids as $id) {
+        $id = (int)$id;
+        if ($id <= 0) continue;
+        
+        $resource = Resource::find($id);
+        if (!$resource) continue;
+        
+        Resource::updateMeta($id, $resource['title'], $folderId > 0 ? $folderId : null);
+        Audit::log($_SESSION['admin_id'],null,'resource_moved',(string)$id);
+        $movedCount++;
+      }
+      
+      if ($movedCount === 0) {
+        $this->json(['ok'=>false,'message'=>'No files were successfully moved'],500);
+      }
+      
+      $this->json(['ok'=>true,'message'=>"Successfully moved {$movedCount} file(s)."]);
+    } catch (\Throwable $e) { $this->json(['ok'=>false,'message'=>'Failed to move file(s)'],500); }
+  }
+
+  public function reorderResources(): void {
+    Auth::guardAdmin();
+    try {
+      $ids = $_POST['ids'] ?? [];
+      if (empty($ids) || !is_array($ids)) {
+        $this->json(['ok'=>false,'message'=>'Invalid resource order payload'],422);
+      }
+      
+      $db = Database::conn();
+      $db->beginTransaction();
+      $stmt = $db->prepare('UPDATE resources SET sort_order = ? WHERE id = ?');
+      foreach ($ids as $index => $id) {
+        $stmt->execute([(int)$index, (int)$id]);
+      }
+      $db->commit();
+      
+      Audit::log($_SESSION['admin_id'],null,'resources_reordered');
+      $this->json(['ok'=>true,'message'=>'Resources reordered successfully']);
+    } catch (\Throwable $e) {
+      if (Database::conn()->inTransaction()) {
+        Database::conn()->rollBack();
+      }
+      $this->json(['ok'=>false,'message'=>'Failed to reorder files'],500);
+    }
+  }
+
   public function saveAssignment(): void {
     Auth::guardAdmin();
     try {
@@ -774,7 +888,7 @@ class AdminController extends Controller {
       'smartboard_min_height' => Setting::get('smartboard_min_height', '900'),
       'debug_mode' => Setting::get('debug_mode', '0'),
       'download_restriction' => Setting::get('download_restriction', '1'),
-      'allowed_file_types' => Setting::get('allowed_file_types', 'pdf,jpg,jpeg,png,mp4'),
+      'allowed_file_types' => Setting::get('allowed_file_types', 'pdf,jpg,jpeg,png,mp4,mov,webm,ppt,pptx,doc,docx,xls,xlsx,txt,zip'),
       'max_upload_mb' => Setting::get('max_upload_mb', '200'),
       'screenshot_protection' => Setting::get('screenshot_protection', '1'),
     ], 'accessSchedule' => $accessSchedule, 'activeNav' => 'settings']);
@@ -865,6 +979,56 @@ class AdminController extends Controller {
       Audit::log((int)$_SESSION['admin_id'], null, 'staff_password_reset', (string)$id);
       $this->json(['ok'=>true,'message'=>'Staff password reset successfully']);
     } catch (\Throwable $e) { $this->json(['ok'=>false,'message'=>'Failed to reset password'],500); }
+  }
+
+  private function detectType(array $resource): string {
+    $ext = strtolower(pathinfo((string)$resource['file_name'], PATHINFO_EXTENSION));
+    return match ($ext) {
+      'pdf' => 'application/pdf',
+      'mp4' => 'video/mp4',
+      'webm' => 'video/webm',
+      'mov' => 'video/quicktime',
+      'png' => 'image/png',
+      'jpg', 'jpeg' => 'image/jpeg',
+      default => (string)($resource['mime_type'] ?? 'application/octet-stream')
+    };
+  }
+
+  public function viewResource(): void {
+    Auth::guardAdmin();
+    $id = (int)($_GET['id'] ?? 0);
+    $resource = Resource::find($id);
+    if (!$resource) {
+      $this->redirect('/admin/folders');
+    }
+    $this->view('admin/viewer', [
+      'resource' => $resource,
+      'resourceType' => $this->detectType($resource),
+    ]);
+  }
+
+  public function streamResource(): void {
+    Auth::guardAdmin();
+    $id = (int)($_GET['id'] ?? 0);
+    $r = Resource::find($id);
+    if (!$r) {
+      http_response_code(404);
+      exit;
+    }
+
+    $file = (require __DIR__ . '/../../config/app.php')['storage_path'] . '/' . $r['stored_name'];
+    if (!file_exists($file)) {
+      http_response_code(404);
+      exit;
+    }
+
+    Audit::log((int)$_SESSION['admin_id'], null, 'resource_viewed', (string)$id);
+    header('Content-Type: ' . $this->detectType($r));
+    header('Content-Length: ' . filesize($file));
+    $disposition = (isset($_GET['download']) && $_GET['download'] === '1') ? 'attachment' : 'inline';
+    header('Content-Disposition: ' . $disposition . '; filename="' . basename($r['file_name']) . '"');
+    readfile($file);
+    exit;
   }
 
   public function profile(): void {

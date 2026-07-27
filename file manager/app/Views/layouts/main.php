@@ -13,12 +13,14 @@ if (!isset($app) || !is_array($app)) {
 $smartboardEnabled = Setting::get('allow_smartboard', '0');
 $smartboardMinWidth = (int)Setting::get('smartboard_min_width', '1600');
 $smartboardMinHeight = (int)Setting::get('smartboard_min_height', '900');
-$isStaff = !empty($_SESSION['staff_id']);
+$isStaff = !empty($_SESSION['staff_id']) || str_contains($_SERVER['REQUEST_URI'] ?? '', '/staff/');
 $isAdmin = !empty($_SESSION['admin_id']);
 $screenshotProtection = Setting::get('screenshot_protection', '1');
+$isStaffLogin = str_contains($_SERVER['REQUEST_URI'] ?? '', 'staff-login') || str_contains($_SERVER['SCRIPT_NAME'] ?? '', 'staff_login');
+$isStaffLayout = $isStaff || $isStaffLogin;
 ?>
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light"<?= $isStaffLayout ? ' class="staff-layout"' : '' ?>>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -40,7 +42,7 @@ $screenshotProtection = Setting::get('screenshot_protection', '1');
     })();
   </script>
 </head>
-<body data-smartboard-enabled="<?= htmlspecialchars($smartboardEnabled) ?>" data-smartboard-min-width="<?= $smartboardMinWidth ?>" data-smartboard-min-height="<?= $smartboardMinHeight ?>" data-screenshot-protection="<?= ($isStaff && $screenshotProtection === '1') ? '1' : '0' ?>">
+<body<?= $isStaffLayout ? ' class="staff-layout"' : '' ?> data-smartboard-enabled="<?= htmlspecialchars($smartboardEnabled) ?>" data-smartboard-min-width="<?= $smartboardMinWidth ?>" data-smartboard-min-height="<?= $smartboardMinHeight ?>" data-screenshot-protection="<?= ($isStaff && $screenshotProtection === '1') ? '1' : '0' ?>">
 <?= $content ?>
 
 <div id="cmdPalette" class="cmdk-backdrop d-none" aria-hidden="true">
@@ -92,5 +94,25 @@ $screenshotProtection = Setting::get('screenshot_protection', '1');
 </div>
 <?php endif; ?>
 
+<script>
+  (function() {
+    function updateClock() {
+      const clock = document.getElementById('staffClock');
+      if (!clock) return;
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      let seconds = now.getSeconds();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      minutes = minutes < 10 ? '0'+minutes : minutes;
+      seconds = seconds < 10 ? '0'+seconds : seconds;
+      clock.textContent = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  })();
+</script>
 </body>
 </html>

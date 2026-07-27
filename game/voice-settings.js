@@ -156,8 +156,8 @@
 
     // Keywords for male voices
     const maleKeywords = [
-      'david', 'mark', 'george', 'paul', 'ravi', 'rishi', 'andrew', 'james', 'sean', 'richard',
-      'daniel', 'alex', 'fred', 'male', 'guy', 'boy', 'russell'
+      'david', 'mark', 'george', 'paul', 'ravi', 'rishi', 'prabhat', 'hemant', 'andrew', 'james',
+      'sean', 'richard', 'daniel', 'alex', 'fred', 'male', 'guy', 'boy', 'russell'
     ];
 
     // Keywords for female voices
@@ -192,21 +192,20 @@
     const settings = window.getVoiceSettings();
     const targetGender = settings.gender || 'female';
 
-    // Filter English voices
-    const englishVoices = voices.filter(v => v.lang.startsWith("en"));
-    if (englishVoices.length === 0) {
-      return voices[0];
-    }
+    // 1. Filter Indian English voices first
+    const inVoices = voices.filter(v => 
+      v.lang.toLowerCase().replace('_', '-').startsWith("en-in") || 
+      v.name.toLowerCase().includes("india")
+    );
 
-    // Separate English voices by gender match
-    const genderMatches = englishVoices.filter(v => classifyVoiceGender(v) === targetGender);
-
+    // Filter matching target gender in Indian English voices
+    let genderMatches = inVoices.filter(v => classifyVoiceGender(v) === targetGender);
     if (genderMatches.length > 0) {
-      // Priority 1: Google voice matching target gender
+      // Priority 1: Google voice matching target gender (usually high quality on Android)
       let best = genderMatches.find(v => v.name.includes("Google"));
       if (best) return best;
 
-      // Priority 2: Microsoft voice matching target gender
+      // Priority 2: Microsoft voice matching target gender (e.g. Microsoft Ravi / Prabhat)
       best = genderMatches.find(v => v.name.includes("Microsoft"));
       if (best) return best;
 
@@ -214,17 +213,35 @@
       return genderMatches[0];
     }
 
-    // If no voices match target gender, fallback to general English voice selection:
-    // Priority 1: Google English voices
-    let best = englishVoices.find(v => v.name.includes("Google"));
-    if (best) return best;
+    // If no exact gender match in Indian English, but we have Indian English voices
+    if (inVoices.length > 0) {
+      let best = inVoices.find(v => v.name.includes("Google"));
+      if (best) return best;
+      best = inVoices.find(v => v.name.includes("Microsoft"));
+      if (best) return best;
+      return inVoices[0];
+    }
 
-    // Priority 2: Microsoft English voices
-    best = englishVoices.find(v => v.name.includes("Microsoft"));
-    if (best) return best;
+    // 2. Fallback to general English voices
+    const englishVoices = voices.filter(v => v.lang.startsWith("en"));
+    if (englishVoices.length > 0) {
+      genderMatches = englishVoices.filter(v => classifyVoiceGender(v) === targetGender);
+      if (genderMatches.length > 0) {
+        let best = genderMatches.find(v => v.name.includes("Google"));
+        if (best) return best;
+        best = genderMatches.find(v => v.name.includes("Microsoft"));
+        if (best) return best;
+        return genderMatches[0];
+      }
+      let best = englishVoices.find(v => v.name.includes("Google"));
+      if (best) return best;
+      best = englishVoices.find(v => v.name.includes("Microsoft"));
+      if (best) return best;
+      return englishVoices[0];
+    }
 
-    // Priority 3: First English voice
-    return englishVoices[0];
+    // 3. Fallback to first voice
+    return voices[0];
   };
 
   // Pre-fetch voices to handle async SpeechSynthesis load
@@ -406,7 +423,7 @@
         utter.rate = settings.rate;
         utter.pitch = settings.pitch;
         utter.volume = 1;
-        utter.lang = "en-US";
+        utter.lang = "en-IN";
 
         window.speechSynthesis.speak(utter);
       });

@@ -1,5 +1,5 @@
 <?php ob_start(); 
-$url=$app['base_url'].'/staff/resource/stream?id='.(int)$resource['id']; 
+$url=$app['base_url'].'/admin/resources/stream?id='.(int)$resource['id']; 
 $ext = strtolower(pathinfo((string)$resource['file_name'], PATHINFO_EXTENSION));
 ?>
 <script>
@@ -19,12 +19,9 @@ $ext = strtolower(pathinfo((string)$resource['file_name'], PATHINFO_EXTENSION));
     sanitize(RegExp.prototype);
   })();
 </script>
-<div class="viewer-overlay">PSNF • <?= htmlspecialchars($_SESSION['staff_name']) ?></div>
+<div class="viewer-overlay">PSNF • <?= htmlspecialchars($_SESSION['admin_name'] ?? 'Admin') ?></div>
 <div class="container-fluid py-2 no-select">
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <a class="btn btn-sm btn-secondary" href="javascript:history.back()">Back</a>
-    <div id="staffClock" class="px-2 py-1 rounded card-glass text-muted small fw-semibold" style="letter-spacing: 0.5px;">--:--:--</div>
-  </div>
+  <a class="btn btn-sm btn-secondary mb-2" href="javascript:history.back()">Back</a>
 
   <div class="viewer-toolbar mb-2">
     <button class="btn btn-sm btn-outline-secondary" id="zoomOutBtn" type="button">-</button>
@@ -53,13 +50,9 @@ $ext = strtolower(pathinfo((string)$resource['file_name'], PATHINFO_EXTENSION));
       async function renderAll(){
         host.innerHTML='';
         const maxW = host.clientWidth - 24;
-        const maxH = host.clientHeight - 24;
         for(const page of pages){
           const base = page.getViewport({scale:1});
-          const scaleW = maxW / base.width;
-          const scaleH = maxH / base.height;
-          let autoScale = Math.min(scaleW, scaleH);
-          if (autoScale < 0.3) autoScale = 0.3;
+          const autoScale = Math.max(0.7, maxW / base.width);
           const viewport = page.getViewport({scale:autoScale * zoom});
           const canvas = document.createElement('canvas');
           canvas.className='pdf-page d-block';
@@ -204,17 +197,9 @@ $ext = strtolower(pathinfo((string)$resource['file_name'], PATHINFO_EXTENSION));
         </div>
         <h4 class="mb-2 font-weight-bold"><?= htmlspecialchars($resource['title']) ?></h4>
         <p class="text-muted mb-4"><?= htmlspecialchars($resource['file_name']) ?> (<?= strtoupper($ext) ?>)</p>
-        
-        <?php if (!empty($downloadRestricted) && $downloadRestricted): ?>
-          <div class="alert alert-warning border-0 bg-warning-subtle text-warning-emphasis rounded-3 px-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            Secure online preview is not supported for this file type, and downloading is restricted by the administrator.
-          </div>
-        <?php else: ?>
-          <a href="<?= $url ?>&download=1" class="btn btn-primary btn-lg px-5 shadow-sm">
-            <i class="bi bi-cloud-arrow-down me-2"></i> Download File
-          </a>
-        <?php endif; ?>
+        <a href="<?= $url ?>&download=1" class="btn btn-primary btn-lg px-5 shadow-sm">
+          <i class="bi bi-cloud-arrow-down me-2"></i> Download File
+        </a>
       </div>
     <?php endif; ?>
   <?php endif; ?>

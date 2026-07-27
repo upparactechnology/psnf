@@ -18,7 +18,6 @@ $crumb = $title ?? 'Dashboard';
         </div>
       </div>
       <nav class="nav-group mt-3">
-        <a class="nav-item text-primary" href="/psnf/public/dashboard"><i class="bi bi-arrow-left-circle-fill text-primary"></i><span class="text-primary font-weight-bold" style="font-weight: 600;">Back to ERP</span></a>
         <a class="nav-item <?= $activeNav==='dashboard'?'active':'' ?>" href="<?= $app['base_url'] ?>/admin/dashboard"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a>
         <a class="nav-item <?= $activeNav==='analytics'?'active':'' ?>" href="<?= $app['base_url'] ?>/admin/analytics"><i class="bi bi-graph-up"></i><span>Analytics</span></a>
         <a class="nav-item <?= $activeNav==='audit'?'active':'' ?>" href="<?= $app['base_url'] ?>/admin/audit"><i class="bi bi-activity"></i><span>Audit &amp; Activity</span></a>

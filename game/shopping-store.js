@@ -68,7 +68,7 @@ const MONEY_ITEMS = [
 const LEVEL_COUNT = 5;
 const PRODUCTS_PER_PAGE = 12;
 const START_WALLET = 8000;
-const START_TIME_SECONDS = 120;
+const START_TIME_SECONDS = 300;
 const XP_PER_LEVEL = 50;
 const STARS_PER_LEVEL = 10;
 const PRODUCT_FALLBACK = "images/money/main.png";
@@ -231,12 +231,17 @@ function renderStats() {
 
 function renderTask() {
   const task = currentTask();
-  const primary = task.requiredItems[0];
   const total = taskRequiredTotal(task);
   const lines = task.requiredItems.map((item) => `<div>${item.name} x${item.requiredQty}</div>`).join("");
 
+  const imagesHTML = task.requiredItems.map((item) => `
+    <img src="${item.image}" alt="${item.name}" style="width: 45%; max-height: clamp(50px, 8vh, 80px); object-fit: contain; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 2px;" onerror="this.src='${PRODUCT_FALLBACK}'" />
+  `).join("");
+
   el.taskItem.innerHTML = `
-    <img src="${primary.image}" alt="${primary.name}" loading="lazy" decoding="async" onerror="this.src='${PRODUCT_FALLBACK}'" />
+    <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+      ${imagesHTML}
+    </div>
     <h3>Level Basket</h3>
     <div style="font-weight:700;color:#25355a;line-height:1.35;">${lines}</div>
     <p>₹${total}</p>
@@ -277,15 +282,7 @@ function removeFromCart(index) {
 }
 
 function renderStore() {
-  const totalPages = Math.max(1, Math.ceil(PRODUCT_CATALOG.length / PRODUCTS_PER_PAGE));
-  if (state.storePage > totalPages) {
-    state.storePage = totalPages;
-  }
-
-  const startIndex = (state.storePage - 1) * PRODUCTS_PER_PAGE;
-  const visibleProducts = PRODUCT_CATALOG.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
-
-  el.storeGrid.innerHTML = visibleProducts.map((item) => {
+  el.storeGrid.innerHTML = PRODUCT_CATALOG.map((item) => {
     const disabled = state.isComplete ? "disabled" : "";
     return `
       <article class="product-card">
@@ -302,16 +299,6 @@ function renderStore() {
   el.storeGrid.querySelectorAll("[data-product-id]").forEach((button) => {
     button.addEventListener("click", () => addToCart(button.dataset.productId || ""));
   });
-
-  if (el.pageInfo) {
-    el.pageInfo.textContent = `Page ${state.storePage} / ${totalPages}`;
-  }
-  if (el.prevPageBtn) {
-    el.prevPageBtn.disabled = state.storePage <= 1;
-  }
-  if (el.nextPageBtn) {
-    el.nextPageBtn.disabled = state.storePage >= totalPages;
-  }
 }
 
 function renderCart() {
@@ -504,7 +491,11 @@ function renderMoneyGrid() {
 
     card.addEventListener("dragend", () => card.classList.remove("dragging"));
 
+    let lastClickTime = 0;
     card.addEventListener("click", () => {
+      const now = Date.now();
+      if (now - lastClickTime < 300) return;
+      lastClickTime = now;
       if (state.isComplete) return;
       const item = MONEY_ITEMS.find((entry) => entry.id === card.dataset.moneyId);
       if (!item) return;
@@ -588,6 +579,23 @@ function playFeedback(kind) {
       osc.start(now + index * 0.08);
       osc.stop(now + index * 0.08 + 0.4);
     });
+
+    // Play Applause Audio File for max 3 seconds with a smooth fade-out
+    const applause = new Audio("vvqne-applause-383901.mp3");
+    applause.volume = 1.0;
+    applause.play().then(() => {
+      setTimeout(() => {
+        let fadeInterval = setInterval(() => {
+          if (applause.volume > 0.1) {
+            applause.volume -= 0.1;
+          } else {
+            clearInterval(fadeInterval);
+            applause.pause();
+            applause.currentTime = 0;
+          }
+        }, 50);
+      }, 2500);
+    }).catch(err => console.error("Error playing applause sound:", err));
   } else {
     // Failure Buzzer: Descending triangle wave with slide
     const osc = audioContext.createOscillator();
