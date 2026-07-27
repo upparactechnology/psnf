@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <script>
-        if (localStorage.getItem('theme') === 'light') {
-            document.documentElement.classList.remove('dark');
-            window.isDark = false;
-        } else {
+        if (localStorage.getItem('theme') === 'dark') {
             document.documentElement.classList.add('dark');
             window.isDark = true;
+        } else {
+            document.documentElement.classList.remove('dark');
+            window.isDark = false;
         }
     </script>
     <meta charset="UTF-8">

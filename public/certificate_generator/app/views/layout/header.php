@@ -147,11 +147,13 @@ if ($userInitials === '') {
     <aside class="sidebar" id="appSidebar">
         <div class="sidebar-header">
             <div class="brand-block">
-                <span class="brand-logo" aria-hidden="true"></span>
-                <div class="brand-copy">
-                    <h1>Certificates</h1>
-                    <p>PSNF ERP Module</p>
-                </div>
+                <a href="/psnf/public/dashboard" style="text-decoration:none; color:inherit; display:flex; items-center:center; gap:8px;" title="Back to Main ERP Launcher">
+                    <span class="brand-logo" aria-hidden="true"></span>
+                    <div class="brand-copy">
+                        <h1>Certificates</h1>
+                        <p>← Back to ERP Launcher</p>
+                    </div>
+                </a>
             </div>
 
             <a class="sidebar-utility-btn" href="<?= e(url('logout')) ?>" title="Sign Out" aria-label="Sign Out">

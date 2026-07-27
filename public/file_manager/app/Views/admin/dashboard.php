@@ -37,6 +37,7 @@ $usagePct = $storageLimitBytes > 0 ? min(100, round(($storageUsedBytes / $storag
     <div class="panel card-glass p-3 mb-3">
       <div class="panel-head"><h5>Module Shortcuts</h5><span class="chip">Jump</span></div>
       <div class="quick-link-list">
+        <a class="quick-link-item" href="/psnf/public/dashboard"><i class="bi bi-house-door"></i><span>Back to ERP Launcher</span><i class="bi bi-chevron-right"></i></a>
         <a class="quick-link-item" href="<?= $app['base_url'] ?>/admin/analytics"><i class="bi bi-graph-up"></i><span>Analytics</span><i class="bi bi-chevron-right"></i></a>
         <a class="quick-link-item" href="<?= $app['base_url'] ?>/admin/audit"><i class="bi bi-activity"></i><span>Audit &amp; Activity</span><i class="bi bi-chevron-right"></i></a>
         <a class="quick-link-item" href="<?= $app['base_url'] ?>/admin/permissions"><i class="bi bi-shield-lock"></i><span>Permissions</span><i class="bi bi-chevron-right"></i></a>
