@@ -32,9 +32,8 @@ class Response
 
     public function redirect(string $url, int $statusCode = 302): string
     {
-        $base = config('app.base_url', '');
-        if (!str_starts_with($url, 'http') && !str_starts_with($url, '//')) {
-            $url = rtrim($base, '/') . '/' . ltrim($url, '/');
+        if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://') && !str_starts_with($url, '//')) {
+            $url = function_exists('url') ? url($url) : $url;
         }
         header("Location: $url", true, $statusCode);
         exit();

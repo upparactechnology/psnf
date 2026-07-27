@@ -102,7 +102,6 @@
                 <i class="fa-solid fa-user-check me-2"></i>Attendance Kiosk
             </a>
             <div class="d-flex align-items-center gap-1">
-                <a href="../../dashboard" class="btn btn-outline-warning btn-sm fw-bold me-1" title="Super Admin Portal"><i class="fa-solid fa-crown me-1 text-warning"></i>Admin</a>
                 <span class="badge bg-secondary me-1" id="clockBadge">00:00:00 AM</span>
                 <a href="register.php" class="btn btn-outline-info btn-sm fw-bold"><i class="fa-solid fa-user-plus"></i></a>
                 <a href="history.php" class="btn btn-outline-light btn-sm fw-bold"><i class="fa-solid fa-history"></i></a>
@@ -170,6 +169,8 @@
         let isProcessing = false;
         let scanPausedUntil = 0;
         let lastScannedPerson = null;
+        let lastScanTime = 0;
+        const SCAN_INTERVAL_MS = 600; // Throttle scans to every 600ms to keep CPU & network lightweight
 
         const API_URL = "api.php?endpoint=/api/verify-face";
 
@@ -179,9 +180,40 @@
         const recentFeed = document.getElementById('recentFeed');
         const clockBadge = document.getElementById('clockBadge');
 
-        const soundSuccess = document.getElementById('soundSuccess');
-        const soundError = document.getElementById('soundError');
-        const soundWarning = document.getElementById('soundWarning');
+        // Synthesized Audio Feedback (Instant local sound, no network delays)
+        function playBeep(type) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                if (type === 'success') {
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.1);
+                } else if (type === 'warning') {
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(330, audioCtx.currentTime + 0.15);
+                } else {
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                }
+                
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.3);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } catch(e) {}
+        }
+
+        // Clean up camera stream and stop scan loop instantly on link clicks
+        window.addEventListener('beforeunload', () => {
+            scanPausedUntil = Date.now() + 999999;
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+        });
 
         // Live Clock
         setInterval(() => {
@@ -196,6 +228,9 @@
                     video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
                 });
                 video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play().catch(() => {});
+                };
                 requestAnimationFrame(processFrame);
             } catch (err) {
                 showResult('error', 'Camera Error', 'Unable to access camera: ' + err.message);
@@ -205,7 +240,9 @@
         // Frame Capture & Auto-Scan Loop
         function processFrame() {
             const now = Date.now();
-            if (!isProcessing && now > scanPausedUntil && video.videoWidth > 0) {
+            const hasVideo = video.readyState >= 2 || video.videoWidth > 0;
+            if (!isProcessing && now > scanPausedUntil && (now - lastScanTime >= SCAN_INTERVAL_MS) && hasVideo) {
+                lastScanTime = now;
                 verifyCurrentFrame();
             }
             requestAnimationFrame(processFrame);
@@ -214,12 +251,14 @@
         async function verifyCurrentFrame() {
             isProcessing = true;
 
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
+            const width = video.videoWidth || 640;
+            const height = video.videoHeight || 480;
+            canvas.width = width;
+            canvas.height = height;
             const ctx = canvas.getContext('2d');
-            ctx.translate(canvas.width, 0);
+            ctx.translate(width, 0);
             ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, width, height);
 
             const base64Image = canvas.toDataURL('image/jpeg', 0.85);
 
@@ -240,18 +279,21 @@
 
                 if (response.ok && data && data.success) {
                     if (data.already_checked_in) {
-                        try { soundWarning.play(); } catch(e) {}
+                        playBeep('warning');
                         showResult('warning', 'Already Checked In', data.message || `Attendance already marked for ${data.employee_name}. Please wait before scanning again.`);
                         scanPausedUntil = Date.now() + 6000;
                     } else {
-                        try { soundSuccess.play(); } catch(e) {}
+                        playBeep('success');
                         showResult('success', 'Attendance Marked!', `Welcome, <b>${data.employee_name}</b> (${data.employee_code})`);
                         addRecentFeed(data.employee_name, data.employee_code, data.check_in || new Date().toLocaleTimeString());
                         scanPausedUntil = Date.now() + 6000;
                     }
-                } else if (data && data.message && data.message.includes('below threshold')) {
-                    // Face detected but not matched -> brief pause
-                    scanPausedUntil = Date.now() + 1500;
+                } else if (data && data.no_faces_registered) {
+                    showResult('warning', 'No Faces Registered', data.message || 'No registered employee faces found in database. Please click "+" to register a face first.');
+                    scanPausedUntil = Date.now() + 5000;
+                } else if (data && !data.success) {
+                    showResult('warning', 'Face Unrecognized', data.message || 'Face not recognized. Please align face inside the frame or register photo.');
+                    scanPausedUntil = Date.now() + 2000;
                 }
             } catch (err) {
                 // API Error -> Brief pause before retry

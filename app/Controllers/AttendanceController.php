@@ -20,9 +20,15 @@ class AttendanceController extends Controller
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
 
-        $selectedClass   = $this->request->get('class', '');
-        $selectedSection = $this->request->get('section', '');
-        $selectedDate    = $this->request->get('date', date('Y-m-d'));
+        $selectedClass   = trim((string)$this->request->get('class', ''));
+        $selectedSection = trim((string)$this->request->get('section', ''));
+        $selectedDate    = trim((string)$this->request->get('date', date('Y-m-d')));
+
+        if (empty($selectedClass) && ($classSection = $this->request->get('class_section', ''))) {
+            $parts = explode('|', (string)$classSection, 2);
+            $selectedClass   = trim($parts[0] ?? '');
+            $selectedSection = trim($parts[1] ?? '');
+        }
 
         // Fetch all classes & sections to populate filter dropdowns
         $classes = $db->select(

@@ -35,29 +35,40 @@ if (strpos($endpoint, '/api') !== 0 && strpos($endpoint, '/health') !== 0) {
 $targetUrl = $fastApiBase . $endpoint;
 $requestBody = file_get_contents('php://input');
 
-// 1. Attempt cURL Proxy to FastAPI Service
-$ch = curl_init($targetUrl);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 3);
-curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $_SERVER['REQUEST_METHOD']);
-
-if (!empty($requestBody)) {
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Content-Length: ' . strlen($requestBody)
-    ]);
+// 1. Quick check if FastAPI Service port 8000 is open before attempting cURL
+$fastApiAvailable = false;
+$fp = @fsockopen('127.0.0.1', 8000, $errno, $errstr, 0.05);
+if ($fp) {
+    fclose($fp);
+    $fastApiAvailable = true;
 }
 
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+if ($fastApiAvailable) {
+    // Attempt cURL Proxy to FastAPI Service
+    $ch = curl_init($targetUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $_SERVER['REQUEST_METHOD']);
 
-if ($response !== false && $httpCode > 0 && $httpCode !== 503) {
-    ob_end_clean();
-    http_response_code($httpCode);
-    echo $response;
-    exit();
+    if (!empty($requestBody)) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $requestBody);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($requestBody)
+        ]);
+    }
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($response !== false && $httpCode > 0 && $httpCode !== 503) {
+        ob_end_clean();
+        http_response_code($httpCode);
+        echo $response;
+        exit();
+    }
 }
 
 // 2. FastAPI is Offline -> Execute Standalone PHP Engine
@@ -89,6 +100,19 @@ try {
     } catch (Throwable $e) {}
 
     $colsEmp = $pdo->query("SHOW COLUMNS FROM `employees`")->fetchAll(PDO::FETCH_COLUMN);
+
+    if (in_array('email', $colsEmp)) {
+        try { $pdo->exec("ALTER TABLE `employees` MODIFY COLUMN `email` VARCHAR(191) NULL DEFAULT NULL"); } catch (Throwable $e) {}
+        try { $pdo->exec("DROP INDEX `ix_employees_email` ON `employees`"); } catch (Throwable $e) {}
+        try { $pdo->exec("DROP INDEX `email` ON `employees`"); } catch (Throwable $e) {}
+        try { $pdo->exec("UPDATE `employees` SET `email` = NULL WHERE `email` = ''"); } catch (Throwable $e) {}
+    }
+
+    foreach (['phone', 'user_id', 'school_id', 'tenant_id', 'branch_id'] as $optCol) {
+        if (in_array($optCol, $colsEmp)) {
+            try { $pdo->exec("UPDATE `employees` SET `$optCol` = NULL WHERE `$optCol` = ''"); } catch (Throwable $e) {}
+        }
+    }
 
     if (in_array('employee_id', $colsEmp)) {
         try { $pdo->exec("ALTER TABLE `employees` MODIFY COLUMN `employee_id` VARCHAR(50) NULL DEFAULT NULL"); } catch (Throwable $e) {}
@@ -321,17 +345,18 @@ try {
             session_name('PSNF_SESSION');
             session_start();
         }
-        $isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']);
+        $isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']) || !empty($_SESSION['face_reg_authenticated']) || !empty($_SESSION['user_id']);
         if (!$isLoggedIn && session_name() !== 'PHPSESSID') {
             session_write_close();
             session_name('PHPSESSID');
             session_start();
-            $isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']);
+            $isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']) || !empty($_SESSION['face_reg_authenticated']) || !empty($_SESSION['user_id']);
         }
+        session_write_close();
         if (!$isLoggedIn) {
             ob_end_clean();
             http_response_code(401);
-            echo json_encode(["success" => false, "message" => "Authentication required to register new employee face."]);
+            echo json_encode(["success" => false, "message" => "Authentication required to register new employee face. Please login."]);
             exit();
         }
 
@@ -391,6 +416,60 @@ try {
             $stmtUpd->execute($updVals);
         }
 
+        // Auto-sync employee as a Staff / Teacher Member in Super Admin ERP users table
+        try {
+            $stmtUser = $pdo->prepare("SELECT id FROM users WHERE name = ? OR email LIKE ? LIMIT 1");
+            $stmtUser->execute([$name, "%$empCode%"]);
+            $existingUser = $stmtUser->fetch();
+
+            if (!$existingUser) {
+                $tenantId = 1;
+                $schoolId = 1;
+                $branchId = 1;
+                
+                try {
+                    $schRow = $pdo->query("SELECT tenant_id, id as school_id FROM schools WHERE deleted_at IS NULL LIMIT 1")->fetch();
+                    if ($schRow) {
+                        $tenantId = (int)$schRow['tenant_id'];
+                        $schoolId = (int)$schRow['school_id'];
+                    }
+                    $brRow = $pdo->query("SELECT id as branch_id FROM branches WHERE deleted_at IS NULL LIMIT 1")->fetch();
+                    if ($brRow) {
+                        $branchId = (int)$brRow['branch_id'];
+                    }
+                } catch (Throwable $e) {}
+
+                $cleanEmpCode = preg_replace('/[^a-zA-Z0-9]/', '', $empCode);
+                $genEmail = strtolower($cleanEmpCode) . '@psnf.edu';
+                $defaultPass = password_hash('12345678', PASSWORD_BCRYPT);
+                $uuidStr = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                    mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+                    mt_rand(0, 0xffff),
+                    mt_rand(0, 0x0fff) | 0x4000,
+                    mt_rand(0, 0x3fff) | 0x8000,
+                    mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+                );
+
+                $stmtUserIns = $pdo->prepare("INSERT INTO users (uuid, tenant_id, school_id, branch_id, name, email, password, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)");
+                $stmtUserIns->execute([$uuidStr, $tenantId, $schoolId, $branchId, $name, $genEmail, $defaultPass, $nowStr]);
+                $newUserId = (int)$pdo->lastInsertId();
+
+                // Assign Teacher / Staff role
+                $roleRow = $pdo->query("SELECT id FROM roles WHERE slug IN ('teacher', 'staff') ORDER BY id ASC LIMIT 1")->fetch();
+                if ($roleRow && !empty($roleRow['id'])) {
+                    $roleId = (int)$roleRow['id'];
+                    try {
+                        $pdo->prepare("INSERT IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)")->execute([$newUserId, $roleId]);
+                    } catch (Throwable $e) {}
+                }
+
+                // Assign Teacher App access
+                try {
+                    $pdo->prepare("INSERT IGNORE INTO user_apps (user_id, app_name) VALUES (?, 'teacher_app')")->execute([$newUserId]);
+                } catch (Throwable $e) {}
+            }
+        } catch (Throwable $syncErr) {}
+
         $uploadsDir = __DIR__ . '/../../backend/uploads/faces';
         if (!file_exists($uploadsDir)) {
             @mkdir($uploadsDir, 0777, true);
@@ -406,6 +485,40 @@ try {
             $data = explode(',', $data)[1];
         }
         $bin = base64_decode($data);
+
+        // Quality Check: Brightness Validation (Dark / Black Image Check)
+        if (function_exists('imagecreatefromstring')) {
+            $imgRes = @imagecreatefromstring($bin);
+            if ($imgRes) {
+                $w = imagesx($imgRes);
+                $h = imagesy($imgRes);
+                $totalLum = 0;
+                $samples = 0;
+                for ($y = 0; $y < $h; $y += 12) {
+                    for ($x = 0; $x < $w; $x += 12) {
+                        $rgb = imagecolorat($imgRes, $x, $y);
+                        $r = ($rgb >> 16) & 0xFF;
+                        $g = ($rgb >> 8) & 0xFF;
+                        $b = $rgb & 0xFF;
+                        $totalLum += (0.299 * $r + 0.587 * $g + 0.114 * $b);
+                        $samples++;
+                    }
+                }
+                imagedestroy($imgRes);
+                $avgBrightness = $totalLum / max(1, $samples);
+
+                if ($avgBrightness < 35) {
+                    ob_end_clean();
+                    http_response_code(400);
+                    echo json_encode([
+                        "success" => false,
+                        "message" => "Captured photo is too dark or black! Please move to a well-lit area and retry."
+                    ]);
+                    exit();
+                }
+            }
+        }
+
         $filename = "emp_{$empCode}_" . time() . ".jpg";
         $savePath = $uploadsDir . '/' . $filename;
         @file_put_contents($savePath, $bin);
@@ -447,7 +560,17 @@ try {
         $targetVec = generatePhpFeatureVector($targetBin);
 
         $stmtAll = $pdo->query("SELECT fe.employee_id, fe.embedding, e.employee_code, e.name, e.department FROM face_embeddings fe JOIN employees e ON fe.employee_id = e.id");
-        $all = $stmtAll->fetchAll();
+        $all = $stmtAll ? $stmtAll->fetchAll() : [];
+
+        if (empty($all)) {
+            ob_end_clean();
+            echo json_encode([
+                "success" => false,
+                "no_faces_registered" => true,
+                "message" => "No registered employee faces found in database. Please register employee face photos first using the Register button."
+            ]);
+            exit();
+        }
 
         $bestMatch = null;
         $highestScore = 0.0;

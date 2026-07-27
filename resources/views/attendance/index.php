@@ -24,6 +24,7 @@ ob_start();
                     const val = this.value.split('|');
                     document.getElementById('class_input').value = val[0] || '';
                     document.getElementById('section_input').value = val[1] || '';
+                    this.form.submit();
                 " class="w-full bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-xs focus:outline-none focus:border-brand-500 transition-all">
                     <option value="">Select Class & Section</option>
                     <?php foreach ($classes as $c): ?>
@@ -40,7 +41,7 @@ ob_start();
 
             <div class="space-y-1.5">
                 <label class="block text-xs font-medium text-slate-400">Date</label>
-                <input type="date" name="date" value="<?= e($selectedDate) ?>" required
+                <input type="date" name="date" value="<?= e($selectedDate) ?>" required onchange="if(document.getElementById('class_input').value) this.form.submit();"
                        class="w-full bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-xs focus:outline-none focus:border-brand-500 transition-all">
             </div>
 

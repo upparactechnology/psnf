@@ -50,12 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit();
 }
 
-// Clear registration auth token on GET so login is required every time Add Employee is clicked
+// Clear registration auth token on GET so Admin login is required every time Add Employee is opened
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     unset($_SESSION['face_reg_authenticated'], $_SESSION['face_reg_user']);
 }
 
-// Check single-action registration login status
+// Check registration login status (must unlock via Admin Login modal)
 $isLoggedIn = !empty($_SESSION['face_reg_authenticated']);
 $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
 ?>
@@ -183,12 +183,10 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
             </a>
             <div class="d-flex align-items-center gap-2" id="authBadgeContainer">
                 <?php if ($isLoggedIn): ?>
-                    <span class="badge bg-success px-2 py-2 text-truncate small" style="max-width: 170px;" title="Authenticated User"><i class="fa-solid fa-user-check me-1"></i><?= htmlspecialchars($userName) ?></span>
                     <button type="button" class="btn btn-outline-danger btn-sm fw-bold me-1" onclick="handleAuthLogout()" title="Lock Kiosk Registration"><i class="fa-solid fa-lock me-1"></i>Lock</button>
                 <?php else: ?>
                     <button type="button" class="btn btn-warning btn-sm fw-bold me-1" onclick="showAuthModal()"><i class="fa-solid fa-right-to-bracket me-1"></i>Admin Login</button>
                 <?php endif; ?>
-                <a href="../../dashboard" class="btn btn-outline-warning btn-sm fw-bold me-1" title="Super Admin Portal"><i class="fa-solid fa-crown text-warning"></i></a>
                 <button type="button" id="btnResetPhotos" class="btn btn-outline-secondary btn-sm" title="Reset Camera Scanner">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
@@ -232,14 +230,17 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
     </div>
 
     <div class="container my-3">
-        <div class="row g-3">
-            <!-- Left Column: Profile Form & Guide -->
-            <div class="col-lg-5">
-                <div class="card-custom p-3 p-md-4 mb-3">
-                    <h5 class="fw-bold mb-3 text-info"><i class="fa-solid fa-id-card me-2"></i>Employee Profile</h5>
-                    <form id="registerForm" onsubmit="return false;">
+        <div class="row g-3 justify-content-center" id="registrationRow">
+            <!-- Step 1: Employee Details Form (Visible Initially) -->
+            <div class="col-lg-6 col-md-8" id="step1Column">
+                <div class="card-custom p-3 p-md-4 mb-3" id="step1Card">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="fw-bold mb-0 text-info"><i class="fa-solid fa-1 me-2 text-warning"></i>Step 1: Employee Details</h5>
+                        <span class="badge bg-secondary" id="step1Badge">Pending</span>
+                    </div>
+                    <form id="registerForm" onsubmit="handleStep1Submit(event)">
                         <div class="mb-3">
-                            <label class="form-label text-secondary small fw-bold">EMPLOYEE CODE *</label>
+                            <label class="form-label text-secondary small fw-bold">EMPLOYEE CODE / ID *</label>
                             <input type="text" id="employee_code" class="form-control bg-dark text-white border-secondary" placeholder="e.g. EMP-1001" required>
                         </div>
                         <div class="mb-3">
@@ -247,39 +248,32 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
                             <input type="text" id="name" class="form-control bg-dark text-white border-secondary" placeholder="e.g. Sarah Jenkins" required>
                         </div>
 
-                        <!-- Progress indicator -->
-                        <div class="mt-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="small text-secondary">Face Photo Progress</span>
-                                <span class="small text-info fw-bold" id="progressText">0 / 1</span>
-                            </div>
-                            <div class="progress bg-dark" style="height: 10px;">
-                                <div id="progressBar" class="progress-bar bg-info" style="width: 0%;"></div>
-                            </div>
-                        </div>
+                        <button type="submit" id="btnProceedToScan" class="btn btn-info btn-lg w-100 fw-bold shadow">
+                            <i class="fa-solid fa-camera me-2"></i>Submit & Open Scanner
+                        </button>
                     </form>
-                </div>
 
-                <!-- Registration Instructions Card -->
-                <div class="card-custom p-3 p-md-4 text-center">
-                    <h5 class="fw-bold text-white mb-2 fs-6"><i class="fa-solid fa-camera-retro me-2 text-info"></i>Face Photo Guide</h5>
-                    <div class="p-3 bg-dark border border-secondary rounded-3 text-start">
-                        <div class="d-flex align-items-center mb-1">
-                            <i class="fa-solid fa-circle-check text-success fs-5 me-2"></i>
-                            <span class="text-white small fw-bold">Look straight into camera</span>
+                    <!-- Confirmed Step 1 Details Box -->
+                    <div id="step1Summary" class="d-none mt-3 p-3 bg-dark border border-success rounded-3 text-success small">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Employee Details Saved</span>
+                            <button type="button" class="btn btn-outline-warning btn-sm py-0 px-2 text-xs" onclick="resetStep1()">Edit Details</button>
                         </div>
-                        <p class="text-secondary small mb-0 ms-4">The scanner will automatically take 1 high-resolution face photo.</p>
+                        <div class="text-white" id="step1SummaryText"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Camera Scanner & Single Photo Kiosk -->
-            <div class="col-lg-7">
-                <div class="card-custom p-3 p-md-4 text-center">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0 text-white"><i class="fa-solid fa-camera me-2 text-info"></i>Face Scanner</h5>
-                        <span class="badge bg-primary px-3 py-2" id="angleHintBadge">1 Front Face Photo</span>
+            <!-- Step 2: Camera Scanner (Hidden initially until Step 1 submitted) -->
+            <div class="col-lg-6 d-none" id="step2Column">
+                <div class="card-custom p-3 p-md-4 text-center" id="step2Card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="fw-bold mb-0 text-white"><i class="fa-solid fa-camera me-2 text-warning"></i>Face Scanner</h5>
+                        <span class="badge bg-warning text-dark px-3 py-2" id="angleHintBadge">Get Ready</span>
                     </div>
+
+                    <!-- Scanning Employee Summary Badge -->
+                    <div class="mb-3" id="scanningEmpSummary"></div>
 
                     <!-- Camera Feed -->
                     <div class="camera-container mb-3">
@@ -290,8 +284,8 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
                     <canvas id="canvas" class="d-none"></canvas>
 
                     <!-- Status Instructions Banner -->
-                    <div class="alert alert-dark border-secondary mb-3 py-2 text-info small" id="autoStatusBanner">
-                        <i class="fa-solid fa-circle-info me-1"></i>Enter Employee Code & Name to start auto-scanner.
+                    <div class="alert alert-info border-info mb-3 py-2 text-info small" id="autoStatusBanner">
+                        <i class="fa-solid fa-camera me-1"></i>Please align face inside circle to capture photo.
                     </div>
 
                     <!-- Single Captured Photo Thumbnail Preview -->
@@ -303,7 +297,15 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
 
                     <!-- Result Status Alert Banner -->
                     <div id="statusAlert" class="alert d-none mt-3 text-start" role="alert"></div>
+
+                    <!-- Action Buttons after completion -->
+                    <div id="completionActions" class="d-none mt-3">
+                        <button type="button" class="btn btn-success btn-lg w-100 fw-bold shadow" onclick="resetForNewEmployee()">
+                            <i class="fa-solid fa-user-plus me-2"></i>+ Register Another Employee
+                        </button>
+                    </div>
                 </div>
+            </div>
         </div>
 
         <!-- Registered Employees Directory Section -->
@@ -352,6 +354,8 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
         let capturedImage = null;
         let autoSaveTimer = null;
         let isSubmitting = false;
+        let step1Submitted = false;
+        let webcamInitialized = false;
 
         const API_URL = "api.php?endpoint=/api/register-face";
 
@@ -366,9 +370,86 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
         const faceOverlay = document.getElementById('faceOverlay');
         const directionArrow = document.getElementById('directionArrow');
         const autoStatusBanner = document.getElementById('autoStatusBanner');
+        const step1Badge = document.getElementById('step1Badge');
+        const step1Summary = document.getElementById('step1Summary');
+        const step1SummaryText = document.getElementById('step1SummaryText');
+        const completionActions = document.getElementById('completionActions');
+
+        let countdownTimer = null;
+        let countdownSeconds = 5;
+
+        function handleStep1Submit(e) {
+            e.preventDefault();
+            const empCode = document.getElementById('employee_code').value.trim();
+            const empName = document.getElementById('name').value.trim();
+
+            if (!empCode || !empName) {
+                showAlert('warning', 'Please fill in both Employee Code and Full Name.');
+                return;
+            }
+
+            step1Submitted = true;
+
+            // Hide Step 1 Column, Show ONLY Step 2 Column (centered)
+            const step1Col = document.getElementById('step1Column');
+            const step2Col = document.getElementById('step2Column');
+            if (step1Col) step1Col.classList.add('d-none');
+            if (step2Col) {
+                step2Col.className = 'col-lg-7 col-md-9 mx-auto';
+                step2Col.classList.remove('d-none');
+                step2Col.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Update Employee Summary Badge in Step 2 Header
+            const empSummaryBadge = document.getElementById('scanningEmpSummary');
+            if (empSummaryBadge) {
+                empSummaryBadge.innerHTML = `<span class="badge bg-dark border border-info text-info px-3 py-2 fs-6"><i class="fa-solid fa-user-check me-2 text-success"></i>Registering: <b>${empCode}</b> (${empName})</span>`;
+            }
+
+            // Start 5-Second Countdown before capturing
+            countdownSeconds = 5;
+            startCountdown();
+
+            if (!webcamInitialized) {
+                initWebcam();
+            }
+        }
+
+        function startCountdown() {
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            angleBadge.className = 'badge bg-warning text-dark px-3 py-2 fw-bold';
+            angleBadge.innerText = `Scanning in ${countdownSeconds}s`;
+
+            autoStatusBanner.className = 'alert alert-warning border-warning mb-3 py-2 text-dark fw-bold fs-6';
+            autoStatusBanner.innerHTML = `<i class="fa-solid fa-clock me-2"></i>Position face! Photo capture in <span class="badge bg-danger fs-5 px-3 py-1" id="countdownBadge">${countdownSeconds}</span> seconds...`;
+
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                const countdownBadge = document.getElementById('countdownBadge');
+                if (countdownBadge) countdownBadge.innerText = countdownSeconds;
+                angleBadge.innerText = `Scanning in ${countdownSeconds}s`;
+
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+
+                    angleBadge.className = 'badge bg-success px-3 py-2';
+                    angleBadge.innerText = 'Capturing Face...';
+
+                    autoStatusBanner.className = 'alert alert-success border-success mb-3 py-2 text-success fw-bold small';
+                    autoStatusBanner.innerHTML = `<i class="fa-solid fa-camera me-1"></i><b>Capturing & Registering Face Photo...</b>`;
+                }
+            }, 1000);
+        }
+
+        function resetStep1() {
+            resetForNewEmployee();
+        }
 
         async function initWebcam() {
             try {
+                webcamInitialized = true;
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
                 });
@@ -389,8 +470,67 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
             return canvas.toDataURL('image/jpeg', 0.95);
         }
 
+        function checkImageQuality(ctx, width, height) {
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            let totalBrightness = 0;
+            let pixelCount = 0;
+
+            for (let i = 0; i < data.length; i += 16) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                totalBrightness += lum;
+                pixelCount++;
+            }
+
+            const avgBrightness = totalBrightness / (pixelCount || 1);
+
+            // 1. Dark / Black photo check
+            if (avgBrightness < 38) {
+                return {
+                    valid: false,
+                    reason: 'dark',
+                    message: '⚠️ Photo is too dark / black! Please move to a well-lit area.'
+                };
+            }
+
+            // 2. Blur / Sharpness edge variance check
+            const startX = Math.floor(width * 0.25);
+            const endX = Math.floor(width * 0.75);
+            const startY = Math.floor(height * 0.25);
+            const endY = Math.floor(height * 0.75);
+
+            let diffSum = 0;
+            let sampleCount = 0;
+
+            for (let y = startY; y < endY; y += 4) {
+                for (let x = startX; x < endX; x += 4) {
+                    const idx = (y * width + x) * 4;
+                    const nextIdx = (y * width + (x + 2)) * 4;
+                    const lum1 = 0.299 * data[idx] + 0.587 * data[idx+1] + 0.114 * data[idx+2];
+                    const lum2 = 0.299 * data[nextIdx] + 0.587 * data[nextIdx+1] + 0.114 * data[nextIdx+2];
+                    diffSum += Math.abs(lum1 - lum2);
+                    sampleCount++;
+                }
+            }
+
+            const avgEdgeDiff = diffSum / (sampleCount || 1);
+
+            if (avgEdgeDiff < 4.0) {
+                return {
+                    valid: false,
+                    reason: 'blur',
+                    message: '⚠️ Photo is blurry! Please hold still and look straight at the camera.'
+                };
+            }
+
+            return { valid: true, brightness: avgBrightness, sharpness: avgEdgeDiff };
+        }
+
         function scanLoop() {
-            if (capturedImage || isSubmitting) {
+            if (!step1Submitted || capturedImage || isSubmitting || countdownSeconds > 0) {
                 requestAnimationFrame(scanLoop);
                 return;
             }
@@ -399,36 +539,59 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
             const empName = document.getElementById('name').value.trim();
 
             if (!empCode || !empName) {
-                faceOverlay.className = 'face-overlay';
-                autoStatusBanner.className = 'alert alert-warning border-warning mb-3 py-2 text-dark fw-bold small';
-                autoStatusBanner.innerHTML = `<i class="fa-solid fa-hand me-1"></i>Please enter Employee Code and Full Name to start scanner.`;
                 requestAnimationFrame(scanLoop);
                 return;
             }
 
             if (video.videoWidth > 0 && video.videoHeight > 0) {
-                faceOverlay.className = 'face-overlay valid';
-                directionArrow.innerHTML = `<i class="fa-solid fa-circle-check text-success"></i>`;
-                autoStatusBanner.className = 'alert alert-success border-success mb-3 py-2 text-success fw-bold small';
-                autoStatusBanner.innerHTML = `<i class="fa-solid fa-check-circle me-1"></i><b>Face Aligned!</b> Capturing photo and registering...`;
-
                 if (!autoSaveTimer) {
                     autoSaveTimer = setTimeout(() => {
                         autoSaveTimer = null;
-                        capturedImage = captureFrame();
+                        
+                        // Check canvas image quality before capturing
+                        const width = video.videoWidth || 640;
+                        const height = video.videoHeight || 480;
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.translate(canvas.width, 0);
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                        const quality = checkImageQuality(ctx, width, height);
+
+                        if (!quality.valid) {
+                            faceOverlay.className = 'face-overlay';
+                            angleBadge.className = 'badge bg-danger px-3 py-2';
+                            angleBadge.innerText = quality.reason === 'dark' ? 'Too Dark / Black' : 'Image Blurry';
+
+                            autoStatusBanner.className = 'alert alert-danger border-danger mb-3 py-2 text-danger fw-bold fs-6';
+                            autoStatusBanner.innerHTML = quality.message;
+
+                            // Reset 5-second countdown to retry
+                            setTimeout(() => {
+                                countdownSeconds = 5;
+                                startCountdown();
+                            }, 2000);
+                            return;
+                        }
+
+                        faceOverlay.className = 'face-overlay valid';
+                        directionArrow.innerHTML = `<i class="fa-solid fa-circle-check text-success"></i>`;
+                        capturedImage = canvas.toDataURL('image/jpeg', 0.95);
 
                         // Update single photo preview UI
                         const thumbBox = document.getElementById('thumb-0');
                         thumbBox.innerHTML = `<img src="${capturedImage}"><div class="step-tag">✔ Photo Saved</div>`;
                         
-                        progressText.innerText = "1 / 1";
-                        progressBar.style.width = "100%";
+                        if (progressText) progressText.innerText = "1 / 1";
+                        if (progressBar) progressBar.style.width = "100%";
                         angleBadge.innerText = "Face Photo Saved!";
                         angleBadge.className = "badge bg-success px-3 py-2";
 
                         // Auto-submit employee registration immediately!
                         autoSubmitRegistration();
-                    }, 500); // 500ms fast single image capture
+                    }, 300);
                 }
             }
 
@@ -436,22 +599,53 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
         }
 
         btnReset.addEventListener('click', () => {
+            resetForNewEmployee();
+        });
+
+        function resetForNewEmployee() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            countdownTimer = null;
+            countdownSeconds = 5;
+
             if (autoSaveTimer) clearTimeout(autoSaveTimer);
             autoSaveTimer = null;
             capturedImage = null;
             isSubmitting = false;
+            step1Submitted = false;
 
-            angleBadge.className = "badge bg-primary px-3 py-2";
-            angleBadge.innerText = "1 Front Face Photo";
+            document.getElementById('employee_code').value = '';
+            document.getElementById('name').value = '';
+            document.getElementById('employee_code').readOnly = false;
+            document.getElementById('name').readOnly = false;
+
+            // Hide Step 2, Re-show Step 1
+            const step1Col = document.getElementById('step1Column');
+            const step2Col = document.getElementById('step2Column');
+            if (step1Col) {
+                step1Col.className = 'col-lg-6 col-md-8';
+                step1Col.classList.remove('d-none');
+            }
+            if (step2Col) step2Col.classList.add('d-none');
+
+            // Stop Webcam Stream
+            if (video && video.srcObject) {
+                try { video.srcObject.getTracks().forEach(t => t.stop()); } catch(e) {}
+                video.srcObject = null;
+            }
+            webcamInitialized = false;
+
+            angleBadge.className = "badge bg-secondary px-3 py-2";
+            angleBadge.innerText = "Waiting for Step 1";
             faceOverlay.className = 'face-overlay';
             
             const thumbBox = document.getElementById('thumb-0');
             thumbBox.innerHTML = `<div class="step-tag"><i class="fa-solid fa-user me-1"></i>Face Photo</div>`;
             
-            progressText.innerText = "0 / 1";
-            progressBar.style.width = "0%";
+            if (progressText) progressText.innerText = "0 / 1";
+            if (progressBar) progressBar.style.width = "0%";
             statusAlert.classList.add('d-none');
-        });
+            completionActions.classList.add('d-none');
+        }
 
         async function autoSubmitRegistration() {
             if (isSubmitting) return;
@@ -473,7 +667,7 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
                 name: empName,
                 department: '',
                 designation: '',
-                images_base64: [capturedImage] // Single image array
+                images_base64: [capturedImage]
             };
 
             try {
@@ -493,21 +687,14 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
 
                 if (response.ok && data && data.success) {
                     showAlert('success', `<i class="fa-solid fa-circle-check me-2"></i><b>Registration Successful!</b> ${data.message}`);
+                    completionActions.classList.remove('d-none');
                     fetchRegisteredEmps();
-                    // Lock kiosk again so next Add Employee requires login every time
-                    try {
-                        const logoutForm = new FormData();
-                        logoutForm.append('action', 'logout');
-                        await fetch('register.php', { method: 'POST', body: logoutForm });
-                    } catch (err) {}
-                    setTimeout(() => { window.location.href = 'verify.php'; }, 2000);
                 } else {
-                    const msg = (data && (data.detail || data.message)) || 'Registration failed.';
-                    showAlert('danger', `<i class="fa-solid fa-circle-exclamation me-2"></i>${msg}`);
+                    showAlert('danger', `<i class="fa-solid fa-triangle-exclamation me-2"></i><b>Registration Failed:</b> ${(data && data.message) || 'Unknown error'}`);
                     isSubmitting = false;
                 }
-            } catch (e) {
-                showAlert('danger', '<i class="fa-solid fa-triangle-exclamation me-2"></i>Registration API Error: ' + e.message);
+            } catch (err) {
+                showAlert('danger', `<i class="fa-solid fa-triangle-exclamation me-2"></i><b>Connection Error:</b> ${err.message}`);
                 isSubmitting = false;
             }
         }
@@ -546,7 +733,7 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
                     }
                     const badgeContainer = document.getElementById('authBadgeContainer');
                     if (badgeContainer) {
-                        badgeContainer.innerHTML = `<span class="badge bg-success px-2 py-2 text-truncate small" style="max-width: 170px;"><i class="fa-solid fa-user-check me-1"></i>${data.userName}</span><button type="button" class="btn btn-outline-danger btn-sm fw-bold me-1" onclick="handleAuthLogout()" title="Lock Kiosk Registration"><i class="fa-solid fa-lock me-1"></i>Lock</button><a href="../../dashboard" class="btn btn-outline-warning btn-sm fw-bold me-1" title="Super Admin Portal"><i class="fa-solid fa-crown text-warning"></i></a><button type="button" id="btnResetPhotos" class="btn btn-outline-secondary btn-sm" title="Reset Camera Scanner"><i class="fa-solid fa-rotate-right"></i></button>`;
+                        badgeContainer.innerHTML = `<button type="button" class="btn btn-outline-danger btn-sm fw-bold me-1" onclick="handleAuthLogout()" title="Lock Kiosk Registration"><i class="fa-solid fa-lock me-1"></i>Lock</button><button type="button" id="btnResetPhotos" class="btn btn-outline-secondary btn-sm" title="Reset Camera Scanner"><i class="fa-solid fa-rotate-right"></i></button>`;
                     }
                     initWebcam();
                 } else {

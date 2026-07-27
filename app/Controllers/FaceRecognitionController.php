@@ -16,53 +16,21 @@ class FaceRecognitionController extends Controller
 
     public function index(): string
     {
-        $db = $this->db();
-        
-        // Fetch stats
-        $totalEmployees = $db->selectOne("SELECT COUNT(*) as cnt FROM employees WHERE status = 'active'")['cnt'] ?? 0;
-        $registeredFaces = $db->selectOne("SELECT COUNT(DISTINCT employee_id) as cnt FROM face_embeddings")['cnt'] ?? 0;
-        $todayAttendance = $db->selectOne("SELECT COUNT(*) as cnt FROM attendance WHERE attendance_date = CURDATE()")['cnt'] ?? 0;
-
-        // Fetch recent attendance logs
-        $recentLogs = $db->select("
-            SELECT a.*, e.employee_code, e.name, e.department
-            FROM attendance a
-            JOIN employees e ON a.employee_id = e.id
-            ORDER BY a.check_in DESC
-            LIMIT 10
-        ") ?: [];
-
-        return $this->render('attendance/dashboard', [
-            'totalEmployees' => $totalEmployees,
-            'registeredFaces' => $registeredFaces,
-            'todayAttendance' => $todayAttendance,
-            'recentLogs' => $recentLogs
-        ]);
+        return $this->redirect(url('public/attendance/index.php'));
     }
 
     public function registerView(): string
     {
-        return $this->render('attendance/register');
+        return $this->redirect(url('public/attendance/register.php'));
     }
 
     public function verifyView(): string
     {
-        return $this->render('attendance/verify');
+        return $this->redirect(url('public/attendance/verify.php'));
     }
 
     public function historyView(): string
     {
-        $db = $this->db();
-        $logs = $db->select("
-            SELECT a.*, e.employee_code, e.name, e.department
-            FROM attendance a
-            JOIN employees e ON a.employee_id = e.id
-            ORDER BY a.check_in DESC
-            LIMIT 100
-        ") ?: [];
-
-        return $this->render('attendance/history', [
-            'logs' => $logs
-        ]);
+        return $this->redirect(url('public/attendance/history.php'));
     }
 }

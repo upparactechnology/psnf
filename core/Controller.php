@@ -20,6 +20,11 @@ abstract class Controller
         return View::render($view, $data);
     }
 
+    protected function render(string $view, array $data = [], string $layout = 'app'): string
+    {
+        return View::render($view, $data);
+    }
+
     protected function json(mixed $data, int $status = 200): string
     {
         return $this->response->json($data, $status);

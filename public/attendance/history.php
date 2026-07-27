@@ -13,8 +13,13 @@ if (!$isLoggedIn && session_name() !== 'PHPSESSID') {
     $isLoggedIn = !empty($_SESSION['user']) || !empty($_SESSION['admin_id']) || !empty($_SESSION['staff_id']);
 }
 
+session_write_close();
+
 if (!$isLoggedIn) {
-    header("Location: ../login");
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $loginUrl = $scheme . '://' . $host . preg_replace('#/public/attendance/.*$#i', '/login', $_SERVER['SCRIPT_NAME'] ?? '');
+    header("Location: " . $loginUrl);
     exit();
 }
 ?>
@@ -62,7 +67,6 @@ if (!$isLoggedIn) {
                 <i class="fa-solid fa-arrow-left me-2"></i>Attendance Logs
             </a>
             <div class="d-flex align-items-center gap-1">
-                <a href="../../dashboard" class="btn btn-outline-warning btn-sm fw-bold me-1"><i class="fa-solid fa-crown me-1 text-warning"></i>Admin</a>
                 <a href="verify.php" class="btn btn-success btn-sm fw-bold"><i class="fa-solid fa-camera me-1"></i>Kiosk</a>
             </div>
         </div>

@@ -96,14 +96,44 @@ if (!function_exists('flash')) {
     }
 }
 
+if (!function_exists('get_dynamic_base_url')) {
+    function get_dynamic_base_url(): string
+    {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+        
+        $configuredBase = config('app.base_url', '');
+        if (!empty($configuredBase)) {
+            $parsed = parse_url($configuredBase);
+            $path = $parsed['path'] ?? '';
+            return $scheme . '://' . $host . rtrim($path, '/');
+        }
+
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
+        $dir = rtrim(dirname($scriptName), '/\\');
+        $dir = preg_replace('#/(attendance)(/.*)?$#i', '', $dir);
+        $dir = rtrim($dir, '/\\');
+
+        return $scheme . '://' . $host . $dir;
+    }
+}
+
 if (!function_exists('url')) {
     function url(string $path = ''): string
     {
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://') || str_starts_with($path, '//')) {
             return $path;
         }
-        $base = rtrim(config('app.base_url', ''), '/');
-        return $base . '/' . ltrim($path, '/');
+
+        $base = rtrim(get_dynamic_base_url(), '/');
+        $cleanPath = ltrim($path, '/');
+
+        // Prevent duplicate /public/public/ when passing 'public/...' to url() helper
+        if (str_ends_with($base, '/public') && str_starts_with($cleanPath, 'public/')) {
+            $cleanPath = substr($cleanPath, 7);
+        }
+        
+        return $base . '/' . $cleanPath;
     }
 }
 
