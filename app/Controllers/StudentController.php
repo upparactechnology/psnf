@@ -29,8 +29,10 @@ class StudentController extends Controller
         $result   = Student::search($search, $filters, 15, $page);
         $statuses = Student::statusCounts();
 
-        if ($this->isHtmx()) {
-            return $this->view('students/_table', array_merge($result, ['search' => $search, 'statuses' => $statuses]));
+        if ($this->isHtmx() && ($this->request->get('search') !== null || $this->request->get('status') !== null || $this->request->get('disability') !== null)) {
+            if (file_exists(VIEWS_PATH . '/students/_table.php')) {
+                return $this->view('students/_table', array_merge($result, ['search' => $search, 'statuses' => $statuses]));
+            }
         }
 
         return $this->view('students/index', array_merge($result, ['search' => $search, 'statuses' => $statuses, 'filters' => $filters]));
@@ -154,7 +156,20 @@ class StudentController extends Controller
             [$tenantId]
         );
 
-        return $this->view('students/show', compact('student', 'classes', 'sections', 'academicYears'));
+        $assignedSubjects = $db->select(
+            "SELECT s.* 
+             FROM subjects s
+             INNER JOIN student_subject_enrollments e ON e.subject_id = s.id
+             WHERE e.student_id = ?",
+            [(int)$id]
+        );
+
+        $availableSubjects = $db->select(
+            "SELECT * FROM subjects WHERE tenant_id = ? ORDER BY name ASC",
+            [$tenantId]
+        );
+
+        return $this->view('students/show', compact('student', 'classes', 'sections', 'academicYears', 'assignedSubjects', 'availableSubjects'));
     }
 
     public function edit(string $id): string
@@ -282,6 +297,52 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Admission status updated.');
+        return $this->redirect("/students/$id");
+    }
+
+    public function assignSubject(string $id): string
+    {
+        $subjectIds = (array)($this->request->input('subject_ids') ?? [$this->request->input('subject_id')]);
+        $subjectIds = array_filter(array_map('intval', $subjectIds));
+
+        if (empty($subjectIds)) {
+            $this->flash('error', 'Please select at least one subject to assign.');
+            return $this->redirect("/students/$id");
+        }
+
+        $db = \Core\Application::$app->db;
+        $added = 0;
+        foreach ($subjectIds as $sId) {
+            try {
+                $db->insert('student_subject_enrollments', [
+                    'student_id' => (int)$id,
+                    'subject_id' => $sId,
+                    'academic_year_id' => 1,
+                    'status' => 'active'
+                ]);
+                $added++;
+            } catch (\Throwable $e) {
+                // Ignore duplicates
+            }
+        }
+
+        if ($added > 0) {
+            $this->flash('success', "$added subject(s) assigned to student successfully.");
+        } else {
+            $this->flash('error', 'Selected subject(s) are already assigned to this student.');
+        }
+
+        return $this->redirect("/students/$id");
+    }
+
+    public function removeSubject(string $id, string $subjectId): string
+    {
+        $db = \Core\Application::$app->db;
+        $db->query(
+            "DELETE FROM student_subject_enrollments WHERE student_id = ? AND subject_id = ?",
+            [(int)$id, (int)$subjectId]
+        );
+        $this->flash('success', 'Subject unassigned successfully.');
         return $this->redirect("/students/$id");
     }
 

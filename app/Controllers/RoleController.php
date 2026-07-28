@@ -12,9 +12,6 @@ class RoleController extends Controller
     public function index(): string
     {
         $roles = Role::allWithPermissionCount();
-        $roles = array_filter($roles, function($role) {
-            return !in_array($role['slug'], ['school_admin', 'manager', 'therapist', 'student']);
-        });
         return $this->view('roles/index', ['roles' => $roles]);
     }
 

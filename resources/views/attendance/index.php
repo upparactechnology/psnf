@@ -17,16 +17,16 @@ ob_start();
 
     <!-- Filter Card -->
     <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 shadow-sm">
-        <form method="GET" action="<?= url('attendance') ?>" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+        <form method="GET" action="<?= url('student-attendance') ?>" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
             <div class="space-y-1.5">
                 <label class="block text-xs font-medium text-slate-400">Class & Section</label>
-                <select name="class_section" required onchange="
+                <select name="class_section" onchange="
                     const val = this.value.split('|');
                     document.getElementById('class_input').value = val[0] || '';
                     document.getElementById('section_input').value = val[1] || '';
                     this.form.submit();
                 " class="w-full bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-xs focus:outline-none focus:border-brand-500 transition-all">
-                    <option value="">Select Class & Section</option>
+                    <option value="">All Classes & Sections</option>
                     <?php foreach ($classes as $c): ?>
                         <?php 
                             $optionVal = $c['class'] . '|' . $c['section'];
@@ -41,21 +41,20 @@ ob_start();
 
             <div class="space-y-1.5">
                 <label class="block text-xs font-medium text-slate-400">Date</label>
-                <input type="date" name="date" value="<?= e($selectedDate) ?>" required onchange="if(document.getElementById('class_input').value) this.form.submit();"
+                <input type="date" name="date" value="<?= e($selectedDate) ?>" required onchange="this.form.submit();"
                        class="w-full bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-xs focus:outline-none focus:border-brand-500 transition-all">
             </div>
 
             <div>
                 <button type="submit" class="w-full inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all bg-brand-600 hover:bg-brand-500 shadow-md">
-                    Load Student List
+                    Filter Attendance
                 </button>
             </div>
         </form>
     </div>
 
     <!-- Attendance Form Sheet -->
-    <?php if ($selectedClass): ?>
-    <form method="POST" action="<?= url('attendance/save') ?>" class="space-y-6">
+    <form method="POST" action="<?= url('student-attendance/save') ?>" class="space-y-6">
         <?= \Core\View::csrf() ?>
         <input type="hidden" name="class" value="<?= e($selectedClass) ?>">
         <input type="hidden" name="section" value="<?= e($selectedSection) ?>">
@@ -147,13 +146,6 @@ ob_start();
         <?php endif; ?>
 
     </form>
-    <?php else: ?>
-    <div class="rounded-2xl border border-slate-800/60 bg-slate-900/20 p-12 text-center shadow-sm">
-        <svg class="w-12 h-12 text-slate-650 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/></svg>
-        <h3 class="text-sm font-semibold text-white">Select a class to mark attendance</h3>
-        <p class="text-xs text-slate-500 mt-1">Choose a Class and Section from the filter block above to retrieve students.</p>
-    </div>
-    <?php endif; ?>
 
 </div>
 

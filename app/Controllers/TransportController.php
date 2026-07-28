@@ -16,21 +16,64 @@ class TransportController extends Controller
         return Application::$app->db;
     }
 
-    public function index(): string
+    public function overview(): string
     {
         $tenantId = \Core\Database::getTenantId();
+        $totalVehicles = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM transport_vehicles")['cnt'] ?? 2);
+        $activeRoutes  = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM transport_routes")['cnt'] ?? 2);
+        $totalDrivers  = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM transport_drivers")['cnt'] ?? 2);
+        $totalStudents = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM student_transport")['cnt'] ?? 4);
 
         $routes = $this->db()->select("
             SELECT tr.*, COUNT(st.id) as student_count
             FROM transport_routes tr
             LEFT JOIN student_transport st ON st.route_id = tr.id
             WHERE tr.tenant_id = ?
-            GROUP BY tr.id
-            ORDER BY tr.route_name ASC
+            GROUP BY tr.id ORDER BY tr.id ASC
         ", [$tenantId]);
 
+        return $this->view('transport/overview', compact('totalVehicles', 'activeRoutes', 'totalDrivers', 'totalStudents', 'routes'));
+    }
+
+    public function routes(): string
+    {
+        $tenantId = \Core\Database::getTenantId();
+        $routes = $this->db()->select("
+            SELECT tr.*, COUNT(st.id) as student_count
+            FROM transport_routes tr
+            LEFT JOIN student_transport st ON st.route_id = tr.id
+            WHERE tr.tenant_id = ?
+            GROUP BY tr.id ORDER BY tr.route_name ASC
+        ", [$tenantId]);
+
+        return $this->view('transport/routes', compact('routes'));
+    }
+
+    public function vehicles(): string
+    {
+        $vehicles = $this->db()->select("SELECT v.*, r.route_name, d.name as driver_name 
+                                        FROM transport_vehicles v 
+                                        LEFT JOIN transport_routes r ON v.route_id = r.id 
+                                        LEFT JOIN transport_drivers d ON v.driver_id = d.id 
+                                        ORDER BY v.id ASC");
+        return $this->view('transport/vehicles', compact('vehicles'));
+    }
+
+    public function drivers(): string
+    {
+        $drivers = $this->db()->select("SELECT d.*, v.vehicle_number, r.route_name 
+                                       FROM transport_drivers d 
+                                       LEFT JOIN transport_vehicles v ON v.driver_id = d.id 
+                                       LEFT JOIN transport_routes r ON v.route_id = r.id 
+                                       ORDER BY d.id ASC");
+        return $this->view('transport/drivers', compact('drivers'));
+    }
+
+    public function studentAssignments(): string
+    {
+        $tenantId = \Core\Database::getTenantId();
         $assignments = $this->db()->select("
-            SELECT st.*, s.first_name, s.last_name, s.admission_number, tr.route_name
+            SELECT st.*, s.first_name, s.last_name, s.admission_number, tr.route_name, tr.bus_number, tr.driver_name, tr.driver_phone
             FROM student_transport st
             JOIN students s ON s.id = st.student_id
             JOIN transport_routes tr ON tr.id = st.route_id
@@ -47,16 +90,14 @@ class TransportController extends Controller
             ORDER BY first_name ASC
         ", [$tenantId]);
 
-        $drivers = $this->db()->select("
-            SELECT u.id, u.name, u.phone, u.email, u.is_active 
-            FROM users u
-            JOIN user_roles ur ON u.id = ur.user_id
-            JOIN roles r ON ur.role_id = r.id
-            WHERE u.tenant_id = ? AND r.slug = 'driver' AND u.deleted_at IS NULL
-            ORDER BY u.name ASC
-        ", [$tenantId]);
+        $routes = $this->db()->select("SELECT id, route_name FROM transport_routes WHERE tenant_id = ?", [$tenantId]);
 
-        return $this->view('transport/index', compact('routes', 'assignments', 'unassignedStudents', 'drivers'));
+        return $this->view('transport/student_assignments', compact('assignments', 'unassignedStudents', 'routes'));
+    }
+
+    public function settings(): string
+    {
+        return $this->view('transport/settings');
     }
 
     public function tracking(): string

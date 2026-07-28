@@ -25,6 +25,11 @@ class View
 
         // Check if view extends a layout
         if (isset($layout)) {
+            // Do not re-wrap outer layout shell if this is an HTMX AJAX request
+            if (isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['HTTP_HX_REQUEST'] === 'true') {
+                return $content;
+            }
+
             $_layout_file_ = VIEWS_PATH . '/layouts/' . $layout . '.php';
             if (file_exists($_layout_file_)) {
                 ob_start();

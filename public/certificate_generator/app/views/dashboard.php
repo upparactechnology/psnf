@@ -153,12 +153,41 @@ $trendClass = static function (float $value): string {
                 <?php endforeach; ?>
             </div>
         </article>
+        <article class="dashboard-metric-card" style="border-color: rgba(16,185,129,0.3);">
+            <header>
+                <span class="metric-icon" aria-hidden="true" style="background: rgba(16,185,129,0.1); color: #10b981;">👨‍🎓</span>
+                <p class="metric-trend is-flat">ERP</p>
+            </header>
+            <p class="metric-label">Total Students</p>
+            <h3><?= e(number_format((int) ($totalStudents ?? 0))) ?></h3>
+            <p class="metric-footnote"><a href="/psnf/public/academic/students" style="color:#10b981">View in ERP →</a></p>
+        </article>
+
+        <article class="dashboard-metric-card" style="border-color: rgba(245,158,11,0.3);">
+            <header>
+                <span class="metric-icon" aria-hidden="true" style="background: rgba(245,158,11,0.1); color: #f59e0b;">💰</span>
+                <p class="metric-trend is-flat">ERP</p>
+            </header>
+            <p class="metric-label">Fee Invoices</p>
+            <h3><?= e(number_format((int) ($totalInvoices ?? 0))) ?></h3>
+            <p class="metric-footnote"><?= (int)($pendingInvoices ?? 0) ?> pending · <a href="/psnf/public/fees" style="color:#f59e0b">Open Finance →</a></p>
+        </article>
+
+        <article class="dashboard-metric-card" style="border-color: rgba(99,102,241,0.3);">
+            <header>
+                <span class="metric-icon" aria-hidden="true" style="background: rgba(99,102,241,0.1); color: #6366f1;">🧾</span>
+                <p class="metric-trend is-flat">ERP</p>
+            </header>
+            <p class="metric-label">Receipts</p>
+            <h3><?= e(number_format((int) ($totalReceipts ?? 0))) ?></h3>
+            <p class="metric-footnote"><a href="/psnf/public/receipts" style="color:#6366f1">View Receipts →</a></p>
+        </article>
     </section>
 
     <section class="dashboard-content-grid">
         <article class="panel dashboard-table-panel">
             <div class="dashboard-panel-heading">
-                <h3>Recent Issuances</h3>
+                <h3>Recent Certificate Issuances</h3>
                 <a href="<?= e(url('participants')) ?>">View All</a>
             </div>
 
@@ -175,7 +204,10 @@ $trendClass = static function (float $value): string {
                     <tbody>
                     <?php if (($recentParticipants ?? []) === []): ?>
                         <tr>
-                            <td colspan="4">No issuances yet. Import recipients to start.</td>
+                            <td colspan="4" style="text-align:center; padding: 24px; color: #94a3b8;">
+                                No certificates issued yet.
+                                <a href="<?= e(url('participants')) ?>" style="color:#6366f1; margin-left:8px">Add students →</a>
+                            </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($recentParticipants as $row): ?>
@@ -186,23 +218,13 @@ $trendClass = static function (float $value): string {
                             $createdAtRaw = (string) ($row['created_at'] ?? '');
                             $createdAt = strtotime($createdAtRaw);
                             $dateLabel = $createdAt !== false ? date('M j, Y', $createdAt) : '-';
-
                             $initials = '';
                             foreach (preg_split('/\s+/', $name) ?: [] as $part) {
-                                if ($part === '') {
-                                    continue;
-                                }
-
+                                if ($part === '') continue;
                                 $initials .= strtoupper(substr($part, 0, 1));
-
-                                if (strlen($initials) >= 2) {
-                                    break;
-                                }
+                                if (strlen($initials) >= 2) break;
                             }
-
-                            if ($initials === '') {
-                                $initials = 'NA';
-                            }
+                            if ($initials === '') $initials = 'NA';
                             ?>
                             <tr>
                                 <td>
@@ -238,9 +260,27 @@ $trendClass = static function (float $value): string {
                     <?php foreach ($gettingStarted as $item): ?>
                         <li class="<?= (($item['done'] ?? false) === true) ? 'done' : '' ?>">
                             <span class="checklist-dot" aria-hidden="true"></span>
-                            <span><?= e((string) ($item['label'] ?? 'Task')) ?></span>
+                            <?php if (!empty($item['url'])): ?>
+                                <a href="<?= e($item['url']) ?>" style="color:inherit;"><?= e((string) ($item['label'] ?? 'Task')) ?></a>
+                            <?php else: ?>
+                                <span><?= e((string) ($item['label'] ?? 'Task')) ?></span>
+                            <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
+                </ul>
+            </article>
+
+            <!-- ERP Quick Links -->
+            <article class="panel" style="margin-top: 16px; padding: 20px;">
+                <div class="dashboard-panel-heading" style="margin-bottom: 12px;">
+                    <h3 style="font-size: 13px;">ERP Quick Links</h3>
+                </div>
+                <ul style="list-style:none; padding:0; margin:0; space-y:8px; font-size:13px; display:flex; flex-direction:column; gap:8px;">
+                    <li><a href="/psnf/public/academic/students" style="color:#6366f1;">👨‍🎓 Students</a></li>
+                    <li><a href="/psnf/public/fees" style="color:#f59e0b;">💰 Fee Invoices</a></li>
+                    <li><a href="/psnf/public/receipts" style="color:#10b981;">🧾 Receipts</a></li>
+                    <li><a href="/psnf/public/certificates" style="color:#a855f7;">📜 ERP Certificates</a></li>
+                    <li><a href="/psnf/public/dashboard" style="color:#94a3b8;">← Back to ERP Dashboard</a></li>
                 </ul>
             </article>
         </aside>

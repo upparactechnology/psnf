@@ -1,4 +1,37 @@
 <?php
+// ─── PSNF ERP Session Bridge: Auto-login from main ERP ─────────────────────
+// The main ERP uses session name 'PSNF_SESSION'. We read it first, extract
+// the logged-in user, then restore our own session for the file manager.
+
+$erpUser = null;
+
+if (empty($_SESSION['admin_id'])) {
+    // Read the ERP session
+    $currentSessionId = session_id();
+    if (!empty($currentSessionId)) {
+        // Already started — suspend it briefly
+        session_write_close();
+    }
+
+    session_name('PSNF_SESSION');
+    session_start();
+    $erpUser = $_SESSION['user'] ?? null;
+    session_write_close();
+
+    // Restore file manager session
+    session_name('PSNF_FM_SESSION');
+    session_start();
+
+    if ($erpUser && !empty($erpUser['id'])) {
+        $_SESSION['admin_id']   = (int) $erpUser['id'];
+        $_SESSION['admin_name'] = (string) ($erpUser['name'] ?? 'ERP User');
+        $_SESSION['erp_bridged'] = true;
+    }
+} else {
+    // Session already active — just continue
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 spl_autoload_register(function ($class) {
   $prefix = 'App\\';
   $baseDir = __DIR__ . '/../app/';
@@ -44,15 +77,22 @@ register_shutdown_function(function () use ($logError): void {
 $appConfig = require __DIR__ . '/../config/app.php';
 date_default_timezone_set($appConfig['timezone']);
 
-session_start();
-
-if (!empty($_SESSION['last_activity']) && time() - $_SESSION['last_activity'] > $appConfig['session_timeout']) {
-  session_unset();
-  session_destroy();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+  session_name('PSNF_FM_SESSION');
   session_start();
+}
+
+if (!empty($_SESSION['last_activity']) && time() - $_SESSION['last_activity'] > ($appConfig['session_timeout'] ?? 3600)) {
+  // Only destroy if NOT bridged from ERP
+  if (empty($_SESSION['erp_bridged'])) {
+    session_unset();
+    session_destroy();
+    session_start();
+  }
 }
 $_SESSION['last_activity'] = time();
 
 $router = new App\Core\Router();
 require __DIR__ . '/../routes/web.php';
 $router->dispatch($_SERVER['REQUEST_METHOD'], parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+

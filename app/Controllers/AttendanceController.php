@@ -30,45 +30,94 @@ class AttendanceController extends Controller
             $selectedSection = trim($parts[1] ?? '');
         }
 
-        // Fetch all classes & sections to populate filter dropdowns
+        // Ensure classes table exists
+        $db->query("
+            CREATE TABLE IF NOT EXISTS `classes` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `tenant_id` INT UNSIGNED NOT NULL,
+                `school_id` INT UNSIGNED NOT NULL,
+                `branch_id` INT UNSIGNED NOT NULL,
+                `name` VARCHAR(100) NOT NULL,
+                `section` VARCHAR(50) NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY `uq_class_section` (`tenant_id`, `name`, `section`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        // Fetch classes from classes table
         $classes = $db->select(
-            "SELECT class, section 
-             FROM students 
-             WHERE tenant_id = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
-             GROUP BY class, section 
-             ORDER BY class ASC, section ASC",
+            "SELECT name as class, COALESCE(section, '') as section 
+             FROM classes 
+             WHERE tenant_id = ? 
+             ORDER BY name ASC, section ASC",
             [$tenantId]
         );
+
+        if (empty($classes)) {
+            $classes = $db->select(
+                "SELECT class, COALESCE(section, '') as section 
+                 FROM students 
+                 WHERE tenant_id = ? AND deleted_at IS NULL AND admission_status = 'enrolled' AND class IS NOT NULL AND class != ''
+                 GROUP BY class, section 
+                 ORDER BY class ASC, section ASC",
+                [$tenantId]
+            );
+        }
+
+        // If no class is selected, auto-select the first available class
+        if (empty($selectedClass) && !empty($classes)) {
+            $selectedClass = $classes[0]['class'];
+            $selectedSection = $classes[0]['section'];
+        }
 
         $students = [];
         $attendanceMap = [];
 
         if ($selectedClass) {
-            // Fetch students in chosen class/section
+            // Fetch enrolled students for selected class and section
             $students = $db->select(
                 "SELECT * FROM students 
-                 WHERE tenant_id = ? AND class = ? AND section = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
+                 WHERE tenant_id = ? AND class = ? AND COALESCE(section, '') = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
                  ORDER BY first_name ASC",
                 [$tenantId, $selectedClass, $selectedSection]
             );
 
-            if ($students) {
-                $studentIds = array_column($students, 'id');
-                $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
-                
-                // Fetch attendance records for these students on the selected date
-                $records = $db->select(
-                    "SELECT student_id, status, remarks FROM attendance 
-                     WHERE date = ? AND student_id IN ($placeholders)",
-                    array_merge([$selectedDate], $studentIds)
+            // If empty with section filter, fallback to class matching
+            if (empty($students)) {
+                $students = $db->select(
+                    "SELECT * FROM students 
+                     WHERE tenant_id = ? AND class = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
+                     ORDER BY first_name ASC",
+                    [$tenantId, $selectedClass]
                 );
+            }
+        } else {
+            // Fallback: Fetch all enrolled students across all classes
+            $students = $db->select(
+                "SELECT * FROM students 
+                 WHERE tenant_id = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
+                 ORDER BY class ASC, first_name ASC",
+                [$tenantId]
+            );
+        }
 
-                foreach ($records as $r) {
-                    $attendanceMap[$r['student_id']] = [
-                        'status'  => $r['status'],
-                        'remarks' => $r['remarks'],
-                    ];
-                }
+        if (!empty($students)) {
+            $studentIds = array_column($students, 'id');
+            $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+            
+            // Fetch attendance records for these students on the selected date
+            $records = $db->select(
+                "SELECT student_id, status, remarks FROM attendance 
+                 WHERE date = ? AND student_id IN ($placeholders)",
+                array_merge([$selectedDate], $studentIds)
+            );
+
+            foreach ($records as $r) {
+                $attendanceMap[$r['student_id']] = [
+                    'status'  => $r['status'],
+                    'remarks' => $r['remarks'],
+                ];
             }
         }
 
@@ -86,22 +135,37 @@ class AttendanceController extends Controller
         $attData = $this->request->input('attendance', []);
         $remarks = $this->request->input('remarks', []);
 
-        if (!$class || !$date) {
-            $this->flash('error', 'Class and Date are required to save attendance.');
+        if (!$date) {
+            $this->flash('error', 'Date is required to save attendance.');
             return $this->redirect('/attendance');
         }
 
         $tenantId = \Core\Database::getTenantId();
 
-        // Get students in this class/section to verify records are for enrolled students
-        $students = $db->select(
-            "SELECT id, tenant_id, school_id, branch_id FROM students 
-             WHERE tenant_id = ? AND class = ? AND section = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
-            [$tenantId, $class, $section]
-        );
+        // Get students in this class/section (or all enrolled students if no class specified)
+        if ($class) {
+            $students = $db->select(
+                "SELECT id, tenant_id, school_id, branch_id FROM students 
+                 WHERE tenant_id = ? AND class = ? AND COALESCE(section, '') = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
+                [$tenantId, $class, $section]
+            );
+            if (empty($students)) {
+                $students = $db->select(
+                    "SELECT id, tenant_id, school_id, branch_id FROM students 
+                     WHERE tenant_id = ? AND class = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
+                    [$tenantId, $class]
+                );
+            }
+        } else {
+            $students = $db->select(
+                "SELECT id, tenant_id, school_id, branch_id FROM students 
+                 WHERE tenant_id = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
+                [$tenantId]
+            );
+        }
 
         if (empty($students)) {
-            $this->flash('error', 'No enrolled students found in this class.');
+            $this->flash('error', 'No enrolled students found.');
             return $this->redirect('/attendance');
         }
 
@@ -148,6 +212,6 @@ class AttendanceController extends Controller
             $this->flash('error', 'Failed to save attendance: ' . $e->getMessage());
         }
 
-        return $this->redirect("/attendance?class=" . urlencode($class) . "&section=" . urlencode($section) . "&date=" . urlencode($date));
+        return $this->redirect("/student-attendance?class=" . urlencode($class) . "&section=" . urlencode($section) . "&date=" . urlencode($date));
     }
 }

@@ -176,18 +176,27 @@
             border: 1px solid rgba(0, 0, 0, 0.06) !important;
         }
 
-        /* Sidebar Navigation */
-        html:not(.dark) .sidebar-link {
-            color: #475569 !important;
+        /* Sidebar Navigation & High Specificity Active Item Styling */
+        aside nav {
+            scrollbar-width: none !important; /* Firefox */
+            -ms-overflow-style: none !important; /* IE 10+ */
         }
-        html:not(.dark) .sidebar-link:hover {
-            color: #0f172a !important;
-            background-color: rgba(0, 0, 0, 0.04) !important;
+        aside nav::-webkit-scrollbar {
+            display: none !important; /* Chrome, Safari, Opera */
+            width: 0 !important;
+            height: 0 !important;
         }
-        html:not(.dark) .sidebar-link.active {
-            background-color: rgba(99, 102, 241, 0.1) !important;
+
+        .sidebar-active-item {
+            background-color: rgba(79, 70, 229, 0.15) !important;
             color: #4f46e5 !important;
-            border-color: rgba(99, 102, 241, 0.2) !important;
+            border: 1px solid rgba(79, 70, 229, 0.3) !important;
+            font-weight: 700 !important;
+        }
+        .dark .sidebar-active-item {
+            background-color: rgba(99, 102, 241, 0.25) !important;
+            color: #818cf8 !important;
+            border: 1px solid rgba(99, 102, 241, 0.4) !important;
         }
 
         /* Badges */
@@ -264,7 +273,26 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-surface-950 dark:text-slate-200 font-sans antialiased min-h-screen" x-data="{ sidebarOpen: true, mobileNav: false, isDark: window.isDark, toggleTheme() { this.isDark = !this.isDark; if (this.isDark) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); } } }">
+<body class="bg-slate-50 text-slate-800 dark:bg-surface-950 dark:text-slate-200 font-sans antialiased min-h-screen" 
+      x-data="{ 
+          sidebarOpen: true, 
+          mobileNav: false, 
+          commandPalette: false,
+          searchQuery: '',
+          isDark: window.isDark, 
+          toggleTheme() { 
+              this.isDark = !this.isDark; 
+              if (this.isDark) { 
+                  document.documentElement.classList.add('dark'); 
+                  localStorage.setItem('theme', 'dark'); 
+              } else { 
+                  document.documentElement.classList.remove('dark'); 
+                  localStorage.setItem('theme', 'light'); 
+              } 
+          } 
+      }"
+      @keydown.window.cmd.k.prevent="commandPalette = true"
+      @keydown.window.ctrl.k.prevent="commandPalette = true">
 
 <!-- Flash Messages -->
 <?php $success = \Core\Session::getFlash('success'); $error = \Core\Session::getFlash('error'); ?>
@@ -356,9 +384,15 @@ if ($user) {
             ?>
             <?php if (!function_exists('navLink')) {
                 function navLink(string $href, string $icon, string $label, string $current, bool $open = true, bool $disabled = false): void {
-                    $active = str_starts_with($current, $href) && $href !== '/';
-                    if ($href === '/dashboard' || $href === '/teacher/dashboard') {
-                        $active = ($current === '/dashboard' || $current === '/teacher/dashboard');
+                    $cleanHref = strtok($href, '?');
+                    $cleanCurrent = strtok($current, '?');
+                    
+                    if ($cleanHref === '/academics' || $cleanHref === '/academics/') {
+                        $active = ($cleanCurrent === '/academics' || $cleanCurrent === '/academics/' || $cleanCurrent === '/academics/overview');
+                    } elseif ($cleanHref === '/dashboard' || $cleanHref === '/teacher/dashboard') {
+                        $active = ($cleanCurrent === '/dashboard' || $cleanCurrent === '/teacher/dashboard');
+                    } else {
+                        $active = str_starts_with($cleanCurrent, $cleanHref) && $cleanHref !== '/';
                     }
                     
                     if ($disabled) {
@@ -371,8 +405,9 @@ if ($user) {
                         }
                         echo "</div>";
                     } else {
-                        $classes = $active ? 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all bg-brand-500/10 text-brand-600 dark:bg-brand-600/20 dark:text-brand-400 border border-brand-500/20 dark:border-brand-500/20' : 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all duration-200';
-                        echo "<a href=\"" . url(ltrim($href, '/')) . "\" class=\"$classes\" title=\"$label\">";
+                        $classes = $active ? 'sidebar-active-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-all bg-indigo-600/15 text-indigo-600 dark:bg-indigo-600/30 dark:text-indigo-400 border border-indigo-500/30 dark:border-indigo-500/40 shadow-sm' : 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all duration-200';
+                        $targetUrl = url(ltrim($href, '/'));
+                        echo "<a href=\"$targetUrl\" class=\"$classes\" title=\"$label\">";
                         echo "<span class=\"flex-shrink-0\">$icon</span>";
                         if ($open) echo "<span class=\"truncate\" x-show=\"sidebarOpen\">$label</span>";
                         echo "</a>";
@@ -401,20 +436,18 @@ if ($user) {
                 'settings' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
             ];
 
-            // Determine active module from path
+            // Determine active workspace module from path
             $module = '';
-            if (str_starts_with($currentPath, '/report-cards') || str_contains($currentPath, '/report-card')) {
-                $module = 'report_cards';
-            } elseif (str_starts_with($currentPath, '/students') || str_starts_with($currentPath, '/admissions')) {
+            if ($currentPath === '/dashboard' || $currentPath === '/teacher/dashboard' || $currentPath === '/games') {
+                $module = 'launcher';
+            } elseif (str_starts_with($currentPath, '/academic') || str_starts_with($currentPath, '/students') || str_starts_with($currentPath, '/admissions') || str_starts_with($currentPath, '/classes') || str_starts_with($currentPath, '/timetables') || str_starts_with($currentPath, '/exams') || str_starts_with($currentPath, '/report-cards') || str_contains($currentPath, '/report-card')) {
                 $module = 'academic';
-            } elseif (str_starts_with($currentPath, '/classes') || str_starts_with($currentPath, '/attendance') || str_starts_with($currentPath, '/certificates') || str_starts_with($currentPath, '/timetables') || str_starts_with($currentPath, '/exams')) {
-                $module = 'academic_summary';
-            } elseif (str_starts_with($currentPath, '/fees') || str_starts_with($currentPath, '/receipts') || str_starts_with($currentPath, '/scholarships')) {
+            } elseif (str_starts_with($currentPath, '/fees') || str_starts_with($currentPath, '/receipts') || str_starts_with($currentPath, '/scholarships') || str_starts_with($currentPath, '/certificates')) {
                 $module = 'finance';
             } elseif (str_starts_with($currentPath, '/transport')) {
                 $module = 'transport';
             } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/staff') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/settings')) {
-                $module = 'administration';
+                $module = 'staff';
             } elseif (str_starts_with($currentPath, '/medical')) {
                 $module = 'medical';
             }
@@ -424,64 +457,109 @@ if ($user) {
             <div class="mb-4 pb-3 border-b border-slate-200 dark:border-slate-800/60">
                 <?php navLink(dashboard_url(), $ic['launcher'], 'Back to Apps', $currentPath, $sidebarOpen); ?>
             </div>
-            <?php if ($module === 'report_cards'): ?>
-                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Report Cards</div>
-                <?php navLink('/report-cards', $ic['certificates'], 'Report Cards Panel', $currentPath, $sidebarOpen); ?>
-                <?php if (in_array('academic', $assignedApps)): ?>
-                    <?php navLink('/students', $ic['students'], 'Students Registry', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
 
-            <?php elseif ($module === 'academic'): ?>
-                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic</div>
-                <?php if (in_array('academic', $assignedApps)): ?>
-                    <?php navLink('/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/report-cards', $ic['certificates'], 'Report Cards', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
-            <?php elseif ($module === 'academic_summary'): ?>
-                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic Summary</div>
-                <?php if (in_array('academic_summary', $assignedApps) || in_array('academic', $assignedApps)): ?>
-                    <?php navLink('/classes', $ic['classes'], 'Classes & Sections', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/certificates', $ic['certificates'], 'Certificates', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/timetables', $ic['timetables'], 'Timetables', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/exams', $ic['exams'], 'Exams & Grades', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
+            <!-- DYNAMIC CLIENT-SIDE SIDEBAR MODULE SECTIONS (ZERO PAGE RELOAD) -->
+            <div x-data="{
+                currentModule() {
+                    const path = (window.location.pathname.replace('/psnf/public', '') || '/').replace(/\/$/, '') || '/';
+                    if (path === '/dashboard' || path === '/teacher/dashboard' || path === '/games' || path === '/') return 'launcher';
+                    if (path.startsWith('/academic') || path.startsWith('/students') || path.startsWith('/admissions') || path.startsWith('/classes') || path.startsWith('/timetables') || path.startsWith('/exams') || path.includes('/report-card')) return 'academic';
+                    if (path.startsWith('/transport')) return 'transport';
+                    if (path.startsWith('/fees') || path.startsWith('/receipts') || path.startsWith('/scholarships') || path.startsWith('/certificates')) return 'finance';
+                    if (path.startsWith('/medical')) return 'medical';
+                    if (path.startsWith('/users') || path.startsWith('/staff') || path.startsWith('/roles') || path.startsWith('/settings')) return 'staff';
+                    return 'launcher';
+                }
+            }" @htmx:after-swap.window="$nextTick(() => {})" class="space-y-1">
 
-            <?php elseif ($module === 'finance'): ?>
-                <?php if (in_array('finance', $assignedApps)): ?>
-                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Finance</div>
+                <!-- ACADEMICS WORKSPACE -->
+                <div x-show="currentModule() === 'academic'" class="space-y-1">
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academics</div>
+                    <?php navLink('/academics', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>', 'Overview', $currentPath, $sidebarOpen); ?>
+                    
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Core</div>
+                    <?php navLink('/academics/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/admissions', $ic['admissions'], 'Admissions', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/classes', $ic['classes'], 'Classes', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/teachers', $ic['users'], 'Teachers', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/subjects', $ic['classes'], 'Subjects', $currentPath, $sidebarOpen); ?>
+
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Operations</div>
+                    <?php navLink('/academics/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/timetable', $ic['timetables'], 'Timetable', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/assessments', $ic['exams'], 'Assessments', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/report-cards', $ic['certificates'], 'Report Cards', $currentPath, $sidebarOpen); ?>
+
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Special Education</div>
+                    <?php navLink('/academics/iep', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'IEP Programs', $currentPath, $sidebarOpen); ?>
+
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Administration</div>
+                    <?php navLink('/academics/settings', $ic['settings'], 'Academic Settings', $currentPath, $sidebarOpen); ?>
+                </div>
+
+                <!-- FINANCE WORKSPACE -->
+                <div x-show="currentModule() === 'finance'" class="space-y-1" x-cloak>
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Finance & Billing</div>
                     <?php navLink('/fees', $ic['fees'], 'Fees & Invoices', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/receipts', $ic['receipts'], 'Receipts', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/receipts', $ic['receipts'], 'Receipts Log', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/scholarships', $ic['scholarships'], 'Scholarships', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/receipts/settings', $ic['settings'], 'Receipt Settings', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
+                    <?php navLink('/receipts/settings', $ic['settings'], 'Receipt Config', $currentPath, $sidebarOpen); ?>
 
-            <?php elseif ($module === 'transport'): ?>
-                <?php if (in_array('transport', $assignedApps)): ?>
-                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Transport</div>
-                    <?php navLink('/transport', $ic['transport'], 'Routes & Vehicles', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/transport/tracking', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Live Tracking', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Documents</div>
+                    <?php navLink('/certificates', '<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Certificate Generator', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/certificates/create', '<svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>', 'Design New Certificate', $currentPath, $sidebarOpen); ?>
+                </div>
 
-            <?php elseif ($module === 'administration'): ?>
-                <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Staff Attendance</div>
-                <?php if (in_array('hr', $assignedApps)): ?>
-                    <?php navLink('/users', $ic['users'], 'Staff Members', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/staff/attendance', $ic['attendance'], 'Attendance Logs', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
-                <?php if (in_array('access_control', $assignedApps)): ?>
+                <!-- TRANSPORT MANAGEMENT WORKSPACE (PERMANENT SIDEBAR) -->
+                <div x-show="currentModule() === 'transport'" class="space-y-1">
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Transport</div>
+                    <?php navLink('/transport/overview', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>', 'Overview', $currentPath, $sidebarOpen); ?>
+
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Transport</div>
+                    <?php navLink('/transport/routes', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>', 'Routes', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/transport/vehicles', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>', 'Vehicles', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/transport/drivers', $ic['users'], 'Drivers', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/transport/student-assignments', $ic['students'], 'Student Assignments', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/transport/live-tracking', '<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Live Tracking', $currentPath, $sidebarOpen); ?>
+
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Administration</div>
+                    <?php navLink('/transport/settings', $ic['settings'], 'Transport Settings', $currentPath, $sidebarOpen); ?>
+                </div>
+
+                <!-- STAFF MANAGEMENT WORKSPACE (ENTERPRISE HRMS PERMANENT SIDEBAR) -->
+                <div x-show="currentModule() === 'staff'" class="space-y-1">
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Staff Management</div>
+                    <?php navLink('/staff/overview', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>', 'Overview', $currentPath, $sidebarOpen); ?>
+                    
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Staff</div>
+                    <?php navLink('/staff/employees', $ic['users'], 'Staff Directory', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/staff/departments', $ic['classes'], 'Departments', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/staff/designations', $ic['roles'], 'Designations', $currentPath, $sidebarOpen); ?>
+
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Operations</div>
+                    <?php navLink('/staff/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/staff/leaves', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>', 'Leave Management', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/staff/payroll', $ic['fees'], 'Payroll', $currentPath, $sidebarOpen); ?>
+
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Security</div>
+                    <?php navLink('/staff/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/staff/users', $ic['users'], 'User Accounts', $currentPath, $sidebarOpen); ?>
+
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Administration</div>
+                    <?php navLink('/staff/settings', $ic['settings'], 'Staff Settings', $currentPath, $sidebarOpen); ?>
+                </div>
+
+                <!-- LAUNCHER / QUICK NAVIGATION WORKSPACE -->
+                <div x-show="currentModule() === 'launcher'" class="space-y-1" x-cloak>
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Quick Navigation</div>
+                    <?php navLink('/students', $ic['students'], 'Students Registry', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/classes', $ic['classes'], 'Classes', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/exams', $ic['exams'], 'Exams & Grades', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/transport', $ic['transport'], 'Transport Routes', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
+                </div>
 
-                <?php if (in_array('config', $assignedApps)): ?>
-                    <?php navLink('/settings', $ic['settings'], 'Settings', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
-            <?php elseif ($module === 'medical'): ?>
-                <?php if (in_array('medical', $assignedApps)): ?>
-                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Medical</div>
-                    <?php navLink('/medical', '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>', 'Care Profiles', $currentPath, $sidebarOpen); ?>
-                <?php endif; ?>
-            <?php endif; ?>
+            </div>
 
         </nav>
 
@@ -589,6 +667,44 @@ if ($user) {
     </div>
 </div>
 
+<!-- Global Command Palette Modal (CTRL + K) -->
+<div x-show="commandPalette" class="fixed inset-0 overflow-y-auto z-[99999]" x-cloak>
+    <div class="flex items-center justify-center min-h-screen px-4 text-center sm:p-0">
+        <div x-show="commandPalette" x-transition.opacity class="fixed inset-0 bg-slate-950/70 backdrop-blur-md" @click="commandPalette = false"></div>
+
+        <div x-show="commandPalette" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="inline-block align-bottom bg-slate-900 border border-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full">
+            <div class="p-4 border-b border-slate-800 flex items-center gap-3">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" x-model="searchQuery" placeholder="Type a module, student name, or route... (ESC to close)" class="w-full bg-transparent border-none text-white text-sm focus:outline-none placeholder-slate-500">
+                <kbd class="px-2 py-0.5 text-2xs font-mono bg-slate-800 text-slate-400 rounded-md border border-slate-700">ESC</kbd>
+            </div>
+            <div class="p-3 max-h-96 overflow-y-auto space-y-1">
+                <div class="text-2xs font-bold text-slate-500 uppercase px-3 py-1.5">Quick Links & Workspaces</div>
+                <a href="<?= url('students') ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-xs">
+                    <span class="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">1</span>
+                    <span>Students Registry Workspace</span>
+                </a>
+                <a href="<?= url('exams/bulk-entry') ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-xs">
+                    <span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">2</span>
+                    <span>Bulk Excel Mark Entry Kiosk</span>
+                </a>
+                <a href="<?= url('transport') ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-xs">
+                    <span class="w-6 h-6 rounded-lg bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-xs font-bold">3</span>
+                    <span>Live GPS Bus Tracking & Routes</span>
+                </a>
+                <a href="<?= url('medical') ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-xs">
+                    <span class="w-6 h-6 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center text-xs font-bold">4</span>
+                    <span>Medical Care Profiles & Incident Logs</span>
+                </a>
+                <a href="<?= url('roles') ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-xs">
+                    <span class="w-6 h-6 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold">5</span>
+                    <span>Roles & Excel Permissions Matrix</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // CSRF for HTMX
 document.body.addEventListener('htmx:configRequest', function(e) {
@@ -615,6 +731,83 @@ function startHeaderClock() {
 }
 document.addEventListener('DOMContentLoaded', startHeaderClock);
 document.body.addEventListener('htmx:afterSwap', startHeaderClock);
+
+// Scroll Active Sidebar Link Into Viewport Container
+function scrollActiveSidebarIntoView() {
+    setTimeout(() => {
+        const activeLink = document.querySelector('.sidebar-active-item');
+        const navContainer = document.querySelector('aside nav');
+        if (activeLink && navContainer) {
+            const linkTop = activeLink.offsetTop;
+            const linkHeight = activeLink.offsetHeight;
+            const containerHeight = navContainer.clientHeight;
+            navContainer.scrollTo({
+                top: linkTop - (containerHeight / 2) + (linkHeight / 2),
+                behavior: 'smooth'
+            });
+        }
+    }, 150);
+}
+document.addEventListener('DOMContentLoaded', scrollActiveSidebarIntoView);
+document.body.addEventListener('htmx:afterSwap', scrollActiveSidebarIntoView);
+
+// Dynamically recalculate sidebar active highlight on HTMX page swaps
+function updateSidebarActiveState() {
+    const rawPath = window.location.pathname;
+    // Normalize path by stripping base directory prefix if present (e.g. /psnf/public)
+    const basePrefix = '/psnf/public';
+    let currentPath = rawPath.startsWith(basePrefix) ? rawPath.substring(basePrefix.length) : rawPath;
+    currentPath = currentPath.replace(/\/$/, '') || '/';
+    
+    document.querySelectorAll('aside nav a').forEach(link => {
+        let linkHref = link.getAttribute('href') || '';
+        let linkPath = new URL(link.href, window.location.origin).pathname;
+        if (linkPath.startsWith(basePrefix)) {
+            linkPath = linkPath.substring(basePrefix.length);
+        }
+        linkPath = linkPath.replace(/\/$/, '') || '/';
+
+        let isActive = false;
+
+        if (linkPath === '/academics' || linkPath === '/academics/') {
+            isActive = (currentPath === '/academics' || currentPath === '/academics/' || currentPath === '/academics/overview');
+        } else if (linkPath === '/dashboard' || linkPath === '/teacher/dashboard') {
+            isActive = (currentPath === '/dashboard' || currentPath === '/teacher/dashboard');
+        } else if (linkPath !== '/') {
+            isActive = (currentPath === linkPath || currentPath.startsWith(linkPath + '/'));
+        }
+
+        if (isActive) {
+            link.classList.add('sidebar-active-item', 'bg-indigo-600/15', 'text-indigo-600', 'dark:bg-indigo-600/30', 'dark:text-indigo-400', 'border-indigo-500/30', 'dark:border-indigo-500/40', 'shadow-sm', 'font-bold');
+            link.classList.remove('text-slate-500', 'hover:bg-slate-100', 'dark:text-slate-400');
+        } else {
+            link.classList.remove('sidebar-active-item', 'bg-indigo-600/15', 'text-indigo-600', 'dark:bg-indigo-600/30', 'dark:text-indigo-400', 'border-indigo-500/30', 'dark:border-indigo-500/40', 'shadow-sm', 'font-bold');
+            link.classList.add('text-slate-500', 'dark:text-slate-400');
+        }
+    });
+
+    scrollActiveSidebarIntoView();
+}
+
+document.addEventListener('DOMContentLoaded', updateSidebarActiveState);
+document.body.addEventListener('htmx:afterSwap', updateSidebarActiveState);
+window.addEventListener('popstate', updateSidebarActiveState);
+
+// Global Seamless AJAX Interceptor for Forms & Navigation
+document.addEventListener('DOMContentLoaded', function() {
+    // Automatically convert forms into AJAX submissions using HTMX dynamic binding
+    document.querySelectorAll('form:not([hx-post]):not([hx-get]):not([target="_blank"])').forEach(form => {
+        const method = (form.method || 'POST').toUpperCase();
+        if (method === 'POST') {
+            form.setAttribute('hx-post', form.action);
+        } else {
+            form.setAttribute('hx-get', form.action);
+        }
+        form.setAttribute('hx-target', '#main-content');
+        form.setAttribute('hx-swap', 'innerHTML');
+        htmx.process(form);
+    });
+
 </script>
 
 </body>

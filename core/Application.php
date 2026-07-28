@@ -85,7 +85,7 @@ class Application
         error_reporting($debug ? E_ALL : E_ERROR | E_PARSE);
         ini_set('display_errors', $debug ? '1' : '0');
         ini_set('log_errors', '1');
-        ini_set('error_log', STORAGE_PATH . '/logs/error.log');
+        ini_set('error_log', \STORAGE_PATH . '/logs/error.log');
 
         set_exception_handler(function (\Throwable $e): void {
             if (config('app.debug', false)) {

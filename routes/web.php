@@ -28,19 +28,40 @@ $router->get('/', function () {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth', 'tenant']);
+$router->get('/games',     [DashboardController::class, 'games'], ['auth', 'tenant']);
 $router->get('/teacher/dashboard', [TeacherPortalController::class, 'dashboard'], ['auth', 'role:teacher']);
 
-// ─── Users ────────────────────────────────────────────────────────────────────
-$router->get('/staff/attendance',  [UserController::class, 'staffAttendanceLog'],['auth', 'permission:view_users']);
-$router->get('/users',             [UserController::class, 'index'],   ['auth', 'permission:view_users']);
-$router->get('/users/create',      [UserController::class, 'create'],  ['auth', 'permission:create_users']);
-$router->post('/users',            [UserController::class, 'store'],   ['auth', 'permission:create_users']);
-$router->get('/users/{id}/edit',   [UserController::class, 'edit'],    ['auth', 'permission:edit_users']);
-$router->post('/users/{id}',       [UserController::class, 'update'],  ['auth', 'permission:edit_users']);
-$router->delete('/users/{id}',     [UserController::class, 'destroy'], ['auth', 'permission:delete_users']);
+// ─── Staff Management Workspace (/staff/*) ──────────────────────────────────
+$router->get('/staff',                  [App\Controllers\StaffWorkspaceController::class, 'overview'],    ['auth', 'tenant']);
+$router->get('/staff/overview',         [App\Controllers\StaffWorkspaceController::class, 'overview'],    ['auth', 'tenant']);
+$router->get('/staff/employees',        [App\Controllers\StaffWorkspaceController::class, 'employees'],   ['auth', 'tenant']);
+$router->post('/staff/employees',       [App\Controllers\StaffWorkspaceController::class, 'storeEmployee'],['auth', 'tenant']);
+$router->get('/staff/employees/{id}',   [App\Controllers\StaffWorkspaceController::class, 'showEmployee'],['auth', 'tenant']);
+$router->post('/staff/employees/{id}',  [App\Controllers\StaffWorkspaceController::class, 'updateEmployee'],['auth', 'tenant']);
+$router->get('/staff/departments',      [App\Controllers\StaffWorkspaceController::class, 'departments'], ['auth', 'tenant']);
+$router->post('/staff/departments',     [App\Controllers\StaffWorkspaceController::class, 'storeDepartment'],['auth', 'tenant']);
+$router->get('/staff/designations',     [App\Controllers\StaffWorkspaceController::class, 'designations'],['auth', 'tenant']);
+$router->post('/staff/designations',    [App\Controllers\StaffWorkspaceController::class, 'storeDesignation'],['auth', 'tenant']);
+$router->get('/staff/attendance',       [App\Controllers\StaffWorkspaceController::class, 'attendance'],  ['auth', 'tenant']);
+$router->post('/staff/attendance',      [App\Controllers\StaffWorkspaceController::class, 'storeAttendance'],['auth', 'tenant']);
+$router->get('/staff/leaves',           [App\Controllers\StaffWorkspaceController::class, 'leaves'],      ['auth', 'tenant']);
+$router->post('/staff/leaves',          [App\Controllers\StaffWorkspaceController::class, 'storeLeave'], ['auth', 'tenant']);
+$router->get('/staff/payroll',          [App\Controllers\StaffWorkspaceController::class, 'payroll'],     ['auth', 'tenant']);
+$router->post('/staff/payroll/run',     [App\Controllers\StaffWorkspaceController::class, 'runPayroll'],   ['auth', 'tenant']);
+$router->get('/staff/roles',            [App\Controllers\StaffWorkspaceController::class, 'roles'],       ['auth', 'tenant']);
+$router->get('/staff/users',            [App\Controllers\StaffWorkspaceController::class, 'users'],       ['auth', 'tenant']);
+$router->get('/staff/settings',         [App\Controllers\StaffWorkspaceController::class, 'settings'],    ['auth', 'tenant']);
+
+// Legacy Users & Roles Fallbacks
+$router->get('/users',                  [App\Controllers\StaffWorkspaceController::class, 'employees'],   ['auth', 'tenant']);
+$router->get('/users/create',           [UserController::class, 'create'],  ['auth', 'permission:create_users']);
+$router->post('/users',                 [UserController::class, 'store'],   ['auth', 'permission:create_users']);
+$router->get('/users/{id}/edit',        [UserController::class, 'edit'],    ['auth', 'permission:edit_users']);
+$router->post('/users/{id}',            [UserController::class, 'update'],  ['auth', 'permission:edit_users']);
+$router->delete('/users/{id}',          [UserController::class, 'destroy'], ['auth', 'permission:delete_users']);
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
-$router->get('/settings',          [SettingsController::class, 'index'],  ['auth', 'permission:view_settings']);
+$router->get('/settings',               [SettingsController::class, 'index'],  ['auth', 'permission:view_settings']);
 $router->post('/settings',         [SettingsController::class, 'update'], ['auth', 'permission:edit_settings']);
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
@@ -56,6 +77,34 @@ $router->get('/students/enrollments',              [EnrollmentAdminController::c
 $router->get('/students/enrollments/{id}',         [EnrollmentAdminController::class, 'show'],     ['auth', 'permission:view_students']);
 $router->post('/students/enrollments/{id}/approve', [EnrollmentAdminController::class, 'approve'],  ['auth', 'permission:create_students']);
 $router->post('/students/enrollments/{id}/reject',  [EnrollmentAdminController::class, 'reject'],   ['auth', 'permission:create_students']);
+
+// ─── Hierarchical Academics Module Routes (/academics/*) ──────────────────────
+$router->get('/academics',                            [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth', 'tenant']);
+$router->get('/academics/students',                   [StudentController::class, 'index'],              ['auth', 'permission:view_students']);
+$router->get('/academics/students/create',            [StudentController::class, 'create'],             ['auth', 'permission:create_students']);
+$router->post('/academics/students',                  [StudentController::class, 'store'],              ['auth', 'permission:create_students']);
+$router->get('/academics/students/{id}',              [StudentController::class, 'show'],               ['auth', 'permission:view_students']);
+$router->get('/academics/students/{id}/edit',         [StudentController::class, 'edit'],               ['auth', 'permission:edit_students']);
+$router->post('/academics/students/{id}',             [StudentController::class, 'update'],             ['auth', 'permission:edit_students']);
+$router->post('/academics/students/{id}/subjects',    [StudentController::class, 'assignSubject'],      ['auth', 'permission:edit_students']);
+$router->post('/academics/students/{id}/subjects/{subjectId}/delete', [StudentController::class, 'removeSubject'], ['auth', 'permission:edit_students']);
+$router->get('/academics/admissions',                 [AdmissionsController::class, 'index'],           ['auth', 'tenant']);
+$router->get('/academics/classes',                    [ClassesController::class, 'index'],              ['auth', 'tenant']);
+$router->get('/academics/teachers',                   [UserController::class, 'index'],                 ['auth', 'permission:view_users']);
+$router->get('/academics/attendance',                 [AttendanceController::class, 'index'],           ['auth', 'tenant']);
+$router->get('/academics/timetable',                  [TimetablesController::class, 'index'],           ['auth', 'tenant']);
+$router->get('/academics/subjects',                   [App\Controllers\SubjectsController::class, 'index'],              ['auth', 'tenant']);
+$router->post('/academics/subjects',                  [App\Controllers\SubjectsController::class, 'store'],              ['auth', 'tenant']);
+$router->post('/academics/subjects/{id}/delete',        [App\Controllers\SubjectsController::class, 'destroy'],            ['auth', 'tenant']);
+$router->get('/academics/assessments',                [ExamsController::class, 'index'],                ['auth', 'tenant']);
+$router->get('/academics/report-cards',               [ReportCardController::class, 'index'],           ['auth', 'permission:edit_students']);
+$router->get('/academics/settings',                   [App\Controllers\AcademicSettingsController::class, 'index'],     ['auth', 'permission:view_settings']);
+$router->post('/academics/settings/years',            [App\Controllers\AcademicSettingsController::class, 'storeYear'], ['auth', 'permission:edit_settings']);
+$router->post('/academics/settings/years/{id}/lock',  [App\Controllers\AcademicSettingsController::class, 'lockYear'],  ['auth', 'permission:edit_settings']);
+$router->post('/academics/settings/wizard/close-year', [App\Controllers\AcademicSettingsController::class, 'runYearClosingWizard'], ['auth', 'permission:edit_settings']);
+
+// Legacy fallbacks
+$router->get('/academic', [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth', 'tenant']);
 
 $router->get('/students',                          [StudentController::class, 'index'],              ['auth', 'permission:view_students']);
 $router->get('/students/create',                   [StudentController::class, 'create'],             ['auth', 'permission:create_students']);
@@ -101,8 +150,16 @@ $router->post('/scholarships/store', [ScholarshipController::class, 'store'], ['
 $router->get('/medical', [MedicalController::class, 'index'], ['auth', 'tenant']);
 $router->post('/medical/{id}', [MedicalController::class, 'store'], ['auth', 'tenant']);
 
-// ─── Transport Management — Admin ──────────────────────────────────────────────
-$router->get('/transport',                  [TransportController::class, 'index'],    ['auth', 'tenant']);
+// ─── Transport Management Workspace (/transport/*) ───────────────────────────
+$router->get('/transport',                      [TransportController::class, 'overview'],            ['auth', 'tenant']);
+$router->get('/transport/overview',             [TransportController::class, 'overview'],            ['auth', 'tenant']);
+$router->get('/transport/routes',               [TransportController::class, 'routes'],              ['auth', 'tenant']);
+$router->get('/transport/vehicles',             [TransportController::class, 'vehicles'],            ['auth', 'tenant']);
+$router->get('/transport/drivers',              [TransportController::class, 'drivers'],             ['auth', 'tenant']);
+$router->get('/transport/student-assignments',  [TransportController::class, 'studentAssignments'],   ['auth', 'tenant']);
+$router->get('/transport/live-tracking',        [TransportController::class, 'tracking'],           ['auth', 'tenant']);
+$router->get('/transport/settings',             [TransportController::class, 'settings'],           ['auth', 'tenant']);
+
 $router->get('/transport/create',           [TransportController::class, 'create'],   ['auth', 'tenant']);
 $router->get('/transport/tracking',         [TransportController::class, 'tracking'], ['auth', 'tenant']);
 $router->get('/transport/live-data',        [TransportController::class, 'liveData'], ['auth', 'tenant']);
@@ -132,6 +189,8 @@ $router->post('/classes/delete', [ClassesController::class, 'destroy'], ['auth',
 $router->get('/classes/{class}', [ClassesController::class, 'show'], ['auth', 'tenant']);
 
 // ─── Attendance ──────────────────────────────────────────────────────────────
+$router->get('/student-attendance', [AttendanceController::class, 'index'], ['auth', 'tenant']);
+$router->post('/student-attendance/save', [AttendanceController::class, 'save'], ['auth', 'tenant']);
 $router->get('/attendance', [AttendanceController::class, 'index'], ['auth', 'tenant']);
 $router->post('/attendance/save', [AttendanceController::class, 'save'], ['auth', 'tenant']);
 $router->get('/attendance/face-kiosk', [App\Controllers\FaceRecognitionController::class, 'verifyView']);
@@ -144,6 +203,8 @@ $router->post('/timetables/store', [TimetablesController::class, 'store'], ['aut
 
 // ─── Exams & Grades ──────────────────────────────────────────────────────────
 $router->get('/exams', [ExamsController::class, 'index'], ['auth', 'tenant']);
+$router->get('/exams/bulk-entry', [ExamsController::class, 'bulkEntry'], ['auth', 'tenant']);
+$router->post('/exams/bulk-save', [ExamsController::class, 'bulkSave'], ['auth', 'tenant']);
 $router->post('/exams/store', [ExamsController::class, 'store'], ['auth', 'tenant']);
 
 // ─── Migrations Helper (Web Run) ─────────────────────────────────────────────

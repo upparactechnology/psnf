@@ -117,7 +117,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
 
     <!-- Tabs -->
     <div class="flex items-center gap-1 border-b border-slate-800/60 mb-6 overflow-x-auto">
-        <?php $tabs = ['overview' => 'Overview', 'medical' => 'Medical', 'guardians' => 'Guardians & Contacts', 'documents' => 'Documents', 'timeline' => 'Timeline']; ?>
+        <?php $tabs = ['overview' => 'Overview', 'subjects' => 'Enrolled Subjects', 'medical' => 'Medical', 'guardians' => 'Guardians & Contacts', 'documents' => 'Documents', 'timeline' => 'Timeline']; ?>
         <?php foreach ($tabs as $key => $label): ?>
         <button @click="activeTab = '<?= $key ?>'"
                 :class="activeTab === '<?= $key ?>' ? 'text-brand-400 border-b-2 border-brand-500' : 'text-slate-500 hover:text-slate-300 border-b-2 border-transparent'"
@@ -190,6 +190,73 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                 <p class="text-xs text-slate-450"><?= e($s['care_instructions']) ?></p>
             </div>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Subjects Tab -->
+    <div x-show="activeTab === 'subjects'" x-cloak class="space-y-6">
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-300">Enrolled Subjects & Therapy Modules</h3>
+                    <p class="text-xs text-slate-500 mt-0.5"><?= count($assignedSubjects ?? []) ?> active subjects assigned</p>
+                </div>
+            </div>
+
+            <!-- Bulk Checkbox Subject Selector -->
+            <form action="<?= url('academics/students/'.$s['id'].'/subjects') ?>" method="POST" class="p-5 rounded-2xl border border-slate-800/80 bg-slate-950/40 space-y-4">
+                <?= \Core\View::csrf() ?>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Subjects to Assign</span>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">
+                        + Assign Selected Subjects
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <?php 
+                    $assignedIds = array_column($assignedSubjects ?? [], 'id');
+                    foreach ($availableSubjects as $sub): 
+                        $isAssigned = in_array($sub['id'], $assignedIds);
+                    ?>
+                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-800/60 bg-slate-900/60 hover:border-slate-700 cursor-pointer transition-all">
+                        <input type="checkbox" name="subject_ids[]" value="<?= $sub['id'] ?>" <?= $isAssigned ? 'checked disabled' : '' ?> class="mt-1 rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                        <div class="min-w-0 flex-1">
+                            <span class="text-2xs font-mono text-indigo-400"><?= e($sub['code']) ?></span>
+                            <p class="text-xs font-bold text-white truncate"><?= e($sub['name']) ?></p>
+                            <span class="text-[10px] text-slate-500"><?= e($sub['type']) ?></span>
+                        </div>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </form>
+
+            <!-- Currently Assigned Subjects Grid -->
+            <div>
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Currently Active Subjects</h4>
+                <?php if (empty($assignedSubjects)): ?>
+                <div class="p-8 text-center border border-slate-800/60 rounded-xl bg-slate-950/30">
+                    <p class="text-xs text-slate-500">No subjects currently assigned to this student.</p>
+                </div>
+                <?php else: ?>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <?php foreach ($assignedSubjects as $sub): ?>
+                    <div class="p-4 rounded-xl bg-slate-800/30 border border-slate-700/30 flex items-center justify-between">
+                        <div>
+                            <span class="text-2xs font-mono text-indigo-400"><?= e($sub['code']) ?></span>
+                            <h4 class="text-xs font-bold text-white mt-0.5"><?= e($sub['name']) ?></h4>
+                            <span class="text-[10px] text-slate-400"><?= e($sub['type']) ?></span>
+                        </div>
+                        <form action="<?= url('academics/students/'.$s['id'].'/subjects/' . $sub['id'] . '/delete') ?>" method="POST" onsubmit="return confirm('Unassign subject?')">
+                            <?= \Core\View::csrf() ?>
+                            <button type="submit" class="text-2xs text-red-400 hover:underline">Unassign</button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+
         </div>
     </div>
 

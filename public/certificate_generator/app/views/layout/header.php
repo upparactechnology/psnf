@@ -184,6 +184,11 @@ if ($userInitials === '') {
                     <span class="nav-group-caret" aria-hidden="true"></span>
                 </div>
 
+                <a class="nav-link" href="/psnf/public/dashboard" style="color: #6366f1; font-weight: 700; border-bottom: 1px solid rgba(99,102,241,0.2); margin-bottom: 4px; padding-bottom: 8px;">
+                    <span class="nav-icon" aria-hidden="true">←</span>
+                    <span class="nav-link-title">Back to ERP</span>
+                </a>
+
                 <a class="nav-link <?= $currentPage === 'dashboard' ? 'active' : '' ?>" href="<?= e(url('dashboard')) ?>">
                     <span class="nav-icon nav-icon-dashboard" aria-hidden="true"></span>
                     <span class="nav-link-title">Dashboard</span>

@@ -5,7 +5,14 @@ use App\Core\Database;
 
 class User {
   public static function adminByEmail(string $email) {
-    $stmt = Database::conn()->prepare('SELECT * FROM admins WHERE email=? AND is_active=1 LIMIT 1');
+    $stmt = Database::conn()->prepare('
+      SELECT u.* 
+      FROM users u 
+      JOIN user_roles ur ON ur.user_id = u.id 
+      JOIN roles r ON r.id = ur.role_id 
+      WHERE u.email = ? AND u.is_active = 1 AND r.slug IN (\'super_admin\', \'school_admin\', \'manager\') 
+      LIMIT 1
+    ');
     $stmt->execute([$email]);
     return $stmt->fetch();
   }

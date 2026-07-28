@@ -4,9 +4,9 @@ namespace App\Core;
 class Auth {
   public static function guardAdmin(): void {
     if (empty($_SESSION['admin_id'])) {
-      $app = require __DIR__ . '/../../config/app.php';
-      $baseUrl = self::resolveBaseUrl($app);
-      header('Location: ' . rtrim($baseUrl, '/') . '/admin/login');
+      // Redirect to PSNF ERP login instead of local login
+      // (auto-login bridge in index.php should have populated admin_id from ERP session)
+      header('Location: /psnf/public/login?redirect=file_manager');
       exit;
     }
   }

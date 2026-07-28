@@ -108,4 +108,9 @@ class DashboardController extends Controller
             'stats', 'statusCounts', 'recentLogs', 'recentStudents', 'user', 'assignedApps'
         ));
     }
+
+    public function games(): string
+    {
+        return $this->view('dashboard/games');
+    }
 }
