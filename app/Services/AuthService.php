@@ -80,6 +80,69 @@ class AuthService
         // Store in session
         $this->createSession($fullUser, $remember);
 
+        // Auto attendance check for teachers on login
+        $roles = $fullUser['roles'] ?? [];
+        if (in_array('teacher', $roles) || in_array('Teacher', $roles)) {
+            $db = \Core\Application::$app->db;
+            
+            // Ensure teacher_lecture_attendance table exists
+            $db->query("
+                CREATE TABLE IF NOT EXISTS `teacher_lecture_attendance` (
+                  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+                  `tenant_id` int(10) UNSIGNED NOT NULL,
+                  `school_id` int(10) UNSIGNED NOT NULL,
+                  `branch_id` int(10) UNSIGNED NOT NULL,
+                  `user_id` int(10) UNSIGNED NOT NULL,
+                  `attendance_date` date NOT NULL,
+                  `opened_at` datetime NOT NULL,
+                  `status` enum('on_time','late') NOT NULL,
+                  `lecture_time` time NOT NULL,
+                  `grace_period` int(10) UNSIGNED NOT NULL,
+                  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+                  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp(),
+                  PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+
+            $today = date('l');
+            $now = date('H:i:s');
+            
+            // Check for timetabled slot starting within 5 minutes of now
+            $slot = $db->selectOne("
+                SELECT * FROM timetables
+                WHERE teacher_name = ? AND day_of_week = ?
+                  AND ABS(TIME_TO_SEC(TIMEDIFF(start_time, ?))) <= 300
+                LIMIT 1
+            ", [$fullUser['name'], $today, $now]);
+
+            if ($slot) {
+                // Ensure no duplicate checkins for this slot today
+                $exists = $db->selectOne("
+                    SELECT id FROM teacher_lecture_attendance
+                    WHERE user_id = ? AND attendance_date = ? AND lecture_time = ?
+                    LIMIT 1
+                ", [$fullUser['id'], date('Y-m-d'), $slot['start_time']]);
+
+                if (!$exists) {
+                    $db->insert('teacher_lecture_attendance', [
+                        'tenant_id'       => $fullUser['tenant_id'],
+                        'school_id'       => $fullUser['school_id'],
+                        'branch_id'       => $fullUser['branch_id'],
+                        'user_id'         => $fullUser['id'],
+                        'attendance_date' => date('Y-m-d'),
+                        'opened_at'       => date('Y-m-d H:i:s'),
+                        'status'          => 'on_time',
+                        'lecture_time'    => $slot['start_time'],
+                        'grace_period'    => 5
+                    ]);
+                    ActivityLog::log('teacher_lec_auto_attendance', $fullUser['id'], [
+                        'timetable_id' => $slot['id'],
+                        'subject'      => $slot['subject']
+                    ]);
+                }
+            }
+        }
+
         // Generate JWT
         $jwt = JWT::encode([
             'sub'       => $user['id'],

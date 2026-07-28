@@ -85,15 +85,40 @@ ob_start();
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="border-b border-slate-800 bg-slate-900/70">
-                        <th class="px-5 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider sticky left-0 bg-slate-900 z-10 border-r border-slate-800">Student Name</th>
+                    <!-- Category Header Row -->
+                    <tr class="border-b border-slate-800 bg-slate-900/90 text-center text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
+                        <th class="px-5 py-2 sticky left-0 bg-slate-900 z-10 border-r border-slate-800 text-left">Category</th>
+                        <?php 
+                        // Group subjects by category
+                        $groupedSubjects = [];
+                        foreach ($subjects as $subj) {
+                            $cat = $subj['category'] ?? 'Academic';
+                            $groupedSubjects[$cat][] = $subj;
+                        }
+                        
+                        // Reconstruct subjects array to match category ordering
+                        $orderedSubjects = [];
+                        foreach ($groupedSubjects as $catName => $subjs) {
+                            $colspan = count($subjs);
+                            $orderedSubjects = array_merge($orderedSubjects, $subjs);
+                            echo '<th colspan="' . $colspan . '" class="px-2 py-2 border-r border-slate-800/60">' . e($catName) . '</th>';
+                        }
+                        // Set subjects back to ordered
+                        $subjects = $orderedSubjects;
+                        ?>
+                        <th class="px-4 py-2 text-slate-400">General</th>
+                    </tr>
+                    
+                    <!-- Subject Names Row -->
+                    <tr class="border-b border-slate-850 bg-slate-900/60">
+                        <th class="px-5 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider sticky left-0 bg-slate-900 z-10 border-r border-slate-800">Student Name</th>
                         <?php foreach ($subjects as $subj): ?>
-                        <th class="px-4 py-3.5 text-xs font-bold text-center text-slate-300 uppercase tracking-wider min-w-[130px] border-r border-slate-800/60">
-                            <div><?= e($subj['name']) ?></div>
-                            <span class="text-[10px] font-normal text-slate-500">Max: 100</span>
+                        <th class="px-4 py-3 text-xs font-bold text-center text-slate-300 uppercase tracking-wider min-w-[130px] border-r border-slate-800/60">
+                            <div class="truncate" title="<?= e($subj['name']) ?>"><?= e($subj['name']) ?></div>
+                            <span class="text-[9px] font-mono text-slate-500"><?= e($subj['code']) ?> (Max: 100)</span>
                         </th>
                         <?php endforeach; ?>
-                        <th class="px-4 py-3.5 text-xs font-bold text-center text-slate-400 uppercase tracking-wider min-w-[100px]">Teacher Remarks</th>
+                        <th class="px-4 py-3 text-xs font-bold text-center text-slate-400 uppercase tracking-wider min-w-[150px]">Teacher Remarks</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-850">
@@ -110,7 +135,7 @@ ob_start();
                             <td class="px-5 py-3.5 whitespace-nowrap sticky left-0 bg-slate-900/90 z-10 border-r border-slate-800">
                                 <div class="flex items-center gap-3">
                                     <div class="w-7 h-7 rounded-full bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                        <?= strtoupper(substr($stu['first_name'], 0, 1) . substr($stu['last_name'], 0, 1)) ?>
+                                        <?= strtoupper(substr($stu['first_name'], 0, 1) . (isset($stu['last_name'][0]) ? substr($stu['last_name'], 0, 1) : 'S')) ?>
                                     </div>
                                     <div>
                                         <p class="text-xs font-bold text-white"><?= e($stu['first_name'] . ' ' . $stu['last_name']) ?></p>
@@ -142,6 +167,7 @@ ob_start();
                             <td class="p-1 text-center">
                                 <input type="text" 
                                        name="remarks[<?= $stu['id'] ?>]" 
+                                       value="<?= e($existingMarks[$stu['id']][$subjects[0]['name']]['remarks'] ?? '') ?>"
                                        placeholder="Remarks..." 
                                        class="w-full bg-slate-950/60 focus:bg-slate-950 border border-transparent focus:border-brand-500 text-slate-300 text-xs py-2 px-3 rounded-lg transition-all focus:outline-none">
                             </td>

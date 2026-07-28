@@ -618,3 +618,42 @@
 [27-Jul-2026 16:52:56 Asia/Kolkata] PHP Warning:  Undefined array key "source" in C:\xampp\htdocs\psnf\resources\views\certificates\index.php on line 61
 [27-Jul-2026 16:52:56 Asia/Kolkata] PHP Warning:  Undefined array key "source" in C:\xampp\htdocs\psnf\resources\views\certificates\index.php on line 56
 [27-Jul-2026 16:52:56 Asia/Kolkata] PHP Warning:  Undefined array key "source" in C:\xampp\htdocs\psnf\resources\views\certificates\index.php on line 61
+[28-Jul-2026 16:34:32 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[28-Jul-2026 16:37:34 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[28-Jul-2026 17:49:56 Asia/Kolkata] PHP Warning:  Undefined variable $userName in C:\xampp\htdocs\psnf\resources\views\dashboard\index.php on line 13
+[28-Jul-2026 17:50:00 Asia/Kolkata] PHP Warning:  Undefined variable $userName in C:\xampp\htdocs\psnf\resources\views\dashboard\index.php on line 13
+[28-Jul-2026 17:50:04 Asia/Kolkata] PHP Warning:  Undefined variable $userName in C:\xampp\htdocs\psnf\resources\views\dashboard\index.php on line 13
+[28-Jul-2026 17:50:07 Asia/Kolkata] PHP Warning:  Undefined variable $userName in C:\xampp\htdocs\psnf\resources\views\dashboard\index.php on line 13
+[28-Jul-2026 17:51:09 Asia/Kolkata] PHP Warning:  Undefined variable $userName in C:\xampp\htdocs\psnf\resources\views\dashboard\index.php on line 13
+[28-Jul-2026 17:52:17 Asia/Kolkata] PHP Warning:  Undefined variable $userName in C:\xampp\htdocs\psnf\resources\views\dashboard\index.php on line 13
+[28-Jul-2026 17:52:19 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:19 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:19 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:19 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:19 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:40 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:40 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:40 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:40 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:40 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:52:42 Asia/Kolkata] PHP Warning:  Undefined variable $userName in C:\xampp\htdocs\psnf\resources\views\dashboard\index.php on line 13
+[28-Jul-2026 17:53:20 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:20 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:20 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:20 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:20 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:27 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:27 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:27 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:27 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:53:27 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:06 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:06 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:06 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:06 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:06 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:31 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:31 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:31 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:31 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[28-Jul-2026 17:55:31 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112

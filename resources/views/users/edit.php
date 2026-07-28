@@ -11,7 +11,7 @@ ob_start();
             <h2 class="text-xl font-bold text-white">Edit User</h2>
             <p class="text-sm text-slate-500 mt-0.5"><?= e($user['email'] ?? '') ?></p>
         </div>
-        <a href="<?= url('users') ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
+        <a href="<?= e($_GET['redirect_to'] ?? '/users') ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
     </div>
 
     <?php
@@ -25,9 +25,11 @@ ob_start();
             $currentRoleSlugs[] = $role['slug'];
         }
     }
+    $redirectTo = $_GET['redirect_to'] ?? '/users';
     ?>
     <form method="POST" action="<?= url('users/'.$user['id']) ?>" x-data="{ loading: false, selectedRoleSlugs: <?= json_encode($currentRoleSlugs) ?> }" @submit="loading = true">
         <?= \Core\View::csrf() ?>
+        <input type="hidden" name="redirect_to" value="<?= e($redirectTo) ?>">
 
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
             <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Account Details</h3>

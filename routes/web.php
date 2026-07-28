@@ -93,9 +93,13 @@ $router->get('/academics/classes',                    [ClassesController::class,
 $router->get('/academics/teachers',                   [UserController::class, 'index'],                 ['auth', 'permission:view_users']);
 $router->get('/academics/attendance',                 [AttendanceController::class, 'index'],           ['auth', 'tenant']);
 $router->get('/academics/timetable',                  [TimetablesController::class, 'index'],           ['auth', 'tenant']);
+$router->post('/academics/timetable/store',           [TimetablesController::class, 'store'],           ['auth', 'tenant']);
+$router->post('/academics/timetable/{id}/update',      [TimetablesController::class, 'update'],          ['auth', 'tenant']);
+$router->post('/academics/timetable/{id}/delete',      [TimetablesController::class, 'destroy'],         ['auth', 'tenant']);
 $router->get('/academics/subjects',                   [App\Controllers\SubjectsController::class, 'index'],              ['auth', 'tenant']);
 $router->post('/academics/subjects',                  [App\Controllers\SubjectsController::class, 'store'],              ['auth', 'tenant']);
 $router->post('/academics/subjects/{id}/delete',        [App\Controllers\SubjectsController::class, 'destroy'],            ['auth', 'tenant']);
+$router->post('/academics/subjects/{id}',               [App\Controllers\SubjectsController::class, 'update'],             ['auth', 'tenant']);
 $router->get('/academics/assessments',                [ExamsController::class, 'index'],                ['auth', 'tenant']);
 $router->get('/academics/report-cards',               [ReportCardController::class, 'index'],           ['auth', 'permission:edit_students']);
 $router->get('/academics/settings',                   [App\Controllers\AcademicSettingsController::class, 'index'],     ['auth', 'permission:view_settings']);
@@ -146,9 +150,7 @@ $router->get('/receipts/{id}/view', [ReceiptsController::class, 'show'], ['auth'
 $router->get('/scholarships', [ScholarshipController::class, 'index'], ['auth', 'tenant']);
 $router->post('/scholarships/store', [ScholarshipController::class, 'store'], ['auth', 'tenant']);
 
-// ─── Medical Logs & Care Profiles — Admin ──────────────────────────────────────
-$router->get('/medical', [MedicalController::class, 'index'], ['auth', 'tenant']);
-$router->post('/medical/{id}', [MedicalController::class, 'store'], ['auth', 'tenant']);
+
 
 // ─── Transport Management Workspace (/transport/*) ───────────────────────────
 $router->get('/transport',                      [TransportController::class, 'overview'],            ['auth', 'tenant']);
@@ -273,8 +275,14 @@ $router->get('/uploads/homework/{file}', function ($file) {
 $router->get('/transport/driver/create',    [TransportController::class, 'createDriver'], ['auth', 'tenant']);
 $router->post('/transport/driver',          [TransportController::class, 'storeDriver'],  ['auth', 'tenant']);
 
-
-
-
-
-
+// ─── Documents Workspace ──────────────────────────────────────────────────────
+$router->get('/documents',                     [App\Controllers\DocumentsController::class, 'dashboard'],         ['auth', 'tenant']);
+$router->get('/documents/dashboard',           [App\Controllers\DocumentsController::class, 'dashboard'],         ['auth', 'tenant']);
+$router->get('/documents/student-documents',   [App\Controllers\DocumentsController::class, 'studentDocuments'],  ['auth', 'tenant']);
+$router->post('/documents/student-documents/upload', [App\Controllers\DocumentsController::class, 'uploadStudentDoc'],['auth', 'tenant']);
+$router->get('/documents/staff-documents',     [App\Controllers\DocumentsController::class, 'staffDocuments'],    ['auth', 'tenant']);
+$router->get('/documents/parent-documents',    [App\Controllers\DocumentsController::class, 'parentDocuments'],   ['auth', 'tenant']);
+$router->get('/documents/driver-documents',    [App\Controllers\DocumentsController::class, 'driverDocuments'],   ['auth', 'tenant']);
+$router->get('/documents/generated',           [App\Controllers\DocumentsController::class, 'generated'],          ['auth', 'tenant']);
+$router->get('/documents/templates',           [App\Controllers\DocumentsController::class, 'templates'],          ['auth', 'tenant']);
+$router->get('/documents/settings',            [App\Controllers\DocumentsController::class, 'settings'],           ['auth', 'tenant']);

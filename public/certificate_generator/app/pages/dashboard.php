@@ -40,7 +40,7 @@ $totalInvoices    = $safeCount('SELECT COUNT(*) FROM fee_invoices');
 $pendingInvoices  = $safeCount("SELECT COUNT(*) FROM fee_invoices WHERE status = 'pending'");
 $paidInvoices     = $safeCount("SELECT COUNT(*) FROM fee_invoices WHERE status = 'paid'");
 // Receipts
-$totalReceipts    = $safeCount('SELECT COUNT(*) FROM receipts');
+$totalReceipts    = $safeCount('SELECT COUNT(*) FROM fee_payments');
 // ERP Certificates (from certificates table linked to students)
 $erpCertificates  = $safeCount('SELECT COUNT(*) FROM certificates');
 $thisMonthCerts   = $safeCount("SELECT COUNT(*) FROM generated_certificates WHERE MONTH(generated_at)=MONTH(NOW()) AND YEAR(generated_at)=YEAR(NOW())");

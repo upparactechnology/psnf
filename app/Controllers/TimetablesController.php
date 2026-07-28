@@ -62,8 +62,15 @@ class TimetablesController extends Controller
             }
         }
 
+        // Fetch all teachers from the database
+        $teachers = $db->select(
+            "SELECT id, name FROM users 
+             WHERE id IN (SELECT ur.user_id FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE r.slug = 'teacher')
+             ORDER BY name ASC"
+        );
+
         return $this->view('timetables/index', compact(
-            'classes', 'selectedClass', 'selectedSection', 'timetableByDay'
+            'classes', 'selectedClass', 'selectedSection', 'timetableByDay', 'teachers'
         ));
     }
 
@@ -75,13 +82,12 @@ class TimetablesController extends Controller
         $dayOfWeek   = $this->request->input('day_of_week', '');
         $subject     = $this->request->input('subject', '');
         $teacherName = $this->request->input('teacher_name', '');
-        $room        = $this->request->input('room', '');
         $startTime   = $this->request->input('start_time', '');
         $endTime     = $this->request->input('end_time', '');
 
         if (!$class || !$dayOfWeek || !$subject || !$startTime || !$endTime) {
             $this->flash('error', 'All required fields must be completed.');
-            return $this->redirect('/timetables');
+            return $this->redirect('/academics/timetable');
         }
 
         $tenantId = \Core\Database::getTenantId();
@@ -98,9 +104,9 @@ class TimetablesController extends Controller
                 'day_of_week'  => $dayOfWeek,
                 'subject'      => $subject,
                 'teacher_name' => $teacherName,
-                'room'         => $room,
-                'start_time'   => $startTime . ':00',
-                'end_time'     => $endTime . ':00',
+                'room'         => $class, // Use class as room/space directly
+                'start_time'   => $startTime . (strlen($startTime) == 5 ? ':00' : ''),
+                'end_time'     => $endTime . (strlen($endTime) == 5 ? ':00' : ''),
             ]);
 
             ActivityLog::log('timetable_slot_added', $this->authId(), [
@@ -114,6 +120,47 @@ class TimetablesController extends Controller
             $this->flash('error', 'Failed to create slot: ' . $e->getMessage());
         }
 
-        return $this->redirect("/timetables?class=" . urlencode($class) . "&section=" . urlencode($section));
+        return $this->redirect("/academics/timetable?class=" . urlencode($class) . "&section=" . urlencode($section));
+    }
+
+    public function update(string $id): string
+    {
+        $db = $this->db();
+        $class       = $this->request->input('class', '');
+        $section     = $this->request->input('section', '');
+        $dayOfWeek   = $this->request->input('day_of_week', '');
+        $subject     = $this->request->input('subject', '');
+        $teacherName = $this->request->input('teacher_name', '');
+        $startTime   = $this->request->input('start_time', '');
+        $endTime     = $this->request->input('end_time', '');
+
+        if (!$class || !$dayOfWeek || !$subject || !$startTime || !$endTime) {
+            $this->flash('error', 'All required fields must be completed.');
+            return $this->redirect('/academics/timetable');
+        }
+
+        try {
+            $db->query("
+                UPDATE timetables 
+                SET day_of_week = ?, subject = ?, teacher_name = ?, room = ?, start_time = ?, end_time = ?
+                WHERE id = ? AND tenant_id = ?
+            ", [$dayOfWeek, $subject, $teacherName, $class, $startTime, $endTime, (int)$id, \Core\Database::getTenantId()]);
+
+            $this->flash('success', 'Timetable slot updated successfully.');
+        } catch (\Throwable $e) {
+            $this->flash('error', 'Failed to update slot: ' . $e->getMessage());
+        }
+
+        return $this->redirect("/academics/timetable?class=" . urlencode($class) . "&section=" . urlencode($section));
+    }
+
+    public function destroy(string $id): string
+    {
+        $db = $this->db();
+        $class   = $this->request->input('class', '');
+        $section = $this->request->input('section', '');
+        $db->query("DELETE FROM timetables WHERE id = ? AND tenant_id = ?", [(int)$id, \Core\Database::getTenantId()]);
+        $this->flash('success', 'Timetable slot deleted successfully.');
+        return $this->redirect("/academics/timetable?class=" . urlencode($class) . "&section=" . urlencode($section));
     }
 }

@@ -61,6 +61,32 @@ class AuthMiddleware
             exit();
         }
 
+        // Auto-logout teacher if today's timetable sessions are over
+        $user = Session::get('user');
+        $roles = $user['roles'] ?? [];
+        if (in_array('teacher', $roles) || in_array('Teacher', $roles)) {
+            $db = \Core\Application::$app->db;
+            $today = date('l');
+            // Get the maximum end_time for this teacher today
+            $lastSlot = $db->selectOne("
+                SELECT MAX(end_time) as max_end 
+                FROM timetables 
+                WHERE teacher_name = ? AND day_of_week = ?
+            ", [$user['name'], $today]);
+
+            if ($lastSlot && !empty($lastSlot['max_end'])) {
+                $endTimeStr = date('Y-m-d') . ' ' . $lastSlot['max_end'];
+                $endTimeStamp = strtotime($endTimeStr);
+                // If past the last lecture end time
+                if (time() > $endTimeStamp) {
+                    Session::destroy();
+                    Session::flash('error', 'Session ended automatically after your scheduled lectures concluded.');
+                    \Core\Application::$app->response->redirect('/login');
+                    exit();
+                }
+            }
+        }
+
         Session::updateActivity();
 
         // Re-set tenant scope from session

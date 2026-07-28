@@ -100,4 +100,32 @@ class SubjectsController extends Controller
 
         return $this->redirect('/academics/subjects');
     }
+
+    public function update(string $id): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+
+        $name = trim($this->request->input('name', ''));
+        $code = trim($this->request->input('code', ''));
+        $type = trim($this->request->input('type', 'Academic'));
+
+        if (empty($name) || empty($code)) {
+            \Core\Session::flash('error', 'Subject Name and Code are required.');
+            return $this->redirect('/academics/subjects');
+        }
+
+        try {
+            $db->query("
+                UPDATE subjects 
+                SET name = ?, code = ?, type = ?
+                WHERE id = ? AND tenant_id = ?
+            ", [$name, strtoupper($code), $type, (int)$id, $tenantId]);
+            \Core\Session::flash('success', "Subject '{$name}' updated successfully.");
+        } catch (\Throwable $e) {
+            \Core\Session::flash('error', 'Error updating subject.');
+        }
+
+        return $this->redirect('/academics/subjects');
+    }
 }

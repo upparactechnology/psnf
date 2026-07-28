@@ -22,11 +22,18 @@ class UserController extends Controller
         $roleId  = $this->request->get('role_id', '');
         $page    = (int) $this->request->get('page', 1);
 
+        $currentPath = \Core\Application::$app->request->getPath();
+        $isTeachersOnly = ($currentPath === '/academics/teachers');
+
         $conditions = [];
         $params = [];
 
-        // Only show users with the selected roles: Teacher, Staff, Driver, Parent, Super Admin
-        $conditions[] = "id IN (SELECT ur.user_id FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE r.slug IN ('super_admin', 'teacher', 'staff', 'driver', 'parent'))";
+        if ($isTeachersOnly) {
+            $conditions[] = "id IN (SELECT ur.user_id FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE r.slug = 'teacher')";
+        } else {
+            // Only show users with the selected roles: Teacher, Staff, Driver, Parent, Super Admin
+            $conditions[] = "id IN (SELECT ur.user_id FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE r.slug IN ('super_admin', 'teacher', 'staff', 'driver', 'parent'))";
+        }
 
         if ($search !== '') {
             $conditions[] = "(name LIKE ? OR email LIKE ?)";
@@ -34,7 +41,7 @@ class UserController extends Controller
             $params[] = "%$search%";
         }
 
-        if ($roleId !== '') {
+        if ($roleId !== '' && !$isTeachersOnly) {
             $conditions[] = "id IN (SELECT user_id FROM user_roles WHERE role_id = ?)";
             $params[] = (int) $roleId;
         }
@@ -50,7 +57,8 @@ class UserController extends Controller
         return $this->view('users/index', array_merge($result, [
             'search' => $search,
             'role_id' => $roleId,
-            'roles' => $roles
+            'roles' => $roles,
+            'isTeachersOnly' => $isTeachersOnly
         ]));
     }
 
@@ -71,7 +79,8 @@ class UserController extends Controller
         $data  = $this->request->getBody();
         $roles = $data['roles'] ?? [];
         $assignedApps = $data['apps'] ?? [];
-        unset($data['roles'], $data['apps'], $data['_csrf']);
+        $redirectTo = $this->request->input('redirect_to', '/users');
+        unset($data['roles'], $data['apps'], $data['_csrf'], $data['redirect_to']);
 
         $rules = [
             'name'      => 'required|min:2',
@@ -85,7 +94,7 @@ class UserController extends Controller
         if ($validator->fails()) {
             \Core\Session::flash('errors', $validator->errors());
             \Core\Session::flash('old', array_merge($data, ['apps' => $assignedApps, 'roles' => $roles]));
-            return $this->redirect('/users/create');
+            return $this->redirect('/users/create?redirect_to=' . urlencode($redirectTo));
         }
 
         $lectureTime = !empty($data['lecture_time']) ? $data['lecture_time'] : null;
@@ -112,7 +121,7 @@ class UserController extends Controller
 
         \App\Models\ActivityLog::log('user_created', auth_id(), ['user_id' => $userId]);
         $this->flash('success', 'User created successfully.');
-        return $this->redirect('/users');
+        return $this->redirect($redirectTo);
     }
 
     public function edit(string $id): string
@@ -138,7 +147,8 @@ class UserController extends Controller
         $data  = $this->request->getBody();
         $roles = $data['roles'] ?? [];
         $assignedApps = $data['apps'] ?? [];
-        unset($data['roles'], $data['apps'], $data['_csrf'], $data['_method'], $data['password'], $data['password_confirmation']);
+        $redirectTo = $this->request->input('redirect_to', '/users');
+        unset($data['roles'], $data['apps'], $data['_csrf'], $data['_method'], $data['password'], $data['password_confirmation'], $data['redirect_to']);
 
         $lectureTime = !empty($data['lecture_time']) ? $data['lecture_time'] : null;
         $gracePeriod = isset($data['grace_period']) && $data['grace_period'] !== '' ? (int) $data['grace_period'] : 5;
@@ -158,7 +168,7 @@ class UserController extends Controller
 
         \App\Models\ActivityLog::log('user_updated', auth_id(), ['user_id' => $id]);
         $this->flash('success', 'User updated.');
-        return $this->redirect('/users');
+        return $this->redirect($redirectTo);
     }
 
     public function destroy(string $id): string
@@ -166,11 +176,13 @@ class UserController extends Controller
         User::delete((int) $id);
         \App\Models\ActivityLog::log('user_deleted', auth_id(), ['user_id' => $id]);
 
+        $redirectTo = $this->request->input('redirect_to', '/users');
+
         if ($this->request->wantsJson()) {
             return $this->successResponse('User deleted.');
         }
         $this->flash('success', 'User deleted.');
-        return $this->redirect('/users');
+        return $this->redirect($redirectTo);
     }
 
     public function staffAttendanceLog(): string

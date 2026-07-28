@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\{Student, StudentMedical, EmergencyContact, StudentDocument, StudentTimeline, Guardian};
+use App\Models\{Student, EmergencyContact, StudentDocument, StudentTimeline, Guardian};
 use Core\Database;
 
 class StudentService
@@ -12,26 +12,6 @@ class StudentService
     public function create(array $data, array $files = []): int
     {
         return \Core\Application::$app->db->transaction(function (Database $db) use ($data, $files) {
-            // Extract guardian fields
-            $guardianData = [];
-            if (!empty($data['guardian_name'])) {
-                $guardianData = [
-                    'name'         => $data['guardian_name'],
-                    'relationship' => $data['guardian_relationship'] ?? 'Guardian',
-                    'phone'        => $data['guardian_phone'] ?? '',
-                    'email'        => $data['guardian_email'] ?: null,
-                    'aadhar'       => $data['guardian_aadhar'] ?: null,
-                ];
-            }
-
-            // Extract medical fields
-            $medicalData = [
-                'allergies'           => $data['allergies'] ?: null,
-                'triggers'            => $data['triggers'] ?: null,
-                'current_medications' => $data['medications'] ?: null,
-                'care_instructions'   => $data['care_instructions'] ?: null,
-            ];
-
             // Filter student table fields
             $studentKeys = [
                 'uuid', 'tenant_id', 'school_id', 'branch_id', 'admission_number', 'gr_number',
@@ -63,43 +43,55 @@ class StudentService
                 }
             }
 
-            // Create medical record with initial data
-            $medicalData['student_id'] = $studentId;
-            $medicalData['created_by'] = auth_id();
-            StudentMedical::create($medicalData);
+            // Save guardian details (multiple supported)
+            $guardiansList = $data['guardians'] ?? [];
+            if (empty($guardiansList) && !empty($data['guardian_name'])) {
+                $guardiansList[] = [
+                    'name'         => $data['guardian_name'],
+                    'relationship' => $data['guardian_relationship'] ?? 'Guardian',
+                    'phone'        => $data['guardian_phone'] ?? '',
+                    'email'        => $data['guardian_email'] ?? '',
+                    'aadhar'       => $data['guardian_aadhar'] ?? '',
+                ];
+            }
 
-            // Save guardian details
-            if (!empty($guardianData['name']) && !empty($guardianData['phone'])) {
+            foreach ($guardiansList as $idx => $gData) {
+                if (empty($gData['name']) || empty($gData['phone'])) continue;
+
                 // Check if guardian with phone already exists
                 $existing = $db->selectOne(
                     "SELECT id, email, aadhar FROM guardians WHERE phone = ? AND tenant_id = ? AND deleted_at IS NULL LIMIT 1",
-                    [$guardianData['phone'], Database::getTenantId()]
+                    [$gData['phone'], Database::getTenantId()]
                 );
 
                 if ($existing) {
                     $guardianId = (int)$existing['id'];
                     $updateFields = [];
-                    if (empty($existing['aadhar']) && !empty($guardianData['aadhar'])) $updateFields['aadhar'] = $guardianData['aadhar'];
-                    if (empty($existing['email']) && !empty($guardianData['email'])) $updateFields['email'] = $guardianData['email'];
+                    if (empty($existing['aadhar']) && !empty($gData['aadhar'])) $updateFields['aadhar'] = $gData['aadhar'];
+                    if (empty($existing['email']) && !empty($gData['email'])) $updateFields['email'] = $gData['email'];
                     if (!empty($updateFields)) {
                         Guardian::update($guardianId, $updateFields);
                     }
                 } else {
-                    $guardianData['tenant_id']  = Database::getTenantId();
-                    $guardianData['created_by'] = auth_id();
-                    $guardianId = (int) Guardian::create($guardianData);
+                    $newGuardian = [
+                        'tenant_id'    => Database::getTenantId(),
+                        'name'         => $gData['name'],
+                        'relationship' => $gData['relationship'] ?? 'Guardian',
+                        'phone'        => $gData['phone'],
+                        'email'        => $gData['email'] ?: null,
+                        'aadhar'       => $gData['aadhar'] ?: null,
+                        'created_by'   => auth_id()
+                    ];
+                    $guardianId = (int) Guardian::create($newGuardian);
                 }
 
-                // Link guardian to student if not linked
-                $linkExists = $db->selectOne("SELECT 1 FROM guardian_student WHERE guardian_id = ? AND student_id = ?", [$guardianId, $studentId]);
-                if (!$linkExists) {
-                    $db->insert('guardian_student', [
-                        'guardian_id' => $guardianId,
-                        'student_id'  => $studentId,
-                        'is_primary'  => 1,
-                        'can_pickup'  => 1,
-                    ]);
-                }
+                // Link guardian to student
+                $db->insert('guardian_student', [
+                    'guardian_id' => $guardianId,
+                    'student_id'  => $studentId,
+                    'is_primary'  => ($idx === 0) ? 1 : 0,
+                    'can_pickup'  => 1,
+                ]);
             }
 
             // Log timeline
@@ -113,36 +105,16 @@ class StudentService
 
     public function update(int $studentId, array $data, array $files = []): bool
     {
-        $student = Student::find($studentId);
-        if (!$student) return false;
+        return \Core\Application::$app->db->transaction(function (Database $db) use ($studentId, $data, $files) {
+            $student = Student::find($studentId);
+            if (!$student) return false;
 
-        return \Core\Application::$app->db->transaction(function (Database $db) use ($studentId, $student, $data, $files) {
             $data['updated_by'] = auth_id();
 
             // Track status change
             if (!empty($data['admission_status']) && $data['admission_status'] !== $student['admission_status']) {
                 Student::updateStatus($studentId, $data['admission_status'], auth_id());
             }
-
-            // Extract guardian fields
-            $guardianData = [];
-            if (!empty($data['guardian_name'])) {
-                $guardianData = [
-                    'name'         => $data['guardian_name'],
-                    'relationship' => $data['guardian_relationship'] ?? 'Guardian',
-                    'phone'        => $data['guardian_phone'] ?? '',
-                    'email'        => $data['guardian_email'] ?: null,
-                    'aadhar'       => $data['guardian_aadhar'] ?: null,
-                ];
-            }
-
-            // Extract medical fields
-            $medicalData = [
-                'allergies'           => $data['allergies'] ?: null,
-                'triggers'            => $data['triggers'] ?: null,
-                'current_medications' => $data['medications'] ?: null,
-                'care_instructions'   => $data['care_instructions'] ?: null,
-            ];
 
             // Filter student table fields
             $studentKeys = [
@@ -173,57 +145,60 @@ class StudentService
             // Update student
             Student::update($studentId, $studentData);
 
-            // Update medical record
-            $existingMedical = StudentMedical::findBy('student_id', $studentId);
-            $medicalData['updated_by'] = auth_id();
-            if ($existingMedical) {
-                StudentMedical::update((int)$existingMedical['id'], $medicalData);
-            } else {
-                $medicalData['student_id'] = $studentId;
-                $medicalData['created_by'] = auth_id();
-                StudentMedical::create($medicalData);
+            // Sync multiple guardians
+            $guardiansList = $data['guardians'] ?? [];
+            if (empty($guardiansList) && !empty($data['guardian_name'])) {
+                $guardiansList[] = [
+                    'name'         => $data['guardian_name'],
+                    'relationship' => $data['guardian_relationship'] ?? 'Guardian',
+                    'phone'        => $data['guardian_phone'] ?? '',
+                    'email'        => $data['guardian_email'] ?? '',
+                    'aadhar'       => $data['guardian_aadhar'] ?? '',
+                ];
             }
 
-            // Update or link guardian details
-            if (!empty($guardianData['name']) && !empty($guardianData['phone'])) {
-                // Get existing primary guardian linked to this student
-                $existingLink = $db->selectOne(
-                    "SELECT g.* FROM guardians g
-                     JOIN guardian_student gs ON gs.guardian_id = g.id
-                     WHERE gs.student_id = ? AND gs.is_primary = 1 AND g.deleted_at IS NULL LIMIT 1",
-                    [$studentId]
-                );
+            if (!empty($guardiansList)) {
+                $db->query("DELETE FROM guardian_student WHERE student_id = ?", [$studentId]);
+                
+                foreach ($guardiansList as $idx => $gData) {
+                    if (empty($gData['name']) || empty($gData['phone'])) continue;
 
-                if ($existingLink) {
-                    $guardianData['updated_by'] = auth_id();
-                    Guardian::update((int)$existingLink['id'], $guardianData);
-                } else {
                     // Check if guardian with this phone already exists in DB
-                    $existingGuardian = $db->selectOne(
+                    $existing = $db->selectOne(
                         "SELECT id FROM guardians WHERE phone = ? AND tenant_id = ? AND deleted_at IS NULL LIMIT 1",
-                        [$guardianData['phone'], Database::getTenantId()]
+                        [$gData['phone'], Database::getTenantId()]
                     );
 
-                    if ($existingGuardian) {
-                        $guardianId = (int)$existingGuardian['id'];
-                        $guardianData['updated_by'] = auth_id();
-                        Guardian::update($guardianId, $guardianData);
+                    if ($existing) {
+                        $guardianId = (int)$existing['id'];
+                        $updateFields = [
+                            'name'         => $gData['name'],
+                            'relationship' => $gData['relationship'] ?? 'Guardian',
+                            'email'        => $gData['email'] ?: null,
+                            'aadhar'       => $gData['aadhar'] ?: null,
+                            'updated_by'   => auth_id()
+                        ];
+                        Guardian::update($guardianId, $updateFields);
                     } else {
-                        $guardianData['tenant_id']  = Database::getTenantId();
-                        $guardianData['created_by'] = auth_id();
-                        $guardianId = (int) Guardian::create($guardianData);
+                        $newGuardian = [
+                            'tenant_id'    => Database::getTenantId(),
+                            'name'         => $gData['name'],
+                            'relationship' => $gData['relationship'] ?? 'Guardian',
+                            'phone'        => $gData['phone'],
+                            'email'        => $gData['email'] ?: null,
+                            'aadhar'       => $gData['aadhar'] ?: null,
+                            'created_by'   => auth_id()
+                        ];
+                        $guardianId = (int) Guardian::create($newGuardian);
                     }
 
                     // Link to student
-                    $linkExists = $db->selectOne("SELECT 1 FROM guardian_student WHERE guardian_id = ? AND student_id = ?", [$guardianId, $studentId]);
-                    if (!$linkExists) {
-                        $db->insert('guardian_student', [
-                            'guardian_id' => $guardianId,
-                            'student_id'  => $studentId,
-                            'is_primary'  => 1,
-                            'can_pickup'  => 1,
-                        ]);
-                    }
+                    $db->insert('guardian_student', [
+                        'guardian_id' => $guardianId,
+                        'student_id'  => $studentId,
+                        'is_primary'  => ($idx === 0) ? 1 : 0,
+                        'can_pickup'  => 1,
+                    ]);
                 }
             }
 
@@ -234,18 +209,8 @@ class StudentService
 
     public function updateMedical(int $studentId, array $data): bool
     {
-        $existing = StudentMedical::findBy('student_id', $studentId);
-        $data['updated_by'] = auth_id();
-
-        if ($existing) {
-            StudentMedical::update($existing['id'], $data);
-        } else {
-            $data['student_id']  = $studentId;
-            $data['created_by']  = auth_id();
-            StudentMedical::create($data);
-        }
-
-        StudentTimeline::logEvent($studentId, 'medical_update', 'Medical information updated', [], auth_id(), 'red', 'heart');
+        // student_medical has been removed from the system. Returning true safely.
+        StudentTimeline::logEvent($studentId, 'medical_update', 'Medical information update requested', [], auth_id(), 'red', 'heart');
         return true;
     }
 

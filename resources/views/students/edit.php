@@ -28,7 +28,18 @@ function selectClassE(string $field, array $errors = []): string {
         </div>
     </div>
 
-    <form method="POST" action="<?= url('students/'.$s['id']) ?>" x-data="{ loading: false }" @submit="loading = true" enctype="multipart/form-data">
+    <form method="POST" action="<?= url('students/'.$s['id']) ?>" 
+          x-data="{ 
+              loading: false,
+              guardians: <?= htmlspecialchars(json_encode(!empty($guardians) ? $guardians : [['name' => '', 'relationship' => 'Father', 'phone' => '', 'email' => '', 'aadhar' => '']]), ENT_QUOTES, 'UTF-8') ?>,
+              addGuardian() {
+                  this.guardians.push({ name: '', relationship: 'Guardian', phone: '', email: '', aadhar: '' });
+              },
+              removeGuardian(idx) {
+                  this.guardians.splice(idx, 1);
+              }
+          }" 
+          @submit="loading = true" enctype="multipart/form-data">
         <?= \Core\View::csrf() ?>
 
         <!-- Personal Information -->
@@ -37,52 +48,34 @@ function selectClassE(string $field, array $errors = []): string {
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Full Name <span class="text-red-400">*</span></label>
-                    <input type="text" name="full_name" value="<?= e(trim(($s['first_name'] ?? '') . ' ' . ($s['middle_name'] ?? '') . ' ' . ($s['last_name'] ?? ''))) ?>" required class="<?= inputClassE('full_name') ?>" placeholder="Full name">
+                    <label class="block text-xs font-medium text-slate-400">First Name <span class="text-red-400">*</span></label>
+                    <input type="text" name="first_name" value="<?= e($s['first_name']??'') ?>" required class="<?= inputClassE('first_name') ?>">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Student Image</label>
-                    <input type="file" name="photo" accept=".png,.jpg,.jpeg" class="w-full bg-slate-900/70 border border-slate-700/60 text-slate-400 placeholder-slate-500 rounded-xl py-2 px-4 text-sm focus:outline-none focus:ring-1 transition-all file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-600/20 file:text-brand-400 hover:file:bg-brand-600/30 cursor-pointer">
+                    <label class="block text-xs font-medium text-slate-400">Last Name <span class="text-red-400">*</span></label>
+                    <input type="text" name="last_name" value="<?= e($s['last_name']??'') ?>" required class="<?= inputClassE('last_name') ?>">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Gender</label>
-                    <select name="gender" class="<?= selectClassE('gender') ?>">
-                        <?php foreach (['male'=>'Male','female'=>'Female','other'=>'Other'] as $v=>$l): ?>
-                        <option value="<?= $v ?>" <?= $s['gender']===$v?'selected':'' ?>><?= $l ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <label class="block text-xs font-medium text-slate-400">Date of Birth <span class="text-red-400">*</span></label>
+                    <input type="date" name="dob" value="<?= e($s['dob']??'') ?>" required class="<?= inputClassE('dob') ?>">
                 </div>
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Date of Birth</label>
-                    <input type="date" name="dob" value="<?= e($s['dob']) ?>" class="<?= inputClassE('dob') ?>">
+                    <label class="block text-xs font-medium text-slate-400">Gender <span class="text-red-400">*</span></label>
+                    <select name="gender" required class="<?= selectClassE('gender') ?>">
+                        <option value="male" <?= ($s['gender']??'') === 'male' ? 'selected' : '' ?>>Male</option>
+                        <option value="female" <?= ($s['gender']??'') === 'female' ? 'selected' : '' ?>>Female</option>
+                        <option value="other" <?= ($s['gender']??'') === 'other' ? 'selected' : '' ?>>Other</option>
+                    </select>
                 </div>
                 <div class="space-y-1.5">
                     <label class="block text-xs font-medium text-slate-400">Blood Group</label>
                     <select name="blood_group" class="<?= selectClassE('blood_group') ?>">
-                        <?php foreach (['Unknown','A+','A-','B+','B-','AB+','AB-','O+','O-'] as $bg): ?>
-                        <option value="<?= $bg ?>" <?= ($s['blood_group']??'')===$bg?'selected':'' ?>><?= $bg ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">School</label>
-                    <select name="school_id" class="<?= selectClassE('school_id') ?>">
-                        <?php foreach ($schools as $sc): ?>
-                        <option value="<?= $sc['id'] ?>" <?= $s['school_id']==$sc['id']?'selected':'' ?>><?= e($sc['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Branch</label>
-                    <select name="branch_id" class="<?= selectClassE('branch_id') ?>">
-                        <?php foreach ($branches as $br): ?>
-                        <option value="<?= $br['id'] ?>" <?= $s['branch_id']==$br['id']?'selected':'' ?>><?= e($br['name']) ?></option>
+                        <option value="Unknown" <?= ($s['blood_group']??'') === 'Unknown' ? 'selected' : '' ?>>Unknown</option>
+                        <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $bg): ?>
+                        <option value="<?= $bg ?>" <?= ($s['blood_group']??'') === $bg ? 'selected' : '' ?>><?= $bg ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -90,122 +83,89 @@ function selectClassE(string $field, array $errors = []): string {
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Class</label>
-                    <input type="text" name="class" value="<?= e($s['class']??'') ?>" class="<?= inputClassE('class') ?>" placeholder="e.g. Grade 3">
+                    <label class="block text-xs font-medium text-slate-400">School <span class="text-red-400">*</span></label>
+                    <select name="school_id" required class="<?= selectClassE('school_id') ?>">
+                        <?php foreach ($schools as $school): ?>
+                        <option value="<?= $school['id'] ?>" <?= ($s['school_id']??0) == $school['id'] ? 'selected' : '' ?>><?= e($school['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Section</label>
-                    <input type="text" name="section" value="<?= e($s['section']??'') ?>" class="<?= inputClassE('section') ?>" placeholder="e.g. A">
+                    <label class="block text-xs font-medium text-slate-400">Branch <span class="text-red-400">*</span></label>
+                    <select name="branch_id" required class="<?= selectClassE('branch_id') ?>">
+                        <?php foreach ($branches as $branch): ?>
+                        <option value="<?= $branch['id'] ?>" <?= ($s['branch_id']??0) == $branch['id'] ? 'selected' : '' ?>><?= e($branch['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Academic Year</label>
-                    <input type="text" name="academic_year" value="<?= e($s['academic_year']??'') ?>" class="<?= inputClassE('academic_year') ?>" placeholder="e.g. 2025-2026">
+                    <label class="block text-xs font-medium text-slate-400">Student Aadhaar Number</label>
+                    <input type="text" name="aadhar_number" value="<?= e($s['aadhar_number']??'') ?>" class="<?= inputClassE('aadhar_number') ?>" placeholder="XXXX-XXXX-XXXX" maxlength="14"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '').replace(/(\d{4})(?=\d)/g, '$1-')">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Aadhar Number</label>
-                    <input type="text" name="aadhar_number" value="<?= e($s['aadhar_number']??'') ?>" class="<?= inputClassE('aadhar_number') ?>" placeholder="XXXX XXXX XXXX">
+                    <label class="block text-xs font-medium text-slate-400">Address</label>
+                    <textarea name="address" rows="2" class="<?= inputClassE('address') ?>"><?= e($s['address']??'') ?></textarea>
                 </div>
                 <div class="space-y-1.5">
                     <label class="block text-xs font-medium text-slate-400">Mother Tongue</label>
                     <input type="text" name="mother_tongue" value="<?= e($s['mother_tongue']??'') ?>" class="<?= inputClassE('mother_tongue') ?>">
                 </div>
             </div>
-
-            <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-slate-400">Address</label>
-                <textarea name="address" rows="2" class="<?= inputClassE('address') ?>"><?= e($s['address']??'') ?></textarea>
-            </div>
-        </div>
-
-        <!-- Disability -->
-        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
-            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Disability & Special Needs</h3>
-
-            <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-slate-400">Primary Disability</label>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <?php foreach (['ASD','ADHD','Down Syndrome','Cerebral Palsy','Dyslexia','Intellectual Disability','Hearing Impairment','Visual Impairment','Multiple Disabilities','Other'] as $d): ?>
-                    <label class="relative flex cursor-pointer">
-                        <input type="radio" name="disability_type" value="<?= $d ?>" class="peer sr-only" <?= $s['disability_type']===$d?'checked':'' ?>>
-                        <span class="w-full text-center text-xs py-2 px-2 rounded-lg border border-slate-700/50 text-slate-400 peer-checked:border-brand-500/50 peer-checked:bg-brand-900/30 peer-checked:text-brand-400 hover:border-slate-600 transition-all"><?= $d ?></span>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-slate-400">Disability Detail</label>
-                <textarea name="disability_detail" rows="2" class="<?= inputClassE('disability_detail') ?>"><?= e($s['disability_detail']??'') ?></textarea>
-            </div>
-
-            <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-slate-400">Care Instructions</label>
-                <textarea name="care_instructions" rows="2" class="<?= inputClassE('care_instructions') ?>"><?= e($s['care_instructions']??'') ?></textarea>
-            </div>
-
-            <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-slate-400">Special Needs Summary</label>
-                <textarea name="special_needs_summary" rows="2" class="<?= inputClassE('special_needs_summary') ?>"><?= e($s['special_needs_summary']??'') ?></textarea>
-            </div>
         </div>
 
         <!-- Guardian Details -->
-        <?php $primaryGuardian = !empty($s['guardians']) ? $s['guardians'][0] : []; ?>
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
-            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Primary Guardian / Parent</h3>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Guardian Name</label>
-                    <input type="text" name="guardian_name" value="<?= e($primaryGuardian['name'] ?? '') ?>" class="<?= inputClassE('guardian_name') ?>" placeholder="Full name">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Relationship</label>
-                    <select name="guardian_relationship" class="<?= selectClassE('guardian_relationship') ?>">
-                        <option value="">Select</option>
-                        <?php foreach (['Father', 'Mother', 'Guardian', 'Sibling', 'Grandparent', 'Other'] as $r): ?>
-                        <option value="<?= $r ?>" <?= ($primaryGuardian['relationship'] ?? '') === $r ? 'selected' : '' ?>><?= $r ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-semibold text-slate-300">Guardians / Parents Details</h3>
+                <button type="button" @click="addGuardian()" class="text-xs text-indigo-400 font-bold hover:underline">+ Add Another Guardian</button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Phone Number</label>
-                    <input type="tel" name="guardian_phone" value="<?= e($primaryGuardian['phone'] ?? '') ?>" class="<?= inputClassE('guardian_phone') ?>" placeholder="+91 XXXXX XXXXX">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Email</label>
-                    <input type="email" name="guardian_email" value="<?= e($primaryGuardian['email'] ?? '') ?>" class="<?= inputClassE('guardian_email') ?>" placeholder="parent@email.com">
-                </div>
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Aadhaar Card Number</label>
-                    <input type="text" name="guardian_aadhar" value="<?= e($primaryGuardian['aadhar'] ?? '') ?>" class="<?= inputClassE('guardian_aadhar') ?>" placeholder="XXXX XXXX XXXX" maxlength="14">
-                </div>
-            </div>
-        </div>
+            <div class="space-y-4">
+                <template x-for="(g, idx) in guardians" :key="idx">
+                    <div class="p-4 rounded-xl bg-slate-950/40 border border-slate-800/60 space-y-4 relative">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-indigo-400" x-text="'Guardian #' + (idx + 1) + (idx === 0 ? ' (Primary)' : '')"></span>
+                            <button type="button" x-show="idx > 0" @click="removeGuardian(idx)" class="text-xs text-red-400 font-semibold hover:underline">Remove</button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-medium text-slate-400">Guardian Name</label>
+                                <input type="text" :name="'guardians['+idx+'][name]'" x-model="g.name" required class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2 px-3 text-xs focus:outline-none" placeholder="Full name">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-medium text-slate-400">Relationship</label>
+                                <select :name="'guardians['+idx+'][relationship]'" x-model="g.relationship" class="w-full bg-slate-900/70 border border-slate-700/60 text-slate-350 rounded-xl py-2 px-3 text-xs focus:outline-none">
+                                    <option value="Father">Father</option>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Guardian">Guardian</option>
+                                    <option value="Sibling">Sibling</option>
+                                    <option value="Grandparent">Grandparent</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
 
-        <!-- Medical Information -->
-        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
-            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Medical Information</h3>
-            
-            <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-slate-400">Known Allergies</label>
-                <textarea name="allergies" rows="2" class="<?= inputClassE('allergies') ?>" placeholder="List known allergies..."><?= e($s['medical']['allergies'] ?? '') ?></textarea>
-            </div>
-
-            <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-slate-400">Triggers / Sensitivities</label>
-                <textarea name="triggers" rows="2" class="<?= inputClassE('triggers') ?>" placeholder="Known behavioral triggers, sensory sensitivities..."><?= e($s['medical']['triggers'] ?? '') ?></textarea>
-            </div>
-
-            <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-slate-400">Current Medications</label>
-                <textarea name="medications" rows="2" class="<?= inputClassE('medications') ?>" placeholder="Medication name, dosage, frequency..."><?= e($s['medical']['current_medications'] ?? '') ?></textarea>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-medium text-slate-400">Phone Number</label>
+                                <input type="tel" :name="'guardians['+idx+'][phone]'" x-model="g.phone" required class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2 px-3 text-xs focus:outline-none" placeholder="10-digit phone" maxlength="10">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-medium text-slate-400">Email</label>
+                                <input type="email" :name="'guardians['+idx+'][email]'" x-model="g.email" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2 px-3 text-xs focus:outline-none" placeholder="parent@email.com">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-medium text-slate-400">Aadhaar Card Number</label>
+                                <input type="text" :name="'guardians['+idx+'][aadhar]'" x-model="g.aadhar" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2 px-3 text-xs focus:outline-none" placeholder="XXXX-XXXX-XXXX" maxlength="14"
+                                       @input="g.aadhar = $event.target.value.replace(/[^0-9]/g, '').replace(/(\d{4})(?=\d)/g, '$1-')">
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
 
@@ -228,7 +188,6 @@ function selectClassE(string $field, array $errors = []): string {
         </div>
     </form>
 </div>
-
 <?php
 $content = ob_get_clean();
 ?>

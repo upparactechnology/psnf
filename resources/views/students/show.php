@@ -39,8 +39,8 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
             <div class="flex-1">
                 <div class="flex flex-wrap items-start gap-3 mb-2">
                     <h2 class="text-2xl font-bold text-white"><?= e($name) ?></h2>
-                    <span class="inline-flex text-xs px-3 py-1 rounded-full font-medium border <?= $sc ?>">
-                        <?= ucfirst($s['admission_status']) ?>
+                    <span class="inline-flex text-xs px-3 py-1 rounded-full font-medium border bg-emerald-900/30 text-emerald-400 border-emerald-700/30">
+                        Enrolled
                     </span>
                 </div>
                 <div class="flex flex-wrap gap-4 text-sm text-slate-400">
@@ -64,44 +64,6 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
 
             <!-- Actions -->
             <div class="flex items-center gap-2 flex-shrink-0">
-                <?php if (has_permission('approve_admissions')): ?>
-                <div x-data="{ statusOpen: false }" class="relative">
-                    <button @click="statusOpen = !statusOpen"
-                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-slate-800/60 hover:bg-slate-800 text-slate-300 border border-slate-700/50 transition-all">
-                        Update Status <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div x-show="statusOpen" @click.outside="statusOpen = false" x-transition
-                         id="status-dropdown"
-                         class="absolute right-0 mt-2 w-48 rounded-xl border border-slate-700/50 bg-slate-900 shadow-2xl z-20 overflow-hidden">
-                        <style>
-                            html:not(.dark) #status-dropdown button {
-                                color: #1e293b !important;
-                            }
-                            html:not(.dark) #status-dropdown button:hover {
-                                color: #ffffff !important;
-                                background-color: #4f46e5 !important;
-                            }
-                        </style>
-                        <?php foreach (['applied','review','assessment','approved','enrolled','withdrawn'] as $st): ?>
-                        <?php if ($st === 'enrolled'): ?>
-                            <button type="button" @click="showEnrollModal = true; statusOpen = false" class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors <?= $s['admission_status'] === $st ? 'text-brand-400' : '' ?>">
-                                <?= ucfirst($st) ?><?= $s['admission_status'] === $st ? ' ✓' : '' ?>
-                            </button>
-                        <?php else: ?>
-                            <form method="POST" action="<?= url('students/'.$s['id'].'/status') ?>">
-                                <?= \Core\View::csrf() ?>
-                                <input type="hidden" name="admission_status" value="<?= $st ?>">
-                                <button type="submit" class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition-colors <?= $s['admission_status'] === $st ? 'text-brand-400' : '' ?>">
-                                    <?= ucfirst($st) ?><?= $s['admission_status'] === $st ? ' ✓' : '' ?>
-                                </button>
-                            </form>
-                        <?php endif; ?>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <?php if (has_permission('edit_students')): ?>
                 <a href="<?= url('students/'.$s['id'].'/report-card/edit') ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all bg-emerald-600 hover:bg-emerald-500 border border-emerald-700/50">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Report Card
@@ -117,7 +79,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
 
     <!-- Tabs -->
     <div class="flex items-center gap-1 border-b border-slate-800/60 mb-6 overflow-x-auto">
-        <?php $tabs = ['overview' => 'Overview', 'subjects' => 'Enrolled Subjects', 'medical' => 'Medical', 'guardians' => 'Guardians & Contacts', 'documents' => 'Documents', 'timeline' => 'Timeline']; ?>
+        <?php $tabs = ['overview' => 'Overview', 'subjects' => 'Enrolled Subjects', 'guardians' => 'Guardians & Contacts', 'documents' => 'Documents', 'timeline' => 'Timeline']; ?>
         <?php foreach ($tabs as $key => $label): ?>
         <button @click="activeTab = '<?= $key ?>'"
                 :class="activeTab === '<?= $key ?>' ? 'text-brand-400 border-b-2 border-brand-500' : 'text-slate-500 hover:text-slate-300 border-b-2 border-transparent'"
@@ -161,7 +123,6 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                 'Enrolled Date'  => $s['enrolled_date'] ? format_date($s['enrolled_date']) : '—',
                 'Class / Section'=> ($s['class'] ?? '—') . ' / ' . ($s['section'] ?? '—'),
                 'Academic Year'  => $s['academic_year'] ?? '—',
-                'Disability Type'=> $s['disability_type'],
             ];
             foreach ($admFields as $label => $value): ?>
             <div class="flex items-start gap-3">
@@ -169,27 +130,6 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                 <span class="text-sm text-slate-300"><?= e($value) ?></span>
             </div>
             <?php endforeach; ?>
-
-            <?php if ($s['disability_detail']): ?>
-            <div class="mt-4 p-3 rounded-xl bg-slate-950/30 border border-slate-800/60">
-                <p class="text-xs font-semibold text-slate-400 mb-1">Disability Details</p>
-                <p class="text-xs text-slate-350"><?= e($s['disability_detail']) ?></p>
-            </div>
-            <?php endif; ?>
-
-            <?php if ($s['special_needs_summary']): ?>
-            <div class="mt-4 p-3 rounded-xl bg-slate-950/30 border border-slate-800/60">
-                <p class="text-xs font-semibold text-slate-400 mb-1">Special Need Summary</p>
-                <p class="text-xs text-slate-350"><?= e($s['special_needs_summary']) ?></p>
-            </div>
-            <?php endif; ?>
-
-            <?php if ($s['care_instructions']): ?>
-            <div class="mt-4 p-3 rounded-xl bg-blue-950/30 border border-blue-900/30">
-                <p class="text-xs font-semibold text-blue-400 mb-1">Care Instructions</p>
-                <p class="text-xs text-slate-450"><?= e($s['care_instructions']) ?></p>
-            </div>
-            <?php endif; ?>
         </div>
     </div>
 
@@ -260,70 +200,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
         </div>
     </div>
 
-    <!-- Medical Tab -->
-    <div x-show="activeTab === 'medical'" x-cloak>
-        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6">
-            <div class="flex items-center justify-between mb-5">
-                <h3 class="text-sm font-semibold text-slate-300">Medical Information</h3>
-                <?php if (has_permission('edit_students')): ?>
-                <span class="text-xs text-slate-500">Auto-saved via HTMX</span>
-                <?php endif; ?>
-            </div>
 
-            <?php if (has_permission('edit_students')): ?>
-            <form hx-post="<?= url('students/'.$s['id'].'/medical') ?>"
-                  hx-swap="outerHTML"
-                  hx-target="#medical-save-msg"
-                  class="space-y-5">
-                <?= \Core\View::csrf() ?>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Known Allergies</label>
-                        <textarea name="allergies" rows="3" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all" placeholder="Food, medication, environmental..."><?= e($s['medical']['allergies'] ?? '') ?></textarea>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Triggers / Sensitivities</label>
-                        <textarea name="triggers" rows="3" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all" placeholder="Known behavioral triggers..."><?= e($s['medical']['triggers'] ?? '') ?></textarea>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Current Medications</label>
-                        <textarea name="current_medications" rows="3" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all" placeholder="Medication, dosage, frequency..."><?= e($s['medical']['current_medications'] ?? '') ?></textarea>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Emergency Protocols</label>
-                        <textarea name="emergency_protocols" rows="3" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all" placeholder="What to do in an emergency..."><?= e($s['medical']['emergency_protocols'] ?? '') ?></textarea>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Care Instructions</label>
-                        <textarea name="care_instructions" rows="3" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all"><?= e($s['medical']['care_instructions'] ?? '') ?></textarea>
-                    </div>
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Doctor Name</label>
-                        <input type="text" name="doctor_name" value="<?= e($s['medical']['doctor_name'] ?? '') ?>" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all" placeholder="Dr. Name">
-                        <input type="tel" name="doctor_phone" value="<?= e($s['medical']['doctor_phone'] ?? '') ?>" class="mt-2 w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all" placeholder="Doctor phone number">
-                    </div>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-                        Save Medical Records
-                    </button>
-                    <div id="medical-save-msg"></div>
-                </div>
-            </form>
-            <?php else: ?>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <?php
-                $medFields = ['allergies' => 'Allergies', 'triggers' => 'Triggers', 'current_medications' => 'Medications', 'emergency_protocols' => 'Emergency Protocols', 'care_instructions' => 'Care Instructions'];
-                foreach ($medFields as $key => $label): ?>
-                <div>
-                    <p class="text-xs font-medium text-slate-500 mb-1"><?= $label ?></p>
-                    <p class="text-sm text-slate-300"><?= e($s['medical'][$key] ?? '—') ?></p>
-                </div>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-        </div>
-    </div>
 
     <!-- Guardians Tab -->
     <div x-show="activeTab === 'guardians'" x-cloak class="space-y-5">

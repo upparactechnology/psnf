@@ -48,6 +48,12 @@ class StudentController extends Controller
     public function store(): string
     {
         $data = $this->request->getBody();
+        if (!isset($data['full_name']) && isset($data['first_name'])) {
+            $data['full_name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['middle_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
+        }
+        if (empty($data['disability_type'])) {
+            $data['disability_type'] = 'Other';
+        }
 
         $rules = [
             'full_name'             => 'required|min:2|max:200',
@@ -180,12 +186,26 @@ class StudentController extends Controller
         $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $branches = \Core\Application::$app->db->select("SELECT id, name, school_id FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
 
-        return $this->view('students/edit', compact('student', 'schools', 'branches'));
+        $guardians = \Core\Application::$app->db->select(
+            "SELECT g.name, g.relationship, g.phone, g.email, g.aadhar 
+             FROM guardians g 
+             JOIN guardian_student gs ON gs.guardian_id = g.id 
+             WHERE gs.student_id = ? AND g.deleted_at IS NULL",
+            [(int)$id]
+        );
+
+        return $this->view('students/edit', compact('student', 'schools', 'branches', 'guardians'));
     }
 
     public function update(string $id): string
     {
         $data = $this->request->getBody();
+        if (!isset($data['full_name']) && isset($data['first_name'])) {
+            $data['full_name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['middle_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
+        }
+        if (empty($data['disability_type'])) {
+            $data['disability_type'] = 'Other';
+        }
 
         $rules = [
             'full_name'             => 'required|min:2|max:200',

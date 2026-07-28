@@ -3,6 +3,12 @@ $layout    = 'app';
 $pageTitle = 'Academic Workspace';
 $breadcrumbs = [];
 ob_start();
+
+$db = \Core\Application::$app->db;
+$recentStudents = $db->select(
+    "SELECT * FROM students WHERE tenant_id = ? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 4",
+    [\Core\Database::getTenantId()]
+);
 ?>
 
 <div class="max-w-6xl mx-auto space-y-8 py-2">
@@ -39,51 +45,51 @@ ob_start();
     </div>
 
     <!-- Top Row: Actionable Overview KPIs -->
-    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm">
         <div class="p-2">
             <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Students</span>
-            <p class="text-xl font-extrabold text-slate-900 dark:text-white mt-1"><?= $stats['students'] ?? 29 ?></p>
+            <p class="text-xl font-extrabold text-slate-900 dark:text-white mt-1"><?= $stats['students'] ?? 0 ?></p>
         </div>
         <div class="p-2 border-l border-slate-100 dark:border-slate-800/60">
             <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Admissions</span>
-            <p class="text-xl font-extrabold text-slate-900 dark:text-white mt-1"><?= $stats['admissions'] ?? 1 ?></p>
+            <p class="text-xl font-extrabold text-slate-900 dark:text-white mt-1"><?= $stats['admissions'] ?? 0 ?></p>
         </div>
         <div class="p-2 border-l border-slate-100 dark:border-slate-800/60">
             <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Absent Today</span>
-            <p class="text-xl font-extrabold text-amber-500 mt-1"><?= $stats['absent'] ?? 2 ?></p>
-        </div>
-        <div class="p-2 border-l border-slate-100 dark:border-slate-800/60">
-            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">IEP Reviews</span>
-            <p class="text-xl font-extrabold text-indigo-500 mt-1"><?= $stats['iep_reviews'] ?? 4 ?></p>
+            <p class="text-xl font-extrabold text-amber-500 mt-1"><?= $stats['absent'] ?? 0 ?></p>
         </div>
         <div class="p-2 border-l border-slate-100 dark:border-slate-800/60">
             <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Pending Reports</span>
-            <p class="text-xl font-extrabold text-slate-900 dark:text-white mt-1"><?= $stats['pending_rc'] ?? 8 ?></p>
+            <p class="text-xl font-extrabold text-slate-900 dark:text-white mt-1"><?= $stats['pending_rc'] ?? 0 ?></p>
         </div>
     </div>
 
-    <!-- Workspace Operations Grid (Actionable Panels, No Duplicate Nav) -->
+    <!-- Workspace Operations Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <!-- Pending Tasks & Priorities -->
         <div class="rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 p-5 space-y-4 shadow-sm">
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Pending Academic Tasks</h3>
-                <span class="text-2xs font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500">4 Items Due</span>
+                <span class="text-2xs font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500"><?= count($pendingAdmissions) + ($stats['pending_rc'] > 0 ? 1 : 0) ?> Items Due</span>
             </div>
             <div class="space-y-3 text-xs">
-                <a href="<?= url('academics/admissions') ?>" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <span class="text-slate-700 dark:text-slate-300 font-medium">New Student Admission for <strong>Het Shah</strong> requires review</span>
-                    <span class="text-2xs text-indigo-500 font-bold">Review →</span>
-                </a>
-                <a href="<?= url('academics/report-cards') ?>" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <span class="text-slate-700 dark:text-slate-300 font-medium">Publish term evaluation report cards for <strong>Class 2-A</strong></span>
-                    <span class="text-2xs text-indigo-500 font-bold">Publish →</span>
-                </a>
-                <a href="<?= url('academics/students') ?>" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <span class="text-slate-700 dark:text-slate-300 font-medium">Speech Therapy IEP milestone review for <strong>Aarav Kumar</strong></span>
-                    <span class="text-2xs text-indigo-500 font-bold">Inspect →</span>
-                </a>
+                <?php if (empty($pendingAdmissions) && $stats['pending_rc'] == 0): ?>
+                    <p class="text-slate-500 text-center py-4">All caught up! No pending tasks.</p>
+                <?php else: ?>
+                    <?php foreach ($pendingAdmissions as $adm): ?>
+                        <a href="<?= url('academics/admissions') ?>" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                            <span class="text-slate-700 dark:text-slate-300 font-medium">New Student Admission for <strong><?= e($adm['first_name'] . ' ' . $adm['last_name']) ?></strong> requires review</span>
+                            <span class="text-2xs text-indigo-500 font-bold">Review →</span>
+                        </a>
+                    <?php endforeach; ?>
+                    <?php if ($stats['pending_rc'] > 0): ?>
+                        <a href="<?= url('academics/report-cards') ?>" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                            <span class="text-slate-700 dark:text-slate-300 font-medium">Publish term evaluation report cards (<strong><?= $stats['pending_rc'] ?></strong> pending students)</span>
+                            <span class="text-2xs text-indigo-500 font-bold">Publish →</span>
+                        </a>
+                    <?php endif; ?>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -91,48 +97,43 @@ ob_start();
         <div class="rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 p-5 space-y-4 shadow-sm">
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Recent Activity</h3>
-                <span class="text-2xs text-slate-400">Real-time</span>
+                <span class="text-2xs text-slate-400 font-mono">Real-time</span>
             </div>
             <div class="space-y-3 text-xs">
-                <div class="flex items-start gap-3">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span>
-                    <div>
-                        <p class="text-slate-700 dark:text-slate-300">New admission application submitted for <strong>Het Shah</strong></p>
-                        <span class="text-2xs text-slate-400">10 minutes ago</span>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <span class="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0"></span>
-                    <div>
-                        <p class="text-slate-700 dark:text-slate-300">Bulk Mark Entry completed for <strong>Class 2-A (First Term Evaluation)</strong></p>
-                        <span class="text-2xs text-slate-400">1 hour ago</span>
-                    </div>
-                </div>
-                <div class="flex items-start gap-3">
-                    <span class="w-2 h-2 rounded-full bg-purple-500 mt-1.5 flex-shrink-0"></span>
-                    <div>
-                        <p class="text-slate-700 dark:text-slate-300">IEP Milestone target updated for <strong>Aarav Kumar (Sensory Integration)</strong></p>
-                        <span class="text-2xs text-slate-400">3 hours ago</span>
-                    </div>
-                </div>
+                <?php if (empty($recentLogs)): ?>
+                    <p class="text-slate-500 text-center py-4">No recent activity logged.</p>
+                <?php else: ?>
+                    <?php foreach ($recentLogs as $log): ?>
+                        <div class="flex items-start gap-3">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></span>
+                            <div>
+                                <p class="text-slate-700 dark:text-slate-300">
+                                    <strong><?= e($log['user_name'] ?: 'System') ?></strong>: 
+                                    <span class="text-slate-500 font-mono text-[11px]"><?= e($log['event']) ?> <?= !empty($log['description']) ? '(' . e($log['description']) . ')' : '' ?></span>
+                                </p>
+                                <span class="text-[10px] text-slate-400"><?= date('d M Y, H:i', strtotime($log['created_at'])) ?></span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
 
     </div>
 
-    <!-- Recently Accessed Students & Classes Quick Drawer -->
+    <!-- Recently Accessed Students -->
     <div class="space-y-4">
         <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Recently Accessed Students</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <?php foreach (array_slice($recentStudents ?? [], 0, 4) as $s): ?>
             <a href="<?= url('academics/students/' . $s['id']) ?>" class="group p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 hover:border-indigo-500/40 transition-all shadow-sm">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                        👤 <?= strtoupper(substr($s['first_name'], 0, 1) . substr($s['last_name'], 0, 1)) ?>
+                    <div class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center justify-center flex-shrink-0 border border-slate-700/10">
+                        <?= strtoupper(substr($s['first_name'], 0, 1) . (isset($s['last_name'][0]) ? substr($s['last_name'], 0, 1) : 'S')) ?>
                     </div>
                     <div class="min-w-0 flex-1">
                         <p class="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-500 transition-colors"><?= e($s['first_name'] . ' ' . $s['last_name']) ?></p>
-                        <p class="text-2xs font-mono text-slate-400"><?= e($s['admission_number'] ?? 'ADM-2026-111') ?></p>
+                        <p class="text-2xs font-mono text-slate-400"><?= e($s['admission_number'] ?? '—') ?></p>
                     </div>
                 </div>
             </a>

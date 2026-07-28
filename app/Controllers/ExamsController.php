@@ -161,13 +161,19 @@ class ExamsController extends Controller
             );
         }
 
-        $subjects = [
-            ['name' => 'Speech Therapy', 'code' => 'ST'],
-            ['name' => 'Sensory Integration', 'code' => 'SI'],
-            ['name' => 'Visual Arts', 'code' => 'VA'],
-            ['name' => 'Math Foundations', 'code' => 'MF'],
-            ['name' => 'Life Skills', 'code' => 'LS'],
-        ];
+        $subjects = $db->select(
+            "SELECT name, code, type as category FROM subjects WHERE tenant_id = ? ORDER BY type ASC, name ASC",
+            [$tenantId]
+        );
+        if (empty($subjects)) {
+            $subjects = [
+                ['name' => 'Speech Therapy', 'code' => 'ST', 'category' => 'Therapy'],
+                ['name' => 'Sensory Integration', 'code' => 'SI', 'category' => 'Therapy'],
+                ['name' => 'Visual Arts', 'code' => 'VA', 'category' => 'Skill'],
+                ['name' => 'Math Foundations', 'code' => 'MF', 'category' => 'Academic'],
+                ['name' => 'Life Skills', 'code' => 'LS', 'category' => 'Skill'],
+            ];
+        }
 
         $existingMarks = [];
         if (!empty($students)) {

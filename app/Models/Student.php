@@ -16,7 +16,7 @@ class Student extends Model
         $student = static::find($studentId);
         if (!$student) return false;
 
-        $student['medical']            = StudentMedical::findBy('student_id', $studentId) ?: [];
+        $student['medical']            = [];
         $student['emergency_contacts'] = EmergencyContact::where('student_id = ?', [$studentId], 'priority ASC');
         $student['documents']          = StudentDocument::where('student_id = ?', [$studentId]);
         $student['guardians']          = static::getGuardians($studentId);

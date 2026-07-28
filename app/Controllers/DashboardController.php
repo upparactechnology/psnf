@@ -37,14 +37,14 @@ class DashboardController extends Controller
             foreach ($rawApps as $rawApp) {
                 if ($rawApp === 'staff_dashboard') {
                     $assignedApps = array_merge($assignedApps, [
-                        'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
+                        'academic', 'academic_summary', 'hr', 'access_control', 'finance', 
                         'transport', 'file_manager', 'games', 'config', 'report_cards'
                     ]);
                 } elseif ($rawApp === 'driver_app') {
                     $assignedApps[] = 'transport';
                 } elseif ($rawApp === 'teacher_app') {
                     $assignedApps = array_merge($assignedApps, [
-                        'academic', 'academic_summary', 'medical', 'games', 'report_cards'
+                        'academic', 'academic_summary', 'games', 'report_cards'
                     ]);
                 } elseif ($rawApp === 'parents_dashboard') {
                     // Parents dashboard doesn't need admin launcher items
@@ -57,7 +57,7 @@ class DashboardController extends Controller
             // Default: if no assignment exists and user is admin/manager/teacher, grant all apps.
             if (has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher')) {
                 $assignedApps = [
-                    'academic', 'academic_summary', 'hr', 'access_control', 'finance', 'medical', 
+                    'academic', 'academic_summary', 'hr', 'access_control', 'finance', 
                     'transport', 'file_manager', 'games', 'config', 'report_cards'
                 ];
             }
@@ -78,22 +78,29 @@ class DashboardController extends Controller
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
 
+        $queryCount = function($sql, $params = []) use ($db) {
+            try {
+                return (int)($db->selectOne($sql, $params)['c'] ?? 0);
+            } catch (\Throwable $e) {
+                return 0;
+            }
+        };
+
         $stats = [
-            'total_students'  => (int) ($db->selectOne("SELECT COUNT(*) as c FROM students WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
-            'enrolled'        => (int) ($db->selectOne("SELECT COUNT(*) as c FROM students WHERE tenant_id = ? AND admission_status = 'enrolled' AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
-            'applied'         => (int) ($db->selectOne("SELECT COUNT(*) as c FROM students WHERE tenant_id = ? AND admission_status = 'applied' AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
-            'total_users'     => (int) ($db->selectOne("SELECT COUNT(DISTINCT u.id) as c FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE u.tenant_id = ? AND u.deleted_at IS NULL AND r.slug IN ('super_admin', 'teacher', 'staff', 'driver', 'parent')", [$tenantId])['c'] ?? 0),
-            'total_schools'   => (int) ($db->selectOne("SELECT COUNT(*) as c FROM schools WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
-            'total_classes'   => (int) ($db->selectOne("SELECT COUNT(*) as c FROM classes WHERE tenant_id = ?", [$tenantId])['c'] ?? 0),
-            'total_roles'     => (int) (($db->selectOne("SELECT COUNT(*) as c FROM roles")['c'] ?? 0)),
-            'total_invoices'  => (int) (($db->selectOne("SELECT COUNT(*) as c FROM fee_invoices WHERE tenant_id = ?", [$tenantId])['c'] ?? 0)),
-            'total_medical_logs' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM student_medical")['c'] ?? 0)),
-            'total_routes'    => (int) (($db->selectOne("SELECT COUNT(*) as c FROM routes")['c'] ?? 0)),
-            'total_files'     => (int) (($db->selectOne("SELECT COUNT(*) as c FROM resources")['c'] ?? 0)),
-            'total_game_sessions' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM game_sessions")['c'] ?? 0)),
-            'total_certificates' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM certificates")['c'] ?? 0)),
-            'total_report_cards' => (int) (($db->selectOne("SELECT COUNT(*) as c FROM student_report_cards")['c'] ?? 0)),
-            'total_guardians' => (int) ($db->selectOne("SELECT COUNT(*) as c FROM guardians WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId])['c'] ?? 0),
+            'total_students'  => $queryCount("SELECT COUNT(*) as c FROM students WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId]),
+            'enrolled'        => $queryCount("SELECT COUNT(*) as c FROM students WHERE tenant_id = ? AND admission_status = 'enrolled' AND deleted_at IS NULL", [$tenantId]),
+            'applied'         => $queryCount("SELECT COUNT(*) as c FROM students WHERE tenant_id = ? AND admission_status = 'applied' AND deleted_at IS NULL", [$tenantId]),
+            'total_users'     => $queryCount("SELECT COUNT(DISTINCT u.id) as c FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE u.tenant_id = ? AND u.deleted_at IS NULL AND r.slug IN ('super_admin', 'teacher', 'staff', 'driver', 'parent')", [$tenantId]),
+            'total_schools'   => $queryCount("SELECT COUNT(*) as c FROM schools WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId]),
+            'total_classes'   => $queryCount("SELECT COUNT(*) as c FROM classes WHERE tenant_id = ?", [$tenantId]),
+            'total_roles'     => $queryCount("SELECT COUNT(*) as c FROM roles"),
+            'total_invoices'  => $queryCount("SELECT COUNT(*) as c FROM fee_invoices WHERE tenant_id = ?", [$tenantId]),
+            'total_routes'    => $queryCount("SELECT COUNT(*) as c FROM routes"),
+            'total_files'     => $queryCount("SELECT COUNT(*) as c FROM resources"),
+            'total_game_sessions' => $queryCount("SELECT COUNT(*) as c FROM game_sessions"),
+            'total_certificates' => $queryCount("SELECT COUNT(*) as c FROM certificates"),
+            'total_report_cards' => $queryCount("SELECT COUNT(*) as c FROM student_report_cards"),
+            'total_guardians' => $queryCount("SELECT COUNT(*) as c FROM guardians WHERE tenant_id = ? AND deleted_at IS NULL", [$tenantId]),
         ];
 
         $statusCounts = Student::statusCounts();

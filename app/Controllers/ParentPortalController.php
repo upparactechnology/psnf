@@ -580,10 +580,7 @@ class ParentPortalController extends Controller
         $context = $this->getContext((int)$id);
         $student = $context['active_student'];
 
-        $medical = $this->db()->selectOne(
-            "SELECT * FROM student_medical WHERE student_id = ? LIMIT 1",
-            [$student['id']]
-        );
+        $medical = [];
 
         return View::render('parent/medical', array_merge($context, [
             'title'   => 'Medical Summary',
@@ -902,8 +899,7 @@ class ParentPortalController extends Controller
     public function apiStudentProfile(string $id): string
     {
         $context = $this->getContext((int)$id);
-        $student = $context['active_student'];
-        $student['medical'] = $this->db()->selectOne("SELECT * FROM student_medical WHERE student_id = ?", [$student['id']]) ?: [];
+        $student['medical'] = [];
         $student['emergency_contacts'] = $this->db()->select("SELECT * FROM emergency_contacts WHERE student_id = ?", [$student['id']]);
 
         return $this->respondJson([

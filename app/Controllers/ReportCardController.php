@@ -16,13 +16,29 @@ class ReportCardController extends Controller
         return Application::$app->db;
     }
 
+    private function getDefaults(): array
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        
+        $activeYearRow = $db->selectOne("SELECT year_name FROM academic_years WHERE status = 'current' AND tenant_id = ? LIMIT 1", [$tenantId]);
+        $academicYear = $activeYearRow['year_name'] ?? '2025-26';
+        
+        $activeSemRow = $db->selectOne("SELECT name FROM academic_semesters WHERE status = 'OPEN' AND tenant_id = ? ORDER BY id ASC LIMIT 1", [$tenantId]);
+        $semester = $activeSemRow['name'] ?? 'Semester 1';
+
+        return [$academicYear, $semester];
+    }
+
+
     public function index(): string
     {
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
         
-        $semester = $this->request->get('semester', 'Semester 2');
-        $academicYear = $this->request->get('academic_year', '2023-24');
+        list($defaultYear, $defaultSem) = $this->getDefaults();
+        $semester = $this->request->get('semester', $defaultSem);
+        $academicYear = $this->request->get('academic_year', $defaultYear);
 
         $students = $db->select(
             "SELECT s.id, s.first_name, s.last_name, s.class, s.section, s.gr_number, s.admission_number,
@@ -45,8 +61,9 @@ class ReportCardController extends Controller
             exit();
         }
 
-        $semester = $this->request->get('semester', 'Semester 2');
-        $academicYear = $this->request->get('academic_year', $student['academic_year'] ?? '2023-24');
+        list($defaultYear, $defaultSem) = $this->getDefaults();
+        $semester = $this->request->get('semester', $defaultSem);
+        $academicYear = $this->request->get('academic_year', (!empty($student['academic_year']) ? $student['academic_year'] : $defaultYear));
 
         $db = $this->db();
         $reportCardRow = $db->selectOne(
@@ -87,8 +104,9 @@ class ReportCardController extends Controller
         }
 
         $db = $this->db();
-        $academicYear = $this->request->input('academic_year', '2023-24');
-        $semester = $this->request->input('semester', 'Semester 2');
+        list($defaultYear, $defaultSem) = $this->getDefaults();
+        $academicYear = $this->request->input('academic_year', $defaultYear);
+        $semester = $this->request->input('semester', $defaultSem);
 
         $routineProfile = $this->request->input('routine_profile', []);
         $learningSkills = $this->request->input('learning_skills', []);
@@ -188,8 +206,9 @@ class ReportCardController extends Controller
             exit();
         }
 
-        $semester = $this->request->get('semester', 'Semester 2');
-        $academicYear = $this->request->get('academic_year', $student['academic_year'] ?? '2023-24');
+        list($defaultYear, $defaultSem) = $this->getDefaults();
+        $semester = $this->request->get('semester', $defaultSem);
+        $academicYear = $this->request->get('academic_year', (!empty($student['academic_year']) ? $student['academic_year'] : $defaultYear));
 
         $db = $this->db();
         $reportCardRow = $db->selectOne(
