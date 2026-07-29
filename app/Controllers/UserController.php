@@ -103,7 +103,7 @@ class UserController extends Controller
         unset($data['roles'], $data['apps'], $data['_csrf'], $data['redirect_to']);
 
         $rules = [
-            'name'      => 'required|min:2',
+            'first_name'=> 'required|min:2',
             'email'     => 'required|email|unique:users,email',
             'password'  => 'required|min:8|confirmed',
             'school_id' => 'required',
@@ -132,7 +132,9 @@ class UserController extends Controller
         $data['created_by']   = auth_id();
         $data['lecture_time'] = $lectureTime;
         $data['grace_period'] = $gracePeriod;
-        unset($data['password_confirmation'], $data['salary_basic'], $data['department_id'], $data['designation_id'], $data['min_clock_in'], $data['max_clock_out']);
+        
+        $data['name'] = trim($data['first_name'] . ' ' . ($data['last_name'] ?? ''));
+        unset($data['password_confirmation'], $data['salary_basic'], $data['department_id'], $data['designation_id'], $data['min_clock_in'], $data['max_clock_out'], $data['first_name'], $data['last_name']);
 
         $userId = (int) User::create($data);
 

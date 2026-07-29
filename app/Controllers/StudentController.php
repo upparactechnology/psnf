@@ -90,6 +90,10 @@ class StudentController extends Controller
         }
 
         $validated = $validator->validated();
+        
+        // Pass un-validated arrays through to the service
+        $validated['guardians'] = $data['guardians'] ?? [];
+        $validated['emergency_contacts'] = $data['emergency_contacts'] ?? [];
 
         // Split Full Name
         $parts = preg_split('/\s+/', trim($validated['full_name']));
@@ -243,6 +247,10 @@ class StudentController extends Controller
         }
 
         $validated = $validator->validated();
+
+        // Pass un-validated arrays through to the service
+        $validated['guardians'] = $data['guardians'] ?? [];
+        $validated['emergency_contacts'] = $data['emergency_contacts'] ?? [];
 
         // Split Full Name
         $parts = preg_split('/\s+/', trim($validated['full_name']));

@@ -106,6 +106,14 @@ $router->get('/academics/subjects',                   [App\Controllers\SubjectsC
 $router->post('/academics/subjects',                  [App\Controllers\SubjectsController::class, 'store'],              ['auth', 'tenant']);
 $router->post('/academics/subjects/{id}/delete',        [App\Controllers\SubjectsController::class, 'destroy'],            ['auth', 'tenant']);
 $router->post('/academics/subjects/{id}',               [App\Controllers\SubjectsController::class, 'update'],             ['auth', 'tenant']);
+
+$router->get('/academics/parents',                    [App\Controllers\GuardianController::class, 'index'],              ['auth', 'tenant']);
+$router->get('/academics/parents/create',             [App\Controllers\GuardianController::class, 'create'],             ['auth', 'tenant']);
+$router->post('/academics/parents',                   [App\Controllers\GuardianController::class, 'store'],              ['auth', 'tenant']);
+$router->get('/academics/parents/{id}/edit',          [App\Controllers\GuardianController::class, 'edit'],               ['auth', 'tenant']);
+$router->post('/academics/parents/{id}',              [App\Controllers\GuardianController::class, 'update'],             ['auth', 'tenant']);
+$router->post('/academics/parents/{id}/delete',       [App\Controllers\GuardianController::class, 'destroy'],            ['auth', 'tenant']);
+
 $router->get('/academics/assessments',                [ExamsController::class, 'index'],                ['auth', 'tenant']);
 $router->get('/academics/report-cards',               [ReportCardController::class, 'index'],           ['auth', 'permission:edit_students']);
 $router->get('/academics/settings',                   [App\Controllers\AcademicSettingsController::class, 'index'],     ['auth', 'permission:view_settings']);

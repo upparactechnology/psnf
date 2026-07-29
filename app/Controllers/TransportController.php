@@ -300,6 +300,9 @@ class TransportController extends Controller
 
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
+            if ($this->request->wantsJson()) {
+                return $this->json(['success' => false, 'message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+            }
             Session::flash('errors', $validator->errors());
             return $this->redirect("/transport/{$id}/edit");
         }
@@ -312,6 +315,11 @@ class TransportController extends Controller
 
         ActivityLog::log('transport_route_updated', auth_id(), ['route_id' => $route['id']]);
         Session::flash('success', 'Route updated successfully.');
+
+        if ($this->request->wantsJson()) {
+            return $this->json(['success' => true, 'message' => 'Route updated successfully.']);
+        }
+
         return $this->redirect('/transport');
     }
 

@@ -85,6 +85,35 @@ class StudentService
                     $guardianId = (int) Guardian::create($newGuardian);
                 }
 
+                // Auto-create Parent User for Portal Login ONLY if Father or Mother
+                $rel = strtolower($gData['relationship'] ?? '');
+                if (in_array($rel, ['father', 'mother'])) {
+                    $userEmail = !empty($gData['email']) ? $gData['email'] : 'parent_' . $gData['phone'] . '@psnf.edu';
+                    $existingUser = $db->selectOne("SELECT id FROM users WHERE email = ? OR phone = ? LIMIT 1", [$userEmail, $gData['phone']]);
+                    
+                    $userId = null;
+                    if ($existingUser) {
+                        $userId = (int)$existingUser['id'];
+                    } else {
+                        $userData = [
+                            'uuid' => str_uuid(),
+                            'tenant_id' => Database::getTenantId(),
+                            'name' => $gData['name'],
+                            'email' => $userEmail,
+                            'phone' => $gData['phone'],
+                            'password' => password_hash($gData['phone'], PASSWORD_BCRYPT, ['cost' => 12]),
+                            'created_by' => auth_id()
+                        ];
+                        $userId = (int) \App\Models\User::create($userData);
+                        
+                        $parentRole = $db->selectOne("SELECT id FROM roles WHERE slug = 'parent' LIMIT 1");
+                        if ($parentRole) {
+                            \App\Models\User::syncRoles($userId, [(int)$parentRole['id']]);
+                        }
+                    }
+                    Guardian::update($guardianId, ['user_id' => $userId]);
+                }
+
                 // Link guardian to student
                 $db->insert('guardian_student', [
                     'guardian_id' => $guardianId,
@@ -190,6 +219,35 @@ class StudentService
                             'created_by'   => auth_id()
                         ];
                         $guardianId = (int) Guardian::create($newGuardian);
+                    }
+
+                    // Auto-create Parent User for Portal Login ONLY if Father or Mother
+                    $rel = strtolower($gData['relationship'] ?? '');
+                    if (in_array($rel, ['father', 'mother'])) {
+                        $userEmail = !empty($gData['email']) ? $gData['email'] : 'parent_' . $gData['phone'] . '@psnf.edu';
+                        $existingUser = $db->selectOne("SELECT id FROM users WHERE email = ? OR phone = ? LIMIT 1", [$userEmail, $gData['phone']]);
+                        
+                        $userId = null;
+                        if ($existingUser) {
+                            $userId = (int)$existingUser['id'];
+                        } else {
+                            $userData = [
+                                'uuid' => str_uuid(),
+                                'tenant_id' => Database::getTenantId(),
+                                'name' => $gData['name'],
+                                'email' => $userEmail,
+                                'phone' => $gData['phone'],
+                                'password' => password_hash($gData['phone'], PASSWORD_BCRYPT, ['cost' => 12]),
+                                'created_by' => auth_id()
+                            ];
+                            $userId = (int) \App\Models\User::create($userData);
+                            
+                            $parentRole = $db->selectOne("SELECT id FROM roles WHERE slug = 'parent' LIMIT 1");
+                            if ($parentRole) {
+                                \App\Models\User::syncRoles($userId, [(int)$parentRole['id']]);
+                            }
+                        }
+                        Guardian::update($guardianId, ['user_id' => $userId]);
                     }
 
                     // Link to student

@@ -65,13 +65,14 @@ class ApiService {
       if (data['success'] == true && data['routes'] != null) {
         final routes = data['routes'] as List;
         if (routes.isNotEmpty) {
-          assignedRoute = routes.firstWhere(
-            (r) => (driverName != null && r['driver'] == driverName) || 
-                   (driverPhone != null && r['phone'] == driverPhone) || 
-                   r['driver'] == 'Rajendra Singh' || 
-                   r['phone'] == '+91-9123456789',
-            orElse: () => routes.first,
-          );
+          try {
+            assignedRoute = routes.firstWhere(
+              (r) => (driverName != null && r['driver'] == driverName) || 
+                     (driverPhone != null && r['phone'] == driverPhone)
+            );
+          } catch (e) {
+            assignedRoute = null;
+          }
         }
       }
     } catch (e) {
