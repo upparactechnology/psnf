@@ -39,9 +39,14 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Full Name <span class="text-red-400">*</span></label>
-                    <input type="text" name="name" value="<?= e($fn('name')) ?>" required class="<?= iClass('name',$errors) ?>" placeholder="Full name">
-                    <?= eMsg('name',$errors) ?>
+                    <label class="block text-xs font-medium text-slate-400">First Name <span class="text-red-400">*</span></label>
+                    <input type="text" name="first_name" value="<?= e($fn('first_name')) ?>" required class="<?= iClass('first_name',$errors) ?>" placeholder="First name">
+                    <?= eMsg('first_name',$errors) ?>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Last Name</label>
+                    <input type="text" name="last_name" value="<?= e($fn('last_name')) ?>" class="<?= iClass('last_name',$errors) ?>" placeholder="Last name">
+                    <?= eMsg('last_name',$errors) ?>
                 </div>
                 <div class="space-y-1.5">
                     <label class="block text-xs font-medium text-slate-400">Email Address <span class="text-red-400">*</span></label>
