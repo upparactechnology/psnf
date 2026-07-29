@@ -657,3 +657,11 @@
 [28-Jul-2026 17:55:31 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
 [28-Jul-2026 17:55:31 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
 [28-Jul-2026 17:55:31 Asia/Kolkata] PHP Warning:  Undefined array key "action" in C:\xampp\htdocs\psnf\resources\views\academic\workspace.php on line 112
+[29-Jul-2026 17:19:14 Asia/Kolkata] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php on line 608
+[29-Jul-2026 17:19:14 Asia/Kolkata] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php on line 608
+[29-Jul-2026 17:19:14 Asia/Kolkata] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php on line 608
+[29-Jul-2026 17:19:14 Asia/Kolkata] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php on line 608
+[29-Jul-2026 17:32:16 Asia/Kolkata] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php on line 608
+[29-Jul-2026 17:32:16 Asia/Kolkata] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php on line 608
+[29-Jul-2026 17:32:16 Asia/Kolkata] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php on line 608
+[29-Jul-2026 17:32:16 Asia/Kolkata] PHP Warning:  Undefined array key "employee_id" in C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php on line 608

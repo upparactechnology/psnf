@@ -187,7 +187,7 @@ class DocumentsController extends Controller
         $staffList = $db->select("
             SELECT id, first_name, last_name, employee_code, department
             FROM employees
-            WHERE tenant_id = ? AND deleted_at IS NULL
+            WHERE tenant_id = ?
             ORDER BY first_name ASC
         ", [$tenantId]);
 
@@ -197,7 +197,7 @@ class DocumentsController extends Controller
         if ($staffId > 0) {
             $documents = $db->select("
                 SELECT * FROM staff_documents 
-                WHERE staff_id = ? AND deleted_at IS NULL
+                WHERE staff_id = ?
             ", [$staffId]);
         }
 
@@ -222,14 +222,13 @@ class DocumentsController extends Controller
     public function parentDocuments(): string
     {
         $db = $this->db();
-        $tenantId = Database::getTenantId();
         
         $parents = $db->select("
-            SELECT id, name, email, phone_number
+            SELECT id, CONCAT(first_name, ' ', last_name) as name, email, phone as phone_number
             FROM parents
-            WHERE tenant_id = ? AND deleted_at IS NULL
+            WHERE deleted_at IS NULL
             ORDER BY name ASC
-        ", [$tenantId]);
+        ");
 
         $parentId = (int) ($_GET['parent_id'] ?? ($parents[0]['id'] ?? 0));
         

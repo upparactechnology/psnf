@@ -13,8 +13,8 @@ return [
     'uploads_dir' => ROOT_PATH . '/storage/uploads',
 
     'session' => [
-        'lifetime' => 7200,       // 2 hours
-        'timeout'  => 1200,       // 20 minutes idle
+        'lifetime' => 86400,       // 24 hours
+        'timeout'  => 86400,       // 24 hours idle
         'secure'   => false,
         'samesite' => 'Lax',
     ],

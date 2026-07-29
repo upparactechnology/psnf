@@ -72,7 +72,23 @@ class AcademicSettingsController extends Controller
         $students = $db->select("SELECT id, first_name, last_name, admission_number, class, section FROM students WHERE tenant_id = ? AND deleted_at IS NULL ORDER BY first_name ASC", [$tenantId]);
         $subjects = $db->select("SELECT * FROM subjects WHERE tenant_id = ? ORDER BY name ASC", [$tenantId]);
 
-        return $this->view('academic/settings', compact('years', 'semesters', 'students', 'subjects'));
+        $shift = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
+        $lecGraceMinutes = $shift['lec_grace_minutes'] ?? 5;
+
+        return $this->view('academic/settings', compact('years', 'semesters', 'students', 'subjects', 'lecGraceMinutes'));
+    }
+
+    public function saveAttendanceSettings(): string
+    {
+        $db = $this->db();
+        $lecGraceMinutes = (int) $this->request->input('lec_grace_minutes', 5);
+
+        $db->update('shift_templates', [
+            'lec_grace_minutes' => $lecGraceMinutes
+        ], 'id = 1');
+
+        Session::flash('success', 'Lecture-wise attendance settings updated.');
+        return $this->redirect('/academics/settings?tab=lock');
     }
 
     public function storeYear(): string
@@ -148,5 +164,21 @@ class AcademicSettingsController extends Controller
         Session::flash('success', "Year Closing Wizard executed! Student promotions & subject rollovers applied successfully.");
 
         return $this->redirect('/academics/settings?tab=wizard');
+    }
+
+    public function lectureAttendance(): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        
+        $logs = $db->select("
+            SELECT tla.*, u.name as teacher_name, u.email as teacher_email
+            FROM teacher_attendance tla
+            JOIN users u ON tla.user_id = u.id
+            WHERE tla.tenant_id = ?
+            ORDER BY tla.attendance_date DESC, tla.opened_at DESC
+        ", [$tenantId]);
+
+        return $this->view('academic/lecture_attendance', compact('logs'));
     }
 }

@@ -176,7 +176,7 @@
                     <p class="text-secondary mb-2 small">Target API Base URL: <code>http://localhost/psnf/public/attendance/api.php</code></p>
                     <ul class="list-inline text-secondary small mb-0">
                         <li class="list-inline-item me-3 mb-1"><i class="fa-solid fa-check text-success me-1"></i>Engine: <b>PHP Engine & AI</b></li>
-                        <li class="list-inline-item me-3 mb-1"><i class="fa-solid fa-check text-success me-1"></i>Threshold: <b>0.60</b></li>
+                        <li class="list-inline-item me-3 mb-1"><i class="fa-solid fa-check text-success me-1"></i>Threshold: <b>0.50</b></li>
                         <li class="list-inline-item me-3 mb-1"><i class="fa-solid fa-check text-success me-1"></i>Cooldown: <b>10 Minutes</b></li>
                     </ul>
                 </div>

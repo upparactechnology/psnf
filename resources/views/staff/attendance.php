@@ -13,7 +13,13 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Staff Attendance Engine</h1>
             <p class="text-xs text-slate-500 mt-0.5">Policy-driven shift tracking, grace minute calculations, clock-in/out & overtime rules</p>
         </div>
-        <button @click="logModal = true" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Clock In / Out Entry</button>
+        <div class="flex items-center gap-4">
+            <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
+                <a href="<?= url('staff/attendance') ?>" class="px-4 py-2 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow shadow-slate-200/50 dark:shadow-none">Daily List</a>
+                <a href="<?= url('staff/attendance?view=calendar') ?>" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Monthly Calendar</a>
+            </div>
+            <a href="<?= url('attendance/face-kiosk') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Clock In / Out Entry</a>
+        </div>
     </div>
 
     <!-- Date Filter -->
@@ -35,6 +41,7 @@ ob_start();
                     <th class="p-4">Department</th>
                     <th class="p-4">Clock In</th>
                     <th class="p-4">Clock Out</th>
+                    <th class="p-4">Working Hours</th>
                     <th class="p-4">Method / Device</th>
                     <th class="p-4 text-right">Status</th>
                 </tr>
@@ -42,7 +49,7 @@ ob_start();
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 <?php if (empty($logs)): ?>
                 <tr>
-                    <td colspan="6" class="p-8 text-center text-slate-400 text-xs">No attendance logs recorded for <?= e($date) ?> yet. Click "+ Clock In / Out Entry" to log attendance.</td>
+                    <td colspan="7" class="p-8 text-center text-slate-400 text-xs">No attendance logs recorded for <?= e($date) ?> yet. Click "+ Clock In / Out Entry" to log attendance.</td>
                 </tr>
                 <?php else: ?>
                     <?php foreach ($logs as $l): ?>
@@ -59,11 +66,19 @@ ob_start();
                             </div>
                         </td>
                         <td class="p-4 text-slate-500"><?= e($l['department_name'] ?? 'General Staff') ?></td>
-                        <td class="p-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        <td class="p-4 font-mono font-bold <?= ($l['status'] === 'late' || $l['status'] === 'half_day') ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400' ?>">
                             <?= e($l['clock_in'] ?? '--:--') ?>
+                            <?php if ($l['status'] === 'late'): ?>
+                                <span class="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded ml-1 uppercase">Late</span>
+                            <?php elseif ($l['status'] === 'half_day'): ?>
+                                <span class="text-[9px] bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded ml-1 uppercase">Half-Day</span>
+                            <?php endif; ?>
                         </td>
                         <td class="p-4 font-mono text-slate-500">
                             <?= e($l['clock_out'] ?? '--:--') ?>
+                        </td>
+                        <td class="p-4 font-mono text-indigo-500 font-bold">
+                            <?= e($l['working_hours'] ?? '0 hrs 0 mins') ?>
                         </td>
                         <td class="p-4">
                             <span class="px-2.5 py-1 rounded-lg text-2xs font-bold border border-indigo-500/30 bg-indigo-500/10 text-indigo-500 inline-flex items-center gap-1.5">
@@ -72,7 +87,15 @@ ob_start();
                             </span>
                         </td>
                         <td class="p-4 text-right">
-                            <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-500 uppercase"><?= e($l['status']) ?></span>
+                            <?php 
+                                $statusColor = 'bg-emerald-500/10 text-emerald-500';
+                                if ($l['status'] === 'late') $statusColor = 'bg-amber-500/10 text-amber-600 dark:text-amber-500';
+                                elseif ($l['status'] === 'half_day') $statusColor = 'bg-orange-500/10 text-orange-600 dark:text-orange-500';
+                                elseif ($l['status'] === 'absent') $statusColor = 'bg-red-500/10 text-red-500';
+                            ?>
+                            <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold <?= $statusColor ?> uppercase">
+                                <?= e(str_replace('_', '-', $l['status'])) ?>
+                            </span>
                         </td>
                     </tr>
                     <?php endforeach; ?>

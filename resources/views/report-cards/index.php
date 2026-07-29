@@ -29,15 +29,15 @@ $db = \Core\Application::$app->db;
                 <form method="GET" action="" class="flex flex-wrap items-center gap-3">
                 <div>
                     <select name="academic_year" onchange="this.form.submit()" class="bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-850 text-slate-800 dark:text-white rounded-xl py-2 px-3.5 text-xs font-medium focus:outline-none focus:border-brand-500 shadow-sm">
-                        <?php foreach (['2023-24', '2024-25', '2025-26'] as $ay): ?>
-                        <option value="<?= $ay ?>" <?= $academicYear === $ay ? 'selected' : '' ?>><?= $ay ?></option>
+                        <?php foreach ($yearsList as $ay): ?>
+                        <option value="<?= $ay['year_name'] ?>" <?= $academicYear === $ay['year_name'] ? 'selected' : '' ?>><?= $ay['year_name'] ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div>
                     <select name="semester" onchange="this.form.submit()" class="bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-850 text-slate-800 dark:text-white rounded-xl py-2 px-3.5 text-xs font-medium focus:outline-none focus:border-brand-500 shadow-sm">
-                        <?php foreach (['Semester 1', 'Semester 2'] as $sem): ?>
-                        <option value="<?= $sem ?>" <?= $semester === $sem ? 'selected' : '' ?>><?= $sem ?></option>
+                        <?php foreach ($semestersList as $sem): ?>
+                        <option value="<?= $sem['name'] ?>" <?= $semester === $sem['name'] ? 'selected' : '' ?>><?= $sem['name'] ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

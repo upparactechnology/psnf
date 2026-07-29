@@ -12,7 +12,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?? 'PSNF ERP — Login' ?></title>
+    <title><?= $title ?? 'PSNF Management System — Login' ?></title>
     <!-- Tailwind CSS (Local Fallback) -->
     <script src="<?= url('js/tailwindcss.js') ?>"></script>
     <script>
@@ -210,12 +210,10 @@
 
         <!-- Logo -->
         <div class="text-center mb-8">
-            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl" style="width: 64px; height: 64px; background: linear-gradient(135deg, #6366f1, #a855f7);">
-                <svg class="w-8 h-8 text-white" style="width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                </svg>
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl overflow-hidden bg-white">
+                <img src="<?= url('game/images/logo.png') ?>" class="w-14 h-14 object-contain" alt="PSNF Logo">
             </div>
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">PSNF ERP</h1>
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white">PSNF Management System</h1>
             <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Pearl Special Needs Foundation</p>
         </div>
 

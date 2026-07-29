@@ -48,12 +48,16 @@ $router->get('/staff/leaves',           [App\Controllers\StaffWorkspaceControlle
 $router->post('/staff/leaves',          [App\Controllers\StaffWorkspaceController::class, 'storeLeave'], ['auth', 'tenant']);
 $router->get('/staff/payroll',          [App\Controllers\StaffWorkspaceController::class, 'payroll'],     ['auth', 'tenant']);
 $router->post('/staff/payroll/run',     [App\Controllers\StaffWorkspaceController::class, 'runPayroll'],   ['auth', 'tenant']);
-$router->get('/staff/roles',            [App\Controllers\StaffWorkspaceController::class, 'roles'],       ['auth', 'tenant']);
+$router->get('/staff/payroll/{id}',     [App\Controllers\StaffWorkspaceController::class, 'payrollDetails'],['auth', 'tenant']);
+$router->get('/staff/payroll/{id}/payslip/{empId}', [App\Controllers\StaffWorkspaceController::class, 'payslip'],['auth', 'tenant']);
+$router->get('/staff/roles',            [RoleController::class, 'index'],       ['auth', 'permission:view_roles']);
 $router->get('/staff/users',            [App\Controllers\StaffWorkspaceController::class, 'users'],       ['auth', 'tenant']);
 $router->get('/staff/settings',         [App\Controllers\StaffWorkspaceController::class, 'settings'],    ['auth', 'tenant']);
+$router->post('/staff/settings',        [App\Controllers\StaffWorkspaceController::class, 'saveSettings'],['auth', 'tenant']);
 
 // Legacy Users & Roles Fallbacks
 $router->get('/users',                  [App\Controllers\StaffWorkspaceController::class, 'employees'],   ['auth', 'tenant']);
+$router->get('/users/attendance',       [App\Controllers\StaffWorkspaceController::class, 'attendance'],  ['auth', 'tenant']);
 $router->get('/users/create',           [UserController::class, 'create'],  ['auth', 'permission:create_users']);
 $router->post('/users',                 [UserController::class, 'store'],   ['auth', 'permission:create_users']);
 $router->get('/users/{id}/edit',        [UserController::class, 'edit'],    ['auth', 'permission:edit_users']);
@@ -96,6 +100,8 @@ $router->get('/academics/timetable',                  [TimetablesController::cla
 $router->post('/academics/timetable/store',           [TimetablesController::class, 'store'],           ['auth', 'tenant']);
 $router->post('/academics/timetable/{id}/update',      [TimetablesController::class, 'update'],          ['auth', 'tenant']);
 $router->post('/academics/timetable/{id}/delete',      [TimetablesController::class, 'destroy'],         ['auth', 'tenant']);
+$router->post('/academics/timetable/bulk-generate',   [TimetablesController::class, 'bulkGenerate'],    ['auth', 'tenant']);
+$router->post('/academics/timetable/clear',           [TimetablesController::class, 'clearTimetable'],  ['auth', 'tenant']);
 $router->get('/academics/subjects',                   [App\Controllers\SubjectsController::class, 'index'],              ['auth', 'tenant']);
 $router->post('/academics/subjects',                  [App\Controllers\SubjectsController::class, 'store'],              ['auth', 'tenant']);
 $router->post('/academics/subjects/{id}/delete',        [App\Controllers\SubjectsController::class, 'destroy'],            ['auth', 'tenant']);
@@ -106,6 +112,8 @@ $router->get('/academics/settings',                   [App\Controllers\AcademicS
 $router->post('/academics/settings/years',            [App\Controllers\AcademicSettingsController::class, 'storeYear'], ['auth', 'permission:edit_settings']);
 $router->post('/academics/settings/years/{id}/lock',  [App\Controllers\AcademicSettingsController::class, 'lockYear'],  ['auth', 'permission:edit_settings']);
 $router->post('/academics/settings/wizard/close-year', [App\Controllers\AcademicSettingsController::class, 'runYearClosingWizard'], ['auth', 'permission:edit_settings']);
+$router->post('/academics/settings/save-attendance-settings', [App\Controllers\AcademicSettingsController::class, 'saveAttendanceSettings'], ['auth', 'permission:edit_settings']);
+$router->get('/academics/lecture-attendance',         [App\Controllers\AcademicSettingsController::class, 'lectureAttendance'], ['auth', 'tenant']);
 
 // Legacy fallbacks
 $router->get('/academic', [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth', 'tenant']);
@@ -147,8 +155,6 @@ $router->post('/receipts/settings', [ReceiptsController::class, 'saveSettings'],
 $router->get('/receipts/{id}/view', [ReceiptsController::class, 'show'], ['auth', 'tenant']);
 
 // ─── Scholarships — Admin ─────────────────────────────────────────────────────
-$router->get('/scholarships', [ScholarshipController::class, 'index'], ['auth', 'tenant']);
-$router->post('/scholarships/store', [ScholarshipController::class, 'store'], ['auth', 'tenant']);
 
 
 
@@ -195,9 +201,11 @@ $router->get('/student-attendance', [AttendanceController::class, 'index'], ['au
 $router->post('/student-attendance/save', [AttendanceController::class, 'save'], ['auth', 'tenant']);
 $router->get('/attendance', [AttendanceController::class, 'index'], ['auth', 'tenant']);
 $router->post('/attendance/save', [AttendanceController::class, 'save'], ['auth', 'tenant']);
-$router->get('/attendance/face-kiosk', [App\Controllers\FaceRecognitionController::class, 'verifyView']);
+$router->get('/attendance/face-kiosk',    [App\Controllers\FaceRecognitionController::class, 'kioskView']);
+$router->post('/attendance/face-kiosk',   [App\Controllers\FaceRecognitionController::class, 'kioskView']);
 $router->get('/attendance/face-register', [App\Controllers\FaceRecognitionController::class, 'registerView']);
-$router->get('/attendance/face-history', [App\Controllers\FaceRecognitionController::class, 'historyView']);
+$router->post('/attendance/face-register',[App\Controllers\FaceRecognitionController::class, 'registerView']);
+$router->get('/attendance/face-history',  [App\Controllers\FaceRecognitionController::class, 'historyView']);
 
 // ─── Timetables ──────────────────────────────────────────────────────────────
 $router->get('/timetables', [TimetablesController::class, 'index'], ['auth', 'tenant']);

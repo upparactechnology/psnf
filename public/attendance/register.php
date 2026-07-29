@@ -50,14 +50,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit();
 }
 
-// Clear registration auth token on GET so Admin login is required every time Add Employee is opened
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    unset($_SESSION['face_reg_authenticated'], $_SESSION['face_reg_user']);
-}
+// Check registration login status (either from face reg login or main ERP session)
+$isLoggedIn = !empty($_SESSION['face_reg_authenticated']) || !empty($_SESSION['user']);
+$userName = $_SESSION['face_reg_user'] ?? ($_SESSION['user']['name'] ?? 'Authorized Staff');
 
-// Check registration login status (must unlock via Admin Login modal)
-$isLoggedIn = !empty($_SESSION['face_reg_authenticated']);
-$userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
+$prefilledCode = $_GET['employee_code'] ?? ($_GET['emp_code'] ?? '');
+$prefilledName = '';
+if ($prefilledCode !== '') {
+    try {
+        $pdoTemp = new PDO("mysql:host=127.0.0.1;dbname=psnf_drm;charset=utf8mb4", "root", "", [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        $stmtTemp = $pdoTemp->prepare("SELECT name FROM employees WHERE employee_code = ? OR emp_code = ? LIMIT 1");
+        $stmtTemp->execute([$prefilledCode, $prefilledCode]);
+        $empRowTemp = $stmtTemp->fetch();
+        if ($empRowTemp) {
+            $prefilledName = $empRowTemp['name'];
+        }
+    } catch (\Throwable $e) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -241,11 +253,11 @@ $userName = $_SESSION['face_reg_user'] ?? 'Authorized Staff';
                     <form id="registerForm" onsubmit="handleStep1Submit(event)">
                         <div class="mb-3">
                             <label class="form-label text-secondary small fw-bold">EMPLOYEE CODE / ID *</label>
-                            <input type="text" id="employee_code" class="form-control bg-dark text-white border-secondary" placeholder="e.g. EMP-1001" required>
+                            <input type="text" id="employee_code" class="form-control bg-dark text-white border-secondary" placeholder="e.g. EMP-1001" value="<?= htmlspecialchars($prefilledCode, ENT_QUOTES, 'UTF-8') ?>" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-secondary small fw-bold">FULL NAME *</label>
-                            <input type="text" id="name" class="form-control bg-dark text-white border-secondary" placeholder="e.g. Sarah Jenkins" required>
+                            <input type="text" id="name" class="form-control bg-dark text-white border-secondary" placeholder="e.g. Sarah Jenkins" value="<?= htmlspecialchars($prefilledName, ENT_QUOTES, 'UTF-8') ?>" required>
                         </div>
 
                         <button type="submit" id="btnProceedToScan" class="btn btn-info btn-lg w-100 fw-bold shadow">

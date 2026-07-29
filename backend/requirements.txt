@@ -1,13 +1,33 @@
+# ─── PSNF Face Recognition Backend — Python Dependencies ───────────────────
+# InsightFace is MANDATORY. Install all with:
+#   pip install -r requirements.txt
+
+# ── Web Framework ────────────────────────────────────────────────────────────
 fastapi>=0.110.0,<1.0.0
 uvicorn>=0.28.0,<1.0.0
+
+# ── InsightFace & AI Engine (REQUIRED) ───────────────────────────────────────
 insightface>=0.7.3
-onnxruntime>=1.17.0
+onnxruntime>=1.17.0          # CPU inference for buffalo_l model
 opencv-python-headless>=4.9.0
+
+# ── Numeric / Array ──────────────────────────────────────────────────────────
 numpy>=1.26.0,<2.0.0
+
+# ── Database ─────────────────────────────────────────────────────────────────
 pymysql>=1.1.0
 sqlalchemy>=2.0.28
+
+# ── Config / Validation ──────────────────────────────────────────────────────
 pydantic>=2.6.0
-pyjwt>=2.8.0
-pillow>=10.2.0
+pydantic-settings>=2.2.0
 python-dotenv>=1.0.1
+
+# ── Image Handling ───────────────────────────────────────────────────────────
+pillow>=10.2.0
+
+# ── Auth ─────────────────────────────────────────────────────────────────────
+pyjwt>=2.8.0
+
+# ── HTTP ─────────────────────────────────────────────────────────────────────
 requests>=2.31.0

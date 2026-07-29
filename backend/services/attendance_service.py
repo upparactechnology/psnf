@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from config import settings
-from database.models import Employee, Attendance, FaceEmbedding
-from models.schemas import VerifyFaceRequest, VerifyFaceResponse
+from database.models import ERPUser, Attendance, FaceEmbedding
+from models.schemas import VerifyFaceRequest
 from utils.image_utils import base64_to_cv2, resize_image_max
 from utils.logger import logger
 from recognition.detector import FaceDetector
@@ -15,9 +15,10 @@ from recognition.embedding import EmbeddingExtractor
 from recognition.liveness import verify_face_liveness
 from recognition.matcher import matcher
 
+
 class AttendanceService:
     def __init__(self, detector: FaceDetector, extractor: EmbeddingExtractor):
-        self.detector = detector
+        self.detector  = detector
         self.extractor = extractor
 
     def verify_and_mark_attendance(
@@ -28,147 +29,159 @@ class AttendanceService:
         user_agent: str
     ) -> Dict[str, Any]:
         """
-        Processes single frame verification:
-        1. Decode & Resize image
-        2. Detect face & quality check (single face, blur, light)
-        3. Check Liveness
-        4. Extract embedding
-        5. Cosine similarity match against in-memory cache
-        6. Cooldown duplicate prevention check
-        7. Record attendance event
+        Full pipeline:
+          1. Decode & resize image
+          2. Detect face (InsightFace, mandatory)
+          3. Liveness check
+          4. Extract 512D embedding
+          5. Match against in-memory cache (user_id keyed)
+          6. Cooldown check (10 min)
+          7. Write attendance row to DB (user_id)
         """
-        # 1. Decode & Resize image
+        # 1. Decode & resize
         img_bgr = base64_to_cv2(req.image_base64)
         img_bgr = resize_image_max(img_bgr, max_dim=1024)
 
-        # 2. Face Detection & Quality Validation
+        # 2. Face detection & quality
         det_res = self.detector.validate_and_detect(img_bgr)
         if not det_res.is_valid:
-            return {
-                "success": False,
-                "message": det_res.error_message or "Face verification failed due to quality check.",
-                "confidence": 0.0
-            }
+            return {"success": False, "message": det_res.error_message or "Face quality check failed.", "confidence": 0.0}
 
-        # 3. Liveness Check
+        # 3. Liveness check
         liveness_ok, liveness_msg = verify_face_liveness(img_bgr, det_res.bbox)
         if not liveness_ok:
+            return {"success": False, "message": f"Security: {liveness_msg}", "confidence": 0.0}
+
+        # 4. Extract embedding
+        try:
+            target_embedding = self.extractor.extract_embedding(img_bgr)
+        except (ValueError, RuntimeError) as e:
+            return {"success": False, "message": str(e), "confidence": 0.0}
+
+        # 5. Cosine match
+        matched_user_id, confidence = matcher.match(target_embedding, threshold=settings.SIMILARITY_THRESHOLD)
+
+        if not matched_user_id:
+            # Check if any faces are registered at all
+            total = db.query(FaceEmbedding).count()
+            if total == 0:
+                return {
+                    "success": False,
+                    "no_faces_registered": True,
+                    "message": "No face profiles registered yet. Please register users at Face Registration first.",
+                    "confidence": 0.0
+                }
             return {
                 "success": False,
-                "message": f"Security Check: {liveness_msg}",
-                "confidence": 0.0
+                "message": f"Face not recognized (score {confidence:.2f} < threshold {settings.SIMILARITY_THRESHOLD}).",
+                "confidence": round(confidence, 4)
             }
 
-        # 4. Extract Embedding
-        target_embedding = self.extractor.extract_embedding(img_bgr)
+        # Fetch user from ERP users table
+        user = db.query(ERPUser).filter(
+            ERPUser.id == matched_user_id,
+            ERPUser.is_active == 1,
+            ERPUser.deleted_at == None
+        ).first()
 
-        # 5. Perform Cosine Similarity Match against memory cache
-        matched_emp_id, confidence = matcher.match(target_embedding, threshold=settings.SIMILARITY_THRESHOLD)
-
-        if not matched_emp_id:
+        if not user:
             return {
                 "success": False,
-                "message": f"Face not recognized. Similarity score ({confidence:.2f}) is below the threshold ({settings.SIMILARITY_THRESHOLD}).",
-                "confidence": confidence
+                "message": "Matched user account is inactive or has been removed.",
+                "confidence": round(confidence, 4)
             }
 
-        # Fetch Employee from DB
-        employee = db.query(Employee).filter(Employee.id == matched_emp_id, Employee.status == "active").first()
-        if not employee:
-            return {
-                "success": False,
-                "message": "Matched employee record is inactive or not found.",
-                "confidence": confidence
-            }
-
-        now = datetime.now()
+        now   = datetime.now()
         today = now.date()
 
-        # 6. Cooldown duplicate check (10 minutes window)
-        cooldown_threshold_time = now - timedelta(minutes=settings.COOLDOWN_MINUTES)
-        recent_attendance = db.query(Attendance).filter(
-            Attendance.employee_id == employee.id,
-            Attendance.check_in >= cooldown_threshold_time
+        # 6. Check if already checked in today
+        recent = db.query(Attendance).filter(
+            Attendance.user_id == user.id,
+            Attendance.attendance_date == today
         ).order_by(desc(Attendance.check_in)).first()
 
-        if recent_attendance:
-            minutes_ago = int((now - recent_attendance.check_in).total_seconds() / 60.0)
+        if recent:
             return {
                 "success": True,
                 "already_checked_in": True,
-                "employee_id": employee.id,
-                "employee_code": employee.employee_code,
-                "employee_name": employee.name,
-                "department": employee.department,
-                "confidence": confidence,
-                "message": f"Attendance already marked for {employee.name} {minutes_ago} mins ago (Cooldown period: {settings.COOLDOWN_MINUTES} mins)."
+                "user_id": user.id,
+                "employee_id": user.employee_id,
+                "employee_code": user.employee_id,
+                "employee_name": user.name,
+                "designation": user.designation,
+                "confidence": round(confidence, 4),
+                "message": f"Attendance already marked for {user.name} today ({recent.check_in.strftime('%I:%M %p')})."
             }
 
-        # Save snapshot image
-        timestamp_str = now.strftime("%Y%m%d_%H%M%S_%f")
-        filename = f"att_{employee.id}_{timestamp_str}.jpg"
+        # Save snapshot
+        ts       = now.strftime("%Y%m%d_%H%M%S_%f")
+        filename = f"att_user{user.id}_{ts}.jpg"
         save_path = os.path.join(settings.UPLOAD_ATTENDANCE_DIR, filename)
-        rel_path = f"uploads/attendance/{filename}"
-        cv2.imwrite(save_path, img_bgr)
+        rel_path  = f"uploads/attendance/{filename}"
+        try:
+            cv2.imwrite(save_path, img_bgr)
+        except Exception:
+            rel_path = None
 
-        # 7. Record Attendance in DB
-        attendance_record = Attendance(
-            employee_id=employee.id,
-            attendance_date=today,
-            check_in=now,
-            confidence=confidence,
-            image_path=rel_path,
-            ip_address=ip_address,
-            user_agent=user_agent
+        # 7. Write attendance record
+        att = Attendance(
+            user_id         = user.id,
+            employee_id     = None,
+            attendance_date = today,
+            check_in        = now,
+            confidence      = round(confidence, 4),
+            image_path      = rel_path,
+            ip_address      = ip_address,
+            user_agent      = user_agent
         )
-        db.add(attendance_record)
+        db.add(att)
         db.commit()
-        db.refresh(attendance_record)
+        db.refresh(att)
 
-        logger.info(f"Attendance marked successfully for {employee.name} (Code: {employee.employee_code}) with confidence {confidence:.2f}")
+        logger.info(f"✅ Attendance marked: {user.name} (user_id={user.id}) confidence={confidence:.3f}")
 
         return {
             "success": True,
             "already_checked_in": False,
-            "employee_id": employee.id,
-            "employee_code": employee.employee_code,
-            "employee_name": employee.name,
-            "department": employee.department,
-            "confidence": confidence,
+            "user_id": user.id,
+            "employee_id": user.employee_id,
+            "employee_code": user.employee_id,
+            "employee_name": user.name,
+            "designation": user.designation,
+            "confidence": round(confidence, 4),
             "check_in": now.strftime("%Y-%m-%d %H:%M:%S"),
-            "message": f"Attendance marked successfully for {employee.name}!"
+            "message": f"Attendance marked for {user.name}!"
         }
 
     def get_attendance_history(
         self,
         db: Session,
         target_date: Optional[date] = None,
-        employee_id: Optional[int] = None,
+        user_id: Optional[int] = None,
         limit: int = 50
     ) -> List[Dict[str, Any]]:
-        """Retrieves history of attendance logs."""
-        query = db.query(Attendance, Employee).join(Employee, Attendance.employee_id == Employee.id)
+        """Retrieves face attendance logs joined with ERP users."""
+        query = db.query(Attendance, ERPUser).join(ERPUser, Attendance.user_id == ERPUser.id)
 
         if target_date:
             query = query.filter(Attendance.attendance_date == target_date)
-        if employee_id:
-            query = query.filter(Attendance.employee_id == employee_id)
+        if user_id:
+            query = query.filter(Attendance.user_id == user_id)
 
         records = query.order_by(desc(Attendance.check_in)).limit(limit).all()
 
         results = []
-        for att, emp in records:
+        for att, user in records:
             results.append({
-                "id": att.id,
-                "employee_id": emp.id,
-                "employee_code": emp.employee_code,
-                "employee_name": emp.name,
-                "department": emp.department,
-                "attendance_date": att.attendance_date.strftime("%Y-%m-%d"),
-                "check_in": att.check_in.strftime("%Y-%m-%d %H:%M:%S"),
-                "confidence": att.confidence,
-                "image_path": att.image_path,
-                "ip_address": att.ip_address,
-                "user_agent": att.user_agent
+                "id":              att.id,
+                "user_id":         user.id,
+                "employee_id":     user.employee_id,
+                "employee_name":   user.name,
+                "designation":     user.designation,
+                "attendance_date": att.attendance_date.strftime("%Y-%m-%d") if att.attendance_date else None,
+                "check_in":        att.check_in.strftime("%Y-%m-%d %H:%M:%S") if att.check_in else None,
+                "confidence":      att.confidence,
+                "image_path":      att.image_path,
+                "ip_address":      att.ip_address,
             })
         return results

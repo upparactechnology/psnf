@@ -39,14 +39,16 @@ async def verify_face(
         )
 
         return VerifyFaceResponse(
-            success=res.get("success", False),
-            already_checked_in=res.get("already_checked_in", False),
-            employee_id=res.get("employee_id"),
-            employee_code=res.get("employee_code"),
-            employee_name=res.get("employee_name"),
-            department=res.get("department"),
-            confidence=res.get("confidence", 0.0),
-            message=res.get("message", "Verification completed.")
+            success            = res.get("success", False),
+            already_checked_in = res.get("already_checked_in", False),
+            user_id            = res.get("user_id"),
+            employee_id        = res.get("employee_id"),
+            employee_code      = res.get("employee_code"),
+            employee_name      = res.get("employee_name"),
+            designation        = res.get("designation"),
+            confidence         = res.get("confidence", 0.0),
+            check_in           = res.get("check_in"),
+            message            = res.get("message", "Verification completed.")
         )
     except Exception as e:
         logger.error(f"Error in verify-face endpoint: {str(e)}")

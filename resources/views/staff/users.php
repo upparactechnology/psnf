@@ -24,7 +24,8 @@ ob_start();
                     <th class="p-4">User</th>
                     <th class="p-4">Assigned Roles</th>
                     <th class="p-4">Last Login</th>
-                    <th class="p-4 text-right">Status</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
@@ -45,8 +46,22 @@ ob_start();
                         <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-indigo-500/10 text-indigo-500"><?= e($u['role_names'] ?: 'User') ?></span>
                     </td>
                     <td class="p-4 font-mono text-slate-400"><?= e($u['last_login_at'] ?? 'Never') ?></td>
-                    <td class="p-4 text-right">
+                    <td class="p-4">
                         <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-500 uppercase">ACTIVE</span>
+                    </td>
+                    <td class="p-4 text-right flex items-center justify-end gap-2">
+                        <a href="<?= url('users/' . $u['id'] . '/edit') ?>?redirect_to=<?= urlencode('/staff/users') ?>" 
+                           class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 text-indigo-400 hover:bg-slate-700 hover:text-white transition-all text-2xs font-bold border border-indigo-500/10">
+                            Edit
+                        </a>
+                        <form action="<?= url('users/' . $u['id']) ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this user account?')" class="inline">
+                            <?= \Core\View::csrf() ?>
+                            <input type="hidden" name="_method" value="DELETE">
+                            <input type="hidden" name="redirect_to" value="/staff/users">
+                            <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 text-red-400 hover:bg-red-950/20 hover:text-red-500 transition-all text-2xs font-bold border border-red-500/10">
+                                Delete
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>

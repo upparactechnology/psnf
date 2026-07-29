@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use Core\Controller;
 use Core\Application;
+use Core\View;
 
 class FaceRecognitionController extends Controller
 {
@@ -16,21 +17,33 @@ class FaceRecognitionController extends Controller
 
     public function index(): string
     {
-        return $this->redirect(url('public/attendance/index.php'));
+        return $this->redirect('/attendance/face-kiosk');
     }
 
+    /**
+     * Face attendance kiosk - embedded in ERP layout, no auth required.
+     */
+    public function kioskView(): string
+    {
+        return View::render('attendance/face_kiosk', []);
+    }
+
+    /**
+     * Face registration - embedded in ERP layout, requires admin auth overlay.
+     * Handles AJAX login/logout POST via the view itself.
+     */
     public function registerView(): string
     {
-        return $this->redirect(url('public/attendance/register.php'));
-    }
-
-    public function verifyView(): string
-    {
-        return $this->redirect(url('public/attendance/verify.php'));
+        return View::render('attendance/face_register', []);
     }
 
     public function historyView(): string
     {
-        return $this->redirect(url('public/attendance/history.php'));
+        return $this->redirect('/attendance/face-kiosk');
+    }
+
+    public function verifyView(): string
+    {
+        return $this->redirect('/attendance/face-kiosk');
     }
 }

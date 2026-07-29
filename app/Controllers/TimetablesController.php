@@ -69,8 +69,19 @@ class TimetablesController extends Controller
              ORDER BY name ASC"
         );
 
+        // Fetch lecture attendance logs
+        $lectureAttendance = $db->select("
+            SELECT tla.*, u.name as teacher_name
+            FROM teacher_attendance tla
+            JOIN users u ON tla.user_id = u.id
+            WHERE tla.tenant_id = ?
+        ", [$tenantId]);
+
+        // Fetch all subjects from database
+        $subjects = $db->select("SELECT id, name FROM subjects WHERE tenant_id = ? ORDER BY name ASC", [$tenantId]);
+
         return $this->view('timetables/index', compact(
-            'classes', 'selectedClass', 'selectedSection', 'timetableByDay', 'teachers'
+            'classes', 'selectedClass', 'selectedSection', 'timetableByDay', 'teachers', 'lectureAttendance', 'subjects'
         ));
     }
 
@@ -161,6 +172,81 @@ class TimetablesController extends Controller
         $section = $this->request->input('section', '');
         $db->query("DELETE FROM timetables WHERE id = ? AND tenant_id = ?", [(int)$id, \Core\Database::getTenantId()]);
         $this->flash('success', 'Timetable slot deleted successfully.');
+        return $this->redirect("/academics/timetable?class=" . urlencode($class) . "&section=" . urlencode($section));
+    }
+
+    public function bulkGenerate(): string
+    {
+        $db = $this->db();
+        $class = $this->request->input('class', '');
+        $section = $this->request->input('section', '');
+        $selectedDays = $this->request->input('days', []);
+        $startTime = $this->request->input('start_time', '');
+        $endTime = $this->request->input('end_time', '');
+        $subject = $this->request->input('subject', '');
+        $teacherName = $this->request->input('teacher_name', 'Teacher');
+        $room = $this->request->input('room', $class);
+
+        if (!$class) {
+            $this->flash('error', 'Class is required.');
+            return $this->redirect('/academics/timetable');
+        }
+
+        if (empty($selectedDays)) {
+            $this->flash('error', 'Please select at least one day.');
+            return $this->redirect("/academics/timetable?class=" . urlencode($class) . "&section=" . urlencode($section));
+        }
+
+        if (!$startTime || !$endTime || !$subject) {
+            $this->flash('error', 'Start time, End time, and Subject are required.');
+            return $this->redirect("/academics/timetable?class=" . urlencode($class) . "&section=" . urlencode($section));
+        }
+
+        $tenantId = \Core\Database::getTenantId();
+        $schoolId = auth()['school_id'] ?? 1;
+        $branchId = auth()['branch_id'] ?? 1;
+
+        try {
+            foreach ($selectedDays as $day) {
+                // Clear overlapping slot on this weekday to avoid duplication
+                $db->query("
+                    DELETE FROM timetables 
+                    WHERE tenant_id = ? AND class = ? AND section = ? AND day_of_week = ? AND start_time = ?
+                ", [$tenantId, $class, $section, $day, $startTime]);
+
+                $db->insert('timetables', [
+                    'tenant_id' => $tenantId,
+                    'school_id' => $schoolId,
+                    'branch_id' => $branchId,
+                    'class' => $class,
+                    'section' => $section,
+                    'day_of_week' => $day,
+                    'subject' => $subject,
+                    'teacher_name' => $teacherName,
+                    'room' => $room,
+                    'start_time' => $startTime,
+                    'end_time' => $endTime
+                ]);
+            }
+            $this->flash('success', "Bulk timetable slots generated successfully for " . implode(', ', $selectedDays) . ".");
+        } catch (\Throwable $e) {
+            $this->flash('error', 'Failed to generate bulk slots: ' . $e->getMessage());
+        }
+
+        return $this->redirect("/academics/timetable?class=" . urlencode($class) . "&section=" . urlencode($section));
+    }
+
+    public function clearTimetable(): string
+    {
+        $db = $this->db();
+        $class = $this->request->input('class', '');
+        $section = $this->request->input('section', '');
+        $tenantId = \Core\Database::getTenantId();
+
+        if ($class) {
+            $db->query("DELETE FROM timetables WHERE tenant_id = ? AND class = ? AND section = ?", [$tenantId, $class, $section]);
+            $this->flash('success', "Timetable for $class - $section has been completely cleared.");
+        }
         return $this->redirect("/academics/timetable?class=" . urlencode($class) . "&section=" . urlencode($section));
     }
 }

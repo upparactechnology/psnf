@@ -12,8 +12,8 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $title ?? 'PSNF ERP' ?></title>
-    <meta name="description" content="Pearl Special Needs Foundation — ERP System">
+    <title><?= $title ?? 'PSNF Management System' ?></title>
+    <meta name="description" content="Pearl Special Needs Foundation — Management System">
     <meta name="csrf-token" content="<?= \Core\View::csrfToken() ?>">
 
     <!-- Tailwind CSS (Local Fallback) -->
@@ -362,14 +362,12 @@ if ($user) {
 
         <!-- Logo -->
         <div class="flex items-center gap-3 px-4 py-5 border-b border-slate-200 dark:border-slate-800/60">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                </svg>
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
+                <img src="<?= url('game/images/logo.png') ?>" class="w-8 h-8 object-contain" alt="PSNF Logo">
             </div>
             <div x-show="sidebarOpen" x-transition.opacity class="overflow-hidden">
-                <p class="text-sm font-bold text-white leading-tight">PSNF ERP</p>
-                <p class="text-xs text-slate-500">v1.0.0</p>
+                <p class="text-xs font-bold text-slate-800 dark:text-white leading-tight">PSNF Management System</p>
+                <p class="text-[10px] text-slate-500">v1.0.0</p>
             </div>
             <button @click="sidebarOpen = !sidebarOpen" class="ml-auto text-slate-500 hover:text-slate-300 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -446,7 +444,7 @@ if ($user) {
                 $module = 'finance';
             } elseif (str_starts_with($currentPath, '/transport')) {
                 $module = 'transport';
-            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/staff') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/settings')) {
+            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/staff') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/settings') || str_starts_with($currentPath, '/attendance')) {
                 $module = 'staff';
             } elseif (str_starts_with($currentPath, '/documents')) {
                 $module = 'documents';
@@ -470,7 +468,7 @@ if ($user) {
                     if (path.startsWith('/fees') || path.startsWith('/receipts') || path.startsWith('/scholarships') || path.startsWith('/certificates')) return 'finance';
                     if (path.startsWith('/medical')) return 'medical';
                     if (path.startsWith('/documents')) return 'documents';
-                    if (path.startsWith('/users') || path.startsWith('/staff') || path.startsWith('/roles') || path.startsWith('/settings')) return 'staff';
+                    if (path.startsWith('/users') || path.startsWith('/staff') || path.startsWith('/roles') || path.startsWith('/settings') || path.startsWith('/attendance')) return 'staff';
                     return 'launcher';
                 }
             }" @htmx:after-swap.window="$nextTick(() => {})" class="space-y-1">
@@ -489,6 +487,7 @@ if ($user) {
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Operations</div>
                     <?php navLink('/academics/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/lecture-attendance', $ic['attendance'], 'Lecture Attendance', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/timetable', $ic['timetables'], 'Timetable', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/assessments', $ic['exams'], 'Assessments', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/report-cards', $ic['certificates'], 'Report Cards', $currentPath, $sidebarOpen); ?>
@@ -504,8 +503,7 @@ if ($user) {
                     <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Finance & Billing</div>
                     <?php navLink('/fees', $ic['fees'], 'Fees & Invoices', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/receipts', $ic['receipts'], 'Receipts Log', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/scholarships', $ic['scholarships'], 'Scholarships', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/receipts/settings', $ic['settings'], 'Receipt Config', $currentPath, $sidebarOpen); ?>
+
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Documents</div>
                     <?php navLink('/certificates', '<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Certificate Generator', $currentPath, $sidebarOpen); ?>
@@ -540,6 +538,8 @@ if ($user) {
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Operations</div>
                     <?php navLink('/staff/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/attendance/face-kiosk', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>', 'Face Kiosk', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/attendance/face-register', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>', 'Face Register', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/staff/leaves', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>', 'Leave Management', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/staff/payroll', $ic['fees'], 'Payroll', $currentPath, $sidebarOpen); ?>
 
@@ -564,7 +564,6 @@ if ($user) {
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-650 uppercase px-3" x-show="sidebarOpen">Generated</div>
                     <?php navLink('/documents/generated?category=certificates', '<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Certificates', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/documents/generated?category=student_ids', '<svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6"/></svg>', 'Student ID Cards', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/documents/generated?category=staff_ids', '<svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>', 'Staff ID Cards', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/documents/generated?category=receipts', '<svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Receipts', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/documents/generated?category=report_cards', '<svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Report Cards', $currentPath, $sidebarOpen); ?>
@@ -617,12 +616,10 @@ if ($user) {
         <?php if ($isDashboard): ?>
         <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/50 backdrop-blur">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-                    <svg class="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                    </svg>
+                <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
+                    <img src="<?= url('game/images/logo.png') ?>" class="w-7 h-7 object-contain" alt="PSNF Logo">
                 </div>
-                <span class="text-sm font-bold text-slate-800 dark:text-white tracking-wide">PSNF ERP Portal</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-white tracking-wide">PSNF Management System</span>
             </div>
             <div class="flex items-center gap-4">
                 <!-- Theme Toggler -->
@@ -836,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function() {
         form.setAttribute('hx-swap', 'innerHTML');
         htmx.process(form);
     });
-
+});
 </script>
 
 </body>

@@ -50,7 +50,18 @@ class ReportCardController extends Controller
             [$academicYear, $semester, $tenantId]
         );
 
-        return $this->view('report-cards/index', compact('students', 'semester', 'academicYear'));
+        $yearsList = $db->select("SELECT year_name FROM academic_years WHERE tenant_id = ? ORDER BY id DESC", [$tenantId]);
+        $semestersList = $db->select("SELECT name FROM academic_semesters WHERE tenant_id = ? GROUP BY name ORDER BY id ASC", [$tenantId]);
+
+        // Fallbacks if empty
+        if (empty($yearsList)) {
+            $yearsList = [['year_name' => '2024-25'], ['year_name' => '2025-26'], ['year_name' => '2026-27']];
+        }
+        if (empty($semestersList)) {
+            $semestersList = [['name' => 'Semester 1'], ['name' => 'Semester 2']];
+        }
+
+        return $this->view('report-cards/index', compact('students', 'semester', 'academicYear', 'yearsList', 'semestersList'));
     }
 
     public function edit(string $studentId): string

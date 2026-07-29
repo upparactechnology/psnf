@@ -5,7 +5,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'St
 ob_start();
 ?>
 
-<div x-data="{ createModal: false }" class="space-y-6 max-w-6xl mx-auto">
+<div class="space-y-6 max-w-6xl mx-auto">
 
     <!-- Header & Search Filters -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -13,7 +13,7 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Staff Directory</h1>
             <p class="text-xs text-slate-500 mt-0.5">Manage employee records, departments, designations & profile details</p>
         </div>
-        <button @click="createModal = true" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Add New Employee</button>
+        <a href="<?= url('users/create?redirect_to=/staff/employees') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Add New Employee</a>
     </div>
 
     <!-- Filter Bar -->
@@ -40,6 +40,7 @@ ob_start();
                         <th class="p-4">EMP Code</th>
                         <th class="p-4">Department</th>
                         <th class="p-4">Designation</th>
+                        <th class="p-4">Joining Date</th>
                         <th class="p-4">Shift Schedule</th>
                         <th class="p-4">Basic Salary</th>
                         <th class="p-4">Status</th>
@@ -65,7 +66,7 @@ ob_start();
                         <td class="p-4 text-slate-700 dark:text-slate-300"><?= e($emp['designation_title'] ?? 'Staff') ?></td>
                         <td class="p-4 text-slate-400 font-mono"><?= e($emp['joining_date']) ?></td>
                         <td class="p-4 font-mono text-slate-700 dark:text-slate-300">
-                            <span class="text-emerald-500 font-bold"><?= e(substr($emp['min_clock_in'] ?? '09:00:00', 0, 5)) ?></span> – <span class="text-indigo-500 font-bold"><?= e(substr($emp['max_clock_out'] ?? '17:00:00', 0, 5)) ?></span>
+                            <span class="text-emerald-500 font-bold"><?= date('h:i A', strtotime($emp['min_clock_in'] ?? '09:00:00')) ?></span> – <span class="text-indigo-500 font-bold"><?= date('h:i A', strtotime($emp['max_clock_out'] ?? '17:00:00')) ?></span>
                         </td>
                         <td class="p-4 font-mono font-bold text-slate-900 dark:text-white">₹<?= number_format((float) $emp['salary_basic'], 2) ?></td>
                         <td class="p-4">
@@ -78,73 +79,6 @@ ob_start();
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        </div>
-    </div>
-
-    <!-- Create Employee Modal -->
-    <div x-show="createModal" class="fixed inset-0 z-50 flex items-center justify-center px-4" x-cloak>
-        <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" @click="createModal = false"></div>
-        <div class="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 z-10">
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white">Add New Employee</h3>
-            
-            <form action="<?= url('staff/employees') ?>" method="POST" class="space-y-4 text-xs">
-                <?= \Core\View::csrf() ?>
-                
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">First Name</label>
-                        <input type="text" name="first_name" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
-                        <input type="text" name="last_name" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Email Address</label>
-                    <input type="email" name="email" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Department</label>
-                        <select name="department_id" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white">
-                            <?php foreach ($departments as $d): ?>
-                                <option value="<?= $d['id'] ?>"><?= e($d['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Designation</label>
-                        <select name="designation_id" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white">
-                            <?php foreach ($designations as $des): ?>
-                                <option value="<?= $des['id'] ?>"><?= e($des['title']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-
-                    <div>
-                        <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Min Clock In Time</label>
-                        <input type="time" name="min_clock_in" value="09:00" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Max Clock Out Time</label>
-                        <input type="time" name="max_clock_out" value="17:00" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Basic Monthly Salary (₹)</label>
-                    <input type="number" step="0.01" name="salary_basic" value="35000.00" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono">
-                </div>
-
-                <div class="flex items-center justify-end gap-2 pt-2">
-                    <button type="button" @click="createModal = false" class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500">Save Employee</button>
-                </div>
-            </form>
         </div>
     </div>
 

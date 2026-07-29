@@ -34,17 +34,30 @@ class TeacherPortalController extends Controller
         $tenantId = $user['tenant_id'];
 
         $teacherAttendance = null;
-        $lectureTime = $user['lecture_time'] ?? null;
-        if ($lectureTime) {
-            $today = date('Y-m-d');
-            $teacherAttendance = $db->selectOne(
-                "SELECT * FROM teacher_attendance WHERE user_id = ? AND attendance_date = ?",
-                [$user['id'], $today]
-            );
+        $today = date('Y-m-d');
+        $todayDayOfWeek = date('l');
 
+        // Check if attendance exists
+        $teacherAttendance = $db->selectOne(
+            "SELECT * FROM teacher_attendance WHERE user_id = ? AND attendance_date = ?",
+            [$user['id'], $today]
+        );
+
+        // Fetch teacher's first timetabled lecture of the day
+        $firstLecture = $db->selectOne(
+            "SELECT start_time FROM timetables WHERE teacher_name = ? AND day_of_week = ? ORDER BY start_time ASC LIMIT 1",
+            [$user['name'], $todayDayOfWeek]
+        );
+
+        $lectureTime = $firstLecture['start_time'] ?? ($user['lecture_time'] ?? null);
+
+        if ($lectureTime) {
             if (!$teacherAttendance) {
                 $openedAt = date('Y-m-d H:i:s');
-                $grace = (int) ($user['grace_period'] ?? 5);
+                
+                // Fetch dynamic lecture grace minutes
+                $shiftPolicy = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
+                $grace = (int) ($shiftPolicy['lec_grace_minutes'] ?? ($user['grace_period'] ?? 5));
 
                 // Compute cutoff time
                 $lectureTimestamp = strtotime($today . ' ' . $lectureTime);

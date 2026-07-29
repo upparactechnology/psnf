@@ -309,6 +309,22 @@ ob_start();
                 <button class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-500">Lock Semester 1 (Current)</button>
             </div>
         </div>
+
+        <!-- Lecture wise attendance settings -->
+        <div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-white">Lecture-Wise Attendance Policy Settings</h3>
+            <p class="text-xs text-slate-500">Configure grace timing for classroom lecture-based student/teacher tracking (does not reflect in salary).</p>
+            
+            <form action="<?= url('academics/settings/save-attendance-settings') ?>" method="POST" class="space-y-4 max-w-sm">
+                <?= \Core\View::csrf() ?>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1.5 font-medium">Lecture-Wise Grace Window (Minutes)</label>
+                    <input type="number" name="lec_grace_minutes" value="<?= (int)($lecGraceMinutes ?? 5) ?>" 
+                           class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-brand-500 font-mono">
+                </div>
+                <button type="submit" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all">Save Attendance Policy</button>
+            </form>
+        </div>
     </div>
 
     <!-- Interactive Year Closing Wizard Modal -->

@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use Core\Controller;
 use App\Models\{User, Role};
+use App\Services\EmployeeSyncService;
 
 class UserController extends Controller
 {
@@ -49,6 +50,22 @@ class UserController extends Controller
         $conditionStr = implode(' AND ', $conditions);
 
         $result  = User::paginate($page, 15, $conditionStr, $params);
+
+        if ($isTeachersOnly) {
+            $db = \Core\Application::$app->db;
+            foreach ($result['data'] as &$u) {
+                $emp = $db->selectOne("
+                    SELECT e.id as emp_id, e.emp_code, e.salary_basic, e.joining_date, d.name as department_name, des.title as designation_title
+                    FROM employees e
+                    LEFT JOIN departments d ON e.department_id = d.id
+                    LEFT JOIN designations des ON e.designation_id = des.id
+                    WHERE e.user_id = ? OR e.email = ?
+                    LIMIT 1
+                ", [$u['id'], $u['email']]);
+                $u['employee'] = $emp ?: null;
+            }
+        }
+
         $roles   = Role::allWithPermissionCount();
         $roles   = array_filter($roles, function($role) {
             return in_array($role['slug'], ['super_admin', 'teacher', 'staff', 'driver', 'parent']);
@@ -71,7 +88,10 @@ class UserController extends Controller
         $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $branches = \Core\Application::$app->db->select("SELECT id, name FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $apps     = $this->availableApps;
-        return $this->view('users/create', compact('roles', 'schools', 'branches', 'apps'));
+        $departments = \Core\Application::$app->db->select("SELECT * FROM departments WHERE is_active = 1");
+        $designations = \Core\Application::$app->db->select("SELECT * FROM designations WHERE is_active = 1");
+
+        return $this->view('users/create', compact('roles', 'schools', 'branches', 'apps', 'departments', 'designations'));
     }
 
     public function store(): string
@@ -99,6 +119,12 @@ class UserController extends Controller
 
         $lectureTime = !empty($data['lecture_time']) ? $data['lecture_time'] : null;
         $gracePeriod = isset($data['grace_period']) && $data['grace_period'] !== '' ? (int) $data['grace_period'] : 5;
+        
+        $salaryBasic = isset($data['salary_basic']) && $data['salary_basic'] !== '' ? (float) $data['salary_basic'] : 0.00;
+        $deptId = !empty($data['department_id']) ? (int) $data['department_id'] : null;
+        $desigId = !empty($data['designation_id']) ? (int) $data['designation_id'] : null;
+        $minClockIn = !empty($data['min_clock_in']) ? $data['min_clock_in'] : null;
+        $maxClockOut = !empty($data['max_clock_out']) ? $data['max_clock_out'] : null;
 
         $data['uuid']         = str_uuid();
         $data['tenant_id']    = \Core\Database::getTenantId();
@@ -106,12 +132,28 @@ class UserController extends Controller
         $data['created_by']   = auth_id();
         $data['lecture_time'] = $lectureTime;
         $data['grace_period'] = $gracePeriod;
-        unset($data['password_confirmation']);
+        unset($data['password_confirmation'], $data['salary_basic'], $data['department_id'], $data['designation_id'], $data['min_clock_in'], $data['max_clock_out']);
 
         $userId = (int) User::create($data);
 
         if ($roles) {
             User::syncRoles($userId, array_map('intval', $roles));
+        }
+
+        EmployeeSyncService::syncUserToEmployee($userId);
+
+        if ($salaryBasic > 0 || $deptId || $desigId || $minClockIn || $maxClockOut) {
+            $db = \Core\Application::$app->db;
+            $updateData = [];
+            if ($salaryBasic > 0) $updateData['salary_basic'] = $salaryBasic;
+            if ($deptId) $updateData['department_id'] = $deptId;
+            if ($desigId) $updateData['designation_id'] = $desigId;
+            if ($minClockIn) $updateData['min_clock_in'] = $minClockIn;
+            if ($maxClockOut) $updateData['max_clock_out'] = $maxClockOut;
+            
+            if (!empty($updateData)) {
+                $db->update('employees', $updateData, 'user_id = ?', [$userId]);
+            }
         }
 
         $db = \Core\Application::$app->db;
@@ -160,6 +202,8 @@ class UserController extends Controller
         User::update((int) $id, $data);
         User::syncRoles((int) $id, array_map('intval', $roles));
 
+        EmployeeSyncService::syncUserToEmployee((int) $id);
+
         $db = \Core\Application::$app->db;
         $db->query("DELETE FROM user_apps WHERE user_id = ?", [$id]);
         foreach ($assignedApps as $app) {
@@ -175,6 +219,18 @@ class UserController extends Controller
     {
         User::delete((int) $id);
         \App\Models\ActivityLog::log('user_deleted', auth_id(), ['user_id' => $id]);
+
+        // Attempt to remove face embeddings from Python backend
+        try {
+            $ch = curl_init("http://127.0.0.1:8000/api/employees/delete?id=" . $id);
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+            curl_exec($ch);
+            curl_close($ch);
+        } catch (\Throwable $e) {
+            // Ignore if backend is down
+        }
 
         $redirectTo = $this->request->input('redirect_to', '/users');
 

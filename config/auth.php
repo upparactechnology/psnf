@@ -11,7 +11,7 @@ return [
     'password_reset_ttl'=> 3600,           // 1 hour
     'max_login_attempts'=> 5,
     'lockout_minutes'   => 15,
-    'session_timeout'   => 1200,           // 20 minutes
+    'session_timeout'   => 86400,          // 24 hours
     'remember_me_days'  => 30,
     '2fa_enabled'       => false,          // Ready for 2FA
     'verify_email'      => false,          // Email verification

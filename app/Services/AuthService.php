@@ -167,6 +167,13 @@ class AuthService
         $userId = auth_id();
         if ($userId) {
             ActivityLog::log('logout', $userId);
+            try {
+                \Core\Application::$app->db->update('users', ['remember_token' => null], 'id = ?', [$userId]);
+            } catch (\Throwable $e) {}
+        }
+        if (isset($_COOKIE['remember_token'])) {
+            unset($_COOKIE['remember_token']);
+            setcookie('remember_token', '', time() - 3600, '/');
         }
         Session::destroy();
     }

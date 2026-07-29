@@ -13,9 +13,10 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Payroll Engine & Salary Slips</h1>
             <p class="text-xs text-slate-500 mt-0.5">Automated attendance-driven salary structures, deduction formulas & payslip generator</p>
         </div>
-        <form action="<?= url('staff/payroll/run') ?>" method="POST">
+        <form action="<?= url('staff/payroll/run') ?>" method="POST" class="flex items-center gap-2">
             <?= \Core\View::csrf() ?>
-            <button type="submit" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-sm">💰 Run Monthly Payroll</button>
+            <input type="month" name="month" value="<?= date('Y-m') ?>" required class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 dark:text-white">
+            <button type="submit" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-sm">💰 Run Payroll</button>
         </form>
     </div>
 
@@ -49,16 +50,17 @@ ob_start();
                 <tr>
                     <th class="p-4">Payroll Cycle</th>
                     <th class="p-4">Gross Disbursed</th>
-                    <th class="p-4">Deductions</th>
+                    <th class="p-4">Total Deductions (Absent + Late)</th>
                     <th class="p-4">Net Payout</th>
                     <th class="p-4">Generated Date</th>
-                    <th class="p-4 text-right">Status</th>
+                    <th class="p-4 text-center">Status</th>
+                    <th class="p-4 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 <?php if (empty($runs)): ?>
                 <tr>
-                    <td colspan="6" class="p-8 text-center text-slate-400 text-xs">No payroll runs generated yet. Click "💰 Run Monthly Payroll" to execute.</td>
+                    <td colspan="7" class="p-8 text-center text-slate-400 text-xs">No payroll runs generated yet. Select a month and click "💰 Run Payroll" to execute.</td>
                 </tr>
                 <?php else: ?>
                     <?php foreach ($runs as $r): ?>
@@ -68,8 +70,11 @@ ob_start();
                         <td class="p-4 font-mono text-red-400">₹<?= number_format((float)$r['total_deductions'], 2) ?></td>
                         <td class="p-4 font-mono font-bold text-emerald-500">₹<?= number_format((float)$r['total_net'], 2) ?></td>
                         <td class="p-4 font-mono text-slate-400"><?= e($r['created_at']) ?></td>
-                        <td class="p-4 text-right">
+                        <td class="p-4 text-center">
                             <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-500 uppercase"><?= e($r['status']) ?></span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <a href="<?= url('staff/payroll/' . $r['id']) ?>" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors">Details</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>

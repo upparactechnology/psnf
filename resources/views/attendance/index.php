@@ -17,7 +17,7 @@ ob_start();
 
     <!-- Filter Card -->
     <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 shadow-sm">
-        <form method="GET" action="<?= url('student-attendance') ?>" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+        <form method="GET" action="" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
             <div class="space-y-1.5">
                 <label class="block text-xs font-medium text-slate-400">Class & Section</label>
                 <select name="class_section" onchange="
@@ -56,6 +56,7 @@ ob_start();
     <!-- Attendance Form Sheet -->
     <form method="POST" action="<?= url('student-attendance/save') ?>" class="space-y-6">
         <?= \Core\View::csrf() ?>
+        <input type="hidden" name="redirect_to" value="<?= e(\Core\Application::$app->request->getPath()) ?>">
         <input type="hidden" name="class" value="<?= e($selectedClass) ?>">
         <input type="hidden" name="section" value="<?= e($selectedSection) ?>">
         <input type="hidden" name="date" value="<?= e($selectedDate) ?>">

@@ -78,9 +78,15 @@ $redirectUrl = $isTeachersOnly ? '/academics/teachers' : '/users';
         <table class="w-full">
             <thead>
                 <tr class="border-b border-slate-800/60">
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">User</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Roles</th>
-                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Last Login</th>
+                    <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"><?= $isTeachersOnly ? 'Teacher' : 'User' ?></th>
+                    <?php if ($isTeachersOnly): ?>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">EMP Code</th>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Department & Designation</th>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Basic Salary</th>
+                    <?php else: ?>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Roles</th>
+                        <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider hidden lg:table-cell">Last Login</th>
+                    <?php endif; ?>
                     <th class="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                     <th class="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -99,21 +105,48 @@ $redirectUrl = $isTeachersOnly ? '/academics/teachers' : '/users';
                             </div>
                         </div>
                     </td>
-                    <td class="px-5 py-4 hidden md:table-cell">
-                        <?php
-                        $userRoles = \Core\Application::$app->db->select(
-                            "SELECT r.name, r.slug FROM roles r JOIN user_roles ur ON ur.role_id = r.id WHERE ur.user_id = ? LIMIT 3",
-                            [$u['id']]
-                        );
-                        foreach (array_slice($userRoles, 0, 2) as $role):
-                            $rc = $roleColors[$role['slug']] ?? 'bg-slate-700/50 text-slate-300 border-slate-600/30';
-                        ?>
-                        <span class="inline-flex text-xs px-2 py-0.5 rounded-full font-medium border mr-1 <?= $rc ?>"><?= e($role['name']) ?></span>
-                        <?php endforeach; ?>
-                    </td>
-                    <td class="px-5 py-4 hidden lg:table-cell">
-                        <span class="text-xs text-slate-500"><?= $u['last_login_at'] ? format_date($u['last_login_at'], 'd M Y, H:i') : 'Never' ?></span>
-                    </td>
+                    <?php if ($isTeachersOnly): ?>
+                        <td class="px-5 py-4">
+                            <?php if (!empty($u['employee'])): ?>
+                                <span class="font-mono text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20">
+                                    <?= e($u['employee']['emp_code']) ?>
+                                </span>
+                            <?php else: ?>
+                                <span class="text-xs text-slate-500">Not Linked</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-5 py-4 hidden md:table-cell">
+                            <?php if (!empty($u['employee'])): ?>
+                                <p class="text-xs text-slate-300 font-medium"><?= e($u['employee']['designation_title'] ?? 'Teacher') ?></p>
+                                <p class="text-2xs text-slate-500"><?= e($u['employee']['department_name'] ?? 'Academics') ?></p>
+                            <?php else: ?>
+                                <span class="text-xs text-slate-500">Unassigned</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-5 py-4 hidden lg:table-cell">
+                            <?php if (!empty($u['employee'])): ?>
+                                <span class="font-mono text-xs text-emerald-400 font-bold">₹<?= number_format((float) $u['employee']['salary_basic'], 2) ?></span>
+                            <?php else: ?>
+                                <span class="text-xs text-slate-500">--</span>
+                            <?php endif; ?>
+                        </td>
+                    <?php else: ?>
+                        <td class="px-5 py-4 hidden md:table-cell">
+                            <?php
+                            $userRoles = \Core\Application::$app->db->select(
+                                "SELECT r.name, r.slug FROM roles r JOIN user_roles ur ON ur.role_id = r.id WHERE ur.user_id = ? LIMIT 3",
+                                [$u['id']]
+                            );
+                            foreach (array_slice($userRoles, 0, 2) as $role):
+                                $rc = $roleColors[$role['slug']] ?? 'bg-slate-700/50 text-slate-300 border-slate-600/30';
+                            ?>
+                            <span class="inline-flex text-xs px-2 py-0.5 rounded-full font-medium border mr-1 <?= $rc ?>"><?= e($role['name']) ?></span>
+                            <?php endforeach; ?>
+                        </td>
+                        <td class="px-5 py-4 hidden lg:table-cell">
+                            <span class="text-xs text-slate-500"><?= $u['last_login_at'] ? format_date($u['last_login_at'], 'd M Y, H:i') : 'Never' ?></span>
+                        </td>
+                    <?php endif; ?>
                     <td class="px-5 py-4">
                         <span class="inline-flex text-xs px-2.5 py-1 rounded-full font-medium <?= $u['is_active'] ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700/30' : 'bg-red-900/30 text-red-400 border border-red-700/30' ?>">
                             <?= $u['is_active'] ? 'Active' : 'Inactive' ?>
@@ -122,6 +155,13 @@ $redirectUrl = $isTeachersOnly ? '/academics/teachers' : '/users';
                     <td class="px-5 py-4 text-right">
                         <!-- Perfectly visible option buttons (removed group-hover opacity restriction) -->
                         <div class="flex items-center justify-end gap-3">
+                            <?php if ($isTeachersOnly && !empty($u['employee'])): ?>
+                            <a href="<?= url('staff/employees/'.$u['employee']['emp_id']) ?>" 
+                               class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-emerald-400 border border-emerald-500/20 hover:bg-slate-700 transition-all" title="Employee Profile">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                <span>HR Profile</span>
+                            </a>
+                            <?php endif; ?>
                             <?php if (has_permission('edit_users')): ?>
                             <a href="<?= url('users/'.$u['id'].'/edit?redirect_to=' . urlencode($redirectUrl)) ?>" 
                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-indigo-400 border border-indigo-500/20 hover:bg-slate-700 transition-all" title="Edit">

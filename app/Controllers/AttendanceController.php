@@ -212,6 +212,9 @@ class AttendanceController extends Controller
             $this->flash('error', 'Failed to save attendance: ' . $e->getMessage());
         }
 
-        return $this->redirect("/student-attendance?class=" . urlencode($class) . "&section=" . urlencode($section) . "&date=" . urlencode($date));
+        $redirectTo = $this->request->input('redirect_to', '/student-attendance');
+        $baseRedirect = str_contains($redirectTo, 'academics/attendance') ? '/academics/attendance' : '/student-attendance';
+
+        return $this->redirect($baseRedirect . "?class=" . urlencode($class) . "&section=" . urlencode($section) . "&date=" . urlencode($date));
     }
 }

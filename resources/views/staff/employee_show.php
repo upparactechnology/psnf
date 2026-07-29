@@ -3,6 +3,11 @@ $layout    = 'app';
 $pageTitle = 'Employee Profile – ' . e($employee['first_name'] . ' ' . $employee['last_name']);
 $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Staff Workspace', 'url' => '/staff/overview'], ['label' => 'Staff Directory', 'url' => '/staff/employees'], ['label' => $employee['emp_code']]];
 ob_start();
+
+$linkedUser = null;
+if (!empty($employee['user_id'])) {
+    $linkedUser = \Core\Application::$app->db->selectOne("SELECT id, name, email, is_active FROM users WHERE id = ?", [$employee['user_id']]);
+}
 ?>
 
 <div x-data="{ tab: 'overview' }" class="space-y-6 max-w-5xl mx-auto">
@@ -42,8 +47,20 @@ ob_start();
                     <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">Department:</span> <span class="font-bold"><?= e($employee['department_name'] ?? 'N/A') ?></span></div>
                     <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">Designation:</span> <span class="font-bold"><?= e($employee['designation_title'] ?? 'N/A') ?></span></div>
                     <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">Employment Type:</span> <span class="font-bold uppercase"><?= e($employee['employment_type']) ?></span></div>
-                    <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">Min Clock In Time:</span> <span class="font-bold font-mono text-emerald-500"><?= e(substr($employee['min_clock_in'] ?? '09:00:00', 0, 5)) ?></span></div>
-                    <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">Max Clock Out Time:</span> <span class="font-bold font-mono text-indigo-500"><?= e(substr($employee['max_clock_out'] ?? '17:00:00', 0, 5)) ?></span></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">Min Clock In Time:</span> <span class="font-bold font-mono text-emerald-500"><?= date('h:i A', strtotime($employee['min_clock_in'] ?? '09:00:00')) ?></span></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">Max Clock Out Time:</span> <span class="font-bold font-mono text-indigo-500"><?= date('h:i A', strtotime($employee['max_clock_out'] ?? '17:00:00')) ?></span></div>
+                    <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
+                        <span class="text-slate-400">Linked User Account:</span> 
+                        <span class="font-bold">
+                            <?php if ($linkedUser): ?>
+                                <a href="<?= url('users/' . $linkedUser['id'] . '/edit?redirect_to=' . urlencode('/staff/employees/' . $employee['id'])) ?>" class="text-indigo-500 hover:underline">
+                                    <?= e($linkedUser['name']) ?> (<?= e($linkedUser['email']) ?>)
+                                </a>
+                            <?php else: ?>
+                                <span class="text-slate-500">Not Linked</span>
+                            <?php endif; ?>
+                        </span>
+                    </div>
                 </div>
             </div>
 
