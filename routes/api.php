@@ -9,6 +9,8 @@ $router->get('/api/v1/health', function () {
 
 $router->post('/api/v1/auth/login', [App\Controllers\AuthController::class, 'login'], ['rate.limit:10,1']);
 $router->post('/api/v1/auth/logout', [App\Controllers\AuthController::class, 'logout'], ['auth']);
+$router->post('/api/v1/auth/driver-login', [App\Controllers\AuthController::class, 'apiDriverLogin'], ['rate.limit:10,1']);
+$router->post('/api/v1/auth/driver-change-password', [App\Controllers\AuthController::class, 'apiDriverChangePassword'], ['auth']);
 
 $router->get('/api/v1/students',      [App\Controllers\StudentController::class, 'index'],   ['auth', 'permission:view_students']);
 $router->get('/api/v1/students/{id}', [App\Controllers\StudentController::class, 'show'],    ['auth', 'permission:view_students']);
@@ -38,3 +40,9 @@ $router->get('/api/v1/staff/early-students',    [App\Controllers\StaffAppControl
 $router->get('/api/v1/staff/summary',           [App\Controllers\StaffAppController::class, 'getSummary'], ['auth']);
 $router->get('/api/v1/staff/guardians',         [App\Controllers\StaffAppController::class, 'getGuardians'], ['auth']);
 
+
+$router->get('/api/v1/driver/my-route', [App\Controllers\TransportController::class, 'driverRouteData'], ['auth', 'role:driver']);
+$router->post('/api/v1/driver/start-trip', [App\Controllers\TransportController::class, 'apiStartTrip'], ['auth', 'role:driver']);
+$router->post('/api/v1/driver/update-status', [App\Controllers\TransportController::class, 'apiUpdateStudentStatus'], ['auth', 'role:driver']);
+$router->post('/api/v1/driver/complete-trip', [App\Controllers\TransportController::class, 'apiCompleteTrip'], ['auth', 'role:driver']);
+$router->post('/api/v1/driver/{id}/location', [App\Controllers\TransportController::class, 'apiUpdateLocation'], ['auth', 'role:driver']);

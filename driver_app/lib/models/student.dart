@@ -11,6 +11,8 @@ class Student {
   final String parentName;
   final double distanceKm;
   final String scheduledTime;
+  final double? pickupLat;
+  final double? pickupLng;
   StudentStatus status;
   String? actionTime;
 
@@ -25,6 +27,8 @@ class Student {
     required this.parentName,
     required this.distanceKm,
     required this.scheduledTime,
+    this.pickupLat,
+    this.pickupLng,
     this.status = StudentStatus.pending,
     this.actionTime,
   });

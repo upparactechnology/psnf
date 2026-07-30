@@ -48,6 +48,7 @@
               status: <?= json_encode($tomorrowAtt['status'] ?? '') ?>,
               remarks: <?= json_encode($tomorrowAtt['remarks'] ?? '') ?>,
               isMedical: <?= (!empty($tomorrowAtt['medical_certificate']) ? 'true' : 'false') ?>,
+              useBus: <?= (!empty($tomorrowAtt['use_bus_transport']) ? 'true' : 'false') ?>,
               isMedicalRequired() {
                   return this.isMedical || this.remarks.toLowerCase().includes('medical');
               }
@@ -104,6 +105,17 @@
                         <span class="w-2 h-2 rounded-full bg-rose-500 dark:bg-rose-400" x-show="status === 'absent'"></span>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Present Details Form (appears only when status is present) -->
+        <div x-show="status === 'present'" x-cloak x-transition class="space-y-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/80 shadow-inner">
+            <div class="flex items-center gap-3">
+                <input type="checkbox" name="use_bus_transport" value="1" id="use_bus_transport" x-model="useBus" <?php if (!$canEdit) echo 'disabled'; ?>
+                       class="w-4 h-4 rounded border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-emerald-500 focus:ring-0 focus:ring-offset-0 disabled:opacity-50">
+                <label for="use_bus_transport" class="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none disabled:opacity-50">
+                    Will the student use school bus transport tomorrow?
+                </label>
             </div>
         </div>
 

@@ -57,6 +57,13 @@ function eMsg(string $f, array $e): string {
                 <?= eMsg('phone',$errors) ?>
             </div>
 
+            <!-- License Number -->
+            <div class="space-y-1.5">
+                <label class="block text-xs font-medium text-slate-400">License Number</label>
+                <input type="text" name="license_number" value="<?= e($fn('license_number')) ?>" class="<?= iClass('license_number',$errors) ?>" placeholder="DL-142011XXXXX">
+                <?= eMsg('license_number',$errors) ?>
+            </div>
+
             <!-- Password -->
             <div class="space-y-1.5">
                 <label class="block text-xs font-medium text-slate-400">Password <span class="text-red-400">*</span></label>

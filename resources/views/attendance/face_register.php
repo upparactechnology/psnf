@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_face_reg_action'])) 
     margin: 0 auto;
     border-radius: 18px;
     overflow: hidden;
-    background: #000;
+    background: transparent;
     border: 3px solid #6366f1;
     box-shadow: 0 0 30px rgba(99,102,241,0.22);
     aspect-ratio: 4/3;
@@ -233,6 +233,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_face_reg_action'])) 
                     </div>
                 </div>
 
+                <div class="flex items-center gap-2">
+                    <span class="text-2xs text-slate-400 font-mono" id="scanStatusLabel">Initializing...</span>
+                    <button onclick="toggleCam()" class="p-1.5 rounded-lg hover:bg-slate-800 transition text-slate-400 hover:text-white" title="Flip Camera">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                    </button>
+                    <button onclick="restartCam()" class="p-1.5 rounded-lg hover:bg-slate-800 transition text-slate-400 hover:text-white" title="Restart">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </button>
+                </div>
                 <button id="startScanBtn" onclick="beginScan()" disabled
                     class="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold hover:from-indigo-500 hover:to-purple-500 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -357,6 +366,7 @@ let countRemain  = 0;
 let phase        = 'idle'; // idle | countdown | capturing | paused | done
 let drawLoopRunning = false;
 let submitting   = false;
+let currentFacingMode = 'user';
 
 // ── Auth ────────────────────────────────────────────────────────────────────────
 const authForm = document.getElementById('authForm');
@@ -377,6 +387,7 @@ if (authForm) {
                 document.getElementById('authOverlay')?.remove();
                 document.getElementById('mainContent').removeAttribute('style');
                 loadEmps();
+                initCam();
             } else { errEl.textContent = d.message||'Invalid.'; errEl.classList.remove('hidden'); }
         } catch(err) { errEl.textContent = 'Error: '+err.message; errEl.classList.remove('hidden'); }
         finally { btn.disabled = false; btn.textContent = 'Login & Unlock Registration'; }
@@ -480,12 +491,67 @@ window.clearSelectedUser = function() {
     document.getElementById('startScanBtn').disabled = true;
 };
 
+// ── Camera ────────────────────────────────────────────────────────────
+async function initCam() {
+    document.getElementById('scanStatusLabel').textContent = 'Starting...';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById('scanStatusLabel').textContent = 'HTTPS Required';
+        alert("Camera access is blocked by the browser. When accessing via a local network IP (like 192.168.x.x) on mobile, browsers require a secure HTTPS connection to use the camera. Please use HTTPS, or test on localhost.");
+        return;
+    }
+    try {
+        let s;
+        try {
+            s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
+        } catch (err1) {
+            // Fallback if facingMode is unsupported or throws error
+            s = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
+        vid.srcObject = s;
+        vid.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+        vid.onloadedmetadata = () => {
+            vid.play().catch(e => alert("Video Play Error: " + e.message));
+        };
+        
+        vid.addEventListener('playing', () => {
+            const checkVideoReady = () => {
+                if (vid.videoWidth === 0) {
+                    requestAnimationFrame(checkVideoReady);
+                    return;
+                }
+                resizeOverlay();
+                const track = s.getVideoTracks()[0];
+                document.getElementById('scanStatusLabel').textContent = `W:${vid.videoWidth} H:${vid.videoHeight} - ` + (track ? track.label : 'Scanning...');
+                if (!drawLoopRunning) { drawLoopRunning = true; requestAnimationFrame(drawLoop); }
+            };
+            checkVideoReady();
+        });
+    } catch(e) {
+        document.getElementById('scanStatusLabel').textContent = 'Cam error';
+        alert("Camera Error: " + e.message);
+    }
+}
+
+window.toggleCam = function() {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    window.restartCam();
+};
+
+window.restartCam = function() {
+    if(vid.srcObject) vid.srcObject.getTracks().forEach(t=>t.stop());
+    initCam();
+};
+
+function resizeOverlay() {
+    ovl.width = vid.videoWidth; ovl.height = vid.videoHeight;
+    capCvs.width = ovl.width;  capCvs.height = ovl.height;
+}
+
 window.beginScan = function() {
     if (!selUserId) return;
     document.getElementById('step1Card').classList.add('hidden');
     document.getElementById('step2Card').classList.remove('hidden');
     buildAngleDots(); updateAngleUI(0);
-    startCamera();
 };
 
 // ── Camera ────────────────────────────────────────────────────────────────────────

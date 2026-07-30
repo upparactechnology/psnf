@@ -4,8 +4,13 @@ import '../models/student.dart';
 
 class DroppedHomeScreen extends StatelessWidget {
   final Student student;
+  final bool isLastStudent;
 
-  const DroppedHomeScreen({super.key, required this.student});
+  const DroppedHomeScreen({
+    super.key, 
+    required this.student,
+    this.isLastStudent = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -113,9 +118,9 @@ class DroppedHomeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  'Next Student',
-                  style: TextStyle(
+                child: Text(
+                  isLastStudent ? 'Finish Route' : 'Next Student',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),

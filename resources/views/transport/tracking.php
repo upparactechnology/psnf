@@ -55,7 +55,7 @@ ob_start();
         </div>
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 shadow-sm">
             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Active Buses</p>
-            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1"><?= count(array_filter($routes, fn($r) => $r['status'] === 'en_route')) ?></p>
+            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1"><?= count(array_filter($routes, fn($r) => $r['route_status'] === 'en_route')) ?></p>
         </div>
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 shadow-sm">
             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Students on Bus</p>
@@ -79,7 +79,7 @@ ob_start();
 
                 <?php foreach ($routes as $route): ?>
                 <div class="route-card rounded-2xl bg-white dark:bg-slate-900/40 border transition-all duration-200 hover:shadow-md cursor-pointer"
-                     @click="selectRoute(<?= $route['id'] ?>, <?= $route['current_latitude'] ?? 13.0827 ?>, <?= $route['current_longitude'] ?? 80.2707 ?>)"
+                     @click="selectRoute(<?= $route['id'] ?>)"
                      :class="selectedRoute == <?= $route['id'] ?> ? 'border-brand-500 dark:border-brand-500 shadow-md shadow-brand-500/10' : 'border-slate-200 dark:border-slate-800/60'">
 
                     <!-- Card Content -->
@@ -87,26 +87,26 @@ ob_start();
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-                                    <?= $route['status'] === 'en_route' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-800' ?>">
-                                    <svg class="w-5 h-5 <?= $route['status'] === 'en_route' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <?= $route['route_status'] === 'en_route' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-800' ?>">
+                                    <svg class="w-5 h-5 <?= $route['route_status'] === 'en_route' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4"/>
                                     </svg>
                                 </div>
                                 <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-slate-800 dark:text-white truncate"><?= htmlspecialchars($route['route_name']) ?></p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400"><?= htmlspecialchars($route['bus_number']) ?></p>
+                                    <p class="text-sm font-semibold text-slate-800 dark:text-white truncate"><?= htmlspecialchars($route['name']) ?></p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400"><?= htmlspecialchars($route['phone']) ?></p>
                                 </div>
                             </div>
                             <span class="flex-shrink-0 text-2xs px-2 py-0.5 rounded-full font-semibold
-                                <?= $route['status'] === 'en_route' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' ?>">
-                                <?= $route['status'] === 'en_route' ? 'En Route' : ucfirst($route['status']) ?>
+                                <?= $route['route_status'] === 'en_route' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' ?>">
+                                <?= $route['route_status'] === 'en_route' ? 'En Route' : ucfirst($route['route_status']) ?>
                             </span>
                         </div>
                         <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400">
                             <div class="flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                <span><?= htmlspecialchars($route['driver_name']) ?></span>
+                                <span><?= htmlspecialchars($route['name']) ?></span>
                             </div>
                             <div class="flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -114,7 +114,7 @@ ob_start();
                             </div>
                             <div class="flex items-center gap-1.5 col-span-2 font-medium">
                                 <svg class="w-3.5 h-3.5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.948V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                <span><?= htmlspecialchars($route['driver_phone']) ?></span>
+                                <span><?= htmlspecialchars($route['phone']) ?></span>
                             </div>
 
                             <!-- Live Speed Indicator Inside Card -->
@@ -291,7 +291,7 @@ const ROUTES_DATA = <?= json_encode(array_map(fn($r) => [
     'driver'      => $r['driver_name'],
     'phone'       => $r['driver_phone'],
     'students'    => $r['student_count'],
-    'status'      => $r['status'],
+    'status'      => $r['route_status'] ?? 'inactive',
     'lat'         => (float)($r['current_latitude']  ?? 13.0827),
     'lng'         => (float)($r['current_longitude'] ?? 80.2707),
     'speed'       => (float)($r['current_speed'] ?? 0.0),
@@ -321,7 +321,7 @@ function liveTracking() {
 
         // Live speeds and simulation states
         routesList:         [],
-        simulateSpeed:      true,
+        simulateSpeed:      false,
         simulationTimer:    null,
 
         // Leaflet instances
@@ -332,9 +332,10 @@ function liveTracking() {
 
         init() {
             this.routesList = [...ROUTES_DATA];
-            this.$nextTick(() => {
+            this.$nextTick(async () => {
                 this.initMap();
                 this.startPolling();
+                await this.fetchLiveData();
                 this.updateLastUpdated();
                 this.startSpeedSimulation();
             });
@@ -342,13 +343,14 @@ function liveTracking() {
 
         // ── Map init ────────────────────────────────────────────────────────────
         initMap() {
-            // Determine center: average of all routes
-            const center = ROUTES_DATA.length
+            // Determine center: average of all routes with valid coords
+            const validRoutes = ROUTES_DATA.filter(r => r.lat && r.lng);
+            const center = validRoutes.length
                 ? [
-                    ROUTES_DATA.reduce((s, r) => s + r.lat, 0) / ROUTES_DATA.length,
-                    ROUTES_DATA.reduce((s, r) => s + r.lng, 0) / ROUTES_DATA.length,
+                    validRoutes.reduce((s, r) => s + parseFloat(r.lat), 0) / validRoutes.length,
+                    validRoutes.reduce((s, r) => s + parseFloat(r.lng), 0) / validRoutes.length,
                   ]
-                : [13.0827, 80.2707];
+                : [<?= $campusLat ?>, <?= $campusLng ?>];
 
             this.map = L.map('live-map', { zoomControl: true }).setView(center, 12);
 
@@ -358,8 +360,19 @@ function liveTracking() {
                 maxZoom: 19,
             }).addTo(this.map);
 
-            // Add markers for all routes
-            this.routesList.forEach(r => this.addOrUpdateMarker(r));
+            // Add School Marker
+            const schoolIcon = L.divIcon({
+                html: `<div style="width:36px;height:36px;background:#4f46e5;border-radius:8px;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></div>`,
+                className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+            });
+            L.marker([<?= $campusLat ?>, <?= $campusLng ?>], { icon: schoolIcon }).bindPopup('<div style="font-weight:bold;font-size:14px;">PSNF Main Campus</div>').addTo(this.map);
+
+            // Add markers for active routes
+            this.routesList.forEach(r => {
+                if (r.status === 'en_route') {
+                    this.addOrUpdateMarker(r);
+                }
+            });
 
             if (this.routesList.length > 1) this.fitAllMarkers();
         },
@@ -389,11 +402,6 @@ function liveTracking() {
             const popup = `
                 <div style="min-width:180px;font-family:Inter,sans-serif;color:#1e293b;">
                     <div style="font-weight:700;font-size:14px;margin-bottom:8px;color:#0f172a;">${route.name}</div>
-                    
-                    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;margin-bottom:6px;">
-                        <svg style="width:14px;height:14px;color:#64748b;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4"/><circle cx="6" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
-                        <span><strong>Bus:</strong> ${route.bus}</span>
-                    </div>
                     
                     <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#475569;margin-bottom:6px;">
                         <svg style="width:14px;height:14px;color:#64748b;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
@@ -448,16 +456,16 @@ function liveTracking() {
             }
         },
 
-        selectRoute(id, lat, lng) {
+        selectRoute(id) {
             this.selectedRoute = id;
             const r = this.routesList.find(x => x.id == id);
             if (r) {
-                this.selectedRouteName  = r.name + ' · ' + r.bus;
-                this.selectedRouteCoords= `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-            }
-            if (this.map && this.markers[id]) {
-                this.map.flyTo([lat, lng], 15, { duration: 1 });
-                this.markers[id].openPopup();
+                this.selectedRouteName  = r.name + ' • ' + r.bus;
+                this.selectedRouteCoords= `${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}`;
+                if (this.map && this.markers[id]) {
+                    this.map.flyTo([r.lat, r.lng], 15, { duration: 1 });
+                    this.markers[id].openPopup();
+                }
             }
         },
 
@@ -587,7 +595,22 @@ function liveTracking() {
                                 listRoute.speed = r.speed;
                             }
                         }
-                        this.addOrUpdateMarker(listRoute || r);
+                        
+                        // Only show marker if active
+                        if (r.status === 'en_route') {
+                            this.addOrUpdateMarker(listRoute || r);
+                            
+                            // Auto follow selected driver
+                            if (this.selectedRoute == r.id && this.map) {
+                                this.map.panTo([r.lat, r.lng]);
+                                this.selectedRouteCoords = `${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}`;
+                            }
+                        } else {
+                            if (this.markers[r.id]) {
+                                this.map.removeLayer(this.markers[r.id]);
+                                delete this.markers[r.id];
+                            }
+                        }
                     });
                     this.updateLastUpdated();
                 }

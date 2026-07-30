@@ -50,11 +50,16 @@ $fn     = fn($k) => $old[$k] ?? '';
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Date of Birth <span class="text-red-400">*</span></label>
                         <input type="date" name="dob" value="<?= e($fn('dob')) ?>" required class="<?= inputClass('dob', $errors) ?>">
                         <?= errorMsg('dob', $errors) ?>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Roll Number</label>
+                        <input type="text" name="roll_number" value="<?= e($fn('roll_number')) ?>" class="<?= inputClass('roll_number', $errors) ?>" placeholder="e.g. 101">
+                        <?= errorMsg('roll_number', $errors) ?>
                     </div>
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Gender <span class="text-red-400">*</span></label>

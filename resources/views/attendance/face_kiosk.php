@@ -13,9 +13,9 @@ ob_start();
     margin: 0 auto;
     border-radius: 20px;
     overflow: hidden;
-    background: #000;
-    border: 3px solid #6366f1;
-    box-shadow: 0 0 40px rgba(99,102,241,0.25);
+    background: transparent;
+    border: 4px solid #6366f1;
+    box-shadow: 0 0 30px rgba(99,102,241,0.15);
     aspect-ratio: 4/3;
 }
 #kioskVideo {
@@ -157,6 +157,9 @@ ob_start();
                     </h3>
                     <div class="flex items-center gap-2">
                         <span class="text-2xs text-slate-400 font-mono" id="scanStatusLabel">Initializing...</span>
+                        <button onclick="toggleCam()" class="p-1.5 rounded-lg hover:bg-slate-800 transition text-slate-400 hover:text-white" title="Flip Camera">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                        </button>
                         <button onclick="restartCam()" class="p-1.5 rounded-lg hover:bg-slate-800 transition text-slate-400 hover:text-white" title="Restart">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         </button>
@@ -240,6 +243,7 @@ ob_start();
     let checkedToday  = 0;
     let faceReady     = false;
     let faceCheckFrame = 0;
+    let currentFacingMode = 'user';
 
     const SCAN_INTERVAL = 800;  // ms between scans
     const FACE_HOLD_FRAMES = 8; // consecutive "face detected" frames before scan fires
@@ -271,21 +275,49 @@ ob_start();
 
     // ── Camera ───────────────────────────────────────────────────────────────
     async function initCam() {
-        document.getElementById('scanStatusLabel').textContent = 'Starting...';
+        statusTxt.textContent = 'Starting camera...';
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            statusTxt.textContent = 'HTTPS Required';
+            alert("Camera access is blocked by the browser. When accessing via a local network IP (like 192.168.x.x) on mobile, browsers require a secure HTTPS connection to use the camera. Please use HTTPS, or test on localhost.");
+            return;
+        }
         try {
-            const s = await navigator.mediaDevices.getUserMedia({ video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'} });
+            let s;
+            try {
+                s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
+            } catch (err1) {
+                s = await navigator.mediaDevices.getUserMedia({ video: true });
+            }
             vid.srcObject = s;
-            vid.onloadedmetadata = () => vid.play().catch(()=>{});
+            vid.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+            vid.onloadedmetadata = () => {
+                vid.play().catch(e => alert("Video Play Error: " + e.message));
+            };
+            
             vid.addEventListener('playing', () => {
-                resizeOverlay();
-                requestAnimationFrame(drawLoop);
-                document.getElementById('scanStatusLabel').textContent = 'Scanning...';
+                const checkVideoReady = () => {
+                    if (vid.videoWidth === 0) {
+                        requestAnimationFrame(checkVideoReady);
+                        return;
+                    }
+                    resizeOverlay();
+                    const track = s.getVideoTracks()[0];
+                    statusTxt.textContent = `W:${vid.videoWidth} H:${vid.videoHeight} - ` + (track ? track.label : 'Scanning...');
+                    requestAnimationFrame(drawLoop);
+                };
+                checkVideoReady();
             });
         } catch(e) {
-            document.getElementById('scanStatusLabel').textContent = 'Cam error';
-            showResult('error','Camera Error', e.message);
+            statusTxt.textContent = 'Cam error';
+            alert("Camera Error: " + e.message);
         }
     }
+    
+    window.toggleCam = function() {
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        window.restartCam();
+    };
+
     window.restartCam = function() {
         pauseUntil = 0; faceCheckFrame = 0; faceReady = false;
         if(vid.srcObject) vid.srcObject.getTracks().forEach(t=>t.stop());

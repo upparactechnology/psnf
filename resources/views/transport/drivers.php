@@ -13,7 +13,7 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Transport Drivers Directory</h1>
             <p class="text-xs text-slate-500 mt-0.5">Licensed bus drivers, phone numbers, license numbers & assigned vehicles</p>
         </div>
-        <button class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Add Driver</button>
+        <a href="<?= url('users/create?redirect_to=/transport/drivers') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Add Driver</a>
     </div>
 
     <!-- Drivers Grid -->
@@ -22,11 +22,11 @@ ob_start();
         <div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 space-y-4">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-extrabold text-base flex items-center justify-center shadow-md">
-                    <?= strtoupper(substr($d['name'], 0, 1)) ?>
+                    <?= strtoupper(substr($d['first_name'], 0, 1)) ?>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-slate-900 dark:text-white"><?= e($d['name']) ?></h3>
-                    <p class="text-xs text-indigo-500 font-mono font-bold"><?= e($d['driver_code']) ?> • <?= e($d['phone']) ?></p>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white"><?= e($d['first_name'] . ' ' . $d['last_name']) ?></h3>
+                    <p class="text-xs text-indigo-500 font-mono font-bold"><?= e($d['emp_code']) ?> • <?= e($d['phone']) ?></p>
                 </div>
             </div>
 

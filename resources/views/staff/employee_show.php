@@ -79,9 +79,39 @@ if (!empty($employee['user_id'])) {
                             <input type="text" name="last_name" value="<?= e($employee['last_name']) ?>" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white">
                         </div>
                     </div>
-                    <div>
-                        <label class="block font-semibold text-slate-400 mb-1">Email</label>
-                        <input type="email" name="email" value="<?= e($employee['email']) ?>" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold text-slate-400 mb-1">Email</label>
+                            <input type="email" name="email" value="<?= e($employee['email']) ?>" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-400 mb-1">Status</label>
+                            <select name="status" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white">
+                                <option value="active" <?= $employee['status'] === 'active' ? 'selected' : '' ?>>Active</option>
+                                <option value="inactive" <?= $employee['status'] === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                                <option value="terminated" <?= $employee['status'] === 'terminated' ? 'selected' : '' ?>>Terminated</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                            <label class="block font-semibold text-slate-400 mb-1">Department</label>
+                            <select name="department_id" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white">
+                                <option value="">Select Department...</option>
+                                <?php foreach ($departments as $d): ?>
+                                    <option value="<?= $d['id'] ?>" <?= $employee['department_id'] == $d['id'] ? 'selected' : '' ?>><?= e($d['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-400 mb-1">Designation</label>
+                            <select name="designation_id" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white">
+                                <option value="">Select Designation...</option>
+                                <?php foreach ($designations as $des): ?>
+                                    <option value="<?= $des['id'] ?>" <?= $employee['designation_id'] == $des['id'] ? 'selected' : '' ?>><?= e($des['title']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <div>

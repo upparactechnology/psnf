@@ -355,10 +355,16 @@ if ($user) {
 ?>
 <div class="flex h-screen overflow-hidden">
 
+    <!-- Mobile Backdrop -->
+    <div x-show="mobileNav" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[90] md:hidden" @click="mobileNav = false" x-transition.opacity x-cloak></div>
+
     <?php if (!$isDashboard): ?>
     <!-- Sidebar -->
-    <aside class="flex-shrink-0 flex flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900 transition-all duration-300"
-           :class="sidebarOpen ? 'w-64' : 'w-16'">
+    <aside class="flex-shrink-0 flex flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900 transition-all duration-300 fixed md:relative z-[100] h-full"
+           :class="[
+               sidebarOpen ? 'w-64' : 'w-16',
+               mobileNav ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+           ]">
 
         <!-- Logo -->
         <div class="flex items-center gap-3 px-4 py-5 border-b border-slate-200 dark:border-slate-800/60">
@@ -369,8 +375,11 @@ if ($user) {
                 <p class="text-xs font-bold text-slate-800 dark:text-white leading-tight">PSNF Management System</p>
                 <p class="text-[10px] text-slate-500">v1.0.0</p>
             </div>
-            <button @click="sidebarOpen = !sidebarOpen" class="ml-auto text-slate-500 hover:text-slate-300 transition-colors">
+            <button @click="sidebarOpen = !sidebarOpen" class="hidden md:block ml-auto text-slate-500 hover:text-slate-300 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <button @click="mobileNav = false" class="md:hidden ml-auto text-slate-500 hover:text-slate-300 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
@@ -615,12 +624,15 @@ if ($user) {
 
         <!-- Top Bar -->
         <?php if ($isDashboard): ?>
-        <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/50 backdrop-blur">
+        <header class="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/50 backdrop-blur">
             <div class="flex items-center gap-3">
+                <button @click="mobileNav = true" class="md:hidden p-2 -ml-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
                 <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
                     <img src="<?= url('game/images/logo.png') ?>" class="w-7 h-7 object-contain" alt="PSNF Logo">
                 </div>
-                <span class="text-sm font-bold text-slate-800 dark:text-white tracking-wide">PSNF Management System</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-white tracking-wide hidden sm:block">PSNF Management System</span>
             </div>
             <div class="flex items-center gap-4">
                 <!-- Theme Toggler -->
@@ -630,7 +642,7 @@ if ($user) {
                     <!-- Moon (dark mode: click to switch to light) -->
                     <svg x-show="isDark" class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 </button>
-                <span class="text-xs text-slate-500 flex items-center gap-1.5 font-medium">
+                <span class="hidden sm:flex text-xs text-slate-500 items-center gap-1.5 font-medium">
                     <span><?= date('D, d M Y') ?></span>
                     <span class="text-slate-300 dark:text-slate-700">|</span>
                     <span class="live-header-clock font-mono">--:--:--</span>
@@ -639,29 +651,34 @@ if ($user) {
                     <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
                         <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
                     </div>
-                    <span class="text-xs text-slate-600 dark:text-slate-300 font-medium"><?= e($user['name'] ?? '') ?></span>
+                    <span class="hidden sm:inline text-xs text-slate-600 dark:text-slate-300 font-medium"><?= e($user['name'] ?? '') ?></span>
                     <a href="<?= url('logout') ?>" class="text-slate-500 hover:text-red-400 transition-colors ml-1" title="Logout">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                     </a>
                 </div>
-            </div>
+            </div>        
         </header>
         <?php else: ?>
-        <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/50 backdrop-blur">
-            <div>
-                <h1 class="text-lg font-semibold text-slate-800 dark:text-white"><?= $pageTitle ?? 'Dashboard' ?></h1>
-                <?php if (!empty($breadcrumbs)): ?>
-                <nav class="flex items-center gap-1 mt-0.5">
-                    <?php foreach ($breadcrumbs as $i => $bc): ?>
-                    <?php if ($i > 0): ?><span class="text-slate-400 dark:text-slate-600 text-xs">›</span><?php endif; ?>
-                    <?php if ($i < count($breadcrumbs) - 1): ?>
-                    <a href="<?= url(ltrim($bc['url'] ?? '#', '/')) ?>" class="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"><?= e($bc['label']) ?></a>
-                    <?php else: ?>
-                    <span class="text-xs text-slate-400 dark:text-slate-500"><?= e($bc['label']) ?></span>
+        <header class="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/50 backdrop-blur">
+            <div class="flex items-center gap-3">
+                <button @click="mobileNav = true" class="md:hidden p-2 -ml-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <div>
+                    <h1 class="text-lg font-semibold text-slate-800 dark:text-white"><?= $pageTitle ?? 'Dashboard' ?></h1>
+                    <?php if (!empty($breadcrumbs)): ?>
+                    <nav class="flex items-center gap-1 mt-0.5">
+                        <?php foreach ($breadcrumbs as $i => $bc): ?>
+                        <?php if ($i > 0): ?><span class="text-slate-400 dark:text-slate-600 text-xs">·</span><?php endif; ?>
+                        <?php if ($i < count($breadcrumbs) - 1): ?>
+                        <a href="<?= url(ltrim($bc['url'] ?? '#', '/')) ?>" class="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"><?= e($bc['label']) ?></a>
+                        <?php else: ?>
+                        <span class="text-xs text-slate-400 dark:text-slate-500"><?= e($bc['label']) ?></span>
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    </nav>
                     <?php endif; ?>
-                    <?php endforeach; ?>
-                </nav>
-                <?php endif; ?>
+                </div>
             </div>
 
             <div class="flex items-center gap-3">

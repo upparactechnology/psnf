@@ -72,8 +72,10 @@ class StaffWorkspaceController extends Controller
         $profile = $db->selectOne("SELECT * FROM employee_profiles WHERE employee_id = ?", [$id]);
         $salary  = $db->selectOne("SELECT * FROM salary_structures WHERE employee_id = ?", [$id]);
         $attendance = $db->select("SELECT * FROM staff_attendance_logs WHERE employee_id = ? ORDER BY date DESC LIMIT 15", [$id]);
+        $departments = $db->select("SELECT * FROM departments WHERE is_active = 1");
+        $designations = $db->select("SELECT * FROM designations WHERE is_active = 1");
 
-        return $this->view('staff/employee_show', compact('employee', 'profile', 'salary', 'attendance'));
+        return $this->view('staff/employee_show', compact('employee', 'profile', 'salary', 'attendance', 'departments', 'designations'));
     }
 
     public function storeEmployee(): string

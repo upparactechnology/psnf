@@ -89,6 +89,7 @@ class Application
 
         set_exception_handler(function (\Throwable $e): void {
             if (config('app.debug', false)) {
+                error_log("Exception: " . $e->getMessage() . "\n" . $e->getTraceAsString());
                 echo '<pre style="background:#1e1e2e;color:#cdd6f4;padding:20px;font-family:monospace;">';
                 echo '<b style="color:#f38ba8">Exception:</b> ' . htmlspecialchars($e->getMessage()) . "\n";
                 echo '<b style="color:#a6e3a1">File:</b> ' . $e->getFile() . ':' . $e->getLine() . "\n\n";

@@ -16,18 +16,41 @@ class GuardianController extends Controller
         $db = \Core\Application::$app->db;
         $tenantId = Database::getTenantId();
         
-        $guardians = $db->select(
-            "SELECT g.*, 
-                (SELECT COUNT(*) FROM guardian_student gs WHERE gs.guardian_id = g.id) as students_count
-             FROM guardians g 
-             WHERE g.tenant_id = ? AND g.deleted_at IS NULL 
-             ORDER BY g.name ASC",
-            [$tenantId]
-        );
+        // Fetch all students (with at least one guardian, or just all active students)
+        $students = $db->select("
+            SELECT id, first_name, last_name, admission_number, photo, class, section
+            FROM students
+            WHERE tenant_id = ? AND deleted_at IS NULL
+            ORDER BY first_name ASC
+        ", [$tenantId]);
+
+        // Fetch all guardians and their links
+        $guardians = $db->select("
+            SELECT g.*, gs.student_id
+            FROM guardians g
+            JOIN guardian_student gs ON gs.guardian_id = g.id
+            WHERE g.tenant_id = ? AND g.deleted_at IS NULL
+        ", [$tenantId]);
+
+        // Fetch unlinked guardians
+        $unlinkedGuardians = $db->select("
+            SELECT g.* 
+            FROM guardians g
+            LEFT JOIN guardian_student gs ON gs.guardian_id = g.id
+            WHERE g.tenant_id = ? AND g.deleted_at IS NULL AND gs.student_id IS NULL
+        ", [$tenantId]);
+
+        // Group guardians by student_id
+        $studentGuardians = [];
+        foreach ($guardians as $g) {
+            $studentGuardians[$g['student_id']][] = $g;
+        }
 
         return $this->view('academics/guardians/index', [
             'title' => 'Parents Directory',
-            'guardians' => $guardians
+            'students' => $students,
+            'studentGuardians' => $studentGuardians,
+            'unlinkedGuardians' => $unlinkedGuardians
         ]);
     }
 

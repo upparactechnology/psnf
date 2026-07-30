@@ -246,9 +246,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _buildStatCard('Total Students', ApiService.assignedRoute != null ? ApiService.assignedRoute!['students'].toString() : '36', Icons.people_rounded, const Color(0xFF6366F1)),
-                _buildStatCard('Picked Up', ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? ApiService.assignedRoute!['students'].toString() : (ApiService.assignedRoute!['status'] == 'en_route' ? (ApiService.assignedRoute!['students'] as int > 0 ? (ApiService.assignedRoute!['students'] - 1).toString() : '0') : '0')) : '18', Icons.check_circle_outline_rounded, const Color(0xFF10B981)),
-                _buildStatCard('Pending', ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : (ApiService.assignedRoute!['status'] == 'en_route' ? '1' : ApiService.assignedRoute!['students'].toString())) : '8', Icons.pending_actions_rounded, const Color(0xFFF59E0B)),
+                _buildStatCard('Total Students', ApiService.assignedRoute != null ? (ApiService.assignedRoute!['students'] as List).length.toString() : '36', Icons.people_rounded, const Color(0xFF6366F1)),
+                _buildStatCard('Picked Up', ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? (ApiService.assignedRoute!['students'] as List).length.toString() : (ApiService.assignedRoute!['status'] == 'en_route' ? ((ApiService.assignedRoute!['students'] as List).length > 0 ? ((ApiService.assignedRoute!['students'] as List).length - 1).toString() : '0') : '0')) : '18', Icons.check_circle_outline_rounded, const Color(0xFF10B981)),
+                _buildStatCard('Pending', ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : (ApiService.assignedRoute!['status'] == 'en_route' ? '1' : (ApiService.assignedRoute!['students'] as List).length.toString())) : '8', Icons.pending_actions_rounded, const Color(0xFFF59E0B)),
                 _buildStatCard('On Leave', ApiService.assignedRoute != null ? '0' : '4', Icons.airline_seat_recline_normal_rounded, const Color(0xFFEF4444)),
               ],
             ),
@@ -303,7 +303,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              ApiService.assignedRoute != null ? ApiService.assignedRoute!['name'] : 'Pickup Route - 1',
+                              ApiService.assignedRoute != null ? 'Pickup Route' : 'Pickup Route - 1',
                               style: TextStyle(
                                 color: mainText,
                                 fontSize: 18,
@@ -333,8 +333,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _routeInfoTile(ApiService.assignedRoute != null ? ApiService.assignedRoute!['students'].toString() : '20', 'Total Stops'),
-                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : ApiService.assignedRoute!['students'].toString()) : '8', 'Remaining'),
+                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['students'] as List).length.toString() : '20', 'Total Stops'),
+                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : (ApiService.assignedRoute!['students'] as List).length.toString()) : '8', 'Remaining'),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -401,7 +401,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              ApiService.assignedRoute != null ? ApiService.assignedRoute!['name'] : 'Drop Route - 1',
+                              ApiService.assignedRoute != null ? 'Drop Route' : 'Drop Route - 1',
                               style: TextStyle(
                                 color: mainText,
                                 fontSize: 18,
@@ -431,8 +431,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _routeInfoTile(ApiService.assignedRoute != null ? ApiService.assignedRoute!['students'].toString() : '2', 'Total Drops'),
-                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : ApiService.assignedRoute!['students'].toString()) : '2', 'Remaining'),
+                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['students'] as List).length.toString() : '2', 'Total Drops'),
+                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : (ApiService.assignedRoute!['students'] as List).length.toString()) : '2', 'Remaining'),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -691,7 +691,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              ApiService.assignedRoute != null ? ApiService.assignedRoute!['phone'] : 'john.driver@psnf.edu',
+              ApiService.assignedRoute != null ? ApiService.assignedRoute!['phone'] ?? 'john.driver@psnf.edu' : 'john.driver@psnf.edu',
               style: TextStyle(
                 color: subText,
                 fontSize: 14,

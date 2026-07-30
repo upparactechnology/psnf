@@ -16,6 +16,12 @@ $router->post('/reset-password', [AuthController::class, 'resetPassword']);
 $router->get('/otp',             [AuthController::class, 'showOtp']);
 $router->post('/otp',            [AuthController::class, 'verifyOtp']);
 
+// Parent Portal Auth
+$router->get('/parent-login',          [\App\Controllers\ParentPortalLoginController::class, 'showLogin'], ['guest']);
+$router->post('/parent-login',         [\App\Controllers\ParentPortalLoginController::class, 'login'], ['rate.limit:10,1']);
+$router->get('/parent/change-password', [\App\Controllers\ParentPortalLoginController::class, 'showChangePassword'], ['auth', 'role:parent']);
+$router->post('/parent/change-password',[\App\Controllers\ParentPortalLoginController::class, 'changePassword'], ['auth', 'role:parent']);
+
 // Root redirect
 $router->get('/', function () {
     if (is_logged_in()) {
@@ -173,8 +179,12 @@ $router->get('/transport/routes',               [TransportController::class, 'ro
 $router->get('/transport/vehicles',             [TransportController::class, 'vehicles'],            ['auth', 'tenant']);
 $router->get('/transport/drivers',              [TransportController::class, 'drivers'],             ['auth', 'tenant']);
 $router->get('/transport/student-assignments',  [TransportController::class, 'studentAssignments'],   ['auth', 'tenant']);
+$router->post('/transport/{id}/assign',     [TransportController::class, 'assignStudent'],['auth', 'tenant']);
+$router->post('/transport/assignments/{id}/update', [TransportController::class, 'updateAssignment'], ['auth', 'tenant']);
+$router->post('/transport/assignments/{id}/remove', [TransportController::class, 'removeAssignment'], ['auth', 'tenant']);
 $router->get('/transport/live-tracking',        [TransportController::class, 'tracking'],           ['auth', 'tenant']);
 $router->get('/transport/settings',             [TransportController::class, 'settings'],           ['auth', 'tenant']);
+$router->post('/transport/settings',            [TransportController::class, 'storeSettings'],      ['auth', 'tenant']);
 
 $router->get('/transport/create',           [TransportController::class, 'create'],   ['auth', 'tenant']);
 $router->get('/transport/tracking',         [TransportController::class, 'tracking'], ['auth', 'tenant']);
@@ -183,7 +193,6 @@ $router->post('/transport',                 [TransportController::class, 'store'
 $router->get('/transport/{id}/edit',        [TransportController::class, 'edit'],     ['auth', 'tenant']);
 $router->post('/transport/{id}',            [TransportController::class, 'update'],    ['auth', 'tenant']);
 $router->post('/transport/{id}/assign',     [TransportController::class, 'assignStudent'],['auth', 'tenant']);
-$router->post('/transport/{id}/location',   [TransportController::class, 'updateLocation'],['auth', 'tenant']);
 $router->post('/transport/{id}/delete',     [TransportController::class, 'destroy'],   ['auth', 'tenant']);
 
 
@@ -239,18 +248,14 @@ $router->get('/migrate', function () {
 // ─── Parent Portal — Module 3 ────────────────────────────────────────────────
 $router->get('/parent/impersonate/{id}',           [ParentPortalController::class, 'impersonate'],   ['auth']);
 $router->get('/parent/dashboard',                  [ParentPortalController::class, 'dashboard'],     ['auth', 'role:parent']);
-$router->get('/parent/students/add',               [ParentPortalController::class, 'addStudent'],    ['auth', 'role:parent']);
-$router->post('/parent/students/add',              [ParentPortalController::class, 'storeStudent'],   ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/attendance',   [ParentPortalController::class, 'attendance'],    ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/attendance/check-date', [ParentPortalController::class, 'checkDateAttendance'], ['auth', 'role:parent']);
 $router->post('/parent/students/{id}/attendance/declare', [ParentPortalController::class, 'submitTomorrowAttendance'], ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/timetable',    [ParentPortalController::class, 'timetable'],     ['auth', 'role:parent']);
-$router->get('/parent/students/{id}/homework',     [ParentPortalController::class, 'homework'],      ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/exams',        [ParentPortalController::class, 'exams'],         ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/certificates', [ParentPortalController::class, 'certificates'],  ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/report-card',  [ReportCardController::class, 'parentShow'],      ['auth', 'role:parent']);
 
-$router->get('/parent/students/{id}/medical',      [ParentPortalController::class, 'medical'],       ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/transport',    [ParentPortalController::class, 'transport'],     ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/fees',         [ParentPortalController::class, 'fees'],          ['auth', 'role:parent']);
 $router->post('/parent/students/{id}/fees/{invoice_id}/pay', [ParentPortalController::class, 'payFee'], ['auth', 'role:parent']);
@@ -302,3 +307,4 @@ $router->get('/documents/driver-documents',    [App\Controllers\DocumentsControl
 $router->get('/documents/generated',           [App\Controllers\DocumentsController::class, 'generated'],          ['auth', 'tenant']);
 $router->get('/documents/templates',           [App\Controllers\DocumentsController::class, 'templates'],          ['auth', 'tenant']);
 $router->get('/documents/settings',            [App\Controllers\DocumentsController::class, 'settings'],           ['auth', 'tenant']);
+$router->post('/transport/{id}/location', [TransportController::class, 'updateLocation'],['auth', 'tenant']);

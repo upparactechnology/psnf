@@ -289,50 +289,7 @@
             </button>
         </div>
 
-        <!-- Admin/Staff View As Selector -->
-        <?php 
-        $isAdminOrStaff = has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher');
-        if ($isAdminOrStaff): 
-            $allGuardians = \Core\Application::$app->db->select("SELECT id, name, relationship FROM guardians WHERE deleted_at IS NULL ORDER BY name ASC");
-        ?>
-        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800/60" x-show="sidebarOpen" x-data="{ guardianDropdown: false }">
-            <label class="block text-[10px] uppercase tracking-wider font-semibold text-amber-500 mb-1.5 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                Admin: View Portal As
-            </label>
-            <div class="relative">
-                <button @click="guardianDropdown = !guardianDropdown"
-                        class="w-full flex items-center justify-between gap-2.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 transition-all text-left">
-                    <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
-                            <?= strtoupper(substr($guardian['name'] ?? 'G', 0, 1)) ?>
-                        </div>
-                        <div class="overflow-hidden">
-                            <p class="text-xs font-semibold text-slate-800 dark:text-white leading-tight truncate"><?= e($guardian['name'] ?? 'Unknown') ?></p>
-                            <p class="text-[10px] text-slate-500 truncate"><?= e($guardian['relationship'] ?? 'Guardian') ?></p>
-                        </div>
-                    </div>
-                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </button>
 
-                <!-- Dropdown -->
-                <div x-show="guardianDropdown" @click.outside="guardianDropdown = false" x-cloak
-                     class="absolute top-full left-0 w-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 p-1.5 max-h-60 overflow-y-auto space-y-1">
-                    <?php foreach ($allGuardians as $g): 
-                        $isSel = (int)$g['id'] === (int)($guardian['id'] ?? 0);
-                        $classes = $isSel
-                            ? 'w-full flex items-center gap-2 p-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-semibold'
-                            : 'w-full flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-350 text-xs transition-colors';
-                    ?>
-                        <a href="<?= url('parent/impersonate/' . $g['id']) ?>" class="<?= $classes ?>">
-                            <div class="w-6 h-6 rounded-md bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-500 dark:text-slate-400"><?= strtoupper(substr($g['name'], 0, 1)) ?></div>
-                            <span class="truncate"><?= e($g['name']) ?> (<?= e($g['relationship']) ?>)</span>
-                        </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
 
         <!-- Multi-Child Context Selector -->
         <?php if (!empty($all_students) && !empty($active_student)): ?>
@@ -434,21 +391,16 @@
             <div class="text-xs font-semibold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Main Portal</div>
             <?php parentNavLink('/parent/dashboard', $ic['dashboard'], 'Overview Dashboard', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/announcements', $ic['announcements'], 'Announcements', $currentPath, $sidebarOpen); ?>
-            <?php parentNavLink('/parent/communication', $ic['messages'], 'Staff Messages', $currentPath, $sidebarOpen); ?>
-            <?php parentNavLink('/parent/students/add', '<svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>', 'Register Student', $currentPath, $sidebarOpen); ?>
-
             <?php if (!empty($active_student)): ?>
             <div class="text-xs font-semibold text-slate-400 dark:text-slate-600 uppercase tracking-wider px-3 mt-5 mb-2" x-show="sidebarOpen">Child Record</div>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/attendance', $ic['attendance'], 'Attendance Log', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/timetable', $ic['timetable'], 'Weekly Timetable', $currentPath, $sidebarOpen); ?>
-            <?php parentNavLink('/parent/students/' . $active_student['id'] . '/homework', $ic['homework'], 'Active Homework', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/exams', $ic['exams'], 'Exams & Progress', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/certificates', $ic['certificates'], 'Certificates', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/report-card', $ic['report_card'], 'Report Card', $currentPath, $sidebarOpen); ?>
-            <?php parentNavLink('/parent/students/' . $active_student['id'] . '/medical', $ic['medical'], 'Medical Warnings', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/transport', $ic['transport'], 'Bus Transport', $currentPath, $sidebarOpen); ?>
             <?php parentNavLink('/parent/students/' . $active_student['id'] . '/fees', $ic['fees'], 'Fee Invoices', $currentPath, $sidebarOpen); ?>
-            <a href="/psnf/game/index.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all duration-200" title="Interactive Games">
+            <a href="<?= url('games') ?>" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all duration-200" title="Interactive Games">
                 <span class="flex-shrink-0">
                     <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </span>

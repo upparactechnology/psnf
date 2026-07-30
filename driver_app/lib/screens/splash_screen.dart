@@ -1,9 +1,50 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
+import '../services/api_service.dart';
 import 'login_screen.dart';
+import 'dashboard_screen.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthAndNavigate();
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    // Wait for 2.5 seconds to show the splash screen
+    await Future.delayed(const Duration(milliseconds: 2500));
+    
+    // Load token
+    await ApiService.loadToken();
+    
+    if (!mounted) return;
+
+    if (ApiService.token != null) {
+      await ApiService.fetchAssignedRoute();
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      }
+    } else {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,70 +146,13 @@ class SplashScreen extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
+                  const SizedBox(height: 60),
+                  const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+                    ),
+                  ),
                   const SizedBox(height: 40),
-                  // Buttons
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7C3AED), // Vibrant purple
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 8,
-                      shadowColor: const Color(0xFF7C3AED).withOpacity(0.4),
-                    ),
-                    child: const Text(
-                      'Get Started',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  // Login to Continue Button (Translucent dark button with chevron)
-                  OutlinedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E293B).withOpacity(0.4),
-                      foregroundColor: Colors.white,
-                      side: BorderSide(color: Colors.white.withOpacity(0.08)),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Login to Continue',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 20,
-                          color: Color(0xFF94A3B8), // slate-400
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
                 ],
               ),
             ),

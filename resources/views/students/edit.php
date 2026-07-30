@@ -6,11 +6,15 @@ $name = $s['first_name'] . ' ' . $s['last_name'];
 $breadcrumbs = [['label'=>'Dashboard','url'=>'/dashboard'],['label'=>'Students','url'=>'/students'],['label'=>$name,'url'=>'/students/'.$s['id']],['label'=>'Edit']];
 ob_start();
 
-function inputClassE(string $field, array $errors = []): string {
+$errors = flash('errors') ?? [];
+
+function inputClassE(string $field): string {
+    global $errors;
     $base = 'w-full bg-slate-900/70 border text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-1 transition-all';
     return $base . (isset($errors[$field]) ? ' border-red-600/60 focus:border-red-500 focus:ring-red-500/20' : ' border-slate-700/60 focus:border-brand-500 focus:ring-brand-500/30');
 }
-function selectClassE(string $field, array $errors = []): string {
+function selectClassE(string $field): string {
+    global $errors;
     $base = 'w-full bg-slate-900/70 border text-slate-300 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-1 transition-all';
     return $base . (isset($errors[$field]) ? ' border-red-600/60 focus:border-red-500 focus:ring-red-500/20' : ' border-slate-700/60 focus:border-brand-500 focus:ring-brand-500/30');
 }
@@ -27,6 +31,17 @@ function selectClassE(string $field, array $errors = []): string {
             <a href="<?= url('students/'.$s['id']) ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← View Profile</a>
         </div>
     </div>
+
+    <?php if (!empty($errors)): ?>
+        <div class="bg-red-500/10 border border-red-500/50 rounded-xl p-4 text-sm text-red-400">
+            <strong class="font-bold">Please fix the following errors:</strong>
+            <ul class="list-disc ml-5 mt-2 space-y-1">
+                <?php foreach ($errors as $err): ?>
+                    <li><?= e($err) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
 
     <form method="POST" action="<?= url('students/'.$s['id']) ?>" 
           x-data="{ 
@@ -57,10 +72,14 @@ function selectClassE(string $field, array $errors = []): string {
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div class="space-y-1.5">
                     <label class="block text-xs font-medium text-slate-400">Date of Birth <span class="text-red-400">*</span></label>
                     <input type="date" name="dob" value="<?= e($s['dob']??'') ?>" required class="<?= inputClassE('dob') ?>">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Roll Number</label>
+                    <input type="text" name="roll_number" value="<?= e($s['roll_number']??'') ?>" class="<?= inputClassE('roll_number') ?>">
                 </div>
                 <div class="space-y-1.5">
                     <label class="block text-xs font-medium text-slate-400">Gender <span class="text-red-400">*</span></label>

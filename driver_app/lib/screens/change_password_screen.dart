@@ -2,30 +2,41 @@ import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import '../services/api_service.dart';
 import 'dashboard_screen.dart';
-import 'change_password_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _nameController = TextEditingController();
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
-  void _handleLogin() async {
+  void _handleChangePassword() async {
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters.')),
+      );
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match.')),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
-    final result = await ApiService.login(
-      _nameController.text.trim(),
-      _passwordController.text,
-    );
+    final result = await ApiService.changePassword(_passwordController.text);
 
     setState(() {
       _isLoading = false;
@@ -33,21 +44,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (mounted) {
       if (result['success'] == true) {
-        if (result['requires_password_change'] == true) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Login failed'),
+            content: Text(result['message'] ?? 'Failed to change password'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -65,24 +69,10 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Back Button
-              Align(
-                alignment: Alignment.centerLeft,
-                child: IconButton(
-                  onPressed: () {
-                    // Go back
-                  },
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ),
               const SizedBox(height: 30),
               // Header
               const Text(
-                'Welcome Back!',
+                'Setup Account',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 32,
@@ -92,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Login to your account',
+                'Please set a secure password to continue.',
                 style: TextStyle(
                   color: AppColors.slate.shade450,
                   fontSize: 16,
@@ -100,39 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Name input
-              Text(
-                'Name',
-                style: TextStyle(
-                  color: AppColors.slate.shade400,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _nameController,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: const Color(0xFF1E293B).withOpacity(0.5),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: AppColors.slate.shade850),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.all(18),
-                ),
-              ),
-              const SizedBox(height: 24),
-
               // Password input
               Text(
-                'Password',
+                'New Password',
                 style: TextStyle(
                   color: AppColors.slate.shade400,
                   fontSize: 12,
@@ -171,12 +131,52 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-
+              // Confirm Password input
+              Text(
+                'Confirm Password',
+                style: TextStyle(
+                  color: AppColors.slate.shade400,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirmPassword,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: const Color(0xFF1E293B).withOpacity(0.5),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: AppColors.slate.shade850),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.all(18),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _obscureConfirmPassword = !_obscureConfirmPassword;
+                      });
+                    },
+                    icon: Icon(
+                      _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: AppColors.slate.shade500,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 36),
 
-              // Login Button / Loading Indicator
+              // Save Button / Loading Indicator
               _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
@@ -184,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     )
                   : ElevatedButton(
-                      onPressed: _handleLogin,
+                      onPressed: _handleChangePassword,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6366F1),
                         foregroundColor: Colors.white,
@@ -196,15 +196,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         shadowColor: const Color(0xFF6366F1).withOpacity(0.4),
                       ),
                       child: const Text(
-                        'Login',
+                        'Set Password & Continue',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-              const SizedBox(height: 36),
-
             ],
           ),
         ),

@@ -18,10 +18,9 @@
         </div>
         
         <div>
-            <a href="<?= url('parent/students/add') ?>"
-               class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-95 text-xs font-bold text-white transition-all shadow-lg hover:shadow-indigo-600/25">
-                ➕ Add Student Details
-            </a>
+            <p class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Please contact school administration to link your child's record to this account.
+            </p>
         </div>
     </div>
     <?php else: ?>
@@ -76,26 +75,27 @@
             </div>
         </div>
 
-        <!-- Homework Widget -->
-        <div class="rounded-2xl p-5 border bg-white dark:bg-slate-900/30 border-slate-200 dark:border-white/5 flex items-center justify-between shadow-sm">
-            <div class="space-y-1">
-                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Active Homework</span>
-                <h3 class="text-2xl font-bold text-indigo-650 dark:text-indigo-400"><?= count($homeworks) ?> Tasks</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Due within this week</p>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-500/10">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-            </div>
-        </div>
 
         <!-- Bus Route Widget -->
         <div class="rounded-2xl p-5 border bg-white dark:bg-slate-900/30 border-slate-200 dark:border-white/5 flex items-center justify-between shadow-sm">
             <div class="space-y-1">
                 <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bus Transit</span>
                 <h3 class="text-lg font-bold text-purple-600 dark:text-purple-400 truncate max-w-[150px]">
-                    <?= $transport ? e($transport['bus_number']) : 'No Transit' ?>
+                    <?= $transport ? e($transport['name']) : 'No Transit' ?>
                 </h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400"><?= $transport ? ucfirst($transport['status']) : 'Not mapped' ?></p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                    <?php 
+                    if ($transport) {
+                        if (!empty($transport['trip_status'])) {
+                            echo e($transport['trip_status']);
+                        } else {
+                            echo e(ucfirst(str_replace('_', ' ', $transport['route_status'])));
+                        }
+                    } else {
+                        echo 'Not mapped';
+                    }
+                    ?>
+                </p>
             </div>
             <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-650 dark:text-purple-400 border border-purple-500/10">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4"/></svg>
@@ -217,28 +217,55 @@
                 </div>
             </div>
 
-            <!-- Active Homework Tasks -->
+            <!-- Today's Timetable -->
             <div class="rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/20 p-6 space-y-4 shadow-sm">
                 <div class="flex items-center justify-between">
                     <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <span class="w-1 h-4 bg-indigo-500 rounded"></span> Active Homework
+                        <span class="w-1 h-4 bg-indigo-500 rounded"></span> Today's Timetable
                     </h3>
-                    <a href="<?= url('parent/students/' . $active_student['id'] . '/homework') ?>" class="text-xs text-brand-655 dark:text-brand-400 hover:underline">See Details</a>
+                    <a href="<?= url('parent/students/' . $active_student['id'] . '/timetable') ?>" class="text-xs text-brand-655 dark:text-brand-400 hover:underline">Full Schedule</a>
                 </div>
                 <div class="space-y-3.5">
-                    <?php if (empty($homeworks)): ?>
-                    <p class="text-xs text-slate-500 text-center py-4">No homework assigned.</p>
+                    <?php if (empty($timetable)): ?>
+                    <p class="text-xs text-slate-500 text-center py-4">No classes scheduled for today.</p>
                     <?php else: ?>
-                    <?php foreach ($homeworks as $hw): ?>
-                    <div class="flex items-start justify-between gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/20">
-                        <div class="space-y-1 min-w-0">
-                            <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate leading-tight"><?= e($hw['title']) ?></h4>
-                            <p class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold"><?= e($hw['subject']) ?></p>
-                            <p class="text-[10px] text-slate-450 dark:text-slate-500">Due: <?= date('d M Y', strtotime($hw['due_date'])) ?></p>
+                    <?php foreach ($timetable as $class): ?>
+                    <div class="flex flex-col p-3.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/20">
+                        <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200"><?= e($class['subject']) ?></h4>
+                        <p class="text-[10px] text-slate-450 dark:text-slate-500"><?= date('h:i A', strtotime($class['start_time'])) ?> - <?= date('h:i A', strtotime($class['end_time'])) ?></p>
+                        <?php if (!empty($class['teacher_name'])): ?>
+                            <p class="text-[10px] text-indigo-600 dark:text-indigo-400 mt-1"><?= e($class['teacher_name']) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Recent Exam Results -->
+            <div class="rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/20 p-6 space-y-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <span class="w-1 h-4 bg-indigo-500 rounded"></span> Recent Exam Results
+                    </h3>
+                    <a href="<?= url('parent/students/' . $active_student['id'] . '/exams') ?>" class="text-xs text-brand-655 dark:text-brand-400 hover:underline">All Exams</a>
+                </div>
+                <div class="space-y-3.5">
+                    <?php if (empty($exams)): ?>
+                    <p class="text-xs text-slate-500 text-center py-4">No recent exam results.</p>
+                    <?php else: ?>
+                    <?php foreach ($exams as $exam): ?>
+                    <div class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/20">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-700 dark:text-slate-200"><?= e($exam['exam_name']) ?></h4>
+                            <p class="text-[10px] text-slate-450 dark:text-slate-500"><?= e($exam['subject']) ?></p>
                         </div>
-                        <span class="flex-shrink-0 text-[10px] font-semibold text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/10">
-                            Pending
-                        </span>
+                        <div class="text-right">
+                            <p class="text-xs font-semibold text-indigo-600 dark:text-indigo-400"><?= e((float)$exam['marks_obtained']) ?> / <?= e((float)$exam['max_marks']) ?></p>
+                            <?php if (!empty($exam['grade'])): ?>
+                                <p class="text-[10px] text-slate-500 font-bold mt-0.5">Grade: <?= e($exam['grade']) ?></p>
+                            <?php endif; ?>
+                        </div>
                     </div>
                     <?php endforeach; ?>
                     <?php endif; ?>

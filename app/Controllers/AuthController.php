@@ -183,4 +183,84 @@ class AuthController extends Controller
 
         return $this->redirect(dashboard_url());
     }
+    public function apiDriverLogin(): string
+    {
+        $body     = $this->request->getBody();
+        $name     = $body['name']     ?? '';
+        $password = $body['password'] ?? '';
+
+        if (empty($name) || empty($password)) {
+            return $this->json(['success' => false, 'message' => 'Name and password are required.'], 400);
+        }
+
+        $db = \Core\Application::$app->db;
+        $user = $db->selectOne(
+            "SELECT u.*, r.slug as role_slug 
+             FROM users u 
+             JOIN user_roles ur ON u.id = ur.user_id
+             JOIN roles r ON ur.role_id = r.id
+             WHERE u.name = ? AND u.deleted_at IS NULL AND u.is_active = 1 AND r.slug = 'driver' LIMIT 1",
+            [$name]
+        );
+
+        if (!$user || !password_verify($password, $user['password'])) {
+            return $this->json(['success' => false, 'message' => 'Invalid name or password.'], 401);
+        }
+
+        $requiresChange = ($password === $user['phone']);
+
+        $payload = [
+            'sub'       => $user['id'],
+            'email'     => $user['email'],
+            'tenant_id' => $user['tenant_id'],
+            'school_id' => $user['school_id'],
+            'branch_id' => $user['branch_id'],
+            'roles'     => [$user['role_slug']],
+        ];
+        
+        $token = \Core\JWT::encode($payload);
+        
+        ActivityLog::log('user_login', (int)$user['id'], ['ip' => \Core\Application::$app->request->ip()]);
+
+        return $this->json([
+            'success' => true,
+            'token' => $token,
+            'requires_password_change' => $requiresChange,
+            'user' => [
+                'id' => $user['id'],
+                'name' => $user['name'],
+                'phone' => $user['phone'],
+            ]
+        ]);
+    }
+
+    public function apiDriverChangePassword(): string
+    {
+        $userId = auth_id();
+        if (!$userId) {
+            return $this->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $body = $this->request->getBody();
+        $password = $body['password'] ?? '';
+        $passwordConfirm = $body['password_confirmation'] ?? '';
+
+        if (strlen($password) < 6) {
+            return $this->json(['success' => false, 'message' => 'Password must be at least 6 characters.'], 400);
+        }
+
+        if ($password !== $passwordConfirm) {
+            return $this->json(['success' => false, 'message' => 'Passwords do not match.'], 400);
+        }
+
+        $db = \Core\Application::$app->db;
+        $db->update('users', [
+            'password' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
+            'updated_at' => now()
+        ], "id = ?", [$userId]);
+
+        ActivityLog::log('password_reset_success', (int)$userId, []);
+
+        return $this->json(['success' => true, 'message' => 'Password changed successfully.']);
+    }
 }

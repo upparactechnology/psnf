@@ -199,9 +199,10 @@ class ParentPortalController extends Controller
 
         // 6. Active bus tracking info
         $transport = $this->db()->selectOne(
-            "SELECT tr.*, st.pickup_point, st.pickup_time
+            "SELECT e.*, CONCAT(e.first_name, ' ', e.last_name) as name, st.pickup_point, st.pickup_time,
+             (SELECT ts.status FROM trip_students ts JOIN driver_trips dt ON dt.id = ts.trip_id WHERE ts.student_id = st.student_id AND dt.status = 'active' LIMIT 1) as trip_status
              FROM student_transport st
-             JOIN transport_routes tr ON tr.id = st.route_id
+             JOIN employees e ON e.id = st.driver_id
              WHERE st.student_id = ? LIMIT 1",
             [$student['id']]
         );
@@ -216,6 +217,19 @@ class ParentPortalController extends Controller
             [$context['guardian']['user_id'], $context['guardian']['user_id']]
         );
 
+        // 8. Fetch recent exam results
+        $exams = $this->db()->select(
+            "SELECT * FROM exam_results WHERE student_id = ? ORDER BY date_published DESC LIMIT 3",
+            [$student['id']]
+        );
+
+        // 9. Fetch today's timetable
+        $todayDay = date('l');
+        $timetable = $this->db()->select(
+            "SELECT * FROM timetables WHERE class = ? AND COALESCE(section, '') = COALESCE(?, '') AND day_of_week = ? ORDER BY start_time ASC LIMIT 5",
+            [$student['class'], $student['section'], $todayDay]
+        );
+
         return View::render('parent/dashboard', array_merge($context, [
             'title'             => 'Parent Dashboard',
             'attendanceRate'    => $attendanceRate,
@@ -225,6 +239,8 @@ class ParentPortalController extends Controller
             'unpaidTotal'       => $unpaidTotal,
             'transport'         => $transport,
             'recentMessages'    => $recentMessages,
+            'exams'             => $exams,
+            'timetable'         => $timetable,
         ]));
     }
 
@@ -378,18 +394,19 @@ class ParentPortalController extends Controller
             }
         }
 
+        $useBusTransport = ($status === 'present') ? (int)Application::$app->request->input('use_bus_transport', '0') : 0;
         $medCert = ($status === 'absent' && $isMedical === '1') ? $storedName : null;
         $remarksVal = ($status === 'absent') ? $remarks : null;
 
         if ($exists) {
             $this->db()->query(
-                "UPDATE attendance SET status = ?, remarks = ?, medical_certificate = ?, updated_at = NOW() WHERE id = ?",
-                [$status, $remarksVal, $medCert, $exists['id']]
+                "UPDATE attendance SET status = ?, remarks = ?, medical_certificate = ?, use_bus_transport = ?, updated_at = NOW() WHERE id = ?",
+                [$status, $remarksVal, $medCert, $useBusTransport, $exists['id']]
             );
         } else {
             $this->db()->query(
-                "INSERT INTO attendance (tenant_id, school_id, branch_id, student_id, date, status, remarks, medical_certificate, created_by, created_at, updated_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                "INSERT INTO attendance (tenant_id, school_id, branch_id, student_id, date, status, remarks, medical_certificate, use_bus_transport, created_by, created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
                 [
                     $student['tenant_id'],
                     $student['school_id'],
@@ -399,6 +416,7 @@ class ParentPortalController extends Controller
                     $status,
                     $remarksVal,
                     $medCert,
+                    $useBusTransport,
                     auth_id()
                 ]
             );
@@ -478,9 +496,9 @@ class ParentPortalController extends Controller
         // Fetch timetable grouped by day
         $rows = $this->db()->select(
             "SELECT * FROM timetables
-             WHERE class = ?
+             WHERE class = ? AND COALESCE(section, '') = COALESCE(?, '')
              ORDER BY FIELD(day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), start_time ASC",
-            [$student['class']]
+            [$student['class'], $student['section']]
         );
 
         $timetableByDay = [];
@@ -594,16 +612,25 @@ class ParentPortalController extends Controller
         $student = $context['active_student'];
 
         $transport = $this->db()->selectOne(
-            "SELECT tr.*, st.pickup_point, st.pickup_time
+            "SELECT e.*, CONCAT(e.first_name, ' ', e.last_name) as name, st.pickup_point, st.pickup_time, st.pickup_lat, st.pickup_lng,
+             (SELECT ts.status FROM trip_students ts JOIN driver_trips dt ON dt.id = ts.trip_id WHERE ts.student_id = st.student_id AND dt.status = 'active' LIMIT 1) as trip_status
              FROM student_transport st
-             JOIN transport_routes tr ON tr.id = st.route_id
+             JOIN employees e ON e.id = st.driver_id
              WHERE st.student_id = ? LIMIT 1",
             [$student['id']]
         );
 
+        // Fetch dynamic campus location
+        $campusLatRow = $this->db()->selectOne("SELECT value FROM settings WHERE `key` = 'campus_lat'");
+        $campusLngRow = $this->db()->selectOne("SELECT value FROM settings WHERE `key` = 'campus_lng'");
+        $campusLat = $campusLatRow ? (float)$campusLatRow['value'] : 23.0225;
+        $campusLng = $campusLngRow ? (float)$campusLngRow['value'] : 72.5714;
+
         return View::render('parent/transport', array_merge($context, [
             'title'     => 'Bus Transport Tracking',
             'transport' => $transport,
+            'campusLat' => $campusLat,
+            'campusLng' => $campusLng,
         ]));
     }
 

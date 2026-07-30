@@ -40,6 +40,27 @@ ob_start();
         </div>
     </div>
 
+    <!-- Campus Location Form -->
+    <div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="font-bold text-slate-900 dark:text-white text-sm">Campus Location</h3>
+        </div>
+        <p class="text-xs text-slate-500">Set the latitude and longitude of the school campus. This is used for live tracking routes once a student is picked up.</p>
+        
+        <form action="<?= url('transport/settings') ?>" method="POST" class="space-y-4 max-w-md">
+            <?= \Core\View::csrf() ?>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Campus Latitude</label>
+                <input type="text" name="campus_lat" value="<?= e($campusLat) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="e.g. 23.0225" required>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Campus Longitude</label>
+                <input type="text" name="campus_lng" value="<?= e($campusLng) ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="e.g. 72.5714" required>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all">Save Location</button>
+        </form>
+    </div>
+
 </div>
 
 <?php

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static String get baseUrl {
@@ -10,7 +11,7 @@ class ApiService {
     }
     try {
       if (Platform.isAndroid) {
-        return 'http://192.168.1.5/psnf/public';
+        return 'http://192.168.29.240/psnf/public';
       }
     } catch (e) {
       // Platform check not supported
@@ -23,15 +24,33 @@ class ApiService {
   static String? driverName;
   static String? driverPhone;
 
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<void> loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    token = prefs.getString('auth_token');
+    driverName = prefs.getString('driver_name');
+    driverPhone = prefs.getString('driver_phone');
+  }
+
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('driver_name');
+    await prefs.remove('driver_phone');
+    token = null;
+    driverName = null;
+    driverPhone = null;
+    assignedRoute = null;
+  }
+
+  static Future<Map<String, dynamic>> login(String name, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/api/v1/auth/login'),
+        Uri.parse('$baseUrl/api/v1/auth/driver-login'),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json'
         },
-        body: {'email': email, 'password': password},
+        body: {'name': name, 'password': password},
       );
 
       final data = json.decode(response.body);
@@ -41,11 +60,46 @@ class ApiService {
           driverName = data['user']['name'];
           driverPhone = data['user']['phone'];
         }
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token!);
+        if (driverName != null) await prefs.setString('driver_name', driverName!);
+        if (driverPhone != null) await prefs.setString('driver_phone', driverPhone!);
+
+        if (data['requires_password_change'] != true) {
+          await fetchAssignedRoute();
+        }
+        return {'success': true, 'requires_password_change': data['requires_password_change']};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Invalid name or password.'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> changePassword(String newPassword) async {
+    if (token == null) return {'success': false, 'message': 'Not authenticated'};
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/auth/driver-change-password'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
+        },
+        body: {
+          'password': newPassword,
+          'password_confirmation': newPassword,
+        },
+      );
+
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
         await fetchAssignedRoute();
         return {'success': true};
-      } else {
-        return {'success': false, 'message': data['message'] ?? 'Invalid email or password.'};
       }
+      return {'success': false, 'message': data['message'] ?? 'Failed to change password'};
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
     }
@@ -55,28 +109,21 @@ class ApiService {
     if (token == null) return;
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/transport/live-data'),
+        Uri.parse('$baseUrl/api/v1/driver/my-route'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
       );
       final data = json.decode(response.body);
-      if (data['success'] == true && data['routes'] != null) {
-        final routes = data['routes'] as List;
-        if (routes.isNotEmpty) {
-          try {
-            assignedRoute = routes.firstWhere(
-              (r) => (driverName != null && r['driver'] == driverName) || 
-                     (driverPhone != null && r['phone'] == driverPhone)
-            );
-          } catch (e) {
-            assignedRoute = null;
-          }
-        }
+      if (data['success'] == true && data['route'] != null) {
+        assignedRoute = data['route'];
+      } else {
+        assignedRoute = null;
       }
     } catch (e) {
       print('Error fetching assigned route: $e');
+      assignedRoute = null;
     }
   }
 
@@ -85,7 +132,7 @@ class ApiService {
     final routeId = assignedRoute!['id'];
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/transport/$routeId/location'),
+        Uri.parse('$baseUrl/api/v1/driver/$routeId/location'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -105,29 +152,68 @@ class ApiService {
     }
   }
 
-  static Future<bool> updateRouteStatus(String status) async {
-    if (token == null || assignedRoute == null) return false;
-    final routeId = assignedRoute!['id'];
+  static Future<bool> startTrip() async {
+    if (token == null) return false;
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/transport/$routeId'),
+        Uri.parse('$baseUrl/api/v1/driver/start-trip'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        await fetchAssignedRoute();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error starting trip: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> completeTrip() async {
+    if (token == null) return false;
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/driver/complete-trip'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      return json.decode(response.body)['success'] == true;
+    } catch (e) {
+      print('Error completing trip: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> updateStudentStatus(int studentId, String status) async {
+    if (token == null) return false;
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/v1/driver/update-status'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
         },
         body: {
-          'route_name': assignedRoute!['name'],
-          'bus_number': assignedRoute!['bus'],
-          'driver_name': assignedRoute!['driver'],
-          'driver_phone': assignedRoute!['phone'],
+          'student_id': studentId.toString(),
           'status': status,
         },
       );
-      await fetchAssignedRoute();
-      return true;
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        await fetchAssignedRoute();
+        return true;
+      }
+      return false;
     } catch (e) {
-      print('Error updating route status: $e');
+      print('Error updating student status: $e');
       return false;
     }
   }

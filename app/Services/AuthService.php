@@ -82,6 +82,13 @@ class AuthService
 
         // Auto attendance check for teachers on login
         $roles = $fullUser['roles'] ?? [];
+        
+        // Prevent parent from logging into standard portal
+        if (in_array('parent', $roles) && count($roles) === 1) {
+            $this->logout();
+            return ['success' => false, 'error' => 'Parents must log in via the Parent Portal.'];
+        }
+
         if (in_array('teacher', $roles) || in_array('Teacher', $roles)) {
             $db = \Core\Application::$app->db;
             

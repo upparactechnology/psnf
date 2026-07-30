@@ -14,7 +14,7 @@ class StudentService
         return \Core\Application::$app->db->transaction(function (Database $db) use ($data, $files) {
             // Filter student table fields
             $studentKeys = [
-                'uuid', 'tenant_id', 'school_id', 'branch_id', 'admission_number', 'gr_number',
+                'uuid', 'tenant_id', 'school_id', 'branch_id', 'admission_number', 'roll_number', 'gr_number',
                 'first_name', 'middle_name', 'last_name', 'gender', 'dob', 'photo', 'blood_group',
                 'nationality', 'religion', 'mother_tongue', 'aadhar_number', 'disability_type',
                 'disability_detail', 'disability_certificate', 'care_instructions',
@@ -147,7 +147,7 @@ class StudentService
 
             // Filter student table fields
             $studentKeys = [
-                'school_id', 'branch_id', 'first_name', 'middle_name', 'last_name', 'gender', 'dob',
+                'school_id', 'branch_id', 'roll_number', 'first_name', 'middle_name', 'last_name', 'gender', 'dob',
                 'blood_group', 'nationality', 'religion', 'mother_tongue', 'aadhar_number',
                 'disability_type', 'disability_detail', 'care_instructions', 'special_needs_summary',
                 'address', 'city', 'state', 'pincode', 'admission_status', 'admission_date',
