@@ -1,6 +1,6 @@
 <?php $layout = 'parent'; ?>
 
-<div class="space-y-6" x-data="{ activeDay: 'Monday' }">
+<div class="space-y-6" x-data="{ activeDay: '<?php echo date('l'); ?>'  }">
 
     <!-- Title and Day Switcher -->
     <div class="p-5 rounded-2xl border bg-white dark:bg-slate-900/30 border-slate-200 dark:border-white/5 shadow-sm space-y-4">
