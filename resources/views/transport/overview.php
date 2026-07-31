@@ -14,18 +14,12 @@ ob_start();
             <p class="text-xs text-slate-500 mt-0.5">Centralized Fleet Management, Active Routes, Drivers & Student Pickups</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="<?= url('transport/routes') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Add Route</a>
             <a href="<?= url('transport/live-tracking') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all">📍 Live Tracking</a>
         </div>
     </div>
 
     <!-- KPI Cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm space-y-1">
-            <span class="text-2xs font-bold text-slate-400 uppercase tracking-wider">Total Vehicles</span>
-            <p class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= $totalVehicles ?></p>
-            <span class="text-2xs text-emerald-500 font-medium">Buses & Vans Active</span>
-        </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm space-y-1">
             <span class="text-2xs font-bold text-slate-400 uppercase tracking-wider">Active Drivers</span>
             <p class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= $activeDrivers ?></p>

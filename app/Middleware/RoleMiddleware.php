@@ -30,7 +30,7 @@ class RoleMiddleware
         $hasRole   = !empty(array_intersect($this->roles, $userRoles));
 
         if (!$hasRole) {
-            if ($request->isAjax() || $request->isHtmx()) {
+            if ($request->isAjax() || $request->isHtmx() || $request->bearerToken()) {
                 http_response_code(403);
                 return json_encode(['success' => false, 'message' => 'Insufficient role.']);
             }

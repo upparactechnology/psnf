@@ -387,7 +387,6 @@ if (authForm) {
                 document.getElementById('authOverlay')?.remove();
                 document.getElementById('mainContent').removeAttribute('style');
                 loadEmps();
-                initCam();
             } else { errEl.textContent = d.message||'Invalid.'; errEl.classList.remove('hidden'); }
         } catch(err) { errEl.textContent = 'Error: '+err.message; errEl.classList.remove('hidden'); }
         finally { btn.disabled = false; btn.textContent = 'Login & Unlock Registration'; }
@@ -504,91 +503,84 @@ async function initCam() {
         try {
             s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
         } catch (err1) {
-            // Fallback if facingMode is unsupported or throws error
             s = await navigator.mediaDevices.getUserMedia({ video: true });
         }
         vid.srcObject = s;
         vid.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
         vid.onloadedmetadata = () => {
-            vid.play().catch(e => alert("Video Play Error: " + e.message));
+            vid.play().catch(e => console.log("Video Play Error: " + e.message));
         };
         
-        vid.addEventListener('playing', () => {
-            const checkVideoReady = () => {
-                if (vid.videoWidth === 0) {
-                    requestAnimationFrame(checkVideoReady);
-                    return;
-                }
-                resizeOverlay();
-                const track = s.getVideoTracks()[0];
-                document.getElementById('scanStatusLabel').textContent = `W:${vid.videoWidth} H:${vid.videoHeight} - ` + (track ? track.label : 'Scanning...');
-                if (!drawLoopRunning) { drawLoopRunning = true; requestAnimationFrame(drawLoop); }
-            };
-            checkVideoReady();
-        });
+        const checkVideoReady = () => {
+            if (vid.videoWidth === 0 || vid.getBoundingClientRect().width === 0) {
+                requestAnimationFrame(checkVideoReady);
+                return;
+            }
+            resizeOverlay();
+            const track = s.getVideoTracks()[0];
+            document.getElementById('scanStatusLabel').textContent = `W:${vid.videoWidth} H:${vid.videoHeight} - ` + (track ? track.label : 'Scanning...');
+            camReady = true;
+            if (!drawLoopRunning) { drawLoopRunning = true; requestAnimationFrame(drawLoop); }
+            startDetectLoop();
+        };
+        checkVideoReady();
     } catch(e) {
-        document.getElementById('scanStatusLabel').textContent = 'Cam error';
-        alert("Camera Error: " + e.message);
+            document.getElementById('scanStatusLabel').textContent = 'Cam error';
+            alert("Camera Error: " + e.message);
+        }
     }
-}
 
-window.toggleCam = function() {
-    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-    window.restartCam();
-};
+    window.toggleCam = function() {
+        currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+        window.restartCam();
+    };
 
-window.restartCam = function() {
-    if(vid.srcObject) vid.srcObject.getTracks().forEach(t=>t.stop());
-    initCam();
-};
+    window.restartCam = function() {
+        if(vid.srcObject) vid.srcObject.getTracks().forEach(t=>t.stop());
+        initCam();
+    };
 
-function resizeOverlay() {
-    ovl.width = vid.videoWidth; ovl.height = vid.videoHeight;
-    capCvs.width = ovl.width;  capCvs.height = ovl.height;
-}
+    function resizeOverlay() {
+        const rect = vid.getBoundingClientRect();
+        ovl.width = Math.round(rect.width) || 400; 
+        ovl.height = Math.round(rect.height) || 300;
+        capCvs.width = ovl.width;  capCvs.height = ovl.height;
+    }
 
 window.beginScan = function() {
     if (!selUserId) return;
     document.getElementById('step1Card').classList.add('hidden');
     document.getElementById('step2Card').classList.remove('hidden');
     buildAngleDots(); updateAngleUI(0);
+    
+    // Initialize camera only on user click to comply with mobile browser rules
+    if (!camStream) {
+        initCam();
+    } else {
+        vid.play().catch(e => console.log("Force play error: ", e));
+    }
+    
+    startAngle(0);
 };
-
-// ── Camera ────────────────────────────────────────────────────────────────────────
-async function startCamera() {
-    try {
-        camStream = await navigator.mediaDevices.getUserMedia({ video:{width:{ideal:1280},height:{ideal:720},facingMode:'user'} });
-        vid.srcObject = camStream;
-        vid.onloadedmetadata = () => vid.play().catch(()=>{});
-        vid.addEventListener('playing', () => {
-            ovl.width = vid.videoWidth; ovl.height = vid.videoHeight;
-            capCvs.width = ovl.width;  capCvs.height = ovl.height;
-            camReady = true;
-            if (!drawLoopRunning) { drawLoopRunning = true; requestAnimationFrame(drawLoop); }
-            startAngle(curAngle);
-        }, {once:true});
-    } catch(e) { showAlert('error', 'Camera Error: ' + e.message); }
-}
 
 function stopCamera() {
     camReady = false;
     if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+    if (vid.srcObject) { vid.srcObject.getTracks().forEach(t => t.stop()); vid.srcObject = null; }
 }
 
 // ── Draw Loop ─────────────────────────────────────────────────────────────────────
 function drawLoop() {
     if (!camReady || !vid.videoWidth) { requestAnimationFrame(drawLoop); return; }
-    if (ovl.width !== vid.videoWidth) { ovl.width = vid.videoWidth; ovl.height = vid.videoHeight; }
+    const rect = vid.getBoundingClientRect();
+    if (ovl.width !== Math.round(rect.width) || ovl.height !== Math.round(rect.height)) { 
+        resizeOverlay(); 
+    }
 
     const W = ovl.width, H = ovl.height;
     const ctx = ovl.getContext('2d');
     const cx = W * 0.5, cy = H * 0.47;
     const rx = W * 0.27, ry = H * 0.43;
-
-    // ── Draw mirrored video frame onto capCvs ───────────────────────────────────
-    const cc = capCvs.getContext('2d');
-    cc.save(); cc.translate(capCvs.width, 0); cc.scale(-1,1);
-    cc.drawImage(vid, 0, 0, capCvs.width, capCvs.height); cc.restore();
 
     // ── Dark overlay with oval cutout ──────────────────────────────────────────
     ctx.clearRect(0,0,W,H);
@@ -603,6 +595,11 @@ function drawLoop() {
     const captured = capturedImgs[curAngle];
     ctx.save();
     ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2);
+    
+    // Animate border to prevent Chrome aggressive idle throttling on static canvas
+    ctx.setLineDash([15, 15]);
+    ctx.lineDashOffset = -(Date.now() / 20);
+    
     if (phase === 'capturing' || captured) {
         ctx.strokeStyle = '#22c55e'; ctx.shadowColor = 'rgba(34,197,94,0.8)'; ctx.shadowBlur = 20;
     } else if (phase === 'countdown') {
@@ -612,27 +609,56 @@ function drawLoop() {
     }
     ctx.lineWidth = 3.5; ctx.stroke(); ctx.restore();
 
-    // ── Face-fit detection ─────────────────────────────────────────────────────
-    if (phase === 'idle') detectAndWait(cc, W, H, cx, cy, rx, ry);
+    // ── Face-fit detection moved to independent loop ──
 
     requestAnimationFrame(drawLoop);
 }
 
-let lastDetectTime = 0;
-let isDetecting = false;
-
-async function detectAndWait(cc, W, H, cx, cy, rx, ry) {
-    if (isDetecting) return;
-    const now = Date.now();
-    if (now - lastDetectTime < 250) return; // 4 FPS polling
+let detectLoopRunning = false;
+function startDetectLoop() {
+    if (detectLoopRunning) return;
+    detectLoopRunning = true;
     
-    isDetecting = true;
-    lastDetectTime = now;
+    async function loop() {
+        if (!camReady || !vid.videoWidth) {
+            setTimeout(loop, 250);
+            return;
+        }
+        if (phase === 'idle') {
+            const W = ovl.width, H = ovl.height;
+            const cx = W * 0.5, cy = H * 0.47;
+            const rx = W * 0.27, ry = H * 0.43;
+            await detectAndWait(W, H, cx, cy, rx, ry);
+        }
+        setTimeout(loop, 250);
+    }
+    loop();
+}
+
+async function detectAndWait(W, H, cx, cy, rx, ry) {
+    // Draw the current video frame into the hidden canvas right before sampling
+    const cc = capCvs.getContext('2d', { willReadFrequently: true });
+    cc.save(); 
+    if (currentFacingMode === 'user') {
+        cc.translate(capCvs.width, 0); cc.scale(-1,1);
+    }
+    const vRatio = vid.videoWidth / vid.videoHeight;
+    const cRatio = capCvs.width / capCvs.height;
+    let sWidth = vid.videoWidth, sHeight = vid.videoHeight, sX = 0, sY = 0;
+    if (vRatio > cRatio) {
+        sWidth = vid.videoHeight * cRatio;
+        sX = (vid.videoWidth - sWidth) / 2;
+    } else {
+        sHeight = vid.videoWidth / cRatio;
+        sY = (vid.videoHeight - sHeight) / 2;
+    }
+    cc.drawImage(vid, sX, sY, sWidth, sHeight, 0, 0, capCvs.width, capCvs.height); 
+    cc.restore();
 
     const base64Img = capCvs.toDataURL('image/jpeg', 0.6);
 
     try {
-        const res = await fetch('http://127.0.0.1:8000/api/detect-frame', {
+        const res = await fetch('/psnf/public/attendance/api.php?endpoint=/api/detect-frame', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({image_base64: base64Img.split(',')[1]})
@@ -705,8 +731,6 @@ async function detectAndWait(cc, W, H, cx, cy, rx, ry) {
         }
     } catch (e) {
         // Silent fail on network error, will retry on next tick
-    } finally {
-        isDetecting = false;
     }
 }
 
@@ -750,6 +774,25 @@ function captureCurrentAngle() {
 
     // Small delay for animation
     setTimeout(() => {
+        // Draw the exact frame at the moment of capture
+        const cc = capCvs.getContext('2d', { willReadFrequently: true });
+        cc.save(); 
+        if (currentFacingMode === 'user') {
+            cc.translate(capCvs.width, 0); cc.scale(-1,1);
+        }
+        const vRatio = vid.videoWidth / vid.videoHeight;
+        const cRatio = capCvs.width / capCvs.height;
+        let sWidth = vid.videoWidth, sHeight = vid.videoHeight, sX = 0, sY = 0;
+        if (vRatio > cRatio) {
+            sWidth = vid.videoHeight * cRatio;
+            sX = (vid.videoWidth - sWidth) / 2;
+        } else {
+            sHeight = vid.videoWidth / cRatio;
+            sY = (vid.videoHeight - sHeight) / 2;
+        }
+        cc.drawImage(vid, sX, sY, sWidth, sHeight, 0, 0, capCvs.width, capCvs.height); 
+        cc.restore();
+
         const img = capCvs.toDataURL('image/jpeg', 0.95);
         capturedImgs[curAngle] = img;
         updateAngleDots();

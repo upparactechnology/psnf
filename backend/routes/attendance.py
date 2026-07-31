@@ -21,7 +21,7 @@ def set_attendance_service_alt(service: AttendanceService):
 
 
 @router.post("/attendance", response_model=VerifyFaceResponse)
-async def post_attendance(
+def post_attendance(
     req: VerifyFaceRequest,
     request: Request,
     db: Session = Depends(get_db)

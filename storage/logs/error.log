@@ -1050,3 +1050,49 @@
 #1 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
 #2 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
 #3 {main}
+[31-Jul-2026 01:39:05 Asia/Kolkata] Exception: SQLSTATE[HY000] [2006] MySQL server has gone away
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[31-Jul-2026 01:39:15 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[31-Jul-2026 12:24:15 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[31-Jul-2026 15:00:34 Asia/Kolkata] Exception: syntax error, unexpected token "<", expecting end of file
+#0 C:\xampp\htdocs\psnf\core\Application.php(30): Core\Application->loadRoutes()
+#1 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#2 {main}
+[31-Jul-2026 15:00:43 Asia/Kolkata] Exception: syntax error, unexpected token "<", expecting end of file
+#0 C:\xampp\htdocs\psnf\core\Application.php(30): Core\Application->loadRoutes()
+#1 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#2 {main}
+[31-Jul-2026 15:00:46 Asia/Kolkata] Exception: syntax error, unexpected token "<", expecting end of file
+#0 C:\xampp\htdocs\psnf\core\Application.php(30): Core\Application->loadRoutes()
+#1 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#2 {main}
+[31-Jul-2026 15:00:47 Asia/Kolkata] Exception: syntax error, unexpected token "<", expecting end of file
+#0 C:\xampp\htdocs\psnf\core\Application.php(30): Core\Application->loadRoutes()
+#1 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#2 {main}
+[31-Jul-2026 15:35:01 Asia/Kolkata] Exception: Too few arguments to function Core\Session::flash(), 1 passed in C:\xampp\htdocs\psnf\app\Controllers\AnnouncementController.php on line 35 and exactly 2 expected
+#0 C:\xampp\htdocs\psnf\app\Controllers\AnnouncementController.php(35): Core\Session::flash('success')
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\AnnouncementController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[31-Jul-2026 15:35:03 Asia/Kolkata] Exception: Too few arguments to function Core\Session::flash(), 1 passed in C:\xampp\htdocs\psnf\app\Controllers\AnnouncementController.php on line 35 and exactly 2 expected
+#0 C:\xampp\htdocs\psnf\app\Controllers\AnnouncementController.php(35): Core\Session::flash('success')
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\AnnouncementController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}

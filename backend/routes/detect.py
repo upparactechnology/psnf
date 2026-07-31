@@ -13,7 +13,7 @@ class DetectFrameRequest(BaseModel):
     image_base64: str
 
 @router.post("/detect-frame")
-async def detect_frame(req: DetectFrameRequest):
+def detect_frame(req: DetectFrameRequest):
     """
     Real-time face detection endpoint for frontend feedback.
     Returns blur, bounding box, pitch, and yaw.

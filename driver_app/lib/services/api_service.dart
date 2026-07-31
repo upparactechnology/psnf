@@ -217,4 +217,33 @@ class ApiService {
       return false;
     }
   }
+
+  static Future<Map<String, dynamic>?> fetchTripHistory(String date) async {
+    if (token == null) return null;
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/v1/driver/trip-history?date=$date'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        print('Trip history auth error: ${response.statusCode}');
+        return null;
+      }
+      if (response.statusCode != 200) {
+        print('Trip history HTTP error: ${response.statusCode}');
+        return null;
+      }
+      final data = json.decode(response.body);
+      if (data['success'] == true) {
+        return data as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching trip history: $e');
+      return null;
+    }
+  }
 }

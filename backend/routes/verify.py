@@ -15,7 +15,7 @@ def set_attendance_service(service: AttendanceService):
     attendance_service_instance = service
 
 @router.post("/verify-face", response_model=VerifyFaceResponse)
-async def verify_face(
+def verify_face(
     req: VerifyFaceRequest,
     request: Request,
     db: Session = Depends(get_db)

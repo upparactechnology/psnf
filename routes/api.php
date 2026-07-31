@@ -40,9 +40,10 @@ $router->get('/api/v1/staff/early-students',    [App\Controllers\StaffAppControl
 $router->get('/api/v1/staff/summary',           [App\Controllers\StaffAppController::class, 'getSummary'], ['auth']);
 $router->get('/api/v1/staff/guardians',         [App\Controllers\StaffAppController::class, 'getGuardians'], ['auth']);
 
-
+// ─── Driver App API ──────────────────────────────────────────────────────────
 $router->get('/api/v1/driver/my-route', [App\Controllers\TransportController::class, 'driverRouteData'], ['auth', 'role:driver']);
 $router->post('/api/v1/driver/start-trip', [App\Controllers\TransportController::class, 'apiStartTrip'], ['auth', 'role:driver']);
 $router->post('/api/v1/driver/update-status', [App\Controllers\TransportController::class, 'apiUpdateStudentStatus'], ['auth', 'role:driver']);
 $router->post('/api/v1/driver/complete-trip', [App\Controllers\TransportController::class, 'apiCompleteTrip'], ['auth', 'role:driver']);
-$router->post('/api/v1/driver/{id}/location', [App\Controllers\TransportController::class, 'apiUpdateLocation'], ['auth', 'role:driver']);
+$router->get('/api/v1/driver/trip-history', [App\Controllers\TransportController::class, 'apiTripHistory'], ['auth']);
+$router->post('/api/v1/driver/{id}/location', [App\Controllers\TransportController::class, 'apiUpdateLocation'], ['auth']);

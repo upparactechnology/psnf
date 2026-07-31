@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Example</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>CRUD Example</h2>
+
+    <form id="crudForm">
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name"><br>
+        <label for="email">Email:</label><br>
+        <input type="text" id="email" name="email"><br>
+        <button type="submit">Create</button>
+    </form>
+
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be populated here -->
+        </tbody>
+    </table>
+
+    <script>
+        document.getElementById('crudForm').addEventListener('submit',
+            function (event) {
+                event.preventDefault();
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+
+                // Make a POST request to create a new item
+                fetch('/api/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email })
+                }).then(response => response.json())
+                    .then(data => {
+                        document.getElementById('name').value = '';
+                        document.getElementById('email').value = '';
+                        loadData();
+                    });
+            });
+
+        function loadData() {
+            // Make a GET request to fetch all items
+            fetch('/api/read')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#data-tabletbody');
+                    tbody.innerHTML = '';
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.name}</td>
+                            <td>${item.email}</td>
+                            <td>
+                                <button
+onclick="editItem(${item.id})">Edit</button>
+                                <button
+onclick="deleteItem(${item.id})">Delete</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                });
+        }
+
+        function editItem(id) {
+            // Make a GET request to fetch the item
+            fetch(`/api/read/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('name').value = data.name;
+                    document.getElementById('email').value = data.email;
+
+                    // Optional: Hide the create button and show an update
+                    button
+                    document.querySelector('#crudForm button[type = "submit"]').style.display = 'none';
+                    const updateButton = document.createElement('button');
+                    updateButton.type = 'submit';
+                    updateButton.textContent = 'Update';
+                    updateButton.onclick = function (event) {
+                        event.preventDefault();
+                        // Make a PUT request to update the item
+                        fetch(`/api/update/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                name:
+                                    document.getElementById('name').value, email:
+                                    document.getElementById('email').value
+                            })
+                        }).then(response => response.json())
+                            .then(data => {
+                                document.getElementById('name').value = '';
+                                document.getElementById('email').value = '';
+                                loadData();
+                            });
+                    };
+
+                    document.querySelector('#crudForm').appendChild(updateButton);
+                });
+        }
+
+        function deleteItem(id) {
+            // Make a DELETE request to remove the item
+            fetch(`/api/delete/${id}`, {
+                method: 'DELETE'
+            }).then(response => response.json())
+                .then(data => loadData());
+        }
+
+        // Load data when the page loads
+        window.onload = loadData;
+    </script>
+</body>
+
+</html>

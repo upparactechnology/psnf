@@ -123,7 +123,7 @@ class SchoolArrivalScreen extends StatelessWidget {
               ElevatedButton(
                 onPressed: () async {
                   await ApiService.updateRouteStatus('completed');
-                  DashboardScreen.isPickupCompleted = true;
+                  // DashboardScreen.isPickupCompleted = true;
                   Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false);
                 },
                 style: ElevatedButton.styleFrom(

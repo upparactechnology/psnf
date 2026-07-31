@@ -161,22 +161,27 @@ async def list_erp_users(db=Depends(lambda: next(__import__('database.connection
     Used by face registration UI to let admin pick who to register.
     """
     from database.connection import get_db as _get_db
-    from sqlalchemy.orm import Session as _Session
-    from database.models import ERPUser as _U, FaceEmbedding as _FE
-    from sqlalchemy import func as _f
+    from sqlalchemy import text
     db2 = next(_get_db())
     try:
-        rows = db2.query(
-            _U.id, _U.name, _U.email, _U.employee_id, _U.designation, _U.is_active,
-            _f.count(_FE.id).label('embedding_count')
-        ).outerjoin(_FE, _FE.user_id == _U.id).filter(
-            _U.is_active == 1, _U.deleted_at == None
-        ).group_by(_U.id).order_by(_U.name).all()
+        query = text("""
+            SELECT u.id, u.name, u.email, u.employee_id, u.designation, u.is_active,
+                   COUNT(fe.id) as embedding_count
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
+            LEFT JOIN face_embeddings fe ON fe.user_id = u.id
+            WHERE u.is_active = 1 AND u.deleted_at IS NULL
+              AND (r.slug IS NULL OR r.slug NOT IN ('parent', 'student'))
+            GROUP BY u.id
+            ORDER BY u.name
+        """)
+        rows = db2.execute(query).fetchall()
 
         data = [{
-            "id": r.id, "name": r.name, "email": r.email,
-            "employee_id": r.employee_id, "designation": r.designation,
-            "embedding_count": r.embedding_count or 0
+            "id": r[0], "name": r[1], "email": r[2],
+            "employee_id": r[3], "designation": r[4],
+            "embedding_count": r[6] or 0
         } for r in rows]
         return {"success": True, "count": len(data), "data": data}
     finally:

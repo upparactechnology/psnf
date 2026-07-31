@@ -102,6 +102,20 @@ ob_start();
 @keyframes offlinePulse { 0%,100%{border-color:rgba(239,68,68,0.35)} 50%{border-color:rgba(239,68,68,0.75)} }
 </style>
 
+<?php if (!function_exists('auth') || !auth()): ?>
+<style>
+    /* Hide sidebar and top nav for guests in the app layout */
+    aside { display: none !important; }
+    header { display: none !important; }
+    .flex-1.flex.flex-col.min-w-0 { padding-top: 0 !important; }
+    main { padding: 1rem !important; }
+    
+    /* Make kiosk full screen for guests */
+    .flex.h-screen { align-items: center; justify-content: center; }
+    main > div { max-width: 1200px; margin: 0 auto; width: 100%; }
+</style>
+<?php endif; ?>
+
 <div class="space-y-5" id="kioskRoot">
 
     <!-- Header -->
@@ -123,9 +137,11 @@ ob_start();
             <span id="engineBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-slate-700 text-slate-400 border border-slate-600">
                 <span class="w-2 h-2 rounded-full bg-slate-500"></span><span id="engineBadgeText">Checking...</span>
             </span>
+            <?php if (function_exists('auth') && auth()): ?>
             <a href="<?= url('attendance/face-register') ?>" class="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition shadow-sm">
                 + Register Face
             </a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -275,6 +291,7 @@ ob_start();
 
     // ── Camera ───────────────────────────────────────────────────────────────
     async function initCam() {
+        const statusTxt = document.getElementById('scanStatusLabel');
         statusTxt.textContent = 'Starting camera...';
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             statusTxt.textContent = 'HTTPS Required';
@@ -304,6 +321,7 @@ ob_start();
                     const track = s.getVideoTracks()[0];
                     statusTxt.textContent = `W:${vid.videoWidth} H:${vid.videoHeight} - ` + (track ? track.label : 'Scanning...');
                     requestAnimationFrame(drawLoop);
+                    startDetectLoop();
                 };
                 checkVideoReady();
             });
@@ -326,18 +344,22 @@ ob_start();
 
     // ── Overlay Canvas Sizing ─────────────────────────────────────────────────
     function resizeOverlay() {
-        ovl.width  = vid.videoWidth  || vid.clientWidth;
-        ovl.height = vid.videoHeight || vid.clientHeight;
+        const rect = vid.getBoundingClientRect();
+        ovl.width  = Math.round(rect.width) || 400;
+        ovl.height = Math.round(rect.height) || 300;
         cap.width  = ovl.width;
         cap.height = ovl.height;
     }
 
     // ── Draw Loop (overlay + face detection) ──────────────────────────────────
     function drawLoop() {
-        if (!vid.videoWidth) { requestAnimationFrame(drawLoop); return; }
+        if (!vid.videoWidth || !vid.videoHeight) { requestAnimationFrame(drawLoop); return; }
 
-        // Keep canvas sized to video
-        if (ovl.width !== vid.videoWidth) resizeOverlay();
+        // Keep canvas sized to video container
+        const rect = vid.getBoundingClientRect();
+        if (ovl.width !== Math.round(rect.width) || ovl.height !== Math.round(rect.height)) {
+            resizeOverlay();
+        }
 
         const W = ovl.width, H = ovl.height;
         const ctx = ovl.getContext('2d');
@@ -366,6 +388,11 @@ ob_start();
         ctx.save();
         ctx.beginPath();
         ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        
+        // Animate border to prevent Chrome aggressive idle throttling on static canvas
+        ctx.setLineDash([15, 15]);
+        ctx.lineDashOffset = -(Date.now() / 20);
+        
         if (faceReady) {
             ctx.strokeStyle = '#22c55e';
             ctx.shadowColor  = 'rgba(34,197,94,0.8)';
@@ -379,111 +406,147 @@ ob_start();
         ctx.stroke();
         ctx.restore();
 
-        // ── 3. Face-fit detection ──────────────────────────────────────────────
-        detectFaceInOval(ctx, W, H, cx, cy, rx, ry);
+        // ── 3. Handle pause state ──────────────────────────────────────────────
+        const now = Date.now();
+        if (isProcessing) {
+            lbl.textContent = '⚡ Processing...';
+            lbl.className = 'kiosk-face-label scan';
+        } else if (now < pauseUntil) {
+            const sec = Math.ceil((pauseUntil - now) / 1000);
+            lbl.textContent = `⏳ Next scan in ${sec}s...`;
+            lbl.className = 'kiosk-face-label wait';
+        } else {
+            // Real-time detection runs in independent loop!
+        }
 
         requestAnimationFrame(drawLoop);
-
-        // ── 4. Trigger scan if face is in oval ────────────────────────────────
-        const now = Date.now();
-        if (faceReady && !isProcessing && now > pauseUntil && (now - lastScan >= SCAN_INTERVAL)) {
-            lastScan = now;
-            doScan(cx, cy, rx, ry);
-        }
     }
-
-    // ── Face-fit detection using pixel variance inside oval ────────────────────
-    function detectFaceInOval(ovlCtx, W, H, cx, cy, rx, ry) {
-        // Capture current video frame
-        const cc = cap.getContext('2d');
-        cc.save();
-        cc.translate(cap.width, 0); cc.scale(-1, 1);
-        cc.drawImage(vid, 0, 0, cap.width, cap.height);
+    
+    // ── Independent Face Detection Loop (4 FPS) ────────────────────────────────
+    let detectLoopRunning = false;
+    let lastDetectTime = 0;
+    
+    function startDetectLoop() {
+        if (detectLoopRunning) return;
+        detectLoopRunning = true;
+        
+        async function loop() {
+            if (!vid.videoWidth || isProcessing || Date.now() < pauseUntil) {
+                setTimeout(loop, 250);
+                return;
+            }
+            
+            const W = ovl.width, H = ovl.height;
+            const cx = W * 0.5, cy = H * 0.48;
+            const rx = W * 0.26, ry = H * 0.42;
+            
+            await detectAndWait(W, H, cx, cy, rx, ry);
+            setTimeout(loop, 250);
+        }
+        loop();
+    }
+    
+    async function detectAndWait(W, H, cx, cy, rx, ry) {
+        // Draw the current video frame into the hidden canvas right before sampling
+        const cc = cap.getContext('2d', { willReadFrequently: true });
+        cc.save(); 
+        if (currentFacingMode === 'user') {
+            cc.translate(cap.width, 0); cc.scale(-1,1);
+        }
+        const vRatio = vid.videoWidth / vid.videoHeight;
+        const cRatio = cap.width / cap.height;
+        let sWidth = vid.videoWidth, sHeight = vid.videoHeight, sX = 0, sY = 0;
+        if (vRatio > cRatio) {
+            sWidth = vid.videoHeight * cRatio;
+            sX = (vid.videoWidth - sWidth) / 2;
+        } else {
+            sHeight = vid.videoWidth / cRatio;
+            sY = (vid.videoHeight - sHeight) / 2;
+        }
+        cc.drawImage(vid, sX, sY, sWidth, sHeight, 0, 0, cap.width, cap.height); 
         cc.restore();
 
-        const pixels = cc.getImageData(0, 0, W, H).data;
+        const base64Img = cap.toDataURL('image/jpeg', 0.6);
 
-        // Sample pixels inside the oval region
-        let bright = 0, dark = 0, totalSamples = 0;
-        const step = 8;
-        for (let y = Math.floor(cy - ry); y < cy + ry; y += step) {
-            for (let x = Math.floor(cx - rx); x < cx + rx; x += step) {
-                // Check if (x,y) is inside the ellipse
-                const dx = (x - cx) / rx, dy = (y - cy) / ry;
-                if (dx*dx + dy*dy > 1) continue;
+        try {
+            const res = await fetch('/psnf/public/attendance/api.php?endpoint=/api/detect-frame', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({image_base64: base64Img.split(',')[1]})
+            });
+            const data = await res.json();
 
-                const idx = (Math.round(y) * W + Math.round(x)) * 4;
-                const lum = 0.299 * pixels[idx] + 0.587 * pixels[idx+1] + 0.114 * pixels[idx+2];
-                if (lum > 60) bright++;
-                else dark++;
-                totalSamples++;
-            }
-        }
+            if (data.success && data.is_valid) {
+                const pitch = data.pitch;
+                const yaw = data.yaw;
+                let poseValid = false;
+                let poseMsg = 'Align face in oval';
 
-        // Also sample OUTSIDE oval (border zone)
-        let outerBright = 0, outerSamples = 0;
-        for (let y = Math.floor(cy - ry*1.15); y < cy + ry*1.15; y += step*2) {
-            for (let x = Math.floor(cx - rx*1.15); x < cx + rx*1.15; x += step*2) {
-                const dx = (x - cx) / rx, dy = (y - cy) / ry;
-                const dist = dx*dx + dy*dy;
-                if (dist < 1.0 || dist > 1.3) continue; // only border ring
-
-                const ix = Math.round(x), iy = Math.round(y);
-                if (ix < 0 || iy < 0 || ix >= W || iy >= H) continue;
-                const idx = (iy * W + ix) * 4;
-                const lum = 0.299 * pixels[idx] + 0.587 * pixels[idx+1] + 0.114 * pixels[idx+2];
-                if (lum > 50) outerBright++;
-                outerSamples++;
-            }
-        }
-
-        // Heuristics:
-        // face fills oval if >55% of oval pixels are reasonably bright (not black bg)
-        const fillRatio = totalSamples > 0 ? bright / totalSamples : 0;
-        // face contrast vs outer border — face areas usually brighter than pure black bg
-        const faceContrast = outerSamples > 0 ? (outerBright / outerSamples) : 1;
-
-        const faceInOval = fillRatio > 0.50 && totalSamples > 100;
-
-        if (faceInOval) {
-            faceCheckFrame++;
-            if (faceCheckFrame >= FACE_HOLD_FRAMES) {
-                faceReady = true;
-                lbl.textContent = '✅ Face detected — scanning...';
-                lbl.className = 'kiosk-face-label ready';
-                scanLine.style.display = 'block';
-            } else {
-                lbl.textContent = `⬆ Hold still... (${faceCheckFrame}/${FACE_HOLD_FRAMES})`;
-                lbl.className = 'kiosk-face-label wait';
-            }
-        } else {
-            faceCheckFrame = Math.max(0, faceCheckFrame - 1);
-            if (faceCheckFrame === 0) {
-                faceReady = false;
-                scanLine.style.display = 'none';
-                const pct = Math.round(fillRatio * 100);
-                if (pct > 30) {
-                    lbl.textContent = `🔄 Move closer — fill the oval (${pct}%)`;
+                // We want them looking straight ahead for attendance
+                if (Math.abs(yaw) < 0.2 && pitch > 0.8 && pitch < 1.3) {
+                    poseValid = true;
                 } else {
-                    lbl.textContent = '👤 Align face inside oval';
+                    if (Math.abs(yaw) >= 0.2) poseMsg = 'Look straight ahead';
+                    else if (pitch <= 0.8) poseMsg = 'Tilt head slightly up';
+                    else if (pitch >= 1.3) poseMsg = 'Tilt head slightly down';
                 }
+
+                // Check if bounding box center is roughly within the circle
+                const [x1, y1, x2, y2] = data.bbox;
+                const bCx = (x1 + x2) / 2;
+                const bCy = (y1 + y2) / 2;
+                
+                const scaleX = W / data.img_width;
+                const scaleY = H / data.img_height;
+                const realBCx = bCx * scaleX;
+                const realBCy = bCy * scaleY;
+
+                if (Math.abs(realBCx - cx) > rx * 0.8 || Math.abs(realBCy - cy) > ry * 0.8) {
+                    poseValid = false;
+                    poseMsg = 'Center your face in the oval';
+                }
+
+                if (poseValid) {
+                    faceCheckFrame++;
+                    if (faceCheckFrame >= 3) {
+                        faceReady = true;
+                        lbl.textContent = '✅ Perfect pose — scanning...';
+                        lbl.className = 'kiosk-face-label ready';
+                        scanLine.style.display = 'block';
+                        
+                        // Trigger actual recognition scan!
+                        doScan(base64Img);
+                    } else {
+                        lbl.textContent = `✅ Hold still... (${faceCheckFrame}/3)`;
+                        lbl.className = 'kiosk-face-label wait';
+                    }
+                } else {
+                    faceCheckFrame = 0;
+                    lbl.textContent = `❌ ${poseMsg}`;
+                    lbl.className = 'kiosk-face-label wait';
+                }
+            } else {
+                faceCheckFrame = 0;
+                lbl.textContent = `⚠️ ${data.error_message || 'Face not detected'}`;
                 lbl.className = 'kiosk-face-label wait';
             }
+        } catch (e) {
+            // Network error
+            lbl.textContent = 'Network error checking face';
         }
     }
 
     // ── Scan & Submit ─────────────────────────────────────────────────────────
-    async function doScan() {
+    async function doScan(base64Img) {
         isProcessing = true;
         scanCount++;
         document.getElementById('statScans').textContent = scanCount;
-        lbl.textContent = '⚡ Scanning...'; lbl.className = 'kiosk-face-label scan';
+        lbl.textContent = '⚡ Identifying...'; lbl.className = 'kiosk-face-label scan';
 
-        const img = cap.toDataURL('image/jpeg', 0.88);
         try {
             const r = await fetch(API, {
                 method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({image_base64: img})
+                body: JSON.stringify({image_base64: base64Img})
             });
             let data = null;
             try { data = await r.json(); } catch(e){}

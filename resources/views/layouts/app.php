@@ -501,8 +501,7 @@ if ($user) {
                     <?php navLink('/academics/timetable', $ic['timetables'], 'Timetable', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/assessments', $ic['exams'], 'Assessments', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/report-cards', $ic['certificates'], 'Report Cards', $currentPath, $sidebarOpen); ?>
-
-
+                    <?php navLink('/academics/announcements', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>', 'Announcements', $currentPath, $sidebarOpen); ?>
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Administration</div>
                     <?php navLink('/academics/settings', $ic['settings'], 'Academic Settings', $currentPath, $sidebarOpen); ?>
@@ -526,8 +525,6 @@ if ($user) {
                     <?php navLink('/transport/overview', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>', 'Overview', $currentPath, $sidebarOpen); ?>
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Transport</div>
-                    <?php navLink('/transport/routes', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>', 'Routes', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/transport/vehicles', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>', 'Vehicles', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/transport/drivers', $ic['users'], 'Drivers', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/transport/student-assignments', $ic['students'], 'Student Assignments', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/transport/live-tracking', '<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Live Tracking', $currentPath, $sidebarOpen); ?>

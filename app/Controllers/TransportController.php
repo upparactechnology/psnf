@@ -19,10 +19,10 @@ class TransportController extends Controller
     public function overview(): string
     {
         $tenantId = \Core\Database::getTenantId();
-        $totalVehicles = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM transport_vehicles")['cnt'] ?? 2);
-        $totalDrivers  = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM employees e JOIN designations des ON e.designation_id = des.id WHERE des.title = 'Driver'")['cnt'] ?? 0);
-        $totalStudents = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM student_transport")['cnt'] ?? 0);
-        $activeDrivers = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM employees e JOIN designations des ON e.designation_id = des.id WHERE des.title = 'Driver' AND e.route_status != 'inactive'")['cnt'] ?? 0);
+        $totalVehicles = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM transport_vehicles WHERE tenant_id = ?", [$tenantId])['cnt'] ?? 0);
+        $totalDrivers  = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM employees e JOIN designations des ON e.designation_id = des.id WHERE e.tenant_id = ? AND des.title = 'Driver'", [$tenantId])['cnt'] ?? 0);
+        $totalStudents = (int) ($this->db()->selectOne("SELECT COUNT(st.id) as cnt FROM student_transport st JOIN employees e ON st.driver_id = e.id WHERE e.tenant_id = ?", [$tenantId])['cnt'] ?? 0);
+        $activeDrivers = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM employees e JOIN designations des ON e.designation_id = des.id WHERE e.tenant_id = ? AND des.title = 'Driver' AND e.route_status != 'inactive'", [$tenantId])['cnt'] ?? 0);
 
         $routes = $this->db()->select("
             SELECT e.id, e.first_name, e.last_name, e.phone, e.route_status, COUNT(st.id) as student_count, CONCAT(e.first_name, ' ', e.last_name) as route_name
@@ -141,13 +141,14 @@ class TransportController extends Controller
         $routes = $this->db()->select("
             SELECT e.id, e.first_name, e.last_name, e.phone, e.route_status, COUNT(st.id) as student_count, 
             CONCAT(e.first_name, ' ', e.last_name) as route_name, CONCAT(e.first_name, ' ', e.last_name) as name, 
-            'No Bus' as bus_number, CONCAT(e.first_name, ' ', e.last_name) as driver_name, e.phone as driver_phone,
+            COALESCE(v.vehicle_number, 'No Bus') as bus_number, CONCAT(e.first_name, ' ', e.last_name) as driver_name, e.phone as driver_phone,
             e.current_latitude as lat, e.current_longitude as lng, e.current_speed as speed, e.route_status as status,
-            'No Bus' as bus
+            COALESCE(v.vehicle_number, 'No Bus') as bus
             FROM employees e
             JOIN designations des ON e.designation_id = des.id
             LEFT JOIN student_transport st ON st.driver_id = e.id
-            WHERE e.tenant_id = ? AND des.title = 'Driver'
+            LEFT JOIN transport_vehicles v ON v.driver_id = e.id
+            WHERE e.tenant_id = ? AND des.title = 'Driver' AND e.route_status = 'en_route'
             GROUP BY e.id
             ORDER BY e.route_status DESC, e.first_name ASC
         ", [$tenantId]);
@@ -163,7 +164,7 @@ class TransportController extends Controller
         $tenantId = \Core\Database::getTenantId();
 
         $rows = $this->db()->select("
-            SELECT e.id, CONCAT(e.first_name, ' ', e.last_name) as driver, CONCAT(e.first_name, ' ', e.last_name) as name, 'No Bus' as bus,
+            SELECT e.id, CONCAT(e.first_name, ' ', e.last_name) as driver, CONCAT(e.first_name, ' ', e.last_name) as name, COALESCE(v.vehicle_number, 'No Bus') as bus,
                    e.phone, e.route_status as status,
                    e.current_latitude  as lat,
                    e.current_longitude as lng,
@@ -173,7 +174,8 @@ class TransportController extends Controller
             FROM employees e
             JOIN designations des ON e.designation_id = des.id
             LEFT JOIN student_transport st ON st.driver_id = e.id
-            WHERE e.tenant_id = ? AND des.title = 'Driver'
+            LEFT JOIN transport_vehicles v ON v.driver_id = e.id
+            WHERE e.tenant_id = ? AND des.title = 'Driver' AND e.route_status = 'en_route'
             GROUP BY e.id
         ", [$tenantId]);
 
@@ -184,8 +186,8 @@ class TransportController extends Controller
             'driver'     => $r['driver'],
             'phone'      => $r['phone'],
             'status'     => $r['status'],
-            'lat'        => (float)($r['lat']  ?? 13.0827),
-            'lng'        => (float)($r['lng']  ?? 80.2707),
+            'lat'        => (float)($r['lat']  ?? 0),
+            'lng'        => (float)($r['lng']  ?? 0),
             'speed'      => (float)($r['speed'] ?? 0.0),
             'students'   => (int)$r['students'],
             'updated_at' => $r['updated_at'] ? date('h:i A', strtotime($r['updated_at'])) : 'Never',
@@ -202,10 +204,11 @@ class TransportController extends Controller
         
         $userId = auth()['id'] ?? 0;
         $driver = $this->db()->selectOne("
-            SELECT e.id, e.first_name, e.last_name, 'No Bus' as bus, e.phone, e.route_status as status,
+            SELECT e.id, e.first_name, e.last_name, COALESCE(v.vehicle_number, 'No Bus') as bus, e.phone, e.route_status as status,
                    e.current_latitude as lat, e.current_longitude as lng, e.current_speed as speed
             FROM employees e
             JOIN designations des ON e.designation_id = des.id
+            LEFT JOIN transport_vehicles v ON v.driver_id = e.id
             WHERE e.user_id = ? AND des.title = 'Driver'
             LIMIT 1
         ", [$userId]);
@@ -357,8 +360,8 @@ class TransportController extends Controller
         $data['school_id'] = \Core\Database::getSchoolId() ?: 1;
         $data['branch_id'] = \Core\Database::getBranchId() ?: 1;
         $data['status']    = $data['status'] ?? 'inactive';
-        $data['current_latitude']  = $data['current_latitude'] ? (float)$data['current_latitude'] : 13.0827; // Chennai fallback default
-        $data['current_longitude'] = $data['current_longitude'] ? (float)$data['current_longitude'] : 80.2707;
+        $data['current_latitude']  = $data['current_latitude'] ? (float)$data['current_latitude'] : null;
+        $data['current_longitude'] = $data['current_longitude'] ? (float)$data['current_longitude'] : null;
         $data['last_updated_at']   = now();
 
         $routeId = TransportRoute::create($data);
@@ -788,5 +791,118 @@ class TransportController extends Controller
         
         return json_encode(['success' => true]);
     }
+
+    public function apiTripHistory(): string
+    {
+        header('Content-Type: application/json');
+        $userId = auth()['id'] ?? 0;
+        $date = $_GET['date'] ?? date('Y-m-d'); // expects YYYY-MM-DD
+
+        $driver = $this->db()->selectOne("
+            SELECT e.id, e.first_name, e.last_name, COALESCE(v.vehicle_number, 'No Bus') as bus, e.route_status as status
+            FROM employees e
+            JOIN designations des ON e.designation_id = des.id
+            LEFT JOIN transport_vehicles v ON v.driver_id = e.id
+            WHERE e.user_id = ? AND des.title = 'Driver'
+            LIMIT 1
+        ", [$userId]);
+
+        if (!$driver) {
+            echo json_encode(['success' => false, 'message' => 'Driver not found.']);
+            exit();
+        }
+
+        // For future dates, return assigned students with no trip yet
+        if ($date > date('Y-m-d')) {
+            $students = $this->db()->select("
+                SELECT s.id, s.first_name, s.last_name, s.class as class_name, s.section, st.pickup_point as address, st.pickup_time
+                FROM student_transport st
+                JOIN students s ON s.id = st.student_id
+                WHERE st.driver_id = ? AND s.deleted_at IS NULL
+                ORDER BY st.pickup_time ASC, s.first_name ASC
+            ", [$driver['id']]);
+
+            echo json_encode([
+                'success' => true,
+                'date' => $date,
+                'trip' => null,
+                'students' => array_map(fn($s) => [
+                    'id' => (int)$s['id'],
+                    'name' => trim($s['first_name'] . ' ' . $s['last_name']),
+                    'class_name' => $s['class_name'],
+                    'section' => $s['section'],
+                    'address' => $s['address'],
+                    'pickup_time' => $s['pickup_time'],
+                    'status' => 'Scheduled',
+                ], $students),
+            ]);
+            exit();
+        }
+
+        // For today/past: get the trip for the given date
+        $trip = $this->db()->selectOne("
+            SELECT id, status, created_at, updated_at
+            FROM driver_trips
+            WHERE driver_id = ? AND DATE(created_at) = ?
+            ORDER BY id DESC LIMIT 1
+        ", [$driver['id'], $date]);
+
+        $students = [];
+        if ($trip) {
+            $rows = $this->db()->select("
+                SELECT ts.student_id as id, ts.status,
+                       s.first_name, s.last_name, s.class as class_name, s.section,
+                       st.pickup_point as address, st.pickup_time
+                FROM trip_students ts
+                JOIN students s ON s.id = ts.student_id
+                JOIN student_transport st ON st.student_id = s.id AND st.driver_id = ?
+                WHERE ts.trip_id = ?
+                ORDER BY st.pickup_time ASC, s.first_name ASC
+            ", [$driver['id'], $trip['id']]);
+
+            $students = array_map(fn($s) => [
+                'id' => (int)$s['id'],
+                'name' => trim($s['first_name'] . ' ' . $s['last_name']),
+                'class_name' => $s['class_name'],
+                'section' => $s['section'],
+                'address' => $s['address'],
+                'pickup_time' => $s['pickup_time'],
+                'status' => $s['status'] ?? 'Waiting',
+            ], $rows);
+        } else {
+            // No trip for this date — return assigned students
+            $rows = $this->db()->select("
+                SELECT s.id, s.first_name, s.last_name, s.class as class_name, s.section, st.pickup_point as address, st.pickup_time
+                FROM student_transport st
+                JOIN students s ON s.id = st.student_id
+                WHERE st.driver_id = ? AND s.deleted_at IS NULL
+                ORDER BY st.pickup_time ASC, s.first_name ASC
+            ", [$driver['id']]);
+
+            $students = array_map(fn($s) => [
+                'id' => (int)$s['id'],
+                'name' => trim($s['first_name'] . ' ' . $s['last_name']),
+                'class_name' => $s['class_name'],
+                'section' => $s['section'],
+                'address' => $s['address'],
+                'pickup_time' => $s['pickup_time'],
+                'status' => 'No Trip',
+            ], $rows);
+        }
+
+        echo json_encode([
+            'success' => true,
+            'date' => $date,
+            'trip' => $trip ? [
+                'id' => (int)$trip['id'],
+                'status' => $trip['status'],
+                'started_at' => $trip['created_at'],
+                'ended_at' => $trip['updated_at'],
+            ] : null,
+            'students' => $students,
+        ]);
+        exit();
+    }
 }
+
 

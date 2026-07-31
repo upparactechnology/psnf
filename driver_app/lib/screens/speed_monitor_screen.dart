@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../theme/colors.dart';
 
 class SpeedMonitorScreen extends StatefulWidget {
@@ -11,18 +12,35 @@ class SpeedMonitorScreen extends StatefulWidget {
 }
 
 class _SpeedMonitorScreenState extends State<SpeedMonitorScreen> {
-  int _currentSpeed = 55;
-  late Timer _timer;
+  int _currentSpeed = 0;
+  StreamSubscription<Position>? _positionStream;
 
   @override
   void initState() {
     super.initState();
-    // Simulate real-time speed variations
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _startLocationTracking();
+  }
+
+  Future<void> _startLocationTracking() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+    if (permission == LocationPermission.deniedForever) return;
+
+    const LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 2,
+    );
+
+    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
       if (mounted) {
         setState(() {
-          // Speed fluctuates between 50 and 72 km/h
-          _currentSpeed = 50 + Random().nextInt(23);
+          _currentSpeed = (position.speed * 3.6).round();
         });
       }
     });
@@ -30,11 +48,10 @@ class _SpeedMonitorScreenState extends State<SpeedMonitorScreen> {
 
   @override
   void dispose() {
-    _timer.cancel();
+    _positionStream?.cancel();
     super.dispose();
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     bool isOverSpeed = _currentSpeed > 60;

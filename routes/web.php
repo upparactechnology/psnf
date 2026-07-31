@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, EnrollmentAdminController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController, SettingsController, ReportCardController};
+use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, EnrollmentAdminController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController, SettingsController, ReportCardController, AnnouncementController};
 
 // ─── Auth (Guest Only) ────────────────────────────────────────────────────────
 $router->get('/login',           [AuthController::class, 'showLogin'],          ['guest']);
@@ -206,6 +206,11 @@ $router->post('/certificates/{id}/delete',  [CertificateController::class, 'dest
 // ─── Admissions ──────────────────────────────────────────────────────────────
 $router->get('/admissions', [AdmissionsController::class, 'index'], ['auth', 'tenant']);
 $router->post('/admissions/{id}/status', [AdmissionsController::class, 'updateStatus'], ['auth', 'tenant']);
+
+// ─── Announcements ───────────────────────────────────────────────────────────
+$router->get('/academics/announcements', [AnnouncementController::class, 'index'], ['auth', 'tenant']);
+$router->post('/academics/announcements', [AnnouncementController::class, 'store'], ['auth', 'tenant']);
+$router->post('/academics/announcements/{id}/delete', [AnnouncementController::class, 'destroy'], ['auth', 'tenant']);
 
 // ─── Classes & Sections ───────────────────────────────────────────────────────
 $router->get('/classes', [ClassesController::class, 'index'], ['auth', 'tenant']);

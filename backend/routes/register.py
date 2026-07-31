@@ -16,7 +16,7 @@ def set_face_service(service: FaceService):
     face_service_instance = service
 
 @router.post("/register-face", response_model=StandardAPIResponse)
-async def register_face(
+def register_face(
     req: RegisterFaceRequest,
     request: Request,
     db: Session = Depends(get_db)

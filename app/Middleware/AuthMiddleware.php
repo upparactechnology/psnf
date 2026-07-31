@@ -27,6 +27,11 @@ class AuthMiddleware
                 }
                 return null; // Authorized via JWT
             }
+            // Bearer token provided but invalid — return JSON 401
+            http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid or expired token.']);
+            exit();
         }
 
         // Session auth

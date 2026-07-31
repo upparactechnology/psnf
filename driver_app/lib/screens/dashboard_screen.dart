@@ -4,17 +4,10 @@ import '../services/api_service.dart';
 import '../main.dart';
 import 'pickup_route_screen.dart';
 import 'drop_route_screen.dart';
-import 'notifications_screen.dart';
-import 'sos_screen.dart';
 import 'speed_monitor_screen.dart';
-import 'safety_center_screen.dart';
 import 'trip_logs_screen.dart';
-import 'app_settings_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  static bool isPickupCompleted = false;
-  static bool isDropCompleted = false;
-
   const DashboardScreen({super.key});
 
   @override
@@ -63,12 +56,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               label: 'Speed',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.sos_rounded),
-              label: 'SOS',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_rounded),
-              label: 'Alerts',
+              icon: Icon(Icons.history_rounded),
+              label: 'Trips',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_rounded),
@@ -87,10 +76,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       case 1:
         return const SpeedMonitorScreen();
       case 2:
-        return const SosScreen();
+        return const TripLogsScreen();
       case 3:
-        return const NotificationsScreen();
-      case 4:
         return _buildProfileTab();
       default:
         return _buildHomeTab();
@@ -104,6 +91,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final Color cardBg = isDark ? const Color(0xFF1E293B).withOpacity(0.4) : Colors.white;
     final Color borderColor = isDark ? AppColors.slate.shade850 : const Color(0xFFE2E8F0);
 
+    final routeData = ApiService.assignedRoute;
+    final bool hasRoute = routeData != null;
+    final String status = hasRoute ? (routeData['status'] ?? 'inactive') : 'inactive';
+    final bool isEnRoute = status == 'en_route';
+    final bool isCompleted = status == 'completed';
+    
+    // Compute dynamic stats
+    int totalStudents = 0;
+    int pickedUp = 0;
+    int pending = 0;
+    int onLeave = 0;
+    
+    if (hasRoute && routeData['students'] != null) {
+      final studentsList = routeData['students'] as List;
+      totalStudents = studentsList.length;
+      for (var student in studentsList) {
+        final stuStatus = student['status'] ?? student['trip_status'] ?? 'Waiting';
+        if (stuStatus == 'Picked Up' || stuStatus == 'Dropped') {
+           pickedUp++;
+        } else if (stuStatus == 'Absent') {
+           onLeave++;
+        } else {
+           pending++;
+        }
+      }
+      if (isCompleted) {
+          pickedUp = totalStudents;
+          pending = 0;
+      }
+    }
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -116,9 +134,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: const Color(0xFF4F46E5).withOpacity(0.2),
-                  child: const Text(
-                    'JD',
-                    style: TextStyle(
+                  child: Text(
+                    ApiService.driverName != null && ApiService.driverName!.isNotEmpty 
+                        ? ApiService.driverName!.substring(0, 1).toUpperCase() 
+                        : 'D',
+                    style: const TextStyle(
                       color: Color(0xFF818CF8),
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -131,14 +151,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Good Morning 👋',
+                        () {
+                          final hour = DateTime.now().hour;
+                          if (hour < 12) return 'Good Morning 🌅';
+                          if (hour < 17) return 'Good Afternoon ☀️';
+                          return 'Good Evening 🌙';
+                        }(),
                         style: TextStyle(
                           color: subText,
                           fontSize: 14,
                         ),
                       ),
                       Text(
-                        ApiService.assignedRoute != null ? ApiService.assignedRoute!['driver'] : 'John Driver',
+                        ApiService.driverName ?? 'Driver',
                         style: TextStyle(
                           color: mainText,
                           fontSize: 20,
@@ -192,51 +217,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Vehicle card
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-              decoration: BoxDecoration(
-                color: cardBg,
-                border: Border.all(color: borderColor),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.directions_bus_rounded, color: Color(0xFF6366F1), size: 24),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Vehicle Status',
-                          style: TextStyle(
-                            color: subText,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          ApiService.assignedRoute != null ? ApiService.assignedRoute!['bus'] : 'GJ 05 AB 1234',
-                          style: TextStyle(
-                            color: mainText,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: _isOnline ? const Color(0xFF10B981) : AppColors.slate.shade500,
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
             // Stats grid (2x2)
             GridView.count(
               crossAxisCount: 2,
@@ -246,10 +226,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _buildStatCard('Total Students', ApiService.assignedRoute != null ? (ApiService.assignedRoute!['students'] as List).length.toString() : '36', Icons.people_rounded, const Color(0xFF6366F1)),
-                _buildStatCard('Picked Up', ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? (ApiService.assignedRoute!['students'] as List).length.toString() : (ApiService.assignedRoute!['status'] == 'en_route' ? ((ApiService.assignedRoute!['students'] as List).length > 0 ? ((ApiService.assignedRoute!['students'] as List).length - 1).toString() : '0') : '0')) : '18', Icons.check_circle_outline_rounded, const Color(0xFF10B981)),
-                _buildStatCard('Pending', ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : (ApiService.assignedRoute!['status'] == 'en_route' ? '1' : (ApiService.assignedRoute!['students'] as List).length.toString())) : '8', Icons.pending_actions_rounded, const Color(0xFFF59E0B)),
-                _buildStatCard('On Leave', ApiService.assignedRoute != null ? '0' : '4', Icons.airline_seat_recline_normal_rounded, const Color(0xFFEF4444)),
+                _buildStatCard('Total Students', totalStudents.toString(), Icons.people_rounded, const Color(0xFF6366F1)),
+                _buildStatCard('Picked Up', pickedUp.toString(), Icons.check_circle_outline_rounded, const Color(0xFF10B981)),
+                _buildStatCard('Pending', pending.toString(), Icons.pending_actions_rounded, const Color(0xFFF59E0B)),
+                _buildStatCard('On Leave', onLeave.toString(), Icons.airline_seat_recline_normal_rounded, const Color(0xFFEF4444)),
               ],
             ),
             const SizedBox(height: 28),
@@ -258,7 +238,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               children: [
                 Text(
-                  "Today's Routes",
+                  "Assigned Trip",
                   style: TextStyle(
                     color: mainText,
                     fontSize: 16,
@@ -269,9 +249,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Active routes list
-            if (!DashboardScreen.isPickupCompleted) ...[
-              // Card 1: Morning Route (Active)
+            if (hasRoute && !isCompleted) ...[
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -295,7 +273,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Morning Shift',
+                              isEnRoute ? 'Current Trip (Active)' : 'Next Shift',
                               style: TextStyle(
                                 color: subText,
                                 fontSize: 12,
@@ -303,7 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              ApiService.assignedRoute != null ? 'Pickup Route' : 'Pickup Route - 1',
+                              'Assigned Route',
                               style: TextStyle(
                                 color: mainText,
                                 fontSize: 18,
@@ -315,13 +293,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B).withOpacity(0.1),
+                            color: isEnRoute ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            '08:00 AM',
+                          child: Text(
+                            isEnRoute ? 'EN ROUTE' : 'READY',
                             style: TextStyle(
-                              color: Color(0xFFF59E0B),
+                              color: isEnRoute ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
                             ),
@@ -333,17 +311,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['students'] as List).length.toString() : '20', 'Total Stops'),
-                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : (ApiService.assignedRoute!['students'] as List).length.toString()) : '8', 'Remaining'),
+                        _routeInfoTile(totalStudents.toString(), 'Total Stops'),
+                        _routeInfoTile(pending.toString(), 'Remaining'),
                       ],
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const PickupRouteScreen()),
                         );
+                        setState(() {});
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6366F1),
@@ -354,9 +333,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         elevation: 4,
                       ),
-                      child: const Text(
-                        'Start Pickup Route',
-                        style: TextStyle(
+                      child: Text(
+                        isEnRoute ? 'Resume Trip' : 'Start Trip',
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
@@ -366,109 +345,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-            ],
-
-            if (!DashboardScreen.isDropCompleted) ...[
-              // Card 2: Evening Route (Active)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDark 
-                        ? [const Color(0xFF2E1A47).withOpacity(0.8), const Color(0xFF0F172A)]
-                        : [Colors.white, const Color(0xFFF3E8FF)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Evening Shift',
-                              style: TextStyle(
-                                color: subText,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              ApiService.assignedRoute != null ? 'Drop Route' : 'Drop Route - 1',
-                              style: TextStyle(
-                                color: mainText,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            '04:00 PM',
-                            style: TextStyle(
-                              color: Color(0xFF10B981),
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['students'] as List).length.toString() : '2', 'Total Drops'),
-                        _routeInfoTile(ApiService.assignedRoute != null ? (ApiService.assignedRoute!['status'] == 'completed' ? '0' : (ApiService.assignedRoute!['students'] as List).length.toString()) : '2', 'Remaining'),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const DropRouteScreen()),
-                        );
-                        setState(() {});
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF818CF8),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        elevation: 4,
-                      ),
-                      child: const Text(
-                        'Start Drop Route',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            if (DashboardScreen.isPickupCompleted && DashboardScreen.isDropCompleted) ...[
-              // All routes completed empty state
+            ] else if (isCompleted) ...[
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                 decoration: BoxDecoration(
@@ -481,7 +358,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const Icon(Icons.done_all_rounded, color: Color(0xFF10B981), size: 48),
                     const SizedBox(height: 12),
                     Text(
-                      'No Active Routes Remaining',
+                      'Trip Completed',
                       style: TextStyle(
                         color: mainText,
                         fontSize: 16,
@@ -490,7 +367,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'All of today\'s shifts have been completed.',
+                      'You have completed your assigned trip.',
                       style: TextStyle(
                         color: subText,
                         fontSize: 12,
@@ -499,67 +376,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-
-            // Notice about tomorrow's pickup route
-            if (DashboardScreen.isPickupCompleted) ...[
+            ] else ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
                 decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: borderColor),
+                  color: isDark ? const Color(0xFF1E293B).withOpacity(0.2) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: borderColor, style: BorderStyle.solid),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    const Icon(Icons.info_outline_rounded, color: Color(0xFFF59E0B), size: 22),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        "Your tomorrow's pickup route will be displayed after 11:30 PM tonight.",
-                        style: TextStyle(
-                          color: mainText.withOpacity(0.8),
-                          fontSize: 12,
-                          height: 1.4,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    const Icon(Icons.route_outlined, color: Color(0xFF64748B), size: 48),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No Active Assignment',
+                      style: TextStyle(
+                        color: mainText,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'You are not currently assigned to any active route.',
+                      style: TextStyle(
+                        color: subText,
+                        fontSize: 12,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-
-            // Notice about tomorrow's drop route
-            if (DashboardScreen.isDropCompleted) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline_rounded, color: Color(0xFF10B981), size: 22),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        "Your tomorrow's drop route will be displayed after 3:30 PM tomorrow afternoon.",
-                        style: TextStyle(
-                          color: mainText.withOpacity(0.8),
-                          fontSize: 12,
-                          height: 1.4,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
             ],
           ],
         ),
@@ -699,32 +546,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 32),
             _profileTile(
-              Icons.shield_rounded, 
-              'Safety Center',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SafetyCenterScreen()),
-                );
-              },
-            ),
-            _profileTile(
               Icons.history_rounded, 
               'Trip Logs',
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const TripLogsScreen()),
-                );
-              },
-            ),
-            _profileTile(
-              Icons.settings_rounded, 
-              'App Settings',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AppSettingsScreen()),
                 );
               },
             ),
@@ -836,7 +663,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                if (!DashboardScreen.isPickupCompleted && !DashboardScreen.isDropCompleted)
+                if (ApiService.assignedRoute == null || ApiService.assignedRoute!["status"] != "completed")
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: Column(
@@ -857,7 +684,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                   ),
-                if (DashboardScreen.isPickupCompleted) ...[
+                if (ApiService.assignedRoute != null && ApiService.assignedRoute!["status"] == "completed") ...[
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -932,7 +759,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 12),
                 ],
-                if (DashboardScreen.isDropCompleted) ...[
+                if (false) ...[
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(

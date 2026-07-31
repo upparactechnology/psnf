@@ -14,7 +14,7 @@ class JWT
 
         $header  = base64url_encode(json_encode(['alg' => self::$algorithm, 'typ' => 'JWT']));
         $payload['iat'] = $payload['iat'] ?? time();
-        $payload['exp'] = $payload['exp'] ?? (time() + config('auth.jwt_ttl', 3600));
+        $payload['exp'] = $payload['exp'] ?? (time() + config('auth.jwt_ttl', 2592000)); // 30 days
 
         $payloadEncoded = base64url_encode(json_encode($payload));
         $signature      = self::sign("$header.$payloadEncoded", $secret);

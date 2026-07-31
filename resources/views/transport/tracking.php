@@ -167,20 +167,7 @@ ob_start();
                 <?php endif; ?>
             </div>
 
-            <!-- Simulation Controls -->
-            <div class="rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 p-3 shadow-sm flex items-center justify-between text-2xs text-slate-500">
-                <span class="flex items-center gap-1.5 font-medium">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    Simulate Driver App Speed
-                </span>
-                <label class="relative inline-flex items-center cursor-pointer font-normal">
-                    <input type="checkbox" x-model="simulateSpeed" class="sr-only peer">
-                    <div class="w-7 h-4 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-600"></div>
-                </label>
-            </div>
+            <!-- Simulation Controls Removed -->
         </div>
 
         <!-- Map -->
@@ -319,10 +306,8 @@ function liveTracking() {
         countdownTimer:     null,
         pollTimer:          null,
 
-        // Live speeds and simulation states
+        // Live speeds
         routesList:         [],
-        simulateSpeed:      false,
-        simulationTimer:    null,
 
         // Leaflet instances
         map:          null,
@@ -337,7 +322,7 @@ function liveTracking() {
                 this.startPolling();
                 await this.fetchLiveData();
                 this.updateLastUpdated();
-                this.startSpeedSimulation();
+                // Removed speed simulation start
             });
         },
 
@@ -591,9 +576,7 @@ function liveTracking() {
                             listRoute.lat = r.lat;
                             listRoute.lng = r.lng;
                             listRoute.status = r.status;
-                            if (!this.simulateSpeed) {
-                                listRoute.speed = r.speed;
-                            }
+                            listRoute.speed = r.speed;
                         }
                         
                         // Only show marker if active
@@ -617,30 +600,7 @@ function liveTracking() {
             } catch (e) { /* silent */ }
         },
 
-        // ── Speed simulation ──────────────────────────────────────────────────
-        startSpeedSimulation() {
-            this.simulationTimer = setInterval(() => {
-                if (!this.simulateSpeed) return;
-
-                this.routesList.forEach(r => {
-                    if (r.status !== 'en_route') {
-                        r.speed = 0;
-                        return;
-                    }
-
-                    if (r.speed === 0) {
-                        if (Math.random() > 0.7) {
-                            r.speed = 25 + Math.random() * 10;
-                        }
-                    } else {
-                        const change = (Math.random() * 12) - 6;
-                        r.speed = Math.max(15, Math.min(95, r.speed + change));
-                    }
-
-                    this.addOrUpdateMarker(r);
-                });
-            }, 3000);
-        },
+        // ── Speed simulation removed ──────────────────────────────────────────
 
         updateLastUpdated() {
             const now = new Date();

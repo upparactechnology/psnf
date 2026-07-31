@@ -26,7 +26,10 @@ class _PickupRouteScreenState extends State<PickupRouteScreen> {
   }
 
   Future<void> _startTripAndLoad() async {
-    await ApiService.startTrip();
+    final routeData = ApiService.assignedRoute;
+    if (routeData == null || routeData['status'] != 'en_route') {
+      await ApiService.startTrip();
+    }
     await ApiService.fetchAssignedRoute();
     _loadStudents();
   }
