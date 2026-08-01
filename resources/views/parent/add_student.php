@@ -33,7 +33,7 @@ $errorMsg = function(string $field) use ($errors): string {
     <!-- Progress Steps Header -->
     <div class="flex items-center gap-0 border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/30 p-4 rounded-2xl shadow-sm">
         <?php
-        $steps = ['Personal Details', 'School & Address', 'Care & Disability'];
+        $steps = ['Personal Details', 'School & Address'];
         foreach ($steps as $i => $step):
         ?>
         <div class="flex items-center <?= $i < count($steps) - 1 ? 'flex-1' : '' ?>">
@@ -172,9 +172,7 @@ $errorMsg = function(string $field) use ($errors): string {
                 <button type="button" @click="step = 0" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                     ← Back
                 </button>
-                <button type="button" @click="validateStep(2)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-xs font-bold text-white shadow-lg shadow-indigo-600/15 hover:opacity-95 transition-all">
-                    Next: Care Profile →
-                </button>
+                
             </div>
         </div>
 

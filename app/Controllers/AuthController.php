@@ -48,14 +48,23 @@ class AuthController extends Controller
         }
 
         if ($this->request->wantsJson()) {
+            $userObj = $result['user'];
+            $roles = $userObj['role_names'] ?? $userObj['roles'] ?? [];
+            $roleStr = !empty($roles) ? (is_array($roles) ? implode(', ', $roles) : (string)$roles) : 'Educator';
+            
             return $this->json([
                 'success' => true,
                 'token' => $result['token'],
                 'user' => [
-                    'id' => $result['user']['id'],
-                    'name' => $result['user']['name'],
-                    'email' => $result['user']['email'],
-                    'phone' => $result['user']['phone'],
+                    'id' => (string)$userObj['id'],
+                    'name' => $userObj['name'] ?? 'Staff Member',
+                    'email' => $userObj['email'] ?? '',
+                    'phone' => $userObj['phone'] ?? '',
+                    'role' => $roleStr,
+                    'designation' => $userObj['designation'] ?? 'Educator',
+                    'employee_id' => $userObj['employee_id'] ?? ('ST' . (1000 + (int)$userObj['id'])),
+                    'school' => 'Pearl Special Needs School',
+                    'branch' => 'Main Branch'
                 ]
             ]);
         }

@@ -270,7 +270,7 @@
 <div class="flex h-screen overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="flex-shrink-0 flex flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900 transition-all duration-300"
+    <aside class="hidden md:flex flex-shrink-0 flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900 transition-all duration-300"
            :class="sidebarOpen ? 'w-64' : 'w-16'">
 
         <!-- Logo -->
@@ -430,7 +430,7 @@
     </aside>
 
     <!-- Main View Window -->
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden w-full relative">
 
         <!-- Header -->
         <header class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/40 backdrop-blur">
@@ -464,7 +464,7 @@
         </header>
 
         <!-- View Body -->
-        <main class="flex-1 overflow-y-auto p-6" id="main-content">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6" id="main-content">
             <?= $content ?>
         </main>
     </div>

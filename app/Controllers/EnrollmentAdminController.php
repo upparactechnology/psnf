@@ -106,32 +106,46 @@ class EnrollmentAdminController extends Controller
         // 2. Insert Father Guardian
         if (!empty($enrollment['father_name'])) {
             $db->query("INSERT INTO guardians (
-                tenant_id, student_id, name, relationship, phone, aadhar_number, photo, is_primary, created_at
+                tenant_id, name, relationship, phone, aadhar, photo, created_at
             ) VALUES (
-                :tenant_id, :student_id, :name, 'Father', :phone, :aadhar, :photo, 1, NOW()
+                :tenant_id, :name, 'Father', :phone, :aadhar, :photo, NOW()
             )", [
                 'tenant_id'  => $tenantId,
-                'student_id' => $studentId,
                 'name'       => $enrollment['father_name'],
                 'phone'      => $enrollment['father_phone'],
                 'aadhar'     => $enrollment['father_aadhar'],
                 'photo'      => $enrollment['father_photo']
+            ]);
+            $guardianId = $db->lastInsertId();
+            $db->insert('guardian_student', [
+                'guardian_id' => $guardianId,
+                'student_id' => $studentId,
+                'is_primary' => 1,
+                'can_pickup' => 1,
+                'created_at' => date('Y-m-d H:i:s')
             ]);
         }
 
         // 3. Insert Mother Guardian
         if (!empty($enrollment['mother_name'])) {
             $db->query("INSERT INTO guardians (
-                tenant_id, student_id, name, relationship, phone, aadhar_number, photo, is_primary, created_at
+                tenant_id, name, relationship, phone, aadhar, photo, created_at
             ) VALUES (
-                :tenant_id, :student_id, :name, 'Mother', :phone, :aadhar, :photo, 0, NOW()
+                :tenant_id, :name, 'Mother', :phone, :aadhar, :photo, NOW()
             )", [
                 'tenant_id'  => $tenantId,
-                'student_id' => $studentId,
                 'name'       => $enrollment['mother_name'],
                 'phone'      => $enrollment['mother_phone'],
                 'aadhar'     => $enrollment['mother_aadhar'],
                 'photo'      => $enrollment['mother_photo']
+            ]);
+            $guardianId = $db->lastInsertId();
+            $db->insert('guardian_student', [
+                'guardian_id' => $guardianId,
+                'student_id' => $studentId,
+                'is_primary' => 0,
+                'can_pickup' => 1,
+                'created_at' => date('Y-m-d H:i:s')
             ]);
         }
 

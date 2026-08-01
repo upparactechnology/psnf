@@ -64,8 +64,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                     <?php endif; ?>
                     <span><?= age($s['dob']) ?></span>
                     <span><?= ucfirst($s['gender']) ?></span>
-                    <span class="text-brand-400"><?= e($s['disability_type']) ?></span>
-                </div>
+                    </div>
             </div>
 
             <!-- Actions -->

@@ -17,13 +17,20 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     'check_in_time': null,
     'check_out_time': null,
     'total_working': '--:--',
-    'status': 'Not Checked In'
+    'status': 'Not Checked In',
+    'face_attendance_time': null,
+    'is_late': false,
+    'late_minutes': 0,
+    'warning_message': null,
   };
 
   List<dynamic> _attendanceHistory = [];
-  List<dynamic> _earlyStudents = [];
   late List<DateTime> _weekDays;
   late DateTime _selectedDay;
+  
+  // History filters selection
+  String _selectedFilter = 'All';
+  String _selectedMonthFilter = 'All Months';
 
   @override
   void initState() {
@@ -34,7 +41,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   void _generateWeekDays() {
-    // Generate 7 days centered around the selected day (3 before, 3 after)
     _weekDays = List.generate(7, (index) {
       return _selectedDay.subtract(Duration(days: 3 - index));
     });
@@ -43,9 +49,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   Future<void> _loadAttendanceData() async {
     setState(() => _isLoading = true);
     try {
-      final attendance = await ApiService.getTodayAttendance();
-      final history = await ApiService.getAttendanceHistory();
-      final earlyStudents = await ApiService.getEarlyStudents();
+      final results = await Future.wait([
+        ApiService.getTodayAttendance(),
+        ApiService.getAttendanceHistory(),
+      ]);
+      final attendance = results[0];
+      final history = results[1];
 
       if (mounted) {
         setState(() {
@@ -54,9 +63,6 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           }
           if (history['success'] == true) {
             _attendanceHistory = history['history'] ?? [];
-          }
-          if (earlyStudents['success'] == true) {
-            _earlyStudents = earlyStudents['students'] ?? [];
           }
           _isLoading = false;
         });
@@ -68,11 +74,157 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
   }
 
+  Map<String, dynamic> _getSelectedDayDetails() {
+    final selectedDayStr = DateFormat('yyyy-MM-dd').format(_selectedDay);
+    final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    
+    if (selectedDayStr == todayStr) {
+      return {
+        'checked_in': _attendanceData['checked_in'] ?? false,
+        'check_in_time': _attendanceData['check_in_time'],
+        'check_out_time': _attendanceData['check_out_time'],
+        'total_working': _attendanceData['total_working'] ?? '--:--',
+        'status': _attendanceData['status'] ?? 'Not Checked In',
+        'warning_message': _attendanceData['warning_message'],
+        'face_attendance_time': _attendanceData['face_attendance_time'],
+      };
+    }
+    
+    final record = _attendanceHistory.firstWhere(
+      (h) => h['raw_date'] == selectedDayStr,
+      orElse: () => null,
+    );
+    
+    if (record != null) {
+      bool isPresent = record['status'] == 'Present' || record['status'] == 'Late';
+      return {
+        'checked_in': isPresent,
+        'check_in_time': record['check_in'] == '--:--' ? null : record['check_in'],
+        'check_out_time': record['check_out'] == '--:--' ? null : record['check_out'],
+        'total_working': record['total_working'] ?? '--:--',
+        'status': record['status'] ?? 'Absent',
+        'warning_message': record['status'] == 'Late' ? 'Late Clock-In recorded on this day.' : null,
+        'face_attendance_time': isPresent ? 'Face Verified on Clock-In' : null,
+      };
+    }
+    
+    if (_selectedDay.weekday == DateTime.saturday || _selectedDay.weekday == DateTime.sunday) {
+      return {
+        'checked_in': false,
+        'check_in_time': null,
+        'check_out_time': null,
+        'total_working': '--:--',
+        'status': 'Weekend',
+        'warning_message': null,
+        'face_attendance_time': null,
+      };
+    }
+
+    return {
+      'checked_in': false,
+      'check_in_time': null,
+      'check_out_time': null,
+      'total_working': '--:--',
+      'status': 'Absent',
+      'warning_message': null,
+      'face_attendance_time': null,
+    };
+  }
+
+  // Calculate statistics from attendance history
+  Map<String, dynamic> _getStats() {
+    int total = _attendanceHistory.length;
+    if (total == 0) {
+      return {'present': 0, 'late': 0, 'absent': 0, 'rate': '0%'};
+    }
+    int present = 0;
+    int late = 0;
+    int absent = 0;
+    
+    for (var item in _attendanceHistory) {
+      final status = (item['status'] ?? '').toString().toLowerCase();
+      if (status.contains('present')) {
+        present++;
+      } else if (status.contains('late')) {
+        late++;
+      } else if (status.contains('absent')) {
+        absent++;
+      }
+    }
+    
+    double rate = ((present + late) / total) * 100;
+    
+    return {
+      'present': present,
+      'late': late,
+      'absent': absent,
+      'rate': '${rate.toStringAsFixed(0)}%'
+    };
+  }
+
+  // Generate dynamic, chronologically-sorted month-year options from raw dates
+  List<String> _getMonthsList() {
+    final Set<String> months = {};
+    for (var item in _attendanceHistory) {
+      if (item['raw_date'] != null) {
+        try {
+          final date = DateTime.parse(item['raw_date']);
+          final key = DateFormat('yyyy-MM').format(date);
+          months.add(key);
+        } catch (e) {}
+      }
+    }
+    
+    final sortedKeys = months.toList();
+    sortedKeys.sort((a, b) => b.compareTo(a)); // Descending order (newest first)
+    
+    final List<String> list = ['All Months'];
+    for (var key in sortedKeys) {
+      final parts = key.split('-');
+      final year = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final formatted = DateFormat('MMMM yyyy').format(DateTime(year, month));
+      list.add(formatted);
+    }
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final String formattedMonth = DateFormat('MMMM yyyy').format(_selectedDay);
-    final String todayString = DateFormat('EEEE, d MMM yyyy').format(DateTime.now());
+    final selectedDetails = _getSelectedDayDetails();
+    final stats = _getStats();
+    
+    // Ensure selected month filter exists in current months list (fail-safe)
+    final availableMonths = _getMonthsList();
+    if (!availableMonths.contains(_selectedMonthFilter)) {
+      _selectedMonthFilter = 'All Months';
+    }
+
+    // Filter history based on status AND month-year selection
+    final filteredHistory = _attendanceHistory.where((item) {
+      // 1. Status Filter
+      bool statusMatches = true;
+      if (_selectedFilter != 'All') {
+        final status = (item['status'] ?? '').toString().toLowerCase();
+        statusMatches = status.contains(_selectedFilter.toLowerCase());
+      }
+      
+      // 2. Month/Year Filter
+      bool monthMatches = true;
+      if (_selectedMonthFilter != 'All Months' && item['raw_date'] != null) {
+        try {
+          final date = DateTime.parse(item['raw_date']);
+          final formatted = DateFormat('MMMM yyyy').format(date);
+          monthMatches = formatted == _selectedMonthFilter;
+        } catch (e) {
+          monthMatches = false;
+        }
+      }
+      
+      return statusMatches && monthMatches;
+    }).toList();
 
     if (_isLoading) {
       return const Scaffold(
@@ -82,27 +234,18 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () {},
-        ),
-        title: const Text('My Attendance'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.calendar_today_rounded, size: 20),
-            onPressed: () {},
-          ),
-        ],
+        title: const Text('My Attendance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF0A5C36),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: RefreshIndicator(
         onRefresh: _loadAttendanceData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 12),
               // 1. Calendar Widget Area
               Card(
                 color: const Color(0xFF0A5C36),
@@ -121,7 +264,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             icon: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 28),
                             onPressed: () {
                               setState(() {
-                                _selectedDay = _selectedDay.subtract(const Duration(days: 30));
+                                _selectedDay = _selectedDay.subtract(const Duration(days: 7));
                                 _generateWeekDays();
                               });
                             },
@@ -138,7 +281,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             icon: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 28),
                             onPressed: () {
                               setState(() {
-                                _selectedDay = _selectedDay.add(const Duration(days: 30));
+                                _selectedDay = _selectedDay.add(const Duration(days: 7));
                                 _generateWeekDays();
                               });
                             },
@@ -203,15 +346,87 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // 2. Today's details Card
+              // 2. Attendance Summary / Statistics Row
+              Card(
+                margin: EdgeInsets.zero,
+                elevation: 0,
+                color: Colors.grey.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildSummaryStat("Present", stats['present'].toString(), Colors.green),
+                      _buildSummaryStat("Late", stats['late'].toString(), Colors.amber.shade700),
+                      _buildSummaryStat("Absent", stats['absent'].toString(), Colors.red),
+                      _buildSummaryStat("Rate", stats['rate'], const Color(0xFF0A5C36)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Late Clock-In Warning Banner for Selected Day
+              if (selectedDetails['warning_message'] != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3D6),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFF59E0B), width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Color(0xFFF59E0B), size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          selectedDetails['warning_message'],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // 3. Selected Day's details Card
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(18.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (selectedDetails['face_attendance_time'] != null)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FFF4),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF86EFAC)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.face_retouching_natural, color: Color(0xFF0A5C36), size: 18),
+                              const SizedBox(width: 8),
+                              Text(
+                                selectedDetails['face_attendance_time'],
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0A5C36)),
+                              ),
+                            ],
+                          ),
+                        ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -219,7 +434,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Today, ${DateFormat('d MMMM yyyy').format(DateTime.now())}',
+                                DateFormat('EEEE, d MMMM yyyy').format(_selectedDay),
                                 style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                               ),
                               Text(
@@ -231,13 +446,21 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: _attendanceData['checked_in'] == true ? const Color(0xFFE6F4EA) : const Color(0xFFFCE8E6),
+                              color: selectedDetails['status'] == 'Present' || selectedDetails['status'] == 'Late'
+                                  ? const Color(0xFFE6F4EA)
+                                  : selectedDetails['status'] == 'Weekend'
+                                      ? const Color(0xFFE8F0FE)
+                                      : const Color(0xFFFCE8E6),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              _attendanceData['checked_in'] == true ? (_attendanceData['status'] ?? 'Present') : 'Absent',
+                              selectedDetails['status'] ?? 'Absent',
                               style: TextStyle(
-                                color: _attendanceData['checked_in'] == true ? const Color(0xFF137333) : const Color(0xFFC5221F),
+                                color: selectedDetails['status'] == 'Present' || selectedDetails['status'] == 'Late'
+                                    ? const Color(0xFF137333)
+                                    : selectedDetails['status'] == 'Weekend'
+                                        ? const Color(0xFF1A73E8)
+                                        : const Color(0xFFC5221F),
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -253,19 +476,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                             Icons.check_circle_outline_rounded,
                             Colors.green,
                             'Check In',
-                            _attendanceData['check_in_time'] ?? '08:45 AM',
+                            selectedDetails['check_in_time'] ?? '--:--',
                           ),
                           _buildDetailStatItem(
                             Icons.highlight_off_rounded,
                             Colors.red,
                             'Check Out',
-                            _attendanceData['check_out_time'] ?? '--:--',
+                            selectedDetails['check_out_time'] ?? '--:--',
                           ),
                           _buildDetailStatItem(
                             Icons.access_time_rounded,
                             Colors.blue,
                             'Total Working',
-                            _attendanceData['total_working'] ?? '--:--',
+                            selectedDetails['total_working'] ?? '--:--',
                           ),
                         ],
                       ),
@@ -275,205 +498,181 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               ),
               const SizedBox(height: 24),
 
-              // 3. Attendance History List
+              // 4. Attendance History Section
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Attendance History",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                  ),
-                  const SizedBox(height: 12),
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _attendanceHistory.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final item = _attendanceHistory[index];
-                      bool isPresent = item['status'] == 'Present' || item['status'] == 'Late';
-
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              item['date'] ?? 'Date',
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                            ),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: isPresent ? const Color(0xFFE6F4EA) : const Color(0xFFFCE8E6),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    item['status'] ?? 'Present',
-                                    style: TextStyle(
-                                      color: isPresent ? const Color(0xFF137333) : const Color(0xFFC5221F),
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Text(
-                                  isPresent ? (item['check_in'] ?? '--:--') : '--:--',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: isPresent ? Colors.grey.shade700 : Colors.grey.shade400,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Color(0xFF0A5C36)),
-                      label: const Text(
-                        'View Full History',
-                        style: TextStyle(color: Color(0xFF0A5C36), fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "History Logs",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // 4. Early Students list again to match mockup
-              if (_earlyStudents.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Early Students Today",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text('View All', style: TextStyle(color: Color(0xFF0A5C36), fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _earlyStudents.length > 2 ? 2 : _earlyStudents.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final item = _earlyStudents[index];
-                    return Card(
-                      margin: EdgeInsets.zero,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: const Color(0xFFF1F5F9),
-                              child: const Icon(Icons.person_rounded, color: Color(0xFF94A3B8)),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['name'] ?? 'Student',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                                  ),
-                                  Text(
-                                    '${item['class']}  •  Arrival: ${item['arrival_time']}',
-                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE6F4EA),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text(
-                                'Early',
-                                style: TextStyle(color: Color(0xFF137333), fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // 5. Bottom Illustration & Dedication Message
-              Container(
-                margin: const EdgeInsets.only(top: 10, bottom: 40),
-                child: Column(
-                  children: [
-                    // School Illustration Placeholder using Flutter Icons & Container
-                    Container(
-                      height: 120,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
+                      
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.school_rounded, size: 70, color: Colors.green.shade700),
-                          Positioned(
-                            bottom: 12,
-                            child: Icon(Icons.nature_rounded, size: 36, color: Colors.green.shade800),
+                          // Month/Year Filter Dropdown
+                          DropdownButton<String>(
+                            value: _selectedMonthFilter,
+                            icon: const Icon(Icons.calendar_month_outlined, size: 14, color: Color(0xFF0A5C36)),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0A5C36)),
+                            underline: Container(height: 0),
+                            onChanged: (String? val) {
+                              if (val != null) {
+                                setState(() {
+                                  _selectedMonthFilter = val;
+                                });
+                              }
+                            },
+                            items: availableMonths.map((m) {
+                              return DropdownMenuItem<String>(
+                                value: m,
+                                child: Text(m),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(width: 8),
+                          // Status Filter Dropdown
+                          DropdownButton<String>(
+                            value: _selectedFilter,
+                            icon: const Icon(Icons.filter_list_rounded, size: 18, color: Color(0xFF0A5C36)),
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0A5C36)),
+                            underline: Container(height: 0),
+                            onChanged: (String? val) {
+                              if (val != null) {
+                                setState(() {
+                                  _selectedFilter = val;
+                                });
+                              }
+                            },
+                            items: ['All', 'Present', 'Late', 'Absent'].map((filter) {
+                              return DropdownMenuItem<String>(
+                                value: filter,
+                                child: Text(filter),
+                              );
+                            }).toList(),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Thank you for your dedication!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F5B3C),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  if (filteredHistory.isEmpty)
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Center(
+                          child: Text(
+                            "No records found for the selected filters.",
+                            style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                          ),
+                        ),
                       ),
+                    )
+                  else
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredHistory.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final item = filteredHistory[index];
+                        bool isPresent = item['status'] == 'Present' || item['status'] == 'Late';
+
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedDay = DateTime.parse(item['raw_date']);
+                              _generateWeekDays();
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  item['date'] ?? 'Date',
+                                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                ),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: isPresent
+                                            ? (item['status'] == 'Late' ? const Color(0xFFFFF3CD) : const Color(0xFFE6F4EA))
+                                            : const Color(0xFFFCE8E6),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        item['status'] ?? 'Present',
+                                        style: TextStyle(
+                                          color: isPresent
+                                              ? (item['status'] == 'Late' ? const Color(0xFF856404) : const Color(0xFF137333))
+                                              : const Color(0xFFC5221F),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Text(
+                                      isPresent ? (item['check_in'] ?? '--:--') : '--:--',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isPresent ? Colors.grey.shade700 : Colors.grey.shade400,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Your presence shapes their tomorrow.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSummaryStat(String title, String value, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade500,
+          ),
+        ),
+      ],
     );
   }
 

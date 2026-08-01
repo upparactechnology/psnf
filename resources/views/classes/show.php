@@ -35,7 +35,7 @@ ob_start();
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Student</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Admission #</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Age & Gender</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Disability Classification</th>
+                        
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Branch</th>
                         <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>
                     </tr>
@@ -76,11 +76,7 @@ ob_start();
                                 <?= ucfirst($s['gender']) ?> (<?= age($s['dob']) ?>)
                             </td>
 
-                            <!-- Disability -->
-                            <td class="px-6 py-4 text-sm text-slate-350 max-w-xs truncate" title="<?= e($s['disability_detail']) ?>">
-                                <span class="font-medium text-white block truncate"><?= e($s['disability_type']) ?></span>
-                                <span class="text-xs text-slate-500 block truncate"><?= e($s['special_needs_summary'] ?: 'No summary') ?></span>
-                            </td>
+                            
 
                             <!-- Branch -->
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-350">

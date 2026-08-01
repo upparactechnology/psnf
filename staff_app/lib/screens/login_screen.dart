@@ -10,8 +10,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'admin@psnf.edu');
-  final _passwordController = TextEditingController(text: 'Admin@1234');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -58,15 +58,31 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Logo & Header
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: theme.primaryColor.withOpacity(0.1),
+                      color: Colors.white,
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: Icon(
-                      Icons.supervised_user_circle_rounded,
-                      size: 80,
-                      color: theme.primaryColor,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(35),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.supervised_user_circle_rounded,
+                          size: 70,
+                          color: theme.primaryColor,
+                        ),
+                      ),
                     ),
                   ),
                 ),

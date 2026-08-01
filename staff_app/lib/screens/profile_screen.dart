@@ -5,32 +5,22 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   void _handleLogout(BuildContext context) {
-    // Clear token & user
-    ApiService.token = null;
-    ApiService.userProfile = null;
+    ApiService.clearPersistedAuth();
     Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final profile = ApiService.userProfile ?? {
-      'name': 'Priya Mehta',
-      'email': 'priya.mehta@psnf.edu',
-      'phone': '+91-9876543211',
-      'role': 'Educator',
-      'id': 'ST1025',
-      'branch': 'Main Branch',
-      'school': 'Pearl Special Needs School'
-    };
+    final profile = ApiService.userProfile ?? {};
 
-    final String staffName = profile['name'] ?? 'Priya Mehta';
-    final String staffEmail = profile['email'] ?? 'priya.mehta@psnf.edu';
-    final String staffPhone = profile['phone'] ?? '+91-9876543211';
-    final String staffRole = profile['role'] ?? 'Educator';
-    final String staffId = profile['id'] ?? 'ST1025';
-    final String school = profile['school'] ?? 'Pearl Special Needs School';
-    final String branch = profile['branch'] ?? 'Main Branch';
+    final String staffName = (profile['name'] ?? 'Staff Member').toString();
+    final String staffEmail = (profile['email'] ?? '').toString();
+    final String staffPhone = (profile['phone'] ?? '').toString();
+    final String staffRole = (profile['role'] ?? profile['designation'] ?? 'Educator').toString();
+    final String staffId = (profile['employee_id'] ?? (profile['id'] != null ? 'ST${1000 + int.tryParse(profile['id'].toString())!}' : '')).toString();
+    final String school = (profile['school'] ?? 'Pearl Special Needs School').toString();
+    final String branch = (profile['branch'] ?? 'Main Branch').toString();
 
     return Scaffold(
       appBar: AppBar(
@@ -53,7 +43,7 @@ class ProfileScreen extends StatelessWidget {
                       radius: 46,
                       backgroundColor: theme.primaryColor.withOpacity(0.08),
                       child: Text(
-                        staffName.isNotEmpty ? staffName.substring(0, 1) : 'P',
+                        staffName.isNotEmpty ? staffName.substring(0, 1) : 'S',
                         style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
@@ -104,11 +94,11 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: Column(
                   children: [
-                    _buildProfileItem(Icons.badge_outlined, 'Employee ID', staffId),
+                    _buildProfileItem(Icons.badge_outlined, 'Employee ID', staffId.isNotEmpty ? staffId : 'N/A'),
                     const Divider(height: 1),
-                    _buildProfileItem(Icons.email_outlined, 'Email Address', staffEmail),
+                    _buildProfileItem(Icons.email_outlined, 'Email Address', staffEmail.isNotEmpty ? staffEmail : 'N/A'),
                     const Divider(height: 1),
-                    _buildProfileItem(Icons.phone_iphone_rounded, 'Mobile Phone', staffPhone),
+                    _buildProfileItem(Icons.phone_iphone_rounded, 'Mobile Phone', staffPhone.isNotEmpty ? staffPhone : 'N/A'),
                   ],
                 ),
               ),

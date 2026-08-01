@@ -230,7 +230,10 @@ class TransportController extends Controller
             FROM student_transport st
             JOIN students s ON s.id = st.student_id
             LEFT JOIN trip_students ts ON ts.student_id = s.id AND ts.trip_id = ?
+            LEFT JOIN attendance att ON att.student_id = s.id AND att.date = CURRENT_DATE()
             WHERE st.driver_id = ? AND s.deleted_at IS NULL
+              AND (att.id IS NULL OR att.use_bus_transport = 1)
+              AND (ts.status IS NULL OR ts.status != 'EarlyPickup')
             ORDER BY st.pickup_time ASC, s.first_name ASC
         ", [$tripId, $driver['id']]);
 

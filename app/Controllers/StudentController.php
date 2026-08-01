@@ -27,6 +27,11 @@ class StudentController extends Controller
 
         $filters  = array_filter(compact('status', 'disability'));
         $result   = Student::search($search, $filters, 15, $page);
+
+        if (str_starts_with($this->request->getPath(), '/api/')) {
+            return $this->json(array_merge(['success' => true], $result));
+        }
+
         $statuses = Student::statusCounts();
 
         if ($this->isHtmx() && ($this->request->get('search') !== null || $this->request->get('status') !== null || $this->request->get('disability') !== null)) {

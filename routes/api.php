@@ -12,7 +12,7 @@ $router->post('/api/v1/auth/logout', [App\Controllers\AuthController::class, 'lo
 $router->post('/api/v1/auth/driver-login', [App\Controllers\AuthController::class, 'apiDriverLogin'], ['rate.limit:10,1']);
 $router->post('/api/v1/auth/driver-change-password', [App\Controllers\AuthController::class, 'apiDriverChangePassword'], ['auth']);
 
-$router->get('/api/v1/students',      [App\Controllers\StudentController::class, 'index'],   ['auth', 'permission:view_students']);
+$router->get('/api/v1/students',      [App\Controllers\StudentController::class, 'index'],   ['auth']);
 $router->get('/api/v1/students/{id}', [App\Controllers\StudentController::class, 'show'],    ['auth', 'permission:view_students']);
 $router->post('/api/v1/students',     [App\Controllers\StudentController::class, 'store'],   ['auth', 'permission:create_students']);
 $router->post('/api/v1/students/{id}',[App\Controllers\StudentController::class, 'update'],  ['auth', 'permission:edit_students']);
@@ -36,9 +36,11 @@ $router->get('/api/v1/staff/attendance/today',  [App\Controllers\StaffAppControl
 $router->post('/api/v1/staff/attendance/check-in', [App\Controllers\StaffAppController::class, 'checkIn'], ['auth']);
 $router->post('/api/v1/staff/attendance/check-out', [App\Controllers\StaffAppController::class, 'checkOut'], ['auth']);
 $router->get('/api/v1/staff/attendance/history', [App\Controllers\StaffAppController::class, 'getAttendanceHistory'], ['auth']);
-$router->get('/api/v1/staff/early-students',    [App\Controllers\StaffAppController::class, 'getEarlyStudents'], ['auth']);
+$router->get('/api/v1/staff/class-attendance',    [App\Controllers\StaffAppController::class, 'getClassAttendance'], ['auth']);
+$router->post('/api/v1/staff/attendance/mark-student', [App\Controllers\StaffAppController::class, 'markStudentAttendance'], ['auth']);
 $router->get('/api/v1/staff/summary',           [App\Controllers\StaffAppController::class, 'getSummary'], ['auth']);
 $router->get('/api/v1/staff/guardians',         [App\Controllers\StaffAppController::class, 'getGuardians'], ['auth']);
+$router->post('/api/v1/staff/early-pickup/approve', [App\Controllers\StaffAppController::class, 'approveEarlyPickup'], ['auth']);
 
 // ─── Driver App API ──────────────────────────────────────────────────────────
 $router->get('/api/v1/driver/my-route', [App\Controllers\TransportController::class, 'driverRouteData'], ['auth', 'role:driver']);

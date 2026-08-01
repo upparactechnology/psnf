@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/login_screen.dart';
 import 'screens/navigation_container.dart';
+import 'services/api_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -11,6 +12,7 @@ void main() {
     systemNavigationBarColor: Colors.white,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
+  await ApiService.loadPersistedAuth();
   runApp(const StaffApp());
 }
 
@@ -35,7 +37,7 @@ class StaffApp extends StatelessWidget {
           onSurface: Color(0xFF1E293B),
           error: Color(0xFFC5221F),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -64,10 +66,10 @@ class StaffApp extends StatelessWidget {
           elevation: 8,
         ),
       ),
-      initialRoute: '/login',
+      initialRoute: ApiService.token != null ? '/home' : '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
-        '/home': (context) => const NavigationContainer(),
+        '/home': (context) => NavigationContainer(key: NavigationContainer.navKey),
       },
     );
   }

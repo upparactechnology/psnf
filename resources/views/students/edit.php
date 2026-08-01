@@ -136,7 +136,7 @@ function selectClassE(string $field): string {
             </div>
         </div>
 
-        <!-- Guardian Details -->
+                <!-- Guardian Details -->
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-5 mb-5">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="text-sm font-semibold text-slate-300">Guardians / Parents Details</h3>

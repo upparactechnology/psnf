@@ -12,7 +12,7 @@
         <!-- Day Selector Tabs -->
         <div class="flex flex-wrap gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-955/60 border border-slate-200 dark:border-slate-900">
             <?php
-            $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',];
             foreach ($days as $day) {
                 echo "<button @click=\"activeDay = '$day'\"
                               :class=\"activeDay === '$day' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-250'\"
@@ -61,8 +61,6 @@
             </div>
             <?php endif; ?>
         </div>
-        <?php foreach ($timetableByDay as $dayName => $pList): ?>
-        <?php endforeach; ?>
         <?php endforeach; ?>
     </div>
 

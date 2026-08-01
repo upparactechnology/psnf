@@ -101,17 +101,19 @@ class AttendanceService:
         ).order_by(desc(Attendance.check_in)).first()
 
         if recent:
-            return {
-                "success": True,
-                "already_checked_in": True,
-                "user_id": user.id,
-                "employee_id": user.employee_id,
-                "employee_code": user.employee_id,
-                "employee_name": user.name,
-                "designation": user.designation,
-                "confidence": round(confidence, 4),
-                "message": f"Attendance already marked for {user.name} today ({recent.check_in.strftime('%I:%M %p')})."
-            }
+            time_diff = (now - recent.check_in).total_seconds()
+            if time_diff < 600:  # 10 minutes
+                return {
+                    "success": True,
+                    "already_checked_in": True,
+                    "user_id": user.id,
+                    "employee_id": user.employee_id,
+                    "employee_code": user.employee_id,
+                    "employee_name": user.name,
+                    "designation": user.designation,
+                    "confidence": round(confidence, 4),
+                    "message": f"Attendance already marked for {user.name} today ({recent.check_in.strftime('%I:%M %p')}). Please wait 10 minutes before scanning again."
+                }
 
         # Save snapshot
         ts       = now.strftime("%Y%m%d_%H%M%S_%f")

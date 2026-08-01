@@ -280,15 +280,152 @@ class ParentPortalController extends Controller
             [$student['id'], $tomorrowDate]
         );
 
+                // Leave Applications History
+        $leaveHistory = $this->db()->select(
+            "SELECT * FROM leave_applications WHERE student_id = ? ORDER BY created_at DESC",
+            [$student['id']]
+        );
+
         return View::render('parent/attendance', array_merge($context, [
             'title'        => 'Child Attendance',
             'logs'         => $logs,
             'summary'      => $summary,
             'month'        => $month,
             'year'         => $year,
+            'leaveHistory' => $leaveHistory,
             'tomorrowDate' => $tomorrowDate,
             'tomorrowAtt'  => $tomorrowAtt,
         ]));
+    }
+
+        public function markAbsent(string $id): void
+    {
+        $context = $this->getContext((int)$id);
+        $student = $context['active_student'];
+
+        $date    = \Core\Application::$app->request->input('absence_date');
+        $remarks = \Core\Application::$app->request->input('remarks', '');
+        $date    = $date ?: date('Y-m-d');
+        
+        // Validate date
+        $timestamp = strtotime($date);
+        if (!$timestamp) {
+            echo '<div class="p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold">Invalid date selected.</div>';
+            return;
+        }
+
+        $dateStr = date('Y-m-d', $timestamp);
+
+        // Check if date is today or in the past
+        if ($dateStr <= date('Y-m-d')) {
+            echo '<div class="p-3 mb-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold">You can only mark absence for future dates (Tomorrow onwards).</div>';
+            return;
+        }
+
+        // Check if record exists
+        $existing = $this->db()->selectOne(
+            "SELECT id FROM attendance WHERE student_id = ? AND date = ?",
+            [$student['id'], $dateStr]
+        );
+
+        if ($existing) {
+            $this->db()->update('attendance', [
+                'status' => 'absent',
+                'remarks' => $remarks,
+                'updated_at' => date('Y-m-d H:i:s'),
+                'updated_by' => auth_id()
+            ], "id = ?", [$existing['id']]);
+        } else {
+            $this->db()->insert('attendance', [
+                'uuid' => str_uuid(),
+                'tenant_id' => $student['tenant_id'],
+                'school_id' => $student['school_id'],
+                'branch_id' => $student['branch_id'],
+                'student_id' => $student['id'],
+                'date' => $dateStr,
+                'status' => 'absent',
+                'remarks' => $remarks,
+                'is_medical' => 0,
+                'created_at' => date('Y-m-d H:i:s'),
+                'created_by' => auth_id()
+            ]);
+        }
+
+        \Core\Session::flash('success', "Absence marked successfully for " . date('d M Y', $timestamp));
+        echo '<div class="p-3 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Absence recorded successfully.</div>';
+        echo '<script>setTimeout(() => { window.location.reload(); }, 1500);</script>';
+    }
+
+        public function requestLeave(string $id): void
+    {
+        $context = $this->getContext((int)$id);
+        $student = $context['active_student'];
+
+        $startDate = \Core\Application::$app->request->input('start_date');
+        $endDate = \Core\Application::$app->request->input('end_date');
+        $leaveType = \Core\Application::$app->request->input('leave_type', 'Other');
+        $reason = \Core\Application::$app->request->input('reason', '');
+
+        $startTs = strtotime($startDate);
+        $endTs = strtotime($endDate);
+
+        if (!$startTs || !$endTs || $startTs > $endTs) {
+            \Core\Session::flash('error', 'Invalid date range.');
+            \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            return;
+        }
+
+        $diffDays = round(($endTs - $startTs) / 86400);
+        $medicalCertPath = null;
+
+        if ($diffDays >= 1) {
+            if (!isset($_FILES['medical_certificate']) || $_FILES['medical_certificate']['error'] !== UPLOAD_ERR_OK) {
+                \Core\Session::flash('error', 'A supporting document is required for multi-day leaves.');
+                \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                return;
+            }
+
+            $uploadDir = dirname(dirname(__DIR__)) . '/public/uploads/absences/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $fileInfo = pathinfo($_FILES['medical_certificate']['name']);
+            $ext = strtolower($fileInfo['extension']);
+            $allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
+
+            if (!in_array($ext, $allowedExts)) {
+                \Core\Session::flash('error', 'Invalid file type. Only PDF and images are allowed.');
+                \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                return;
+            }
+
+            $fileName = $student['id'] . '_' . time() . '_' . uniqid() . '.' . $ext;
+            if (move_uploaded_file($_FILES['medical_certificate']['tmp_name'], $uploadDir . $fileName)) {
+                $medicalCertPath = $fileName;
+            } else {
+                \Core\Session::flash('error', 'Failed to upload document.');
+                \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                return;
+            }
+        }
+
+        $this->db()->insert('leave_applications', [
+            'tenant_id' => $student['tenant_id'],
+            'school_id' => $student['school_id'],
+            'branch_id' => $student['branch_id'],
+            'student_id' => $student['id'],
+            'start_date' => date('Y-m-d', $startTs),
+            'end_date' => date('Y-m-d', $endTs),
+            'leave_type' => $leaveType,
+            'reason' => $reason,
+            'medical_certificate' => $medicalCertPath,
+            'status' => 'Pending',
+            'created_at' => date('Y-m-d H:i:s')
+        ]);
+
+        \Core\Session::flash('success', 'Leave request submitted successfully.');
+        \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
     }
 
     public function submitTomorrowAttendance(string $id): void

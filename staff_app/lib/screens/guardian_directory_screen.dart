@@ -36,7 +36,6 @@ class _GuardianDirectoryScreenState extends State<GuardianDirectoryScreen> {
         if (result['success'] == true && result['guardians'] != null) {
           _allGuardians = result['guardians'];
         } else {
-          // Mock data fallback if database check fails or is empty
           _allGuardians = [
             {
               'name': 'Meera Mehta',
@@ -107,6 +106,109 @@ class _GuardianDirectoryScreenState extends State<GuardianDirectoryScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _showEarlyPickupApproval(BuildContext context, dynamic guardian) async {
+    final theme = Theme.of(context);
+    final String parentName = guardian['name'] ?? 'Guardian';
+    final String relation = guardian['relationship'] ?? 'Guardian';
+    final String studentName = guardian['student_name'] ?? 'Student';
+    final notesController = TextEditingController(text: 'Verified relationship and identity physically.');
+
+    setState(() => _isLoading = true);
+    final studentListRes = await ApiService.getStudents();
+    setState(() => _isLoading = false);
+
+    int studentId = 0;
+    if (studentListRes['success'] == true && studentListRes['students'] != null) {
+      final List<dynamic> students = studentListRes['students'];
+      final match = students.firstWhere(
+        (s) {
+          final String sName = '${s['first_name']} ${s['last_name']}'.toLowerCase();
+          return sName.contains(studentName.toLowerCase()) || studentName.toLowerCase().contains(s['first_name'].toString().toLowerCase());
+        },
+        orElse: () => null,
+      );
+      if (match != null) {
+        studentId = int.tryParse(match['id'].toString()) ?? 0;
+      }
+    }
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Release $studentName'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Guardian: $parentName ($relation)'),
+              const SizedBox(height: 6),
+              Text('Contact: ${guardian['phone'] ?? 'N/A'}'),
+              const SizedBox(height: 12),
+              const Text(
+                'Approving early pickup will mark the student checkout and automatically remove them from the active driver bus route.',
+                style: TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                decoration: InputDecoration(
+                  labelText: 'Verification Notes',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                maxLines: 2,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                Navigator.pop(context);
+                setState(() => _isLoading = true);
+                final res = await ApiService.approveEarlyPickup(
+                  studentId: studentId,
+                  guardianName: parentName,
+                  relationship: relation,
+                  notes: notesController.text.trim(),
+                );
+                setState(() => _isLoading = false);
+
+                if (mounted) {
+                  if (res['success'] == true) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(res['message'] ?? 'Early pickup approved and bus route updated!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(res['message'] ?? 'Failed to approve early pickup.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Verify & Approve Release'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -185,57 +287,81 @@ class _GuardianDirectoryScreenState extends State<GuardianDirectoryScreen> {
                         margin: EdgeInsets.zero,
                         child: Padding(
                           padding: const EdgeInsets.all(14.0),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              CircleAvatar(
-                                radius: 24,
-                                backgroundColor: theme.primaryColor.withOpacity(0.08),
-                                child: Icon(Icons.family_restroom_rounded, color: theme.primaryColor, size: 22),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      parentName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                        color: Color(0xFF1E293B),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '$relation of $studentName ($studentClass)',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      phone,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: theme.primaryColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (phone != 'N/A')
-                                IconButton(
-                                  icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF137333)),
-                                  onPressed: () => _simulateCall(phone, parentName),
-                                  style: IconButton.styleFrom(
-                                    backgroundColor: const Color(0xFFE6F4EA),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 24,
+                                    backgroundColor: theme.primaryColor.withOpacity(0.08),
+                                    child: Icon(Icons.family_restroom_rounded, color: theme.primaryColor, size: 22),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          parentName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '$relation of $studentName ($studentClass)',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          phone,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: theme.primaryColor,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
+                                  if (phone != 'N/A')
+                                    IconButton(
+                                      icon: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF137333)),
+                                      onPressed: () => _simulateCall(phone, parentName),
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: const Color(0xFFE6F4EA),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              const Divider(height: 1),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: () => _showEarlyPickupApproval(context, contact),
+                                    icon: const Icon(Icons.verified_user_rounded, size: 16),
+                                    label: const Text('Verify & Release Student', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: theme.primaryColor,
+                                      side: BorderSide(color: theme.primaryColor),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),

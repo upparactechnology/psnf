@@ -66,13 +66,14 @@ class AttendanceController extends Controller
         }
 
         // If no class is selected, auto-select the first available class
-        if (empty($selectedClass) && !empty($classes)) {
+        if (!isset($_GET['class']) && empty($selectedClass) && !empty($classes)) {
             $selectedClass = $classes[0]['class'];
             $selectedSection = $classes[0]['section'];
         }
 
         $students = [];
         $attendanceMap = [];
+        $pendingLeaves = $db->select("SELECT l.*, s.first_name, s.last_name, s.class, s.section FROM leave_applications l JOIN students s ON l.student_id = s.id WHERE l.tenant_id = ? AND l.status = 'Pending' ORDER BY l.created_at DESC", [$tenantId]);
 
         if ($selectedClass) {
             // Fetch enrolled students for selected class and section
@@ -122,8 +123,24 @@ class AttendanceController extends Controller
         }
 
         return $this->view('attendance/index', compact(
-            'classes', 'selectedClass', 'selectedSection', 'selectedDate', 'students', 'attendanceMap'
+            'classes', 'selectedClass', 'selectedSection', 'selectedDate', 'students', 'attendanceMap', 'pendingLeaves'
         ));
+    }
+
+    
+    public function leaves(): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        $allLeaves = $db->select("
+            SELECT l.*, s.first_name, s.last_name, s.class, s.section 
+            FROM leave_applications l
+            JOIN students s ON l.student_id = s.id
+            WHERE l.tenant_id = ?
+            ORDER BY CASE WHEN l.status = 'Pending' THEN 1 ELSE 2 END, l.created_at DESC
+        ", [$tenantId]);
+        
+        return $this->view('attendance/leaves', compact('allLeaves'));
     }
 
     public function save(): string

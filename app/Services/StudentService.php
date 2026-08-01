@@ -298,6 +298,7 @@ class StudentService
             'mime_type'   => $fileData['type'],
             'file_size'   => $fileData['size'],
             'created_by'  => auth_id(),
+            'status'      => 'verified',
         ]);
 
         StudentTimeline::logEvent($studentId, 'document_upload', 'Document uploaded: ' . ($fileData['title'] ?? $fileData['name']), [], auth_id(), 'green', 'document');

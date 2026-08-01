@@ -4,7 +4,8 @@ import '../services/api_service.dart';
 import 'guardian_directory_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Function(int)? onNavigateTab;
+  const HomeScreen({super.key, this.onNavigateTab});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -38,17 +39,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadDashboardData() async {
     setState(() => _isLoading = true);
     try {
-      final attendance = await ApiService.getTodayAttendance();
-      final earlyStudents = await ApiService.getEarlyStudents();
-      final summary = await ApiService.getSummary();
+      final results = await Future.wait([
+        ApiService.getTodayAttendance(),
+        ApiService.getSummary(),
+      ]);
+      final attendance = results[0];
+      final summary = results[1];
 
       if (mounted) {
         setState(() {
           if (attendance['success'] == true) {
             _attendanceData = attendance;
-          }
-          if (earlyStudents['success'] == true) {
-            _earlyStudents = earlyStudents['students'] ?? [];
           }
           if (summary['success'] == true) {
             _summaryData = summary['summary'] ?? _summaryData;
@@ -173,17 +174,25 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Row(
                               children: [
-                                // Logo
                                 Container(
-                                  padding: const EdgeInsets.all(6),
+                                  padding: const EdgeInsets.all(4),
                                   decoration: const BoxDecoration(
                                     color: Colors.white,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
-                                    Icons.spa_rounded,
-                                    color: Color(0xFF0A5C36),
-                                    size: 24,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.asset(
+                                      'assets/images/logo.png',
+                                      width: 28,
+                                      height: 28,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) => const Icon(
+                                        Icons.spa_rounded,
+                                        color: Color(0xFF0A5C36),
+                                        size: 24,
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -420,132 +429,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
 
-              // 3. Quick Access Grid
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Quick Access",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildQuickAccessItem(Icons.calendar_month_rounded, Colors.green.shade600, 'My Attendance', () {
-                          // Open custom Attendance history
-                        }),
-                        _buildQuickAccessItem(Icons.nature_people_rounded, Colors.orange.shade600, 'Early Students', () {
-                          // Scroll to early students
-                        }),
-                        _buildQuickAccessItem(Icons.contact_phone_rounded, Colors.purple.shade600, 'Guardian Directory', () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const GuardianDirectoryScreen()),
-                          );
-                        }),
-                        _buildQuickAccessItem(Icons.person_pin_rounded, Colors.blue.shade600, 'Profile', () {
-                          // Navigate to profile index 3
-                        }),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
 
-              // 4. Early Students Today
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Early Students Today",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text('View All', style: TextStyle(color: Color(0xFF0A5C36), fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    if (_earlyStudents.isEmpty)
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20.0),
-                          child: Center(
-                            child: Text(
-                              'No student arrivals logged yet.',
-                              style: TextStyle(color: Colors.grey.shade400),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _earlyStudents.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final item = _earlyStudents[index];
-                          return Card(
-                            margin: EdgeInsets.zero,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 22,
-                                    backgroundColor: const Color(0xFFF1F5F9),
-                                    child: const Icon(Icons.person_rounded, color: Color(0xFF94A3B8)),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          item['name'] ?? 'Student',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '${item['class']}  •  Arrival: ${item['arrival_time']}',
-                                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE6F4EA),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text(
-                                      'Early',
-                                      style: TextStyle(color: Color(0xFF137333), fontSize: 11, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
+
 
               // 5. Today's Summary Row
               Padding(

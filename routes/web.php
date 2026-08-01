@@ -102,6 +102,9 @@ $router->get('/academics/admissions',                 [AdmissionsController::cla
 $router->get('/academics/classes',                    [ClassesController::class, 'index'],              ['auth', 'tenant']);
 $router->get('/academics/teachers',                   [UserController::class, 'index'],                 ['auth', 'permission:view_users']);
 $router->get('/academics/attendance',                 [AttendanceController::class, 'index'],           ['auth', 'tenant']);
+$router->get('/academics/attendance/leaves', [AttendanceController::class, 'leaves'], ['auth', 'tenant']);
+$router->post('/academics/attendance/approve-leave/{id}', [AttendanceController::class, 'approveLeave'],    ['auth', 'tenant']);
+$router->post('/academics/attendance/reject-leave/{id}',  [AttendanceController::class, 'rejectLeave'],     ['auth', 'tenant']);
 $router->get('/academics/timetable',                  [TimetablesController::class, 'index'],           ['auth', 'tenant']);
 $router->post('/academics/timetable/store',           [TimetablesController::class, 'store'],           ['auth', 'tenant']);
 $router->post('/academics/timetable/{id}/update',      [TimetablesController::class, 'update'],          ['auth', 'tenant']);
@@ -256,6 +259,8 @@ $router->get('/parent/dashboard',                  [ParentPortalController::clas
 $router->get('/parent/students/{id}/attendance',   [ParentPortalController::class, 'attendance'],    ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/attendance/check-date', [ParentPortalController::class, 'checkDateAttendance'], ['auth', 'role:parent']);
 $router->post('/parent/students/{id}/attendance/declare', [ParentPortalController::class, 'submitTomorrowAttendance'], ['auth', 'role:parent']);
+$router->post('/parent/students/{id}/attendance/mark-absent', [ParentPortalController::class, 'markAbsent'], ['auth', 'role:parent']);
+$router->post('/parent/students/{id}/attendance/request-leave', [ParentPortalController::class, 'requestLeave'], ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/timetable',    [ParentPortalController::class, 'timetable'],     ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/exams',        [ParentPortalController::class, 'exams'],         ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/certificates', [ParentPortalController::class, 'certificates'],  ['auth', 'role:parent']);
