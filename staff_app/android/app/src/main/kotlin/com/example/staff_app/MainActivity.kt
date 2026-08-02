@@ -1,4 +1,4 @@
-package com.example.driver_app
+package com.example.staff_app
 
 import io.flutter.embedding.android.FlutterActivity
 
