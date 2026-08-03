@@ -29,6 +29,10 @@ class ExamsController extends Controller
                 `branch_id` INT UNSIGNED NOT NULL,
                 `name` VARCHAR(100) NOT NULL,
                 `section` VARCHAR(50) NULL,
+                `academic_year_id` INT UNSIGNED NULL,
+                `main_group_id` INT UNSIGNED NULL,
+                `curriculum_template_id` INT UNSIGNED NULL,
+                `class_teacher_id` INT UNSIGNED NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 UNIQUE KEY `uq_class_section` (`tenant_id`, `name`, `section`)
@@ -161,10 +165,41 @@ class ExamsController extends Controller
             );
         }
 
-        $subjects = $db->select(
-            "SELECT name, code, type as category FROM subjects WHERE tenant_id = ? ORDER BY type ASC, name ASC",
-            [$tenantId]
-        );
+        $subjects = [];
+        if ($selectedClass) {
+            // First check if the class has a specific curriculum template assigned directly
+            $subjects = $db->select("
+                SELECT DISTINCT s.name, s.code, s.type as category
+                FROM classes c
+                JOIN curriculum_sections sec ON sec.curriculum_template_id = c.curriculum_template_id
+                JOIN curriculum_subjects cs ON cs.curriculum_section_id = sec.id
+                JOIN subjects s ON cs.subject_id = s.id
+                WHERE c.tenant_id = ? AND c.name = ? AND COALESCE(c.section, '') = ?
+                ORDER BY s.type ASC, s.name ASC
+            ", [$tenantId, $selectedClass, $selectedSection]);
+
+            // Fallback to group and year mapping if direct link is empty
+            if (empty($subjects)) {
+                $subjects = $db->select("
+                    SELECT DISTINCT s.name, s.code, s.type as category
+                    FROM classes c
+                    JOIN curriculum_templates ct ON c.academic_year_id = ct.academic_year_id AND c.main_group_id = ct.main_group_id
+                    JOIN curriculum_sections sec ON sec.curriculum_template_id = ct.id
+                    JOIN curriculum_subjects cs ON cs.curriculum_section_id = sec.id
+                    JOIN subjects s ON cs.subject_id = s.id
+                    WHERE c.tenant_id = ? AND c.name = ? AND COALESCE(c.section, '') = ?
+                    ORDER BY s.type ASC, s.name ASC
+                ", [$tenantId, $selectedClass, $selectedSection]);
+            }
+        }
+
+        if (empty($subjects)) {
+            $subjects = $db->select(
+                "SELECT name, code, type as category FROM subjects WHERE tenant_id = ? ORDER BY type ASC, name ASC",
+                [$tenantId]
+            );
+        }
+
         if (empty($subjects)) {
             $subjects = [
                 ['name' => 'Speech Therapy', 'code' => 'ST', 'category' => 'Therapy'],
@@ -261,6 +296,6 @@ class ExamsController extends Controller
         ]);
 
         $this->flash('success', "Successfully saved bulk evaluation marks.");
-        return $this->redirect("/exams/bulk-entry?class=" . urlencode($class) . "&section=" . urlencode($section) . "&term=" . urlencode($term));
+        return $this->redirect("/academics/assessments?class=" . urlencode($class) . "&section=" . urlencode($section) . "&term=" . urlencode($term));
     }
 }

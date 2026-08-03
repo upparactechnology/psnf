@@ -98,17 +98,11 @@ ob_start();
     </div>
 
     <!-- Quick Navigation / Workspace Sections -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <a href="<?= url('documents/student-documents') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/20 hover:border-indigo-500/50 hover:bg-slate-50/50 transition-all block">
             <div class="text-3xl">👨‍🎓</div>
             <h3 class="font-bold text-slate-900 dark:text-white mt-3 group-hover:text-indigo-500 transition-colors">Student Registry</h3>
             <p class="text-xs text-slate-500 mt-1 leading-relaxed">Birth certificates, Aadhar card validation, transfer sheets, academic scores</p>
-        </a>
-
-        <a href="<?= url('documents/staff-documents') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/20 hover:border-blue-500/50 hover:bg-slate-50/50 transition-all block">
-            <div class="text-3xl">👨‍🏫</div>
-            <h3 class="font-bold text-slate-900 dark:text-white mt-3 group-hover:text-blue-500 transition-colors">Staff Documents</h3>
-            <p class="text-xs text-slate-500 mt-1 leading-relaxed">Offer letters, joining reports, PAN validation, salary structures</p>
         </a>
 
         <a href="<?= url('documents/parent-documents') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/20 hover:border-emerald-500/50 hover:bg-slate-50/50 transition-all block">

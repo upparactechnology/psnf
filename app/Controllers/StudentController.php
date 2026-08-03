@@ -56,22 +56,16 @@ class StudentController extends Controller
         if (!isset($data['full_name']) && isset($data['first_name'])) {
             $data['full_name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['middle_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
         }
-        if (empty($data['disability_type'])) {
-            $data['disability_type'] = 'Other';
-        }
-
         $rules = [
             'full_name'             => 'required|min:2|max:200',
             'gender'                 => 'required|in:male,female,other',
             'dob'                    => 'required|date',
             'blood_group'            => 'nullable|in:Unknown,A+,A-,B+,B-,AB+,AB-,O+,O-',
             'aadhar_number'          => 'nullable|max:20',
+            'roll_number'            => 'nullable|max:50',
+            'gr_number'              => 'nullable|max:50',
             'mother_tongue'          => 'nullable|max:100',
             'address'                => 'nullable',
-            'disability_type'        => 'required',
-            'disability_detail'      => 'nullable',
-            'care_instructions'      => 'nullable',
-            'special_needs_summary'  => 'nullable',
             'school_id'              => 'required|exists:schools,id',
             'branch_id'              => 'required|exists:branches,id',
             'guardian_name'          => 'nullable|min:2',
@@ -130,10 +124,10 @@ class StudentController extends Controller
                 return $this->successResponse('Student created.', ['id' => $studentId], 201);
             }
 
-            return $this->redirect("/students/$studentId");
+            return $this->redirect("/academics/students/$studentId");
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to create student. ' . $e->getMessage());
-            return $this->redirect('/students/create');
+            return $this->redirect('/academics/students/create');
         }
     }
 
@@ -145,6 +139,21 @@ class StudentController extends Controller
             $this->response->abort(404);
             exit();
         }
+
+        $student['ledgers'] = \Core\Application::$app->db->select("
+            SELECT * FROM student_ledgers 
+            WHERE student_id = ? 
+            ORDER BY created_at DESC
+        ", [(int)$id]);
+        
+        $student['ledger_summary'] = \Core\Application::$app->db->selectOne("
+            SELECT 
+                COALESCE(SUM(debit), 0) as total_debit, 
+                COALESCE(SUM(credit), 0) as total_credit,
+                (COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0)) as current_balance
+            FROM student_ledgers 
+            WHERE student_id = ?
+        ", [(int)$id]);
 
         $db = \Core\Application::$app->db;
         $tenantId = \Core\Database::getTenantId();
@@ -171,20 +180,30 @@ class StudentController extends Controller
             [$tenantId]
         );
 
-        $assignedSubjects = $db->select(
-            "SELECT s.* 
-             FROM subjects s
-             INNER JOIN student_subject_enrollments e ON e.subject_id = s.id
-             WHERE e.student_id = ?",
-            [(int)$id]
-        );
+        $inheritedSubjects = [];
+        if (!empty($student['class_id'])) {
+            $classId = (int)$student['class_id'];
+            $classRow = $db->selectOne("SELECT * FROM classes WHERE id = ?", [$classId]);
+            if ($classRow) {
+                $curriculum = $db->selectOne("
+                    SELECT id FROM curriculum_templates 
+                    WHERE academic_year_id = ? AND main_group_id = ? AND tenant_id = ? LIMIT 1
+                ", [$classRow['academic_year_id'], $classRow['main_group_id'], $tenantId]);
+                
+                if ($curriculum) {
+                    $inheritedSubjects = $db->select("
+                        SELECT s.*, cs.assessment_type, cs.is_required
+                        FROM curriculum_subjects cs
+                        JOIN subjects s ON cs.subject_id = s.id
+                        JOIN curriculum_sections sec ON cs.curriculum_section_id = sec.id
+                        WHERE sec.curriculum_template_id = ?
+                        ORDER BY sec.sort_order ASC, cs.sequence ASC
+                    ", [$curriculum['id']]);
+                }
+            }
+        }
 
-        $availableSubjects = $db->select(
-            "SELECT * FROM subjects WHERE tenant_id = ? ORDER BY name ASC",
-            [$tenantId]
-        );
-
-        return $this->view('students/show', compact('student', 'classes', 'sections', 'academicYears', 'assignedSubjects', 'availableSubjects'));
+        return $this->view('students/show', compact('student', 'classes', 'sections', 'academicYears', 'inheritedSubjects'));
     }
 
     public function edit(string $id): string
@@ -205,15 +224,24 @@ class StudentController extends Controller
 
         return $this->view('students/edit', compact('student', 'schools', 'branches', 'guardians'));
     }
-
     public function update(string $id): string
     {
         $data = $this->request->getBody();
         if (!isset($data['full_name']) && isset($data['first_name'])) {
             $data['full_name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['middle_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
         }
-        if (empty($data['disability_type'])) {
-            $data['disability_type'] = 'Other';
+
+        $student = Student::find((int) $id);
+        if (!$student) {
+            $this->response->abort(404);
+            exit();
+        }
+
+        if (empty($data['school_id'])) {
+            $data['school_id'] = $student['school_id'];
+        }
+        if (empty($data['branch_id'])) {
+            $data['branch_id'] = $student['branch_id'];
         }
 
         $rules = [
@@ -222,12 +250,10 @@ class StudentController extends Controller
             'dob'                    => 'required|date',
             'blood_group'            => 'nullable|in:Unknown,A+,A-,B+,B-,AB+,AB-,O+,O-',
             'aadhar_number'          => 'nullable|max:20',
+            'roll_number'            => 'nullable|max:50',
+            'gr_number'              => 'nullable|max:50',
             'mother_tongue'          => 'nullable|max:100',
             'address'                => 'nullable',
-            'disability_type'        => 'required',
-            'disability_detail'      => 'nullable',
-            'care_instructions'      => 'nullable',
-            'special_needs_summary'  => 'nullable',
             'school_id'              => 'required|exists:schools,id',
             'branch_id'              => 'required|exists:branches,id',
             'class'                  => 'nullable|max:50',
@@ -282,10 +308,10 @@ class StudentController extends Controller
 
             $this->service->update((int) $id, $validated, $filesData);
             $this->flash('success', 'Student profile updated successfully.');
-            return $this->redirect("/students/$id");
+            return $this->redirect("/academics/students/$id");
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to update student. ' . $e->getMessage());
-            return $this->redirect("/students/$id/edit");
+            return $this->redirect("/academics/students/$id/edit");
         }
     }
 
@@ -299,7 +325,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Medical information updated.');
-        return $this->redirect("/students/$id");
+        return $this->redirect("/academics/students/$id");
     }
 
     public function updateStatus(string $id): string
@@ -312,17 +338,17 @@ class StudentController extends Controller
         Student::updateStatus((int) $id, $status, auth_id());
 
         if ($status === 'enrolled') {
-            $class = trim($this->request->input('class') ?? '');
-            $section = trim($this->request->input('section') ?? '');
-            $academicYear = trim($this->request->input('academic_year') ?? '');
-            
+            $classId = (int)$this->request->input('class_id');
             $db = \Core\Application::$app->db;
-            $db->query(
-                "UPDATE students 
-                 SET class = ?, section = ?, academic_year = ?, enrolled_date = ? 
-                 WHERE id = ?",
-                [$class, $section, $academicYear, date('Y-m-d'), (int)$id]
-            );
+            $classRow = $db->selectOne("SELECT * FROM classes WHERE id = ?", [$classId]);
+            if ($classRow) {
+                $db->query(
+                    "UPDATE students 
+                     SET class_id = ?, main_group_id = ?, class = ?, section = ?, enrolled_date = ? 
+                     WHERE id = ?",
+                    [$classRow['id'], $classRow['main_group_id'], $classRow['name'], $classRow['section'], date('Y-m-d'), (int)$id]
+                );
+            }
         }
 
         if ($this->request->wantsJson() || $this->isHtmx()) {
@@ -330,53 +356,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Admission status updated.');
-        return $this->redirect("/students/$id");
-    }
-
-    public function assignSubject(string $id): string
-    {
-        $subjectIds = (array)($this->request->input('subject_ids') ?? [$this->request->input('subject_id')]);
-        $subjectIds = array_filter(array_map('intval', $subjectIds));
-
-        if (empty($subjectIds)) {
-            $this->flash('error', 'Please select at least one subject to assign.');
-            return $this->redirect("/students/$id");
-        }
-
-        $db = \Core\Application::$app->db;
-        $added = 0;
-        foreach ($subjectIds as $sId) {
-            try {
-                $db->insert('student_subject_enrollments', [
-                    'student_id' => (int)$id,
-                    'subject_id' => $sId,
-                    'academic_year_id' => 1,
-                    'status' => 'active'
-                ]);
-                $added++;
-            } catch (\Throwable $e) {
-                // Ignore duplicates
-            }
-        }
-
-        if ($added > 0) {
-            $this->flash('success', "$added subject(s) assigned to student successfully.");
-        } else {
-            $this->flash('error', 'Selected subject(s) are already assigned to this student.');
-        }
-
-        return $this->redirect("/students/$id");
-    }
-
-    public function removeSubject(string $id, string $subjectId): string
-    {
-        $db = \Core\Application::$app->db;
-        $db->query(
-            "DELETE FROM student_subject_enrollments WHERE student_id = ? AND subject_id = ?",
-            [(int)$id, (int)$subjectId]
-        );
-        $this->flash('success', 'Subject unassigned successfully.');
-        return $this->redirect("/students/$id");
+        return $this->redirect("/academics/students/$id");
     }
 
     public function uploadDocument(string $id): string
@@ -402,7 +382,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Document uploaded successfully.');
-        return $this->redirect("/students/$id");
+        return $this->redirect("/academics/students/$id");
     }
 
     public function storeGuardian(string $id): string
@@ -427,7 +407,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Guardian/parent added successfully.');
-        return $this->redirect("/students/$id");
+        return $this->redirect("/academics/students/$id");
     }
 
     public function storeEmergencyContact(string $id): string
@@ -440,7 +420,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Emergency contact added.');
-        return $this->redirect("/students/$id");
+        return $this->redirect("/academics/students/$id");
     }
 
     public function timeline(string $id): string

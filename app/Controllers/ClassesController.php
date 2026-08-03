@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use Core\Controller;
 use Core\Application;
+use Core\Session;
 
 class ClassesController extends Controller
 {
@@ -14,224 +15,252 @@ class ClassesController extends Controller
         return Application::$app->db;
     }
 
-    private function checkAndInitializeClassesTable(): void
-    {
-        $db = $this->db();
-        $db->query("
-            CREATE TABLE IF NOT EXISTS `classes` (
-                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                `tenant_id` INT UNSIGNED NOT NULL,
-                `school_id` INT UNSIGNED NOT NULL,
-                `branch_id` INT UNSIGNED NOT NULL,
-                `name` VARCHAR(100) NOT NULL,
-                `section` VARCHAR(50) NULL,
-                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                UNIQUE KEY `uq_class_section` (`tenant_id`, `name`, `section`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-        ");
-
-        // Sync existing classes from students table to classes table if empty
-        $count = $db->selectOne("SELECT COUNT(*) as c FROM classes")['c'] ?? 0;
-        if ($count == 0) {
-            $existing = $db->select("
-                SELECT tenant_id, school_id, branch_id, class as name, section 
-                FROM students 
-                WHERE class IS NOT NULL AND class != ''
-                GROUP BY tenant_id, school_id, branch_id, class, section
-            ");
-            foreach ($existing as $row) {
-                try {
-                    $db->insert('classes', [
-                        'tenant_id' => $row['tenant_id'],
-                        'school_id' => $row['school_id'] ?: 1,
-                        'branch_id' => $row['branch_id'] ?: 1,
-                        'name' => $row['name'],
-                        'section' => $row['section'] ?: '',
-                    ]);
-                } catch (\Throwable $e) {
-                    // Ignore duplicate key errors or constraint errors
-                }
-            }
-        }
-    }
-
     public function index(): string
     {
-        $this->checkAndInitializeClassesTable();
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
 
-        // Retrieve all unique class and section combinations with student counts from the classes table
-        $classes = $db->select(
-            "SELECT c.name as class, c.section, COUNT(s.id) as student_count 
-             FROM classes c
-             LEFT JOIN students s ON s.class = c.name AND COALESCE(s.section, '') = COALESCE(c.section, '') AND s.tenant_id = c.tenant_id AND s.deleted_at IS NULL AND s.admission_status = 'enrolled'
-             WHERE c.tenant_id = ?
-             GROUP BY c.id, c.name, c.section
-             ORDER BY c.name ASC, c.section ASC",
-            [$tenantId]
-        );
+        // Fetch classes with main groups and teachers
+        $classes = $db->select("
+            SELECT c.*, mg.name as group_name, mg.color as group_color, mg.icon as group_icon, 
+                   u.name as teacher_name, ay.year_name, ct.name as curriculum_name,
+                   (SELECT COUNT(*) FROM students s WHERE s.class_id = c.id AND s.deleted_at IS NULL) as student_count
+            FROM classes c
+            LEFT JOIN main_groups mg ON c.main_group_id = mg.id
+            LEFT JOIN users u ON c.class_teacher_id = u.id
+            LEFT JOIN academic_years ay ON c.academic_year_id = ay.id
+            LEFT JOIN curriculum_templates ct ON c.curriculum_template_id = ct.id
+            WHERE c.tenant_id = ?
+            ORDER BY mg.name ASC, c.name ASC
+        ", [$tenantId]);
 
-        // Fetch all active students to assign in the modal
-        $students = $db->select(
-            "SELECT id, first_name, last_name, admission_number, class, section, admission_status
-             FROM students
-             WHERE tenant_id = ? AND deleted_at IS NULL
-             ORDER BY first_name ASC, last_name ASC",
-            [$tenantId]
-        );
+        $years = $db->select("SELECT * FROM academic_years WHERE tenant_id = ? ORDER BY year_name DESC", [$tenantId]);
+        $groups = $db->select("SELECT * FROM main_groups WHERE tenant_id = ? AND is_active = 1", [$tenantId]);
+        $curriculums = $db->select("SELECT id, name, main_group_id, academic_year_id FROM curriculum_templates WHERE tenant_id = ? AND is_active = 1 ORDER BY name ASC", [$tenantId]);
+        
+        // Fetch teachers
+        $teachers = $db->select("
+            SELECT u.id, u.name 
+            FROM users u
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN roles r ON ur.role_id = r.id
+            WHERE u.tenant_id = ? AND r.slug = 'teacher'
+            ORDER BY u.name ASC
+        ", [$tenantId]);
 
-        return $this->view('classes/index', compact('classes', 'students'));
+        return $this->view('classes/index', compact('classes', 'years', 'groups', 'teachers', 'curriculums'));
     }
 
     public function store(): string
     {
-        $this->checkAndInitializeClassesTable();
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
-        $data = $this->request->getBody();
-        $className = trim($data['class'] ?? '');
-        $sectionName = trim($data['section'] ?? '');
-        $studentIds = $data['student_ids'] ?? [];
-        $redirectTo = $data['redirect_to'] ?? '/classes';
-
-        if (empty($className)) {
-            \Core\Session::flash('error', 'Class name is required.');
-            return $this->redirect($redirectTo);
-        }
-
-        // Insert class into classes table if not exists
-        $exists = $db->selectOne("SELECT id FROM classes WHERE tenant_id = ? AND name = ? AND COALESCE(section, '') = ?", [$tenantId, $className, $sectionName]);
-        if (!$exists) {
-            $db->insert('classes', [
-                'tenant_id' => $tenantId,
-                'school_id' => \Core\Database::getSchoolId() ?: 1,
-                'branch_id' => \Core\Database::getBranchId() ?: 1,
-                'name' => $className,
-                'section' => $sectionName,
-            ]);
-        }
-
-        if (!empty($studentIds)) {
-            $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
-            $params = array_merge([$className, $sectionName], array_map('intval', $studentIds));
-            
-            $db->query(
-                "UPDATE students 
-                 SET class = ?, section = ?, admission_status = 'enrolled' 
-                 WHERE id IN ($placeholders)",
-                $params
-            );
-            
-            \App\Models\ActivityLog::log('class_created', auth_id(), [
-                'class' => $className,
-                'section' => $sectionName,
-                'assigned_count' => count($studentIds)
-            ]);
-            
-            \Core\Session::flash('success', "Class '{$className}' created and student(s) assigned successfully.");
-        } else {
-            \App\Models\ActivityLog::log('class_created', auth_id(), [
-                'class' => $className,
-                'section' => $sectionName,
-                'assigned_count' => 0
-            ]);
-
-            \Core\Session::flash('success', "Class '{$className}' created successfully.");
-        }
-
-        return $this->redirect($redirectTo);
-    }
-
-    public function destroy(): string
-    {
-        $this->checkAndInitializeClassesTable();
-        $db = $this->db();
-        $tenantId = \Core\Database::getTenantId();
+        
         $className = trim($this->request->input('class', ''));
         $sectionName = trim($this->request->input('section', ''));
+        $yearId = (int)$this->request->input('academic_year_id');
+        $groupId = (int)$this->request->input('main_group_id');
+        $curriculumTemplateId = $this->request->input('curriculum_template_id') ? (int)$this->request->input('curriculum_template_id') : null;
+        $teacherId = (int)$this->request->input('class_teacher_id');
 
         if (empty($className)) {
-            \Core\Session::flash('error', 'Class name is required.');
-            return $this->redirect('/classes');
+            Session::flash('error', 'Class name is required.');
+            return $this->redirect('/academics/classes');
         }
 
-        // Delete from classes table
-        $db->query("DELETE FROM classes WHERE tenant_id = ? AND name = ? AND COALESCE(section, '') = ?", [$tenantId, $className, $sectionName]);
+        if ($curriculumTemplateId) {
+            $currCheck = $db->selectOne("SELECT id FROM curriculum_templates WHERE id = ? AND main_group_id = ? AND academic_year_id = ? AND tenant_id = ?", [$curriculumTemplateId, $groupId, $yearId, $tenantId]);
+            if (!$currCheck) {
+                Session::flash('error', 'The selected curriculum template does not match the selected Main Group or Academic Year.');
+                return $this->redirect('/academics/classes');
+            }
+        }
 
-        // Unassign any students belonging to this class and section
-        $db->query(
-            "UPDATE students 
-             SET class = NULL, section = NULL 
-             WHERE tenant_id = ? AND class = ? AND COALESCE(section, '') = ?",
-            [$tenantId, $className, $sectionName]
-        );
-
-        \App\Models\ActivityLog::log('class_deleted', auth_id(), [
-            'class' => $className,
-            'section' => $sectionName
+        // Insert into classes
+        $db->insert('classes', [
+            'tenant_id' => $tenantId,
+            'school_id' => 1,
+            'branch_id' => 1,
+            'name' => $className,
+            'section' => $sectionName,
+            'academic_year_id' => $yearId,
+            'main_group_id' => $groupId,
+            'curriculum_template_id' => $curriculumTemplateId,
+            'class_teacher_id' => $teacherId ?: null
         ]);
 
-        \Core\Session::flash('success', "Class '{$className}' deleted successfully.");
-        return $this->redirect('/classes');
+        Session::flash('success', "Class '{$className}' created successfully.");
+        return $this->redirect('/academics/classes');
     }
 
-    public function show(string $class): string
+    public function show(string $id): string
     {
-        $this->checkAndInitializeClassesTable();
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
-        $className = urldecode($class);
 
-        $classCondition = "s.class = ?";
-        $params = [$tenantId, $className];
+        $class = $db->selectOne("
+            SELECT c.*, mg.name as group_name, mg.color as group_color, mg.icon as group_icon, 
+                   u.name as teacher_name, ay.year_name
+            FROM classes c
+            LEFT JOIN main_groups mg ON c.main_group_id = mg.id
+            LEFT JOIN users u ON c.class_teacher_id = u.id
+            LEFT JOIN academic_years ay ON c.academic_year_id = ay.id
+            WHERE c.id = ? AND c.tenant_id = ?
+        ", [(int)$id, $tenantId]);
 
-        if ($className === 'Unassigned') {
-            $classCondition = "(s.class IS NULL OR s.class = '')";
-            $params = [$tenantId];
+        if (!$class) {
+            Session::flash('error', 'Class not found.');
+            return $this->redirect('/academics/classes');
+        }
+
+        // Resolve curriculum template
+        $curriculum = null;
+        if (!empty($class['curriculum_template_id'])) {
+            $curriculum = $db->selectOne("
+                SELECT * FROM curriculum_templates 
+                WHERE id = ? AND tenant_id = ?
+            ", [(int)$class['curriculum_template_id'], $tenantId]);
+        }
+        if (!$curriculum) {
+            $curriculum = $db->selectOne("
+                SELECT * FROM curriculum_templates 
+                WHERE academic_year_id = ? AND main_group_id = ? AND tenant_id = ? LIMIT 1
+            ", [$class['academic_year_id'], $class['main_group_id'], $tenantId]);
+        }
+
+        $subjects = [];
+        if ($curriculum) {
+            $subjects = $db->select("
+                SELECT s.name, s.code, s.category, cs.assessment_type
+                FROM curriculum_subjects cs
+                JOIN subjects s ON cs.subject_id = s.id
+                JOIN curriculum_sections sec ON cs.curriculum_section_id = sec.id
+                WHERE sec.curriculum_template_id = ?
+                ORDER BY sec.sort_order ASC, cs.sequence ASC
+            ", [$curriculum['id']]);
         }
 
         // Fetch students in this class
-        $students = $db->select(
-            "SELECT s.*, b.name as branch_name 
-             FROM students s
-             LEFT JOIN branches b ON b.id = s.branch_id
-             WHERE s.tenant_id = ? AND $classCondition AND s.deleted_at IS NULL AND s.admission_status = 'enrolled'
-             ORDER BY s.first_name ASC",
-            $params
+        $students = $db->select("
+            SELECT * FROM students 
+            WHERE class_id = ? AND tenant_id = ? AND deleted_at IS NULL
+            ORDER BY first_name ASC
+        ", [(int)$id, $tenantId]);
+
+        $years = $db->select("SELECT * FROM academic_years WHERE tenant_id = ? ORDER BY year_name DESC", [$tenantId]);
+        $groups = $db->select("SELECT * FROM main_groups WHERE tenant_id = ? AND is_active = 1", [$tenantId]);
+        $curriculums = $db->select("SELECT id, name, main_group_id, academic_year_id FROM curriculum_templates WHERE tenant_id = ? AND is_active = 1 ORDER BY name ASC", [$tenantId]);
+        $unassignedStudents = $db->select("
+            SELECT id, first_name, last_name, admission_number 
+            FROM students 
+            WHERE tenant_id = ? AND class_id IS NULL AND deleted_at IS NULL AND admission_status = 'enrolled'
+            ORDER BY first_name ASC
+        ", [$tenantId]);
+
+        $teachers = $db->select("
+            SELECT u.id, u.name 
+            FROM users u
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN roles r ON ur.role_id = r.id
+            WHERE u.tenant_id = ? AND r.slug = 'teacher'
+            ORDER BY u.name ASC
+        ", [$tenantId]);
+
+        return $this->view('classes/show', compact('class', 'curriculum', 'subjects', 'students', 'years', 'groups', 'teachers', 'curriculums', 'unassignedStudents'));
+    }
+
+    public function update(string $id): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        
+        $className = trim($this->request->input('class', ''));
+        $sectionName = trim($this->request->input('section', ''));
+        $yearId = (int)$this->request->input('academic_year_id');
+        $groupId = (int)$this->request->input('main_group_id');
+        $curriculumTemplateId = $this->request->input('curriculum_template_id') ? (int)$this->request->input('curriculum_template_id') : null;
+        $teacherId = (int)$this->request->input('class_teacher_id');
+
+        if (empty($className)) {
+            Session::flash('error', 'Class name is required.');
+            return $this->redirect('/academics/classes/' . $id);
+        }
+
+        if ($curriculumTemplateId) {
+            $currCheck = $db->selectOne("SELECT id FROM curriculum_templates WHERE id = ? AND main_group_id = ? AND academic_year_id = ? AND tenant_id = ?", [$curriculumTemplateId, $groupId, $yearId, $tenantId]);
+            if (!$currCheck) {
+                Session::flash('error', 'The selected curriculum template does not match the selected Main Group or Academic Year.');
+                return $this->redirect('/academics/classes/' . $id);
+            }
+        }
+
+        $db->update('classes', [
+            'name' => $className,
+            'section' => $sectionName,
+            'academic_year_id' => $yearId,
+            'main_group_id' => $groupId,
+            'curriculum_template_id' => $curriculumTemplateId,
+            'class_teacher_id' => $teacherId ?: null
+        ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
+
+        Session::flash('success', "Class '{$className}' updated successfully.");
+        return $this->redirect('/academics/classes/' . $id);
+    }
+
+    public function destroy(string $id): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+
+        // Unassign students from this class
+        $db->query("UPDATE students SET class_id = NULL, class = NULL, section = NULL WHERE class_id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        $db->query("DELETE FROM classes WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+
+        Session::flash('success', 'Class deleted successfully.');
+        return $this->redirect('/academics/classes');
+    }
+
+    public function enrollStudents(string $id): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        
+        $class = $db->selectOne("SELECT * FROM classes WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        if (!$class) {
+            Session::flash('error', 'Class not found.');
+            return $this->redirect('/academics/classes');
+        }
+
+        $studentIds = $this->request->input('student_ids', []);
+        if (!empty($studentIds)) {
+            $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+            $db->query(
+                "UPDATE students 
+                 SET class_id = ?, class = ?, section = ? 
+                 WHERE id IN ($placeholders) AND tenant_id = ?",
+                array_merge([(int)$id, $class['name'], $class['section']], array_map('intval', $studentIds), [$tenantId])
+            );
+            Session::flash('success', count($studentIds) . ' students enrolled successfully.');
+        } else {
+            Session::flash('error', 'No students selected.');
+        }
+
+        return $this->redirect('/academics/classes/' . $id);
+    }
+
+    public function removeStudent(string $classId, string $studentId): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+
+        $db->query(
+            "UPDATE students 
+             SET class_id = NULL, class = NULL, section = NULL 
+             WHERE id = ? AND class_id = ? AND tenant_id = ?",
+            [(int)$studentId, (int)$classId, $tenantId]
         );
 
-        // Fetch all active students NOT in this class
-        if ($className === 'Unassigned') {
-            $assignableStudents = $db->select(
-                "SELECT id, first_name, last_name, admission_number, class, section, admission_status
-                 FROM students
-                 WHERE tenant_id = ? AND deleted_at IS NULL AND (class IS NOT NULL AND class != '')
-                 ORDER BY first_name ASC, last_name ASC",
-                [$tenantId]
-            );
-        } else {
-            $assignableStudents = $db->select(
-                "SELECT id, first_name, last_name, admission_number, class, section, admission_status
-                 FROM students
-                 WHERE tenant_id = ? AND deleted_at IS NULL AND (class != ? OR class IS NULL OR class = '')
-                 ORDER BY first_name ASC, last_name ASC",
-                [$tenantId, $className]
-            );
-        }
-
-        // Get distinct sections for this class
-        $sections = [];
-        if ($className !== 'Unassigned') {
-            $sections = $db->select(
-                "SELECT DISTINCT section 
-                 FROM students 
-                 WHERE tenant_id = ? AND class = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
-                [$tenantId, $className]
-            );
-        }
-
-        return $this->view('classes/show', compact('students', 'className', 'assignableStudents', 'sections'));
+        Session::flash('success', 'Student removed from class.');
+        return $this->redirect('/academics/classes/' . $classId);
     }
 }

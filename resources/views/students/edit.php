@@ -3,7 +3,7 @@ $layout    = 'app';
 $pageTitle = 'Edit Student';
 $s = $student;
 $name = $s['first_name'] . ' ' . $s['last_name'];
-$breadcrumbs = [['label'=>'Dashboard','url'=>'/dashboard'],['label'=>'Students','url'=>'/students'],['label'=>$name,'url'=>'/students/'.$s['id']],['label'=>'Edit']];
+$breadcrumbs = [['label'=>'Dashboard','url'=>'/dashboard'],['label'=>'Students','url'=>'/academics/students'],['label'=>$name,'url'=>'/academics/students/'.$s['id']],['label'=>'Edit']];
 ob_start();
 
 $errors = flash('errors') ?? [];
@@ -28,7 +28,7 @@ function selectClassE(string $field): string {
             <p class="text-sm text-slate-500 mt-0.5"><?= e($name) ?></p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="<?= url('students/'.$s['id']) ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← View Profile</a>
+            <a href="<?= url('academics/students/'.$s['id']) ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← View Profile</a>
         </div>
     </div>
 
@@ -43,7 +43,7 @@ function selectClassE(string $field): string {
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="<?= url('students/'.$s['id']) ?>" 
+    <form method="POST" action="<?= url('academics/students/'.$s['id']) ?>" 
           x-data="{ 
               loading: false,
               guardians: <?= htmlspecialchars(json_encode(!empty($guardians) ? $guardians : [['name' => '', 'relationship' => 'Father', 'phone' => '', 'email' => '', 'aadhar' => '']]), ENT_QUOTES, 'UTF-8') ?>,
@@ -196,7 +196,7 @@ function selectClassE(string $field): string {
 
         <!-- Actions -->
         <div class="flex items-center justify-between">
-            <a href="<?= url('students/'.$s['id']) ?>" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-all">Cancel</a>
+            <a href="<?= url('academics/students/'.$s['id']) ?>" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-all">Cancel</a>
             <button type="submit" :disabled="loading"
                     class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90"
                     style="background: linear-gradient(135deg, #6366f1, #a855f7);"

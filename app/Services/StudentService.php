@@ -12,17 +12,16 @@ class StudentService
     public function create(array $data, array $files = []): int
     {
         return \Core\Application::$app->db->transaction(function (Database $db) use ($data, $files) {
-            // Filter student table fields
             $studentKeys = [
                 'uuid', 'tenant_id', 'school_id', 'branch_id', 'admission_number', 'roll_number', 'gr_number',
                 'first_name', 'middle_name', 'last_name', 'gender', 'dob', 'photo', 'blood_group',
-                'nationality', 'religion', 'mother_tongue', 'aadhar_number', 'disability_type',
-                'disability_detail', 'disability_certificate', 'care_instructions',
-                'special_needs_summary', 'address', 'city', 'state', 'pincode', 'admission_status',
+                'nationality', 'religion', 'mother_tongue', 'aadhar_number',
+                'address', 'city', 'state', 'pincode', 'admission_status',
                 'admission_date', 'enrolled_date', 'class', 'section', 'academic_year',
                 'is_active', 'notes', 'created_by', 'updated_by'
             ];
             $studentData = array_intersect_key($data, array_flip($studentKeys));
+            $studentData['admission_status'] = 'enrolled';
 
             $studentData['uuid']             = str_uuid();
             $studentData['admission_number'] = admission_number((int)($data['school_id'] ?? 1));
@@ -149,11 +148,11 @@ class StudentService
             $studentKeys = [
                 'school_id', 'branch_id', 'roll_number', 'first_name', 'middle_name', 'last_name', 'gender', 'dob',
                 'blood_group', 'nationality', 'religion', 'mother_tongue', 'aadhar_number',
-                'disability_type', 'disability_detail', 'care_instructions', 'special_needs_summary',
                 'address', 'city', 'state', 'pincode', 'admission_status', 'admission_date',
                 'enrolled_date', 'class', 'section', 'academic_year', 'is_active', 'notes', 'updated_by'
             ];
             $studentData = array_intersect_key($data, array_flip($studentKeys));
+            $studentData['admission_status'] = 'enrolled';
 
             // Handle student photo image upload if present
             if (!empty($files['photo']) && $files['photo']['error'] === UPLOAD_ERR_OK) {

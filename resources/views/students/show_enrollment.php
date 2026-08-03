@@ -201,4 +201,4 @@ $pickups = json_decode($enrollment['pickup_persons_json'] ?? '[]', true) ?: [];
 
 <?php
 $content = ob_get_clean();
-require VIEWS_PATH . '/layouts/' . $layout . '.php';
+?>

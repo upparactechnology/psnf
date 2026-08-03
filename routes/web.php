@@ -100,6 +100,12 @@ $router->post('/academics/students/{id}/subjects',    [StudentController::class,
 $router->post('/academics/students/{id}/subjects/{subjectId}/delete', [StudentController::class, 'removeSubject'], ['auth', 'permission:edit_students']);
 $router->get('/academics/admissions',                 [AdmissionsController::class, 'index'],           ['auth', 'tenant']);
 $router->get('/academics/classes',                    [ClassesController::class, 'index'],              ['auth', 'tenant']);
+$router->post('/academics/classes',                   [ClassesController::class, 'store'],              ['auth', 'tenant']);
+$router->get('/academics/classes/{id}',               [ClassesController::class, 'show'],               ['auth', 'tenant']);
+$router->post('/academics/classes/{id}',              [ClassesController::class, 'update'],             ['auth', 'tenant']);
+$router->post('/academics/classes/{id}/delete',       [ClassesController::class, 'destroy'],            ['auth', 'tenant']);
+$router->post('/academics/classes/{id}/enroll',           [ClassesController::class, 'enrollStudents'],     ['auth', 'tenant']);
+$router->post('/academics/classes/{classId}/remove-student/{studentId}', [ClassesController::class, 'removeStudent'], ['auth', 'tenant']);
 $router->get('/academics/teachers',                   [UserController::class, 'index'],                 ['auth', 'permission:view_users']);
 $router->get('/academics/attendance',                 [AttendanceController::class, 'index'],           ['auth', 'tenant']);
 $router->get('/academics/attendance/leaves', [AttendanceController::class, 'leaves'], ['auth', 'tenant']);
@@ -123,14 +129,53 @@ $router->get('/academics/parents/{id}/edit',          [App\Controllers\GuardianC
 $router->post('/academics/parents/{id}',              [App\Controllers\GuardianController::class, 'update'],             ['auth', 'tenant']);
 $router->post('/academics/parents/{id}/delete',       [App\Controllers\GuardianController::class, 'destroy'],            ['auth', 'tenant']);
 
-$router->get('/academics/assessments',                [ExamsController::class, 'index'],                ['auth', 'tenant']);
+$router->get('/academics/assessments',                [ExamsController::class, 'bulkEntry'],                ['auth', 'tenant']);
 $router->get('/academics/report-cards',               [ReportCardController::class, 'index'],           ['auth', 'permission:edit_students']);
 $router->get('/academics/settings',                   [App\Controllers\AcademicSettingsController::class, 'index'],     ['auth', 'permission:view_settings']);
 $router->post('/academics/settings/years',            [App\Controllers\AcademicSettingsController::class, 'storeYear'], ['auth', 'permission:edit_settings']);
 $router->post('/academics/settings/years/{id}/lock',  [App\Controllers\AcademicSettingsController::class, 'lockYear'],  ['auth', 'permission:edit_settings']);
+$router->post('/academics/settings/years/{id}/archive', [App\Controllers\AcademicSettingsController::class, 'archiveYear'], ['auth', 'permission:edit_settings']);
+$router->post('/academics/settings/years/{id}/copy',   [App\Controllers\AcademicSettingsController::class, 'copyPreviousYear'], ['auth', 'permission:edit_settings']);
 $router->post('/academics/settings/wizard/close-year', [App\Controllers\AcademicSettingsController::class, 'runYearClosingWizard'], ['auth', 'permission:edit_settings']);
 $router->post('/academics/settings/save-attendance-settings', [App\Controllers\AcademicSettingsController::class, 'saveAttendanceSettings'], ['auth', 'permission:edit_settings']);
 $router->get('/academics/lecture-attendance',         [App\Controllers\AcademicSettingsController::class, 'lectureAttendance'], ['auth', 'tenant']);
+
+// Main Groups & Subject Master Routes
+$router->get('/academics/main-groups',                [App\Controllers\AcademicSettingsController::class, 'mainGroupsIndex'], ['auth', 'tenant']);
+$router->post('/academics/main-groups',               [App\Controllers\AcademicSettingsController::class, 'storeMainGroup'], ['auth', 'tenant']);
+$router->post('/academics/main-groups/{id}',          [App\Controllers\AcademicSettingsController::class, 'updateMainGroup'], ['auth', 'tenant']);
+$router->get('/academics/subject-master',             [App\Controllers\AcademicSettingsController::class, 'subjectMasterIndex'], ['auth', 'tenant']);
+$router->post('/academics/subject-master',            [App\Controllers\AcademicSettingsController::class, 'storeSubject'], ['auth', 'tenant']);
+$router->post('/academics/subject-master/{id}',       [App\Controllers\AcademicSettingsController::class, 'updateSubject'], ['auth', 'tenant']);
+$router->post('/academics/subject-master/{id}/delete', [App\Controllers\AcademicSettingsController::class, 'destroySubject'], ['auth', 'tenant']);
+
+// ─── Global System Settings & Reports ───────────────────────────────────────────
+$router->get('/reports',                        [\App\Controllers\ReportsController::class, 'index'],     ['auth', 'tenant']);
+$router->get('/reports/finance',                [\App\Controllers\ReportsController::class, 'finance'],   ['auth', 'tenant']);
+$router->get('/reports/students',               [\App\Controllers\ReportsController::class, 'students'],  ['auth', 'tenant']);
+$router->get('/reports/staff',                  [\App\Controllers\ReportsController::class, 'staff'],     ['auth', 'tenant']);
+$router->get('/reports/communication',           [\App\Controllers\ReportsController::class, 'communication'], ['auth', 'tenant']);
+$router->get('/settings',                       [\App\Controllers\SettingsController::class, 'index'],    ['auth', 'tenant']);
+$router->get('/settings/general',               [\App\Controllers\SettingsController::class, 'index'],    ['auth', 'tenant']);
+$router->get('/settings/school',                [\App\Controllers\SettingsController::class, 'school'],   ['auth', 'tenant']);
+$router->get('/settings/integrations',          [\App\Controllers\SettingsController::class, 'integrations'],['auth', 'tenant']);
+$router->get('/settings/system',                [\App\Controllers\SettingsController::class, 'system'],   ['auth', 'tenant']);
+$router->post('/settings',                      [\App\Controllers\SettingsController::class, 'update'],   ['auth', 'tenant']);
+$router->post('/settings/update',               [\App\Controllers\SettingsController::class, 'update'],   ['auth', 'tenant']);
+$router->post('/settings/test-whatsapp',        [\App\Controllers\SettingsController::class, 'testWhatsApp'],['auth', 'tenant']);
+
+// Curriculum Templates Manager Routes
+$router->get('/academics/curriculum',                 [App\Controllers\CurriculumManagerController::class, 'index'], ['auth', 'tenant']);
+$router->post('/academics/curriculum/templates',      [App\Controllers\CurriculumManagerController::class, 'storeTemplate'], ['auth', 'tenant']);
+$router->get('/academics/curriculum/templates/{id}',  [App\Controllers\CurriculumManagerController::class, 'showTemplate'], ['auth', 'tenant']);
+$router->post('/academics/curriculum/templates/{id}/sections', [App\Controllers\CurriculumManagerController::class, 'storeSection'], ['auth', 'tenant']);
+$router->post('/academics/curriculum/subjects/add',             [App\Controllers\CurriculumManagerController::class, 'storeCurriculumSubject'], ['auth', 'tenant']);
+$router->post('/academics/curriculum/subjects/{id}/delete',    [App\Controllers\CurriculumManagerController::class, 'destroyCurriculumSubject'], ['auth', 'tenant']);
+$router->post('/academics/curriculum/reorder',        [App\Controllers\CurriculumManagerController::class, 'reorderSubjects'], ['auth', 'tenant']);
+
+// Promotion Wizard Routes
+$router->get('/academics/promotion',                  [App\Controllers\PromotionController::class, 'index'], ['auth', 'tenant']);
+$router->post('/academics/promotion/run',             [App\Controllers\PromotionController::class, 'promoteStudents'], ['auth', 'tenant']);
 
 // Legacy fallbacks
 $router->get('/academic', [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth', 'tenant']);
@@ -160,10 +205,40 @@ $router->get('/students/{id}/report-card/view',    [ReportCardController::class,
 
 // ─── Fees Management — Admin ──────────────────────────────────────────────────
 $router->get('/fees',                       [FeeController::class, 'index'],          ['auth', 'tenant']);
-$router->get('/fees/create',                [FeeController::class, 'create'],         ['auth', 'tenant']);
-$router->post('/fees',                      [FeeController::class, 'store'],          ['auth', 'tenant']);
+$router->get('/fees/export',                [FeeController::class, 'exportCsv'],      ['auth', 'tenant']);
 $router->post('/fees/{id}/pay',             [FeeController::class, 'recordPayment'],  ['auth', 'tenant']);
-$router->post('/fees/{id}/delete',          [FeeController::class, 'destroy'],        ['auth', 'tenant']);
+
+// Invoices CRUD
+$router->get('/fees/invoices',              [\App\Controllers\FeeInvoiceController::class, 'index'],   ['auth', 'tenant']);
+$router->get('/fees/invoices/create',       [\App\Controllers\FeeInvoiceController::class, 'create'],  ['auth', 'tenant']);
+$router->post('/fees/invoices',             [\App\Controllers\FeeInvoiceController::class, 'store'],   ['auth', 'tenant']);
+$router->get('/fees/invoices/{id}',         [\App\Controllers\FeeInvoiceController::class, 'show'],    ['auth', 'tenant']);
+$router->get('/fees/invoices/{id}/edit',    [\App\Controllers\FeeInvoiceController::class, 'edit'],    ['auth', 'tenant']);
+$router->post('/fees/invoices/{id}',        [\App\Controllers\FeeInvoiceController::class, 'update'],  ['auth', 'tenant']);
+$router->post('/fees/invoices/{id}/delete', [\App\Controllers\FeeInvoiceController::class, 'destroy'], ['auth', 'tenant']);
+
+// Fee Categories
+$router->get('/fees/categories',            [\App\Controllers\FeeCategoryController::class, 'index'],   ['auth', 'tenant']);
+$router->post('/fees/categories',           [\App\Controllers\FeeCategoryController::class, 'store'],   ['auth', 'tenant']);
+$router->post('/fees/categories/{id}',      [\App\Controllers\FeeCategoryController::class, 'update'],  ['auth', 'tenant']);
+$router->post('/fees/categories/{id}/delete',[\App\Controllers\FeeCategoryController::class, 'destroy'],['auth', 'tenant']);
+
+// Late Fee Policies
+$router->get('/fees/late-fee-policies',            [\App\Controllers\LateFeePolicyController::class, 'index'],   ['auth', 'tenant']);
+$router->post('/fees/late-fee-policies',           [\App\Controllers\LateFeePolicyController::class, 'store'],   ['auth', 'tenant']);
+$router->post('/fees/late-fee-policies/{id}',      [\App\Controllers\LateFeePolicyController::class, 'update'],  ['auth', 'tenant']);
+$router->post('/fees/late-fee-policies/{id}/delete',[\App\Controllers\LateFeePolicyController::class, 'destroy'],['auth', 'tenant']);
+
+// Fee Structures & Items
+$router->get('/fees/structures',                   [\App\Controllers\FeeStructureController::class, 'index'],    ['auth', 'tenant']);
+$router->post('/fees/structures',                  [\App\Controllers\FeeStructureController::class, 'store'],    ['auth', 'tenant']);
+$router->get('/fees/structures/{id}',              [\App\Controllers\FeeStructureController::class, 'show'],     ['auth', 'tenant']);
+$router->post('/fees/structures/{id}/items',       [\App\Controllers\FeeStructureController::class, 'addItem'],  ['auth', 'tenant']);
+$router->post('/fees/structures/{id}/items/{itemId}/delete', [\App\Controllers\FeeStructureController::class, 'destroyItem'], ['auth', 'tenant']);
+
+// Batch Fee Generator
+$router->get('/fees/batch-generator',              [\App\Controllers\BatchFeeGeneratorController::class, 'index'], ['auth', 'tenant']);
+$router->post('/fees/batch-generator',             [\App\Controllers\BatchFeeGeneratorController::class, 'generate'], ['auth', 'tenant']);
 
 // ─── Receipts — Admin ─────────────────────────────────────────────────────────
 $router->get('/receipts', [ReceiptsController::class, 'index'], ['auth', 'tenant']);

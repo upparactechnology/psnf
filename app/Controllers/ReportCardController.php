@@ -30,6 +30,57 @@ class ReportCardController extends Controller
         return [$academicYear, $semester];
     }
 
+    public function resolveCurriculum(int $studentId, string $academicYear): array
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        
+        $student = $db->selectOne("SELECT * FROM students WHERE id = ? AND tenant_id = ?", [$studentId, $tenantId]);
+        if (!$student || !$student['class_id']) {
+            return [];
+        }
+        
+        $class = $db->selectOne("SELECT * FROM classes WHERE id = ?", [$student['class_id']]);
+        if (!$class) {
+            return [];
+        }
+        
+        $curriculum = $db->selectOne("
+            SELECT * FROM curriculum_templates 
+            WHERE academic_year_id = ? AND main_group_id = ? AND tenant_id = ? LIMIT 1
+        ", [$class['academic_year_id'], $class['main_group_id'], $tenantId]);
+        
+        if (!$curriculum) {
+            return [];
+        }
+        
+        $sections = $db->select("
+            SELECT * FROM curriculum_sections 
+            WHERE curriculum_template_id = ? 
+            ORDER BY sort_order ASC
+        ", [$curriculum['id']]);
+        
+        $curriculumTree = [];
+        foreach ($sections as $sec) {
+            $subjects = $db->select("
+                SELECT cs.*, s.name as subject_name, s.code as subject_code, s.category as subject_category
+                FROM curriculum_subjects cs
+                JOIN subjects s ON cs.subject_id = s.id
+                WHERE cs.curriculum_section_id = ?
+                ORDER BY cs.sequence ASC
+            ", [$sec['id']]);
+            
+            $curriculumTree[] = [
+                'id' => $sec['id'],
+                'section_name' => $sec['section_name'],
+                'sort_order' => $sec['sort_order'],
+                'subjects' => $subjects
+            ];
+        }
+        
+        return $curriculumTree;
+    }
+
 
     public function index(): string
     {
@@ -103,7 +154,8 @@ class ReportCardController extends Controller
             $settings['trustees_config'] = json_decode($settings['trustees_config'] ?? '[]', true) ?: [];
         }
 
-        return $this->view('report-cards/edit', compact('student', 'reportCard', 'semester', 'academicYear', 'settings'));
+        $curriculumTree = $this->resolveCurriculum((int)$studentId, $academicYear);
+        return $this->view('report-cards/edit', compact('student', 'reportCard', 'semester', 'academicYear', 'settings', 'curriculumTree'));
     }
 
     public function store(string $studentId): string
@@ -267,6 +319,8 @@ class ReportCardController extends Controller
         }
         $settings['trustees_config'] = json_decode($settings['trustees_config'] ?? '[]', true) ?: [];
 
+        $curriculumTree = $this->resolveCurriculum((int)$studentId, $academicYear);
+
         if ($this->request->get('pdf') === '1') {
             $composerAutoload = ROOT_PATH . '/certificate_generator/vendor/autoload.php';
             if (file_exists($composerAutoload)) {
@@ -281,7 +335,7 @@ class ReportCardController extends Controller
             $isPdf = true;
             $name = $student['first_name'] . ' ' . $student['last_name'];
             ob_start();
-            extract(compact('student', 'reportCard', 'semester', 'academicYear', 'isPdf', 'name', 'settings'));
+            extract(compact('student', 'reportCard', 'semester', 'academicYear', 'isPdf', 'name', 'settings', 'curriculumTree'));
             include VIEWS_PATH . '/report-cards/view.php';
             $html = ob_get_clean();
 
@@ -294,7 +348,7 @@ class ReportCardController extends Controller
             exit();
         }
 
-        return $this->view('report-cards/view', compact('student', 'reportCard', 'semester', 'academicYear', 'settings'));
+        return $this->view('report-cards/view', compact('student', 'reportCard', 'semester', 'academicYear', 'settings', 'curriculumTree'));
     }
 
     public function parentShow(string $studentId): string

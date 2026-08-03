@@ -38,10 +38,6 @@ class MedicalController extends Controller
             $params[] = $like;
         }
 
-        if ($disability) {
-            $where[]  = 's.disability_type = ?';
-            $params[] = $disability;
-        }
 
         if ($classFilter) {
             $where[]  = 's.class = ?';
@@ -63,7 +59,7 @@ class MedicalController extends Controller
 
         $students = $this->db()->select("
             SELECT s.id, s.first_name, s.last_name, s.dob, s.gender, s.admission_number,
-                   s.blood_group, s.disability_type, s.photo, s.class,
+                   s.blood_group, 'Other' AS disability_type, s.photo, s.class,
                    sm.allergies, sm.allergy_severity, sm.triggers, sm.current_medications,
                    sm.medical_conditions, sm.care_instructions, sm.emergency_protocols,
                    sm.doctor_name, sm.doctor_phone, sm.hospital_name,

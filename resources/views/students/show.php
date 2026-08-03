@@ -73,7 +73,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Report Card
                 </a>
-                <a href="<?= url('students/'.$s['id'].'/edit') ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
+                <a href="<?= url('academics/students/'.$s['id'].'/edit') ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     Edit
                 </a>
@@ -83,7 +83,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
 
     <!-- Tabs -->
     <div class="flex items-center gap-1 border-b border-slate-800/60 mb-6 overflow-x-auto">
-        <?php $tabs = ['overview' => 'Overview', 'subjects' => 'Enrolled Subjects', 'guardians' => 'Guardians & Contacts', 'documents' => 'Documents', 'timeline' => 'Timeline']; ?>
+        <?php $tabs = ['overview' => 'Overview', 'subjects' => 'Inherited Curriculum', 'fees' => 'Financial Ledger', 'guardians' => 'Guardians & Contacts', 'documents' => 'Documents', 'timeline' => 'Timeline']; ?>
         <?php foreach ($tabs as $key => $label): ?>
         <button @click="activeTab = '<?= $key ?>'"
                 :class="activeTab === '<?= $key ?>' ? 'text-brand-400 border-b-2 border-brand-500' : 'text-slate-500 hover:text-slate-300 border-b-2 border-transparent'"
@@ -139,68 +139,27 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
 
     <!-- Subjects Tab -->
     <div x-show="activeTab === 'subjects'" x-cloak class="space-y-6">
-        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-semibold text-slate-300">Enrolled Subjects & Therapy Modules</h3>
-                    <p class="text-xs text-slate-500 mt-0.5"><?= count($assignedSubjects ?? []) ?> active subjects assigned</p>
-                </div>
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-4">
+            <div>
+                <h3 class="text-sm font-semibold text-slate-300">Inherited Curriculum Subjects</h3>
+                <p class="text-xs text-slate-500 mt-0.5"><?= count($inheritedSubjects) ?> subjects automatically inherited from Class.</p>
             </div>
 
-            <!-- Bulk Checkbox Subject Selector -->
-            <form action="<?= url('academics/students/'.$s['id'].'/subjects') ?>" method="POST" class="p-5 rounded-2xl border border-slate-800/80 bg-slate-950/40 space-y-4">
-                <?= \Core\View::csrf() ?>
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Subjects to Assign</span>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">
-                        + Assign Selected Subjects
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    <?php 
-                    $assignedIds = array_column($assignedSubjects ?? [], 'id');
-                    foreach ($availableSubjects as $sub): 
-                        $isAssigned = in_array($sub['id'], $assignedIds);
-                    ?>
-                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-800/60 bg-slate-900/60 hover:border-slate-700 cursor-pointer transition-all">
-                        <input type="checkbox" name="subject_ids[]" value="<?= $sub['id'] ?>" <?= $isAssigned ? 'checked disabled' : '' ?> class="mt-1 rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500">
-                        <div class="min-w-0 flex-1">
-                            <span class="text-2xs font-mono text-indigo-400"><?= e($sub['code']) ?></span>
-                            <p class="text-xs font-bold text-white truncate"><?= e($sub['name']) ?></p>
-                            <span class="text-[10px] text-slate-500"><?= e($sub['type']) ?></span>
-                        </div>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
-            </form>
-
-            <!-- Currently Assigned Subjects Grid -->
-            <div>
-                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Currently Active Subjects</h4>
-                <?php if (empty($assignedSubjects)): ?>
-                <div class="p-8 text-center border border-slate-800/60 rounded-xl bg-slate-950/30">
-                    <p class="text-xs text-slate-500">No subjects currently assigned to this student.</p>
-                </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <?php if (empty($inheritedSubjects)): ?>
+                    <p class="col-span-full text-center text-slate-500 text-xs py-6">No subjects resolved for this student's class.</p>
                 <?php else: ?>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <?php foreach ($assignedSubjects as $sub): ?>
-                    <div class="p-4 rounded-xl bg-slate-800/30 border border-slate-700/30 flex items-center justify-between">
-                        <div>
-                            <span class="text-2xs font-mono text-indigo-400"><?= e($sub['code']) ?></span>
-                            <h4 class="text-xs font-bold text-white mt-0.5"><?= e($sub['name']) ?></h4>
-                            <span class="text-[10px] text-slate-400"><?= e($sub['type']) ?></span>
+                    <?php foreach ($inheritedSubjects as $sub): ?>
+                        <div class="p-4 rounded-xl bg-slate-800/30 border border-slate-700/30 flex items-center justify-between">
+                            <div>
+                                <span class="text-2xs font-mono text-indigo-400"><?= e($sub['code']) ?></span>
+                                <h4 class="text-xs font-bold text-white mt-0.5"><?= e($sub['name']) ?></h4>
+                                <span class="text-[10px] text-slate-400"><?= e($sub['category']) ?> (<?= e($sub['assessment_type']) ?>)</span>
+                            </div>
                         </div>
-                        <form action="<?= url('academics/students/'.$s['id'].'/subjects/' . $sub['id'] . '/delete') ?>" method="POST" onsubmit="return confirm('Unassign subject?')">
-                            <?= \Core\View::csrf() ?>
-                            <button type="submit" class="text-2xs text-red-400 hover:underline">Unassign</button>
-                        </form>
-                    </div>
                     <?php endforeach; ?>
-                </div>
                 <?php endif; ?>
             </div>
-
         </div>
     </div>
 
@@ -283,6 +242,67 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Fees Tab -->
+    <div x-show="activeTab === 'fees'" x-cloak>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="rounded-2xl bg-indigo-900/40 border border-indigo-500/30 p-5 flex flex-col justify-center">
+                <p class="text-indigo-400 text-sm font-medium mb-1">Total Expected</p>
+                <h3 class="text-2xl font-bold text-white">₹<?= number_format((float)($s['ledger_summary']['total_debit'] ?? 0), 2) ?></h3>
+            </div>
+            <div class="rounded-2xl bg-emerald-900/40 border border-emerald-500/30 p-5 flex flex-col justify-center">
+                <p class="text-emerald-400 text-sm font-medium mb-1">Total Collected</p>
+                <h3 class="text-2xl font-bold text-white">₹<?= number_format((float)($s['ledger_summary']['total_credit'] ?? 0), 2) ?></h3>
+            </div>
+            <div class="rounded-2xl bg-red-900/40 border border-red-500/30 p-5 flex flex-col justify-center">
+                <p class="text-red-400 text-sm font-medium mb-1">Outstanding Balance</p>
+                <h3 class="text-2xl font-bold text-white">₹<?= number_format((float)($s['ledger_summary']['current_balance'] ?? 0), 2) ?></h3>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-sm font-semibold text-slate-300">Ledger History</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="text-slate-500 font-medium border-b border-slate-800">
+                        <tr>
+                            <th class="pb-3 font-medium">Date</th>
+                            <th class="pb-3 font-medium">Description</th>
+                            <th class="pb-3 font-medium text-right">Debit (-)</th>
+                            <th class="pb-3 font-medium text-right">Credit (+)</th>
+                            <th class="pb-3 font-medium text-right">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/50">
+                        <?php if (empty($s['ledgers'])): ?>
+                            <tr><td colspan="5" class="py-6 text-center text-slate-500">No financial records found.</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($s['ledgers'] as $ledger): ?>
+                            <tr class="hover:bg-slate-800/30">
+                                <td class="py-3 text-slate-400 whitespace-nowrap"><?= date('M d, Y', strtotime($ledger['created_at'])) ?></td>
+                                <td class="py-3 text-slate-300">
+                                    <span class="block truncate max-w-xs" title="<?= e($ledger['description']) ?>"><?= e($ledger['description']) ?></span>
+                                    <span class="text-xs text-slate-500 uppercase"><?= e($ledger['entry_type']) ?></span>
+                                </td>
+                                <td class="py-3 text-right text-red-400 font-medium">
+                                    <?= $ledger['debit'] > 0 ? '₹' . number_format($ledger['debit'], 2) : '-' ?>
+                                </td>
+                                <td class="py-3 text-right text-emerald-400 font-medium">
+                                    <?= $ledger['credit'] > 0 ? '₹' . number_format($ledger['credit'], 2) : '-' ?>
+                                </td>
+                                <td class="py-3 text-right text-white font-bold">
+                                    ₹<?= number_format($ledger['balance'], 2) ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

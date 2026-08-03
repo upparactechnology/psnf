@@ -447,13 +447,17 @@ if ($user) {
             $module = '';
             if ($currentPath === '/dashboard' || $currentPath === '/teacher/dashboard' || $currentPath === '/games') {
                 $module = 'launcher';
+            } elseif (str_starts_with($currentPath, '/reports')) {
+                $module = 'reports';
+            } elseif (str_starts_with($currentPath, '/settings')) {
+                $module = 'settings';
             } elseif (str_starts_with($currentPath, '/academic') || str_starts_with($currentPath, '/students') || str_starts_with($currentPath, '/admissions') || str_starts_with($currentPath, '/classes') || str_starts_with($currentPath, '/timetables') || str_starts_with($currentPath, '/exams') || str_starts_with($currentPath, '/report-cards') || str_contains($currentPath, '/report-card')) {
                 $module = 'academic';
             } elseif (str_starts_with($currentPath, '/fees') || str_starts_with($currentPath, '/receipts') || str_starts_with($currentPath, '/scholarships') || str_starts_with($currentPath, '/certificates')) {
                 $module = 'finance';
             } elseif (str_starts_with($currentPath, '/transport')) {
                 $module = 'transport';
-            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/staff') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/settings') || str_starts_with($currentPath, '/attendance')) {
+            } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/staff') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/attendance')) {
                 $module = 'staff';
             } elseif (str_starts_with($currentPath, '/documents')) {
                 $module = 'documents';
@@ -472,51 +476,70 @@ if ($user) {
                 currentModule() {
                     const path = (window.location.pathname.replace('/psnf/public', '') || '/').replace(/\/$/, '') || '/';
                     if (path === '/dashboard' || path === '/teacher/dashboard' || path === '/games' || path === '/') return 'launcher';
+                    if (path.startsWith('/settings')) return 'settings';
+                    if (path.startsWith('/reports')) return 'reports';
                     if (path.startsWith('/academic') || path.startsWith('/students') || path.startsWith('/admissions') || path.startsWith('/classes') || path.startsWith('/timetables') || path.startsWith('/exams') || path.includes('/report-card')) return 'academic';
                     if (path.startsWith('/transport')) return 'transport';
                     if (path.startsWith('/fees') || path.startsWith('/receipts') || path.startsWith('/scholarships') || path.startsWith('/certificates')) return 'finance';
                     if (path.startsWith('/medical')) return 'medical';
                     if (path.startsWith('/documents')) return 'documents';
-                    if (path.startsWith('/users') || path.startsWith('/staff') || path.startsWith('/roles') || path.startsWith('/settings') || path.startsWith('/attendance')) return 'staff';
+                    if (path.startsWith('/users') || path.startsWith('/staff') || path.startsWith('/roles') || path.startsWith('/attendance')) return 'staff';
                     return 'launcher';
                 }
             }" @htmx:after-swap.window="$nextTick(() => {})" class="space-y-1">
 
+                <!-- SETTINGS WORKSPACE -->
+                <div x-show="currentModule() === 'settings'" class="space-y-1">
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">System Settings</div>
+                    <?php navLink('/settings/general', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>', 'General & Branding', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/settings/school', '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>', 'School Parameters', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/settings/integrations', '<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Integrations & APIs', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/settings/system', '<svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'System Configurations', $currentPath, $sidebarOpen); ?>
+                </div>
+
+                <!-- REPORTS WORKSPACE -->
+                <div x-show="currentModule() === 'reports'" class="space-y-1">
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Reports & Analytics</div>
+                    <?php navLink('/reports', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>', 'Overview', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/reports/finance', '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', 'Financial Reports', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/reports/students', '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>', 'Student Reports', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/reports/staff', '<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Staff & HR Reports', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/reports/communication', '<svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>', 'WhatsApp Logs', $currentPath, $sidebarOpen); ?>
+                </div>
+
                 <!-- ACADEMICS WORKSPACE -->
                 <div x-show="currentModule() === 'academic'" class="space-y-1">
-                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academics</div>
-                    <?php navLink('/academics', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>', 'Overview', $currentPath, $sidebarOpen); ?>
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic</div>                    <?php navLink('/dashboard', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>', 'Dashboard', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/reports', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>', 'Reports & Analytics', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/settings', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Global Settings', $currentPath, $sidebarOpen); ?>
                     
-                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Core</div>
-                    <?php navLink('/academics/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/academics/parents', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>', 'Parents', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/academics/admissions', $ic['admissions'], 'Admissions', $currentPath, $sidebarOpen); ?>
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Core Modules</div> <?php navLink('/academics/settings?tab=years', $ic['timetables'], 'Academic Years', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/main-groups', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z"/></svg>', 'Main Groups', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/curriculum', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Curriculum', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/subjects', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>', 'Subjects', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/classes', $ic['classes'], 'Classes', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/students', $ic['students'], 'Students', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/teachers', $ic['users'], 'Teachers', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/academics/subjects', $ic['classes'], 'Subjects', $currentPath, $sidebarOpen); ?>
-
-                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Operations</div>
                     <?php navLink('/academics/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/academics/lecture-attendance', $ic['attendance'], 'Lecture Attendance', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/timetable', $ic['timetables'], 'Timetable', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/assessments', $ic['exams'], 'Assessments', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/academics/report-cards', $ic['certificates'], 'Report Cards', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/academics/announcements', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>', 'Announcements', $currentPath, $sidebarOpen); ?>
-
-                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Administration</div>
-                    <?php navLink('/academics/settings', $ic['settings'], 'Academic Settings', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/promotion', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>', 'Promotion', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/academics/settings', $ic['settings'], 'Settings', $currentPath, $sidebarOpen); ?>
                 </div>
 
                 <!-- FINANCE WORKSPACE -->
                 <div x-show="currentModule() === 'finance'" class="space-y-1" x-cloak>
                     <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Finance & Billing</div>
-                    <?php navLink('/fees', $ic['fees'], 'Fees & Invoices', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/fees', $ic['fees'], 'Fees Dashboard', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/fees/invoices', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'All Invoices', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/fees/structures', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>', 'Fee Structures', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/fees/batch-generator', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'Batch Generator', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/receipts', $ic['receipts'], 'Receipts Log', $currentPath, $sidebarOpen); ?>
 
-
-                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Documents</div>
-                    <?php navLink('/certificates', '<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Certificate Generator', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/certificates/create', '<svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>', 'Design New Certificate', $currentPath, $sidebarOpen); ?>
+                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Settings</div>
+                    <?php navLink('/fees/categories', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>', 'Fee Categories', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/fees/late-fee-policies', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', 'Late Fee Policies', $currentPath, $sidebarOpen); ?>
                 </div>
 
                 <!-- TRANSPORT MANAGEMENT WORKSPACE (PERMANENT SIDEBAR) -->
@@ -565,22 +588,11 @@ if ($user) {
                     
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-650 uppercase px-3" x-show="sidebarOpen">Documents</div>
                     <?php navLink('/documents/student-documents', '<svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>', 'Student Documents', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/documents/staff-documents', '<svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'Staff Documents', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/documents/parent-documents', '<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>', 'Parent Documents', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/documents/driver-documents', '<svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>', 'Driver Documents', $currentPath, $sidebarOpen); ?>
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-650 uppercase px-3" x-show="sidebarOpen">Generated</div>
                     <?php navLink('/documents/generated?category=certificates', '<svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Certificates', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/documents/generated?category=staff_ids', '<svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>', 'Staff ID Cards', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/documents/generated?category=receipts', '<svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Receipts', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/documents/generated?category=report_cards', '<svg class="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Report Cards', $currentPath, $sidebarOpen); ?>
-
-                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-650 uppercase px-3" x-show="sidebarOpen">Templates</div>
-                    <?php navLink('/documents/templates', '<svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>', 'Document Templates', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/documents/templates?tab=print-queue', '<svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>', 'Print Queue', $currentPath, $sidebarOpen); ?>
-
-                    <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-650 uppercase px-3" x-show="sidebarOpen">Administration</div>
-                    <?php navLink('/documents/settings', $ic['settings'], 'Document Settings', $currentPath, $sidebarOpen); ?>
                 </div>
 
                 <!-- LAUNCHER / QUICK NAVIGATION WORKSPACE -->
@@ -592,6 +604,8 @@ if ($user) {
                     <?php navLink('/transport', $ic['transport'], 'Transport Routes', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/documents', '<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>', 'Documents Workspace', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/reports', '<svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>', 'Global Reports', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/settings', '<svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>', 'System Settings', $currentPath, $sidebarOpen); ?>
                 </div>
 
             </div>

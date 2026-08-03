@@ -33,20 +33,7 @@ ob_start();
         </div>
     </div>
 
-    <!-- Quick Filter Pills -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-1">
-        <?php
-        $essentialFilters = ['all' => 'All', 'enrolled' => 'Enrolled', 'applied' => 'Admissions', 'assessment' => 'Assessment', 'withdrawn' => 'Withdrawn'];
-        $currentStatus = $filters['status'] ?? '';
-        foreach ($essentialFilters as $key => $label):
-            $active = ($key === 'all' && !$currentStatus) || $key === $currentStatus;
-        ?>
-        <a href="<?= url('students?' . http_build_query(array_merge($filters, ['status' => $key === 'all' ? '' : $key, 'search' => $search ?? '']))) ?>"
-           class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all <?= $active ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800' ?>">
-            <?= $label ?>
-        </a>
-        <?php endforeach; ?>
-    </div>
+
 
     <!-- Search Input -->
     <div class="relative">
@@ -73,7 +60,7 @@ ob_start();
         <!-- ENHANCED STUDENT CARD GRID -->
         <div x-show="viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <?php foreach ($data as $student): ?>
-            <a href="<?= url('students/' . $student['id']) ?>" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-4">
+            <a href="<?= url('academics/students/' . $student['id']) ?>" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-4">
                 
                 <!-- Avatar & Identifiers -->
                 <div class="flex items-center gap-3">
@@ -140,7 +127,7 @@ ob_start();
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <a href="<?= url('students/' . $student['id']) ?>" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">View →</a>
+                            <a href="<?= url('academics/students/' . $student['id']) ?>" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">View →</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>

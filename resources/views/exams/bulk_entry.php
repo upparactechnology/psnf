@@ -42,13 +42,14 @@ ob_start();
 
     <!-- Filter Form -->
     <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 shadow-sm">
-        <form method="GET" action="<?= url('exams/bulk-entry') ?>" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+        <form method="GET" action="" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
             <div class="space-y-1.5 col-span-2">
                 <label class="block text-xs font-medium text-slate-400">Class & Section</label>
                 <select name="class_section" required onchange="
                     const val = this.value.split('|');
                     document.getElementById('bulk_class_input').value = val[0] || '';
                     document.getElementById('bulk_section_input').value = val[1] || '';
+                    this.form.submit();
                 " class="w-full bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-xs focus:outline-none focus:border-brand-500 transition-all">
                     <?php foreach ($classes as $c): ?>
                         <?php 

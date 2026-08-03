@@ -62,13 +62,13 @@ class FeeController extends Controller
 
         $stats = $this->db()->selectOne("
             SELECT
-                COALESCE(SUM(amount), 0)            AS total_invoiced,
-                COALESCE(SUM(paid_amount), 0)       AS total_paid,
-                COALESCE(SUM(amount - paid_amount), 0) AS total_unpaid,
+                (SELECT COALESCE(SUM(debit), 0) FROM student_ledgers sl JOIN students s ON sl.student_id = s.id WHERE s.tenant_id = ?) AS total_revenue_expected,
+                (SELECT COALESCE(SUM(credit), 0) FROM student_ledgers sl JOIN students s ON sl.student_id = s.id WHERE s.tenant_id = ?) AS total_collected,
+                (SELECT COALESCE(SUM(balance), 0) FROM student_ledgers sl JOIN students s ON sl.student_id = s.id WHERE s.tenant_id = ?) AS total_outstanding,
                 COUNT(CASE WHEN status != 'paid' AND due_date < CURRENT_DATE THEN 1 END) AS overdue_count
             FROM fee_invoices
             WHERE tenant_id = ?
-        ", [$tenantId]);
+        ", [$tenantId, $tenantId, $tenantId, $tenantId]);
 
         // Recent payments from Parent Portal (online)
         $recentParentPayments = $this->db()->select("
@@ -84,6 +84,31 @@ class FeeController extends Controller
         ", [$tenantId]);
 
         return $this->view('fees/index', compact('invoices', 'stats', 'status', 'search', 'view', 'recentParentPayments'));
+    }
+
+    public function exportCsv(): void
+    {
+        $tenantId = \Core\Database::getTenantId();
+        $ledgers = $this->db()->select("
+            SELECT sl.id, s.admission_number, s.first_name, s.last_name, sl.entry_type, sl.debit, sl.credit, sl.balance, sl.description, sl.created_at
+            FROM student_ledgers sl
+            JOIN students s ON sl.student_id = s.id
+            WHERE s.tenant_id = ?
+            ORDER BY sl.created_at DESC
+        ", [$tenantId]);
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="fees_ledger_report.csv"');
+        
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['ID', 'Admission No', 'First Name', 'Last Name', 'Entry Type', 'Debit', 'Credit', 'Balance', 'Description', 'Date']);
+        
+        foreach ($ledgers as $row) {
+            fputcsv($output, $row);
+        }
+        
+        fclose($output);
+        exit;
     }
 
     public function create(): string
@@ -126,29 +151,71 @@ class FeeController extends Controller
         $data['tenant_id'] = \Core\Database::getTenantId();
         $data['school_id'] = \Core\Database::getSchoolId() ?: 1;
         $data['branch_id'] = \Core\Database::getBranchId() ?: 1;
+        $amount = (float)$data['amount'];
 
-        $invoiceId = FeeInvoice::create($data);
+        $id = $this->db()->insert('fee_invoices', [
+            'student_id'     => $data['student_id'],
+            'title'          => $data['title'],
+            'amount'         => $amount,
+            'due_date'       => $data['due_date'],
+            'invoice_number' => $data['invoice_number'],
+            'tenant_id'      => $data['tenant_id'],
+            'school_id'      => $data['school_id'],
+            'branch_id'      => $data['branch_id'],
+            'paid_amount'    => 0.00,
+            'status'         => 'unpaid',
+            'created_at'     => now(),
+        ]);
 
-        ActivityLog::log('fee_invoice_created', auth_id(), ['invoice_id' => $invoiceId]);
+        // Dual-Write: Ledger Debit
+        $currentBalance = (float)($this->db()->selectOne("SELECT balance FROM student_ledgers WHERE student_id = ? ORDER BY id DESC LIMIT 1", [$data['student_id']])['balance'] ?? 0);
+        $newBalance = $currentBalance + $amount;
+        $this->db()->insert('student_ledgers', [
+            'student_id'   => $data['student_id'],
+            'entry_type'   => 'invoice',
+            'debit'        => $amount,
+            'credit'       => 0.00,
+            'balance'      => $newBalance,
+            'reference_id' => $id,
+            'description'  => "Manual Invoice: {$data['title']}"
+        ]);
+
+        // Audit Trail (Student Timeline)
+        $student = $this->db()->selectOne("SELECT first_name, last_name FROM students WHERE id = ?", [$data['student_id']]);
+        $this->db()->insert('student_timeline', [
+            'student_id'  => $data['student_id'],
+            'event_type'  => 'fee_invoice',
+            'title'       => 'Fee Invoice Created',
+            'description' => "Invoice '{$data['title']}' for Rs. {$amount} created manually.",
+            'color'       => 'blue',
+            'icon'        => 'document',
+            'actor_name'  => Session::get('user')['name'] ?? 'System',
+            'occurred_at' => now(),
+        ]);
+
+        ActivityLog::log('fee_invoice_created', auth_id(), ['invoice_id' => $id]);
         Session::flash('success', "Invoice {$data['invoice_number']} created successfully.");
         return $this->redirect('/fees');
     }
 
     public function recordPayment(string $id): string
     {
+        $data = $this->request->getBody();
+        $returnUrl = $data['return_url'] ?? '/fees';
+        
         $invoice = FeeInvoice::find((int)$id);
         if (!$invoice || $invoice['status'] === 'paid') {
             Session::flash('error', 'Invoice cannot be paid.');
-            return $this->redirect('/fees');
+            return $this->redirect($returnUrl);
         }
 
-        $amount = (float)$this->request->post('amount');
-        $method = $this->request->post('payment_method', 'Cash');
-        $ref    = $this->request->post('payment_ref', '');
+        $amount = (float)($data['amount'] ?? 0);
+        $method = $data['payment_method'] ?? 'Cash';
+        $ref    = $data['payment_ref'] ?? '';
 
         if ($amount <= 0 || $amount > ($invoice['amount'] - $invoice['paid_amount'])) {
             Session::flash('error', 'Invalid payment amount.');
-            return $this->redirect('/fees');
+            return $this->redirect($returnUrl);
         }
 
         $newPaidAmount = (float)$invoice['paid_amount'] + $amount;
@@ -160,7 +227,7 @@ class FeeController extends Controller
             'paid_at'     => now(),
         ], 'id = ?', [$invoice['id']]);
 
-        $this->db()->insert('fee_payments', [
+        $paymentId = $this->db()->insert('fee_payments', [
             'tenant_id'      => $invoice['tenant_id'],
             'school_id'      => $invoice['school_id'],
             'branch_id'      => $invoice['branch_id'],
@@ -172,8 +239,32 @@ class FeeController extends Controller
             'payment_source' => 'staff',
         ]);
 
+        // Record to Student Ledger
+        $currentBalance = (float)($this->db()->selectOne("SELECT balance FROM student_ledgers WHERE student_id = ? ORDER BY id DESC LIMIT 1", [$invoice['student_id']])['balance'] ?? 0);
+        $newBalance = $currentBalance - $amount;
+        $this->db()->insert('student_ledgers', [
+            'student_id'   => $invoice['student_id'],
+            'entry_type'   => 'payment',
+            'debit'        => 0.00,
+            'credit'       => $amount,
+            'balance'      => $newBalance,
+            'reference_id' => $paymentId,
+            'description'  => "Payment: Received {$amount} via {$method} for '{$invoice['title']}'"
+        ]);
+
+        // Fetch student details with parent phone for WhatsApp Notification
+        $student = $this->db()->selectOne("
+            SELECT s.*, p.whatsapp_number as phone, p.first_name as parent_name 
+            FROM students s 
+            LEFT JOIN parent_student ps ON s.id = ps.student_id 
+            LEFT JOIN parents p ON ps.parent_id = p.id 
+            WHERE s.id = ?
+        ", [$invoice['student_id']]);
+
+        // WhatsApp Notification
+        \App\Services\NotificationService::notifyPaymentReceived($student, $invoice, $amount);
+
         // Log to timeline
-        $student = $this->db()->selectOne("SELECT first_name, last_name FROM students WHERE id = ?", [$invoice['student_id']]);
         $this->db()->insert('student_timeline', [
             'student_id'  => $invoice['student_id'],
             'event_type'  => 'fee_payment',
@@ -187,7 +278,10 @@ class FeeController extends Controller
 
         ActivityLog::log('fee_payment_recorded', auth_id(), ['invoice_id' => $invoice['id'], 'amount' => $amount]);
         Session::flash('success', 'Payment recorded successfully.');
-        return $this->redirect('/fees');
+        
+        $data = $this->request->getBody();
+        $returnUrl = $data['return_url'] ?? '/fees';
+        return $this->redirect($returnUrl);
     }
 
     public function destroy(string $id): string

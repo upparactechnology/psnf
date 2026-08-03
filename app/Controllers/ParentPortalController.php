@@ -830,7 +830,7 @@ class ParentPortalController extends Controller
         ], 'id = ?', [$invoice['id']]);
 
         // Insert payment details
-        $this->db()->insert('fee_payments', [
+        $paymentId = $this->db()->insert('fee_payments', [
             'tenant_id'      => $student['tenant_id'],
             'school_id'      => $student['school_id'],
             'branch_id'      => $student['branch_id'],
@@ -841,6 +841,22 @@ class ParentPortalController extends Controller
             'paid_at'        => now(),
             'payment_source' => 'parent_online',
         ]);
+
+        // Record to Student Ledger
+        $currentBalance = (float)($this->db()->selectOne("SELECT balance FROM student_ledgers WHERE student_id = ? ORDER BY id DESC LIMIT 1", [$student['id']])['balance'] ?? 0);
+        $newBalance = $currentBalance - $amount;
+        $this->db()->insert('student_ledgers', [
+            'student_id'   => $student['id'],
+            'entry_type'   => 'payment',
+            'debit'        => 0.00,
+            'credit'       => $amount,
+            'balance'      => $newBalance,
+            'reference_id' => $paymentId,
+            'description'  => "Online Payment: Received {$amount} via {$method} for '{$invoice['title']}'"
+        ]);
+
+        // WhatsApp Notification
+        \App\Services\NotificationService::notifyPaymentReceived($student, $invoice, $amount);
 
         // Log to Student Timeline
         $this->db()->insert('student_timeline', [
@@ -1332,7 +1348,6 @@ class ParentPortalController extends Controller
             'aadhar_number'         => 'nullable|max:20',
             'mother_tongue'         => 'nullable|max:100',
             'address'               => 'nullable',
-            'disability_type'       => 'required|in:ASD,ADHD,Down Syndrome,Cerebral Palsy,Dyslexia,Intellectual Disability,Hearing Impairment,Visual Impairment,Multiple Disabilities,Other',
             'disability_detail'     => 'nullable',
             'care_instructions'     => 'nullable',
             'special_needs_summary' => 'nullable',
@@ -1367,7 +1382,6 @@ class ParentPortalController extends Controller
             'nationality'           => 'Indian',
             'mother_tongue'         => $validated['mother_tongue'] ?? null,
             'aadhar_number'         => $validated['aadhar_number'] ?? null,
-            'disability_type'       => $validated['disability_type'],
             'disability_detail'     => $validated['disability_detail'] ?? null,
             'care_instructions'     => $validated['care_instructions'] ?? null,
             'special_needs_summary' => $validated['special_needs_summary'] ?? null,

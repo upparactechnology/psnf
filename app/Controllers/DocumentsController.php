@@ -106,17 +106,8 @@ class DocumentsController extends Controller
 
         // Available document types for students
         $docTypes = [
-            'admission_form' => 'Admission Form',
-            'birth_certificate' => 'Birth Certificate',
-            'aadhar' => 'Aadhar Card',
-            'passport' => 'Passport',
-            'medical_certificate' => 'Medical Certificate',
-            'disability_certificate' => 'Disability Certificate',
-            'income_certificate' => 'Income Certificate',
-            'transfer_certificate' => 'Transfer Certificate',
-            'previous_report_cards' => 'Previous Report Cards',
-            'passport_photo' => 'Passport Photo',
-            'other' => 'Other Documents'
+            'photo' => 'Student Photo',
+            'aadhar' => 'Student Aadhar Card'
         ];
 
         return $this->view('documents/student_documents', compact('students', 'studentId', 'documents', 'docTypes'));
@@ -223,12 +214,13 @@ class DocumentsController extends Controller
     {
         $db = $this->db();
         
+        $tenantId = Database::getTenantId();
         $parents = $db->select("
-            SELECT id, CONCAT(first_name, ' ', last_name) as name, email, phone as phone_number
-            FROM parents
-            WHERE deleted_at IS NULL
+            SELECT id, name, '' as email, phone as phone_number
+            FROM guardians
+            WHERE tenant_id = ?
             ORDER BY name ASC
-        ");
+        ", [$tenantId]);
 
         $parentId = (int) ($_GET['parent_id'] ?? ($parents[0]['id'] ?? 0));
         
@@ -241,14 +233,8 @@ class DocumentsController extends Controller
         }
 
         $docTypes = [
-            'aadhar' => 'Aadhar Card',
-            'pan' => 'PAN Card',
-            'income_certificate' => 'Income Certificate',
-            'address_proof' => 'Address Proof',
-            'guardian_auth' => 'Guardian Authorization',
-            'photo' => 'Photo',
-            'rel_proof' => 'Relationship Proof',
-            'other' => 'Other Documents'
+            'photo' => 'Parent Photo',
+            'aadhar' => 'Aadhar Card'
         ];
 
         return $this->view('documents/parent_documents', compact('parents', 'parentId', 'documents', 'docTypes'));
@@ -260,9 +246,10 @@ class DocumentsController extends Controller
         $tenantId = Database::getTenantId();
         
         $drivers = $db->select("
-            SELECT id, name, phone, license_number
-            FROM transport_drivers
-            WHERE tenant_id = ?
+            SELECT e.id, CONCAT(e.first_name, ' ', e.last_name) as name, e.phone, e.license_number
+            FROM employees e
+            JOIN designations des ON e.designation_id = des.id
+            WHERE e.tenant_id = ? AND des.title = 'Driver'
             ORDER BY name ASC
         ", [$tenantId]);
 
@@ -277,15 +264,8 @@ class DocumentsController extends Controller
         }
 
         $docTypes = [
-            'license' => 'Driving License',
-            'badge' => 'Badge',
-            'police_verification' => 'Police Verification',
-            'medical_certificate' => 'Medical Certificate',
-            'aadhar' => 'Aadhar Card',
-            'pan' => 'PAN Card',
-            'vehicle_auth' => 'Vehicle Authorization',
-            'experience' => 'Experience Certificate',
-            'insurance' => 'Insurance Document'
+            'photo' => 'Driver Photo',
+            'aadhar' => 'Aadhar Card'
         ];
 
         return $this->view('documents/driver_documents', compact('drivers', 'driverId', 'documents', 'docTypes'));

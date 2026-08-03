@@ -673,7 +673,7 @@ async function detectAndWait(W, H, cx, cy, rx, ry) {
 
             const angleId = ANGLES[curAngle].id;
             if (angleId === 'center') {
-                if (Math.abs(yaw) < 0.15 && pitch > 0.8 && pitch < 1.3) poseValid = true;
+                if (Math.abs(yaw) < 0.35 && pitch > 0.65 && pitch < 1.7) poseValid = true;
                 else poseMsg = 'Look straight ahead';
             } else if (angleId === 'left') {
                 if (yaw < -0.15) poseValid = true;
@@ -701,7 +701,7 @@ async function detectAndWait(W, H, cx, cy, rx, ry) {
             const realBCx = bCx * scaleX;
             const realBCy = bCy * scaleY;
 
-            if (Math.abs(realBCx - cx) > rx * 0.8 || Math.abs(realBCy - cy) > ry * 0.8) {
+            if (Math.abs(realBCx - cx) > rx * 1.5 || Math.abs(realBCy - cy) > ry * 1.5) {
                 poseValid = false;
                 poseMsg = 'Center your face in the oval';
             }

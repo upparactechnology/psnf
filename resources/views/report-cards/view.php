@@ -26,14 +26,7 @@ $fontFamilyMap = [
 ];
 $fontFamily = $fontFamilyMap[$pdfFont] ?? "'Inter', sans-serif";
 
-// Fetch dynamic fields configuration
-$fieldsConfig = json_decode($settings['fields_config'] ?? '[]', true) ?: [];
-$fields = $fieldsConfig[$academicYear][$semester] ?? \App\Controllers\ReportCardController::getDefaultFields();
-
-$routineParams = $fields['routine'] ?? [];
-$skillParams = $fields['skills'] ?? [];
-$subjects = $fields['academics'] ?? [];
-$activities = $fields['cocurricular'] ?? [];
+$scores = json_decode($reportCard['academic_profile'] ?? '{}', true) ?: [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -99,6 +92,12 @@ $activities = $fields['cocurricular'] ?? [];
                 width: 210mm !important;
                 height: 297mm !important;
             }
+            .no-print {
+                display: none !important;
+            }
+            .no-print-space {
+                display: none !important;
+            }
             .report-container {
                 width: 210mm !important;
                 margin: 0 !important;
@@ -107,110 +106,99 @@ $activities = $fields['cocurricular'] ?? [];
             .page {
                 width: 210mm !important;
                 height: 297mm !important;
-                padding: 10mm !important;
-                margin: 0 !important;
                 box-shadow: none !important;
+                margin: 0 !important;
+                padding: 15mm 15mm !important;
                 page-break-after: always !important;
                 page-break-inside: avoid !important;
+                background-color: #ffffff !important;
+                overflow: hidden !important;
                 box-sizing: border-box !important;
             }
             .double-border {
-                height: 100% !important;
-                width: 100% !important;
+                height: 267mm !important;
+                width: 180mm !important;
+                padding: 15mm !important;
                 box-sizing: border-box !important;
-                display: flex !important;
-                flex-direction: column !important;
-                padding: 20px !important;
-            }
-            .cover-border {
-                height: 100% !important;
-                width: 100% !important;
-                box-sizing: border-box !important;
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                justify-content: space-between !important;
-                text-align: center !important;
-                padding: 30px !important;
-            }
-            .no-print,
-            .no-print-space {
-                display: none !important;
             }
         }
 
-        /* Print Controller Floating Panel */
+        /* Floating action buttons */
         .no-print {
-            background-color: #0f172a;
-            border-bottom: 1px solid #334155;
-            padding: 12px 24px;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
+            height: 60px;
+            background-color: #0f172a;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            z-index: 9999;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
 
         .no-print-space {
             height: 60px;
+            width: 100%;
         }
 
         .btn-action {
+            background-color: #6366f1;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #ffffff;
-            background-color: #4f46e5;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 150ms;
+            transition: all 0.15s ease;
         }
 
         .btn-action:hover {
-            background-color: #4338ca;
+            background-color: #4f46e5;
         }
 
-        .btn-secondary {
+        .btn-action.btn-secondary {
             background-color: #334155;
+            color: #cbd5e1;
         }
 
-        .btn-secondary:hover {
+        .btn-action.btn-secondary:hover {
             background-color: #475569;
+            color: #ffffff;
         }
 
-        /* --- Page 1: Cover Layout --- */
+        /* Cover Page Elements */
         .cover-page {
-            background-color: <?= $primaryColor ?>; /* Dynamic primary theme color */
-            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .cover-border {
             border: 4px double #d4af37;
             height: 100%;
             width: 100%;
-            padding: 60px 40px;
+            padding: 50px;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: space-between;
-            text-align: center;
+            align-items: center;
         }
 
         .cover-logo {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
+            margin-bottom: 25px;
             background-color: #ffffff;
             border-radius: 50%;
-            padding: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            padding: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -219,152 +207,143 @@ $activities = $fields['cocurricular'] ?? [];
         .cover-logo img {
             max-width: 100%;
             max-height: 100%;
-            object-fit: contain;
+            object-contain: fit;
         }
 
         .school-name {
             font-family: 'Cinzel', serif;
-            font-size: 24px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: #d4af37; /* Gold accent color */
-            margin-top: 15px;
-            text-transform: uppercase;
+            font-size: 26px;
+            font-weight: 800;
+            color: <?= $primaryColor ?>;
+            text-align: center;
+            line-height: 1.2;
+            letter-spacing: 0.5px;
         }
 
         .school-subtitle {
-            font-family: 'Inter', sans-serif;
-            font-size: 11px;
-            color: #cbd5e1;
-            letter-spacing: 3px;
-            text-transform: uppercase;
+            font-size: 13px;
+            color: #475569;
+            text-align: center;
             margin-top: 6px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
         }
 
         .report-title-container {
             margin: 40px 0;
+            text-align: center;
         }
 
         .report-title-badge {
             font-family: 'Cinzel', serif;
-            border-top: 1.5px solid #d4af37;
-            border-bottom: 1.5px solid #d4af37;
-            padding: 12px 30px;
-            font-size: 28px;
-            letter-spacing: 5px;
-            color: #ffffff;
-            font-weight: 800;
-            display: inline-block;
+            font-size: 32px;
+            font-weight: 700;
+            color: <?= $primaryColor ?>;
+            display: block;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
         }
 
         .academic-year-badge {
-            font-family: 'Playfair Display', serif;
-            font-size: 18px;
-            font-style: italic;
-            color: #e2e8f0;
-            margin-top: 15px;
+            font-size: 14px;
+            color: #d4af37;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .student-badge-card {
-            background-color: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(212, 175, 55, 0.3);
+            background-color: #fcfdfd;
+            border: 1px solid #e2e8f0;
             border-radius: 12px;
             padding: 24px;
             width: 100%;
             max-width: 480px;
-            margin-top: 30px;
-            text-align: left;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
         }
 
         .student-badge-row {
             display: flex;
-            margin-bottom: 12px;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-            padding-bottom: 8px;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
         }
 
         .student-badge-row:last-child {
-            margin-bottom: 0;
             border-bottom: none;
-            padding-bottom: 0;
         }
 
         .student-badge-label {
-            font-size: 11px;
-            color: #94a3b8;
-            width: 130px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 12px;
             font-weight: 650;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .student-badge-value {
-            font-size: 14px;
-            color: #ffffff;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
         }
 
         .school-address-footer {
             font-size: 10px;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-            line-height: 1.5;
+            color: #64748b;
+            text-align: center;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 15px;
+            width: 100%;
         }
 
-        /* --- Inside Pages Styles --- */
+        /* Inner Page Elements */
         .page-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
-            margin-bottom: 24px;
+            gap: 15px;
+            border-bottom: 2px solid <?= $primaryColor ?>;
+            padding-bottom: 12px;
+            margin-bottom: 25px;
         }
 
         .page-header-logo {
-            width: 50px;
-            height: 50px;
-            background-color: #f1f5f9;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 4px;
+            width: 45px;
+            height: 45px;
         }
 
         .page-header-logo img {
             max-width: 100%;
             max-height: 100%;
-            object-fit: contain;
         }
 
         .page-header-text h3 {
             font-family: 'Cinzel', serif;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 700;
             color: <?= $primaryColor ?>;
-            text-align: right;
         }
 
         .page-header-text p {
-            font-size: 10px;
+            font-size: 11px;
             color: #64748b;
-            text-align: right;
-            margin-top: 3px;
+            font-weight: 500;
+            margin-top: 2px;
         }
 
         .section-title {
             font-family: 'Cinzel', serif;
-            font-size: 16px;
-            color: <?= $primaryColor ?>;
+            font-size: 15px;
             font-weight: 700;
-            border-bottom: 2.5px solid <?= $primaryColor ?>;
-            padding-bottom: 6px;
-            margin-bottom: 20px;
-            letter-spacing: 1.5px;
+            color: <?= $primaryColor ?>;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-left: 3px solid #d4af37;
+            padding-left: 10px;
         }
 
-        /* Standard Table Styles */
+        /* Structured tables */
         .table-profile {
             width: 100%;
             border-collapse: collapse;
@@ -374,154 +353,48 @@ $activities = $fields['cocurricular'] ?? [];
         .table-profile th,
         .table-profile td {
             border: 1px solid #cbd5e1;
-            padding: 10px 12px;
-            font-size: 12px;
+            padding: 8px 12px;
+            font-size: 11px;
+            vertical-align: middle;
         }
 
         .table-profile th {
-            background-color: <?= $primaryColor ?>;
-            color: #ffffff;
-            font-weight: 600;
+            background-color: #f8fafc;
+            font-weight: 750;
+            color: #334155;
             text-transform: uppercase;
-            font-size: 11px;
+            font-size: 10px;
             letter-spacing: 0.5px;
         }
 
-        .table-profile td.param-label {
-            font-weight: 600;
-            color: #334155;
-            width: 55%;
-        }
-
-        .table-profile td.rating-val {
-            text-align: center;
-            font-weight: 700;
-            font-size: 13px;
-        }
-
-        /* Colors for Ratings */
-        .rating-a { color: #16a34a; background-color: #f0fdf4; }
-        .rating-b { color: #2563eb; background-color: #eff6ff; }
-        .rating-c { color: #ea580c; background-color: #fff7ed; }
-        .rating-ref { color: #dc2626; background-color: #fef2f2; }
-        .rating-na { color: #64748b; background-color: #f8fafc; }
-
-        /* --- Academic Sheet Styles --- */
-        .academic-table th {
-            text-align: center;
-        }
-
-        .academic-table td {
-            text-align: center;
-        }
-
-        .academic-table td.subject-name {
-            text-align: left;
-            font-weight: 600;
+        .param-label {
+            font-weight: 650;
             color: #1e293b;
         }
 
-        .academic-table td.remarks-col {
-            text-align: left;
+        .rating-val {
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .remarks-col {
             font-style: italic;
             color: #475569;
         }
 
-        /* Evaluation Chart */
-        .evaluation-chart-box {
+        .feedback-text-box {
             border: 1px solid #cbd5e1;
             border-radius: 8px;
-            padding: 15px;
-            background-color: #f8fafc;
-            margin-top: 30px;
-        }
-
-        .evaluation-chart-box h4 {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: <?= $primaryColor ?>;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: 1px;
-        }
-
-        .evaluation-chart-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-        }
-
-        .chart-item {
-            text-align: center;
-            border-right: 1px solid #e2e8f0;
-            padding-right: 5px;
-        }
-
-        .chart-item:last-child {
-            border-right: none;
-        }
-
-        .chart-key {
-            font-weight: 700;
-            font-size: 12px;
-            color: <?= $primaryColor ?>;
-            margin-bottom: 2px;
-        }
-
-        .chart-desc {
-            font-size: 9px;
-            color: #64748b;
-        }
-
-        /* --- Summary Sheet Signatures & Comments --- */
-        .feedback-text-box {
-            border: 1.5px solid <?= $primaryColor ?>;
             background-color: #fcfdfd;
-            border-radius: 8px;
-            padding: 20px;
-            min-height: 180px;
-            font-size: 13px;
+            padding: 15px 20px;
+            font-size: 11.5px;
             line-height: 1.6;
             color: #334155;
-            font-style: italic;
-            margin-bottom: 35px;
+            min-height: 120px;
+            margin-bottom: 25px;
         }
 
-        .attendance-stats-box {
-            display: flex;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 35px;
-        }
-
-        .attendance-stat-item {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            border-right: 1px solid #cbd5e1;
-            background-color: #f8fafc;
-        }
-
-        .attendance-stat-item:last-child {
-            border-right: none;
-        }
-
-        .stat-label {
-            font-size: 10px;
-            text-transform: uppercase;
-            color: #64748b;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .stat-value {
-            font-size: 15px;
-            font-weight: 700;
-            color: <?= $primaryColor ?>;
-        }
-
-         .signature-row-1 {
+        .signature-row-1 {
             display: flex;
             justify-content: space-between;
             margin-top: 30px;
@@ -679,15 +552,6 @@ $activities = $fields['cocurricular'] ?? [];
             width: 32% !important;
             text-align: center !important;
         }
-        .evaluation-chart-grid {
-            display: block !important;
-            width: 100% !important;
-        }
-        .chart-item {
-            float: left !important;
-            width: 19% !important;
-            text-align: center !important;
-        }
         table {
             margin-bottom: 15px !important;
         }
@@ -751,7 +615,6 @@ $activities = $fields['cocurricular'] ?? [];
         <span style="color: #cbd5e1; font-weight: 600; font-size: 14px;">Pearl Special Needs Progress Report</span>
         <div style="display: flex; gap: 10px;">
             <button onclick="window.print()" class="btn-action">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm0 0l-3-3m3 3l3-3"/></svg>
                 Download PDF / Print
             </button>
             <button onclick="window.close()" class="btn-action btn-secondary">Close View</button>
@@ -761,7 +624,7 @@ $activities = $fields['cocurricular'] ?? [];
     <?php endif; ?>
 
     <?php 
-    $logoPath = url('images/logo.png');
+    $logoPath = url('game/images/logo.png');
     ?>
 
     <!-- Main Report Container -->
@@ -774,7 +637,7 @@ $activities = $fields['cocurricular'] ?? [];
                 <!-- Logo & Heading -->
                 <div style="display: flex; flex-direction: column; align-items: center;">
                     <div class="cover-logo">
-                        <img src="<?= $logoPath ?>" onerror="this.onerror=null; this.src='https://pearlspecialneeds.org/wp-content/uploads/2021/04/pearl-logo.png';" alt="Pearl Logo">
+                        <img src="<?= $logoPath ?>" alt="Pearl Logo">
                     </div>
                     <h1 class="school-name"><?= e($schoolName) ?></h1>
                     <p class="school-subtitle"><?= e($schoolSubtitle) ?></p>
@@ -798,28 +661,72 @@ $activities = $fields['cocurricular'] ?? [];
                     </div>
                     <div class="student-badge-row">
                         <span class="student-badge-label">GR Number:</span>
-                        <span class="student-badge-value font-mono"><?= e($student['gr_number'] ?? '—') ?></span>
+                        <span class="student-badge-value"><?= e($student['gr_number'] ?? '—') ?></span>
                     </div>
                     <div class="student-badge-row">
-                        <span class="student-badge-label">Admission ID:</span>
-                        <span class="student-badge-value font-mono"><?= e($student['admission_number'] ?? '—') ?></span>
+                        <span class="student-badge-label">Roll Number:</span>
+                        <span class="student-badge-value"><?= e($student['roll_number'] ?? '—') ?></span>
                     </div>
                 </div>
 
-                <!-- Footer address details -->
+                <!-- School Address Footer -->
                 <div class="school-address-footer">
-                    <p><?= e($schoolName) ?></p>
-                    <p><?= e($schoolAddress) ?></p>
+                    <?= e($schoolAddress) ?>
                 </div>
             </div>
         </div>
 
-        <!-- ================= PAGE 2: ROUTINE PROFILE ================= -->
+        <!-- ================= DYNAMIC CURRICULUM SECTIONS PAGES ================= -->
+        <?php foreach ($curriculumTree as $sec): ?>
+            <div class="page">
+                <div class="double-border">
+                    <div class="page-header">
+                        <div class="page-header-logo">
+                            <img src="<?= $logoPath ?>" alt="Pearl Logo">
+                        </div>
+                        <div class="page-header-text">
+                            <h3><?= e($schoolName) ?></h3>
+                            <p>Progress Report · <?= e($semester) ?> (<?= e($academicYear) ?>)</p>
+                        </div>
+                    </div>
+
+                    <h2 class="section-title"><?= e($sec['section_name']) ?></h2>
+
+                    <table class="table-profile">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; width: 65%;">Subject / Parameter</th>
+                                <th style="width: 35%; text-align: center;">Evaluation Outcome</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($sec['subjects'] as $sub): ?>
+                                <?php 
+                                    $val = $scores[$sub['subject_id']] ?? '—';
+                                    if ($sub['assessment_type'] === 'Rating') {
+                                        $ratingMap = ['A' => 'Excellent (A)', 'B' => 'Good (B)', 'C' => 'Needs Improvement (C)', 'R' => 'Refused (R)', 'N/A' => 'N/A'];
+                                        $val = $ratingMap[$val] ?? $val;
+                                    }
+                                ?>
+                                <tr>
+                                    <td class="param-label"><?= e($sub['subject_name']) ?></td>
+                                    <td class="rating-val" style="color: <?= $primaryColor ?>; background-color: #fcfdfd;">
+                                        <?= e($val) ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        <?php endforeach; ?>
+
+        <!-- ================= FINAL PAGE: FEEDBACK & SIGNATURES ================= -->
         <div class="page">
             <div class="double-border">
                 <div class="page-header">
                     <div class="page-header-logo">
-                        <img src="<?= $logoPath ?>" onerror="this.onerror=null; this.src='https://pearlspecialneeds.org/wp-content/uploads/2021/04/pearl-logo.png';" alt="Pearl Logo">
+                        <img src="<?= $logoPath ?>" alt="Pearl Logo">
                     </div>
                     <div class="page-header-text">
                         <h3><?= e($schoolName) ?></h3>
@@ -827,220 +734,17 @@ $activities = $fields['cocurricular'] ?? [];
                     </div>
                 </div>
 
-                <h2 class="section-title">Routine & Social Behavioral Profile</h2>
-
-                <table class="table-profile">
-                    <thead>
-                        <tr>
-                            <th style="text-align: left;">Evaluation Parameter</th>
-                            <th style="width: 25%; text-align: center;">Assessed Grade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        foreach ($routineParams as $key => $label):
-                            $val = $reportCard['routine_profile'][$key] ?? 'B';
-                            $class = 'rating-' . strtolower(substr($val, 0, 3));
-                        ?>
-                        <tr>
-                            <td class="param-label"><?= $label ?></td>
-                            <td class="rating-val <?= $class ?>"><?= e($val) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-
-                <div class="evaluation-chart-box">
-                    <h4>Assessed Grading Scale Indicators</h4>
-                    <div class="evaluation-chart-grid">
-                        <div class="chart-item">
-                            <p class="chart-key">A</p>
-                            <p class="chart-desc">Excellent / Independent</p>
-                        </div>
-                        <div class="chart-item">
-                            <p class="chart-key">B</p>
-                            <p class="chart-desc">Good / Prompt Assisted</p>
-                        </div>
-                        <div class="chart-item">
-                            <p class="chart-key">C</p>
-                            <p class="chart-desc">Needs Improvement / Guided</p>
-                        </div>
-                        <div class="chart-item">
-                            <p class="chart-key">Refused</p>
-                            <p class="chart-desc">Student Refused Task</p>
-                        </div>
-                        <div class="chart-item">
-                            <p class="chart-key">N/A</p>
-                            <p class="chart-desc">Not Applicable</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= PAGE 3: LEARNING SKILLS ================= -->
-        <div class="page">
-            <div class="double-border">
-                <div class="page-header">
-                    <div class="page-header-logo">
-                        <img src="<?= $logoPath ?>" onerror="this.onerror=null; this.src='https://pearlspecialneeds.org/wp-content/uploads/2021/04/pearl-logo.png';" alt="Pearl Logo">
-                    </div>
-                    <div class="page-header-text">
-                        <h3><?= e($schoolName) ?></h3>
-                        <p>Progress Report · <?= e($semester) ?> (<?= e($academicYear) ?>)</p>
-                    </div>
-                </div>
-
-                <h2 class="section-title">Cognitive & Learning Skills Profile</h2>
-
-                <table class="table-profile">
-                    <thead>
-                        <tr>
-                            <th style="text-align: left;">Skill Indicator</th>
-                            <th style="width: 25%; text-align: center;">Assessed Grade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        foreach ($skillParams as $key => $label):
-                            $val = $reportCard['learning_skills'][$key] ?? 'B';
-                            $class = 'rating-' . strtolower(substr($val, 0, 3));
-                        ?>
-                        <tr>
-                            <td class="param-label"><?= $label ?></td>
-                            <td class="rating-val <?= $class ?>"><?= e($val) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-
-                <div class="evaluation-chart-box">
-                    <h4>Assessed Grading Scale Indicators</h4>
-                    <div class="evaluation-chart-grid">
-                        <div class="chart-item">
-                            <p class="chart-key">A</p>
-                            <p class="chart-desc">Excellent / Independent</p>
-                        </div>
-                        <div class="chart-item">
-                            <p class="chart-key">B</p>
-                            <p class="chart-desc">Good / Prompt Assisted</p>
-                        </div>
-                        <div class="chart-item">
-                            <p class="chart-key">C</p>
-                            <p class="chart-desc">Needs Improvement / Guided</p>
-                        </div>
-                        <div class="chart-item">
-                            <p class="chart-key">Refused</p>
-                            <p class="chart-desc">Student Refused Task</p>
-                        </div>
-                        <div class="chart-item">
-                            <p class="chart-key">N/A</p>
-                            <p class="chart-desc">Not Applicable</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= PAGE 4: ACADEMIC PROFILE ================= -->
-        <div class="page">
-            <div class="double-border">
-                <div class="page-header">
-                    <div class="page-header-logo">
-                        <img src="<?= $logoPath ?>" onerror="this.onerror=null; this.src='https://pearlspecialneeds.org/wp-content/uploads/2021/04/pearl-logo.png';" alt="Pearl Logo">
-                    </div>
-                    <div class="page-header-text">
-                        <h3><?= e($schoolName) ?></h3>
-                        <p>Progress Report · <?= e($semester) ?> (<?= e($academicYear) ?>)</p>
-                    </div>
-                </div>
-
-                <h2 class="section-title">Academic Subject Evaluations</h2>
-
-                <table class="table-profile academic-table">
-                    <thead>
-                        <tr>
-                            <th style="text-align: left; width: 25%;">Subject</th>
-                            <th style="width: 15%;">Unit Test (20)</th>
-                            <th style="width: 15%;">Theory (40)</th>
-                            <th style="width: 15%;">Practical / Oral (15)</th>
-                            <th style="width: 15%;">Total (75)</th>
-                            <th style="text-align: left;">Evaluator Comments</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        foreach ($subjects as $key => $label):
-                            $subjData = $reportCard['academic_profile'][$key] ?? [];
-                            $ut = (float)($subjData['unit_test'] ?? 0);
-                            $th = (float)($subjData['theory'] ?? 0);
-                            $pr = (float)($subjData['practical'] ?? 0);
-                            $tot = $ut + $th + $pr;
-                        ?>
-                        <tr>
-                            <td class="subject-name"><?= $label ?></td>
-                            <td><?= $ut ?></td>
-                            <td><?= $th ?></td>
-                            <td><?= $pr ?></td>
-                            <td style="font-weight: 700; color: #0d3827;"><?= $tot ?></td>
-                            <td class="remarks-col"><?= e($subjData['remarks'] ?? '') ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-
-                <h2 class="section-title" style="margin-top: 30px;">Sensory & Co-Curricular Skill Ratings</h2>
-
-                <table class="table-profile">
-                    <thead>
-                        <tr>
-                            <th style="text-align: left;">Activity Profile</th>
-                            <th style="width: 30%; text-align: center;">Assessed Descriptor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        foreach ($activities as $key => $label):
-                            $val = $reportCard['cocurriculum_profile'][$key] ?? 'Good';
-                        ?>
-                        <tr>
-                            <td class="param-label"><?= $label ?></td>
-                            <td class="rating-val" style="color: #0d3827; background-color: #fcfdfd;"><?= e($val) ?></td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- ================= PAGE 5: FEEDBACK & SIGNATURES ================= -->
-        <div class="page">
-            <div class="double-border">
-                <div class="page-header">
-                    <div class="page-header-logo">
-                        <img src="<?= $logoPath ?>" onerror="this.onerror=null; this.src='https://pearlspecialneeds.org/wp-content/uploads/2021/04/pearl-logo.png';" alt="Pearl Logo">
-                    </div>
-                    <div class="page-header-text">
-                        <h3><?= e($schoolName) ?></h3>
-                        <p>Progress Report · <?= e($semester) ?> (<?= e($academicYear) ?>)</p>
-                    </div>
-                </div>
-
-                <h2 class="section-title">Attendance & Social Integration Log</h2>
+                <h2 class="section-title">Attendance & Integration Log</h2>
 
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 35px; border: 1px solid #cbd5e1; border-radius: 8px;">
                     <tr>
-                        <td style="width: 33.33%; padding: 12px; text-align: center; background-color: #f8fafc; border-right: 1px solid #cbd5e1;">
+                        <td style="width: 50%; padding: 12px; text-align: center; background-color: #f8fafc; border-right: 1px solid #cbd5e1;">
                             <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 4px; letter-spacing: 0.5px;">Total Working Days</div>
-                            <div style="font-size: 15px; font-weight: 700; color: <?= $primaryColor ?>;"><?= e($reportCard['attendance_profile']['total_days'] ?? '90') ?></div>
+                            <div style="font-size: 15px; font-weight: 700; color: <?= $primaryColor ?>;"><?= e($reportCard['attendance_profile']['total_days'] ?? '—') ?></div>
                         </td>
-                        <td style="width: 33.33%; padding: 12px; text-align: center; background-color: #f8fafc; border-right: 1px solid #cbd5e1;">
+                        <td style="width: 50%; padding: 12px; text-align: center; background-color: #f8fafc;">
                             <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 4px; letter-spacing: 0.5px;">Days Present</div>
-                            <div style="font-size: 15px; font-weight: 700; color: <?= $primaryColor ?>;"><?= e($reportCard['attendance_profile']['present_days'] ?? '85') ?></div>
-                        </td>
-                        <td style="width: 33.33%; padding: 12px; text-align: center; background-color: #f8fafc;">
-                            <div style="font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 4px; letter-spacing: 0.5px;">Punctuality Grade</div>
-                            <div style="font-size: 15px; font-weight: 700; color: <?= $primaryColor ?>;"><?= e($reportCard['attendance_profile']['punctuality'] ?? 'A') ?></div>
+                            <div style="font-size: 15px; font-weight: 700; color: <?= $primaryColor ?>;"><?= e($reportCard['attendance_profile']['days_present'] ?? '—') ?></div>
                         </td>
                     </tr>
                 </table>

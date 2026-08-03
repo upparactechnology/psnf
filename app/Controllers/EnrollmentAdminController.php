@@ -81,10 +81,10 @@ class EnrollmentAdminController extends Controller
         // 1. Insert into `students` table
         $db->query("INSERT INTO students (
             uuid, tenant_id, school_id, branch_id, admission_number, first_name, middle_name, last_name,
-            gender, dob, photo, aadhar_number, disability_type, address, created_at
+            gender, dob, photo, aadhar_number, address, created_at
         ) VALUES (
             :uuid, :tenant_id, :school_id, :branch_id, :adm, :fname, :mname, :lname,
-            :gender, :dob, :photo, :aadhar, 'Other', :address, NOW()
+            :gender, :dob, :photo, :aadhar, :address, NOW()
         )", [
             'uuid'       => $uuid,
             'tenant_id'  => $tenantId,

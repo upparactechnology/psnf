@@ -1,4 +1,9 @@
 <?php
+// Prevent aggressive mobile/tablet browser caching
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
 $layout    = 'app';
 $pageTitle = 'Face Attendance Kiosk';
 $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Attendance'], ['label' => 'Face Kiosk']];
@@ -17,6 +22,8 @@ ob_start();
     border: 4px solid #6366f1;
     box-shadow: 0 0 30px rgba(99,102,241,0.15);
     aspect-ratio: 4/3;
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
 }
 #kioskVideo {
     width: 100%; height: 100%;
@@ -183,12 +190,18 @@ ob_start();
                 </div>
 
                 <!-- Camera with overlay canvas -->
-                <div class="kiosk-wrap">
+                <div class="kiosk-wrap" style="position: relative;">
                     <video id="kioskVideo" autoplay playsinline muted></video>
                     <canvas id="kioskOverlayCanvas"></canvas>
                     <div class="kiosk-scan-line" id="scanLine" style="display:none;"></div>
                     <div class="kiosk-face-label wait" id="faceLbl">👤 Align face in oval</div>
                     <canvas id="kioskCapCanvas" style="display:none;"></canvas>
+                    
+                    <!-- Result Overlay Centered and Big -->
+                    <div id="kioskResultOverlay" style="position: absolute; inset: 0px; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 99; transition: all 0.3s ease; opacity: 0; pointer-events: none; background: #0f172a; transform: translateZ(999px); -webkit-transform: translateZ(999px);">
+                        <div id="kioskResultOverlayContent" style="text-align: center; padding: 24px; transition: all 0.3s ease; transform: scale(0.9) translateZ(1000px); -webkit-transform: scale(0.9) translateZ(1000px); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        </div>
+                    </div>
                 </div>
 
                 <p class="text-2xs text-slate-500 text-center mt-3">
@@ -251,6 +264,8 @@ ob_start();
     const scanLine = document.getElementById('scanLine');
     const resultEl = document.getElementById('kioskResult');
     const feedEl   = document.getElementById('kioskFeed');
+    const overlay  = document.getElementById('kioskResultOverlay');
+    const overlayContent = document.getElementById('kioskResultOverlayContent');
 
     let isProcessing  = false;
     let pauseUntil    = 0;
@@ -412,10 +427,14 @@ ob_start();
             lbl.textContent = '⚡ Processing...';
             lbl.className = 'kiosk-face-label scan';
         } else if (now < pauseUntil) {
-            const sec = Math.ceil((pauseUntil - now) / 1000);
-            lbl.textContent = `⏳ Next scan in ${sec}s...`;
-            lbl.className = 'kiosk-face-label wait';
+            if (!lbl.getAttribute('data-custom-status')) {
+                const sec = Math.ceil((pauseUntil - now) / 1000);
+                lbl.textContent = `⏳ Next scan in ${sec}s...`;
+                lbl.className = 'kiosk-face-label wait';
+            }
         } else {
+            lbl.removeAttribute('data-custom-status');
+            hideOverlayResult();
             // Real-time detection runs in independent loop!
         }
 
@@ -482,13 +501,13 @@ ob_start();
                 let poseValid = false;
                 let poseMsg = 'Align face in oval';
 
-                // We want them looking straight ahead for attendance
-                if (Math.abs(yaw) < 0.2 && pitch > 0.8 && pitch < 1.3) {
+                // We want them looking straight ahead for attendance, but with looser constraints for ease of use
+                if (Math.abs(yaw) < 0.45 && pitch > 0.65 && pitch < 1.7) {
                     poseValid = true;
                 } else {
-                    if (Math.abs(yaw) >= 0.2) poseMsg = 'Look straight ahead';
-                    else if (pitch <= 0.8) poseMsg = 'Tilt head slightly up';
-                    else if (pitch >= 1.3) poseMsg = 'Tilt head slightly down';
+                    if (Math.abs(yaw) >= 0.45) poseMsg = 'Look straight ahead';
+                    else if (pitch <= 0.65) poseMsg = 'Tilt head slightly up';
+                    else if (pitch >= 1.7) poseMsg = 'Tilt head slightly down';
                 }
 
                 // Check if bounding box center is roughly within the circle
@@ -501,7 +520,7 @@ ob_start();
                 const realBCx = bCx * scaleX;
                 const realBCy = bCy * scaleY;
 
-                if (Math.abs(realBCx - cx) > rx * 0.8 || Math.abs(realBCy - cy) > ry * 0.8) {
+                if (Math.abs(realBCx - cx) > rx * 1.5 || Math.abs(realBCy - cy) > ry * 1.5) {
                     poseValid = false;
                     poseMsg = 'Center your face in the oval';
                 }
@@ -536,6 +555,62 @@ ob_start();
         }
     }
 
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function showOverlayResult(type, title, subtitle, description = '') {
+        const icons = {
+            success: `<div style="width: 80px; height: 80px; margin: 0 auto 16px auto; border-radius: 50%; background: rgba(16, 185, 129, 0.1); border: 1.5px solid rgba(16, 185, 129, 0.25); display: flex; align-items: center; justify-content: center; color: #10b981; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15);">
+                        <svg style="width: 40px; height: 40px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      </div>`,
+            warn: `<div style="width: 80px; height: 80px; margin: 0 auto 16px auto; border-radius: 50%; background: rgba(245, 158, 11, 0.1); border: 1.5px solid rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: center; color: #f59e0b; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.15);">
+                    <svg style="width: 40px; height: 40px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                   </div>`,
+            error: `<div style="width: 80px; height: 80px; margin: 0 auto 16px auto; border-radius: 50%; background: rgba(239, 68, 68, 0.1); border: 1.5px solid rgba(239, 68, 68, 0.25); display: flex; align-items: center; justify-content: center; color: #ef4444; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.15);">
+                     <svg style="width: 40px; height: 40px;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </div>`
+        };
+
+        const subtextColors = {
+            success: '#10b981',
+            warn: '#f59e0b',
+            error: '#ef4444'
+        };
+
+        overlayContent.innerHTML = `
+            ${icons[type]}
+            <h4 style="color: #ffffff; font-size: 32px; font-weight: 900; letter-spacing: 0.02em; margin: 12px 0 4px 0; font-family: system-ui, -apple-system, sans-serif;">${escapeHtml(title)}</h4>
+            <p style="color: ${subtextColors[type]}; font-size: 13px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; margin: 0; font-family: system-ui, -apple-system, sans-serif;">${escapeHtml(subtitle)}</p>
+            ${description ? `<p style="color: #cbd5e1; font-size: 12.5px; margin: 16px auto 0 auto; max-width: 320px; background: rgba(0,0,0,0.55); border-radius: 12px; padding: 10px 16px; border: 1px solid rgba(255,255,255,0.06); font-weight: 500; line-height: 1.45; font-family: system-ui, -apple-system, sans-serif;">${escapeHtml(description)}</p>` : ''}
+        `;
+        
+        overlay.style.display = 'flex';
+        overlay.offsetHeight; // Force reflow
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+        overlayContent.style.transform = 'scale(1) translateZ(1000px)';
+        overlayContent.style.webkitTransform = 'scale(1) translateZ(1000px)';
+    }
+
+    function hideOverlayResult() {
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+        overlayContent.style.transform = 'scale(0.9) translateZ(1000px)';
+        overlayContent.style.webkitTransform = 'scale(0.9) translateZ(1000px)';
+        setTimeout(() => {
+            if (overlay.style.opacity === '0') {
+                overlay.style.display = 'none';
+            }
+        }, 300);
+    }
+
     // ── Scan & Submit ─────────────────────────────────────────────────────────
     async function doScan(base64Img) {
         isProcessing = true;
@@ -561,6 +636,10 @@ ob_start();
                 if (data.already_checked_in) {
                     beep('dupe');
                     showResult('warn', data.employee_name||'Staff', data.message, data.confidence);
+                    lbl.textContent = `⚠️ Already Checked In: ${data.employee_name || 'Staff'}`;
+                    lbl.className = 'kiosk-face-label wait';
+                    lbl.setAttribute('data-custom-status', '1');
+                    showOverlayResult('warn', data.employee_name || 'Staff', 'Already Checked In', data.message);
                     pauseUntil = Date.now() + 5000;
                 } else {
                     beep('ok');
@@ -568,18 +647,36 @@ ob_start();
                     document.getElementById('statChecked').textContent = checkedToday;
                     showResult('success', data.employee_name||'Staff', '✔ Attendance marked successfully!', data.confidence);
                     addFeed(data.employee_name, data.employee_code, data.check_in);
+                    lbl.textContent = `🎉 Marked: ${data.employee_name || 'Staff'}`;
+                    lbl.className = 'kiosk-face-label ready';
+                    lbl.setAttribute('data-custom-status', '1');
+                    showOverlayResult('success', data.employee_name || 'Staff', 'Attendance Marked', 'Clocked in successfully!');
                     pauseUntil = Date.now() + 6000;
                 }
             } else if (data && data.no_faces_registered) {
                 showResult('warn', 'No Faces Registered', 'Please register at least one employee face first.', null);
+                lbl.textContent = `⚠️ No Faces Registered`;
+                lbl.className = 'kiosk-face-label wait';
+                lbl.setAttribute('data-custom-status', '1');
+                showOverlayResult('warn', 'No Faces Registered', 'Register faces first', 'Face profiles must be enrolled before verification.');
                 pauseUntil = Date.now() + 5000;
             } else {
-                pauseUntil = Date.now() + 1500;
+                beep('error');
+                showResult('error', 'Not Recognized', data && data.message ? data.message : 'Face not recognized. Please try again.', data && data.confidence ? data.confidence : null);
+                lbl.textContent = `❌ Not Recognized`;
+                lbl.className = 'kiosk-face-label wait';
+                lbl.setAttribute('data-custom-status', '1');
+                showOverlayResult('error', 'Not Recognized', 'Please try again', data && data.message ? data.message : 'Face not recognized.');
+                pauseUntil = Date.now() + 4000;
             }
         } catch(e) {
             // Network error — backend likely offline
             setBackendStatus(false);
             showResult('error', 'Backend Offline', 'InsightFace service is unreachable. Please start the Python backend.');
+            lbl.textContent = `❌ Backend Offline`;
+            lbl.className = 'kiosk-face-label wait';
+            lbl.setAttribute('data-custom-status', '1');
+            showOverlayResult('error', 'Backend Offline', 'Service unreachable', 'Please start the Python face recognition service.');
             pauseUntil = Date.now() + 5000;
         } finally {
             isProcessing = false;

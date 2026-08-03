@@ -25,18 +25,6 @@ ob_start();
            class="py-3 font-semibold text-xs transition-all <?= $category === 'student_ids' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-200' ?>">
             🆔 Student ID Cards
         </a>
-        <a href="?category=staff_ids" 
-           class="py-3 font-semibold text-xs transition-all <?= $category === 'staff_ids' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-200' ?>">
-            💳 Staff ID Cards
-        </a>
-        <a href="?category=receipts" 
-           class="py-3 font-semibold text-xs transition-all <?= $category === 'receipts' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-200' ?>">
-            🧾 Receipts
-        </a>
-        <a href="?category=report_cards" 
-           class="py-3 font-semibold text-xs transition-all <?= $category === 'report_cards' ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-200' ?>">
-            📊 Report Cards
-        </a>
     </div>
 
     <!-- Table -->

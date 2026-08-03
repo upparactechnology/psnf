@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_resources_views_auth_reset_password_php", "label": "reset-password.php", "file_type": "code", "source_file": "resources/views/auth/reset-password.php", "source_location": "L1"}], "edges": [], "raw_calls": []}

@@ -1,176 +1,222 @@
 <?php
 $layout    = 'app';
-$pageTitle = 'Class Directory — ' . e($className);
-$breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Classes', 'url' => '/classes'], ['label' => $className]];
+$pageTitle = 'Class Details: ' . $class['name'];
+$breadcrumbs = [['label' => 'Dashboard', 'url' => '/academics'], ['label' => 'Classes', 'url' => '/academics/classes'], ['label' => 'Show']];
 ob_start();
 ?>
 
-<div x-data="{ showAssignModal: false, searchStudent: '' }" class="space-y-6">
+<div x-data="{ 
+    showEditModal: false,
+    showEnrollModal: false,
+    selectedGroupId: '<?= $class['main_group_id'] ?>',
+    selectedYearId: '<?= $class['academic_year_id'] ?>'
+}" class="max-w-6xl mx-auto space-y-6 py-2">
 
-    <!-- Header section -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur">
-        <div>
-            <h2 class="text-xl font-bold text-white"><?= e($className) ?> Student Directory</h2>
-            <p class="text-sm text-slate-500 mt-0.5"><?= count($students) ?> students enrolled in this class</p>
+    <!-- Header Panel detailing Class Info -->
+    <div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div style="background-color: <?= $class['group_color'] ?: '#6366f1' ?>20;" class="w-12 h-12 rounded-2xl flex items-center justify-center text-3xl shadow-sm">
+                <?= e($class['group_icon'] ?: '🎓') ?>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-slate-900 dark:text-white tracking-tight"><?= e($class['name']) ?> (Section: <?= e($class['section'] ?: 'Default') ?>)</h1>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Main Group: <span class="font-extrabold" style="color: <?= $class['group_color'] ?: '#6366f1' ?>;"><?= e($class['group_name'] ?: 'None') ?></span> &middot; 
+                    Academic Year: <span class="font-bold text-slate-800 dark:text-slate-200"><?= e($class['year_name'] ?: '—') ?></span> &middot;
+                    Template: <span class="font-bold text-indigo-500"><?= e($curriculum['name'] ?? 'None (Default Mapping)') ?></span>
+                </p>
+            </div>
         </div>
-        <div class="flex items-center gap-3">
-            <a href="<?= url('classes') ?>" class="text-sm text-slate-400 hover:text-white transition-colors">← Back to Classes</a>
-            <?php if ($className !== 'Unassigned'): ?>
-            <button @click="showAssignModal = true" 
-                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md hover:opacity-90"
-                    style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                Add Students
+
+        <div class="flex items-center gap-4">
+            <div class="space-y-1 text-right text-xs">
+                <p class="text-slate-400">Class Teacher</p>
+                <p class="font-black text-slate-850 dark:text-white text-sm"><?= e($class['teacher_name'] ?: 'Not Assigned') ?></p>
+            </div>
+            <button @click="showEditModal = true" class="px-3.5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-sm transition-all">
+                Edit Class
             </button>
-            <?php endif; ?>
         </div>
     </div>
 
-    <!-- Student Table / Grid -->
-    <div class="rounded-2xl border border-slate-800/60 bg-slate-900/20 overflow-hidden shadow-sm">
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="border-b border-slate-800 bg-slate-900/50">
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Student</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Admission #</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Age & Gender</th>
-                        
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Branch</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-850">
-                    <?php if (empty($students)): ?>
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                             No students enrolled in this class yet.
-                        </td>
-                    </tr>
-                    <?php else: ?>
-                        <?php foreach ($students as $s): ?>
-                        <tr class="hover:bg-slate-900/30 transition-colors group">
-                            <!-- Name / avatar -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white"
-                                         style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-                                        <?= strtoupper(substr($s['first_name'], 0, 1) . substr($s['last_name'], 0, 1)) ?>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-semibold text-white group-hover:text-brand-400 transition-colors">
-                                            <?= e($s['first_name'] . ' ' . $s['last_name']) ?>
-                                        </p>
-                                        <p class="text-xs text-slate-500"><?= e($s['blood_group'] ? $s['blood_group'] . ' Blood Group' : '—') ?></p>
-                                    </div>
-                                </div>
-                            </td>
+    <!-- Main Grid: Enrolled Students vs. Inherited Curriculum Subjects -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                            <!-- Adm No -->
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-450 font-mono">
-                                <?= e($s['admission_number']) ?>
-                            </td>
-
-                            <!-- Age / Gender -->
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-350">
-                                <?= ucfirst($s['gender']) ?> (<?= age($s['dob']) ?>)
-                            </td>
-
-                            
-
-                            <!-- Branch -->
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-350">
-                                <?= e($s['branch_name'] ?? 'Main') ?>
-                            </td>
-
-                            <!-- Actions -->
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                <a href="<?= url('students/' . $s['id']) ?>" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all border border-slate-200 dark:border-slate-700/50 shadow-sm">
-                                    Profile
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Add Students Modal -->
-    <div x-show="showAssignModal" 
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
-          x-cloak
-          x-transition>
-        <div class="w-full max-w-lg rounded-2xl border border-slate-800/60 bg-slate-900 p-6 space-y-5 shadow-2xl relative"
-             @click.outside="showAssignModal = false">
-            
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="text-lg font-bold text-white">Add Students to <?= e($className) ?></h3>
-                <button @click="showAssignModal = false" class="text-slate-400 hover:text-white transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        <!-- Students List (Span 2) -->
+        <div class="md:col-span-2 space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Enrolled Students (<?= count($students) ?>)</h3>
+                <button @click="showEnrollModal = true" class="px-2.5 py-1.5 rounded-xl text-3xs font-extrabold text-indigo-500 bg-indigo-500/10 hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
+                    + Enroll Students
                 </button>
             </div>
-
-            <form method="POST" action="<?= url('classes') ?>" class="space-y-4">
-                <?= \Core\View::csrf() ?>
-                
-                <input type="hidden" name="class" value="<?= e($className) ?>">
-                <input type="hidden" name="redirect_to" value="<?= url('classes/' . urlencode($className)) ?>">
-
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-450">Section</label>
-                    <input type="text" name="section" placeholder="e.g. S1 (optional)" list="existing-sections"
-                           class="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
-                    <datalist id="existing-sections">
-                        <?php foreach ($sections as $sec): ?>
-                            <?php if (!empty($sec['section'])): ?>
-                                <option value="<?= e($sec['section']) ?>"></option>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </datalist>
-                </div>
-
-                <!-- Select Students list -->
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-450">Assign Students</label>
-                    <input type="text" x-model="searchStudent" placeholder="Search students..."
-                           class="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 rounded-xl py-2 px-4 text-xs focus:outline-none focus:border-brand-500 transition-all mb-2">
-                    
-                    <div class="max-h-48 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800 bg-slate-950/20">
-                        <?php if (empty($assignableStudents)): ?>
-                            <div class="p-4 text-center text-xs text-slate-500">No other active students found.</div>
+            
+            <div class="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900/40 overflow-hidden shadow-sm">
+                <table class="w-full text-xs text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-400 font-bold uppercase tracking-wider">
+                            <th class="p-3">Student Name</th>
+                            <th class="p-3">Roll No</th>
+                            <th class="p-3">GR No</th>
+                            <th class="p-3 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($students)): ?>
+                            <tr>
+                                <td colspan="4" class="p-8 text-center text-slate-400">No students enrolled in this class.</td>
+                            </tr>
                         <?php else: ?>
-                            <?php foreach ($assignableStudents as $student): ?>
-                            <?php 
-                                $studentName = $student['first_name'] . ' ' . $student['last_name'];
-                                $assignedStr = $student['class'] ? " ({$student['class']}-" . ($student['section'] ?: 'Default') . ")" : ' (Unassigned)';
-                            ?>
-                            <label x-show="searchStudent === '' || '<?= strtolower(addslashes($studentName)) ?>'.includes(searchStudent.toLowerCase())"
-                                   class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-900/50 cursor-pointer text-xs transition-colors">
-                                <input type="checkbox" name="student_ids[]" value="<?= (int)$student['id'] ?>"
-                                       class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500/30">
-                                <div>
-                                    <span class="font-semibold text-slate-200"><?= e($studentName) ?></span>
-                                    <span class="text-3xs text-slate-500 font-mono ml-2">ADM: <?= e($student['admission_number']) ?></span>
-                                    <span class="text-3xs text-brand-400 ml-1"><?= $assignedStr ?></span>
-                                </div>
-                            </label>
+                            <?php foreach ($students as $s): ?>
+                                <tr class="border-b border-slate-200 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
+                                    <td class="p-3 font-bold text-slate-900 dark:text-white"><?= e($s['first_name'] . ' ' . $s['last_name']) ?></td>
+                                    <td class="p-3 font-mono text-slate-500"><?= e($s['roll_number'] ?: '—') ?></td>
+                                    <td class="p-3 font-mono text-slate-500"><?= e($s['gr_number'] ?: '—') ?></td>
+                                    <td class="p-3 text-right flex items-center justify-end gap-3">
+                                        <a href="<?= url('academics/students/' . $s['id']) ?>" class="text-indigo-500 font-bold hover:underline">Profile &rarr;</a>
+                                        <form action="<?= url('academics/classes/' . $class['id'] . '/remove-student/' . $s['id']) ?>" method="POST" class="inline" onsubmit="return confirm('Remove student from this class?')">
+                                            <?= \Core\View::csrf() ?>
+                                            <button type="submit" class="text-red-500 hover:text-red-700 font-bold hover:underline bg-transparent border-0 p-0 cursor-pointer">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Inherited Curriculum Subjects Panel -->
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Inherited Curriculum</h3>
+                <span class="text-[10px] text-slate-400 font-mono">v1.0</span>
+            </div>
+            
+            <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-sm space-y-4">
+                <div>
+                    <h4 class="font-extrabold text-slate-900 dark:text-white text-xs"><?= e($curriculum['name'] ?? 'No curriculum active') ?></h4>
+                    <p class="text-3xs text-slate-400 mt-0.5">Automatically inherited by all students enrolled in this class.</p>
+                </div>
+
+                <div class="space-y-2 max-h-[350px] overflow-y-auto pr-1">
+                    <?php if (empty($subjects)): ?>
+                        <p class="text-3xs text-slate-400 text-center py-4">No subjects found in resolved curriculum.</p>
+                    <?php else: ?>
+                        <?php foreach ($subjects as $sub): ?>
+                            <div class="p-2.5 rounded-xl border border-slate-100 dark:border-slate-850 bg-slate-50/40 dark:bg-slate-900/50 flex items-center justify-between text-2xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                    <span class="font-extrabold text-slate-850 dark:text-slate-350"><?= e($sub['name']) ?></span>
+                                </div>
+                                <span class="text-3xs text-slate-400"><?= e($sub['category']) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Edit Class Modal -->
+    <div x-show="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Edit Class Details</h3>
+            
+            <form action="<?= url('academics/classes/' . $class['id']) ?>" method="POST" class="space-y-4 text-xs">
+                <?= \Core\View::csrf() ?>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-1">
+                        <label class="block font-bold text-slate-700 dark:text-slate-300">Class Name</label>
+                        <input type="text" name="class" required value="<?= e($class['name']) ?>" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block font-bold text-slate-700 dark:text-slate-300">Section</label>
+                        <input type="text" name="section" value="<?= e($class['section']) ?>" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-                    <button type="button" @click="showAssignModal = false"
-                            class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-350 hover:bg-slate-750 transition-all">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                            class="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-md hover:opacity-95 transition-all"
-                            style="background: linear-gradient(135deg, #6366f1, #a855f7);">
-                        Assign Students
-                    </button>
+                <div class="space-y-1">
+                    <label class="block font-bold text-slate-700 dark:text-slate-300">Main Group</label>
+                    <select name="main_group_id" x-model="selectedGroupId" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                        <?php foreach ($groups as $g): ?>
+                            <option value="<?= $g['id'] ?>"><?= e($g['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block font-bold text-slate-700 dark:text-slate-300">Academic Year</label>
+                    <select name="academic_year_id" x-model="selectedYearId" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                        <?php foreach ($years as $y): ?>
+                            <option value="<?= $y['id'] ?>"><?= e($y['year_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block font-bold text-slate-700 dark:text-slate-300">Curriculum Template</label>
+                    <select name="curriculum_template_id" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                        <option value="">-- No Specific Curriculum (Default Mapping) --</option>
+                        <?php foreach ($curriculums as $curr): ?>
+                            <option value="<?= $curr['id'] ?>"
+                                    x-show="selectedGroupId == '<?= $curr['main_group_id'] ?>' && selectedYearId == '<?= $curr['academic_year_id'] ?>'"
+                                    <?= $curr['id'] == $class['curriculum_template_id'] ? 'selected' : '' ?>>
+                                <?= e($curr['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="block font-bold text-slate-700 dark:text-slate-300">Class Teacher</label>
+                    <select name="class_teacher_id" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+                        <option value="">-- Choose Class Teacher --</option>
+                        <?php foreach ($teachers as $t): ?>
+                            <option value="<?= $t['id'] ?>" <?= $t['id'] == $class['class_teacher_id'] ? 'selected' : '' ?>><?= e($t['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" @click="showEditModal = false" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Enroll Students Modal -->
+    <div x-show="showEnrollModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm" x-cloak>
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Enroll Students in <?= e($class['name']) ?></h3>
+            
+            <form action="<?= url('academics/classes/' . $class['id'] . '/enroll') ?>" method="POST" class="space-y-4 text-xs">
+                <?= \Core\View::csrf() ?>
+                
+                <p class="text-2xs text-slate-505">Only enrolled students without an active class assignment are listed below.</p>
+                
+                <div class="max-h-[300px] overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl p-3 space-y-2">
+                    <?php if (empty($unassignedStudents)): ?>
+                        <p class="text-2xs text-slate-400 text-center py-6">No unassigned students available to enroll.</p>
+                    <?php else: ?>
+                        <?php foreach ($unassignedStudents as $ustu): ?>
+                            <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
+                                <input type="checkbox" name="student_ids[]" value="<?= $ustu['id'] ?>" class="rounded text-indigo-650 focus:ring-indigo-500 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                                <div class="text-left">
+                                    <p class="font-bold text-slate-850 dark:text-slate-200"><?= e($ustu['first_name'] . ' ' . $ustu['last_name']) ?></p>
+                                    <p class="text-[10px] text-slate-450 font-mono">Admission No: <?= e($ustu['admission_number']) ?></p>
+                                </div>
+                            </label>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" @click="showEnrollModal = false" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500" <?= empty($unassignedStudents) ? 'disabled' : '' ?>>Enroll Students</button>
                 </div>
             </form>
         </div>

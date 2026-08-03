@@ -63,6 +63,19 @@ class UserController extends Controller
                     LIMIT 1
                 ", [$u['id'], $u['email']]);
                 $u['employee'] = $emp ?: null;
+
+                // Relational assignments
+                $u['class_teacher_assignments'] = $db->select("
+                    SELECT name, section FROM classes WHERE class_teacher_id = ?
+                ", [$u['id']]);
+
+                $u['subject_teacher_assignments'] = $db->select("
+                    SELECT DISTINCT c.name as class_name, c.section, s.name as subject_name 
+                    FROM timetables t 
+                    JOIN classes c ON t.class_id = c.id 
+                    JOIN subjects s ON t.subject_id = s.id 
+                    WHERE t.teacher_id = ?
+                ", [$u['id']]);
             }
         }
 

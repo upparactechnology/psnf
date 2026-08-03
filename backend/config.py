@@ -23,7 +23,7 @@ class Settings(BaseSettings):
         return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}?charset=utf8mb4"
 
     # AI Recognition & Verification Settings
-    SIMILARITY_THRESHOLD: float = float(os.getenv("SIMILARITY_THRESHOLD", "0.78"))  # 0.75 - 0.80 range
+    SIMILARITY_THRESHOLD: float = float(os.getenv("SIMILARITY_THRESHOLD", "0.55"))  # Standard Sweet Spot (0.50 - 0.60)
     COOLDOWN_MINUTES: int = int(os.getenv("COOLDOWN_MINUTES", "10"))
     MODEL_NAME: str = os.getenv("MODEL_NAME", "buffalo_l")
     DETECTION_SIZE: int = int(os.getenv("DETECTION_SIZE", "640"))

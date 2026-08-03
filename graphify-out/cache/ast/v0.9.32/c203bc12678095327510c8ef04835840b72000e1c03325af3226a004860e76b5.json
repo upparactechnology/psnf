@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_public_certificate_generator_vendor_phpmailer_phpmailer_language_phpmailer_lang_as_php", "label": "phpmailer.lang-as.php", "file_type": "code", "source_file": "public/certificate_generator/vendor/phpmailer/phpmailer/language/phpmailer.lang-as.php", "source_location": "L1"}], "edges": [], "raw_calls": []}

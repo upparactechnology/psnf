@@ -185,13 +185,87 @@ ob_start();
             </div>
         </div>
 
-        <div class="flex items-center justify-end">
+        <!-- Global System Settings -->
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-4 mb-5 mt-5">
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Communication & Integration (WhatsApp)
+            </h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">WhatsApp Enable/Disable</label>
+                    <select name="whatsapp_enabled" class="w-full bg-slate-900/70 border border-slate-700/60 text-slate-350 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
+                        <option value="1" <?= ($systemSettings['whatsapp_enabled'] ?? '1') == '1' ? 'selected' : '' ?>>Enabled</option>
+                        <option value="0" <?= ($systemSettings['whatsapp_enabled'] ?? '1') == '0' ? 'selected' : '' ?>>Disabled</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">web.upparac.com API Key</label>
+                    <input type="password" name="whatsapp_api_key" value="<?= e($systemSettings['whatsapp_api_key'] ?? '') ?>"
+                           class="w-full bg-slate-900/70 border border-slate-700/60 text-white rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
+                </div>
+            </div>
+
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3 pt-4">Academic & Portal Settings</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Hide Exam Results (Portal)</label>
+                    <select name="portal_hide_exams" class="w-full bg-slate-900/70 border border-slate-700/60 text-slate-350 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
+                        <option value="1" <?= ($systemSettings['portal_hide_exams'] ?? '1') == '1' ? 'selected' : '' ?>>Yes, hide until published</option>
+                        <option value="0" <?= ($systemSettings['portal_hide_exams'] ?? '1') == '0' ? 'selected' : '' ?>>No, show immediately</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Allow Online Payments</label>
+                    <select name="portal_allow_payments" class="w-full bg-slate-900/70 border border-slate-700/60 text-slate-350 rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 transition-all">
+                        <option value="1" <?= ($systemSettings['portal_allow_payments'] ?? '0') == '1' ? 'selected' : '' ?>>Enabled</option>
+                        <option value="0" <?= ($systemSettings['portal_allow_payments'] ?? '0') == '0' ? 'selected' : '' ?>>Disabled</option>
+                    </select>
+                </div>
+            </div>
+            
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3 pt-4">Payment Gateways</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Razorpay Key ID</label>
+                    <input type="text" name="payment_razorpay_key" value="<?= e($systemSettings['payment_razorpay_key'] ?? '') ?>"
+                           class="w-full bg-slate-900/70 border border-slate-700/60 text-white rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Stripe Publishable Key</label>
+                    <input type="text" name="payment_stripe_key" value="<?= e($systemSettings['payment_stripe_key'] ?? '') ?>"
+                           class="w-full bg-slate-900/70 border border-slate-700/60 text-white rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end mb-10">
             <button type="submit" :disabled="loading" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #a855f7);" :class="loading?'opacity-70 cursor-not-allowed':''">
                 <svg x-show="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                Save Settings
+                Save All Settings
             </button>
         </div>
     </form>
+    
+    <!-- Test WhatsApp Tool -->
+    <div class="rounded-2xl border border-brand-800/60 bg-brand-900/20 p-6 space-y-4 mb-5">
+        <h3 class="text-sm font-semibold text-brand-300 border-b border-brand-800/50 pb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            Test WhatsApp Integration
+        </h3>
+        <form method="POST" action="<?= url('settings/test-whatsapp') ?>" class="flex gap-4 items-end">
+            <?= \Core\View::csrf() ?>
+            <div class="space-y-1.5 flex-1">
+                <label class="block text-xs font-medium text-slate-400">Phone Number (with Country Code e.g. 919876543210)</label>
+                <input type="text" name="phone" required
+                       class="w-full bg-slate-900/70 border border-brand-700/60 text-white rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-green-500 transition-all">
+            </div>
+            <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">
+                Send Test Message
+            </button>
+        </form>
+    </div>
 </div>
 
 <?php
