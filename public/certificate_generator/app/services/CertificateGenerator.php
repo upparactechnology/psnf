@@ -197,6 +197,13 @@ class CertificateGenerator
             'id' => $participantId,
         ]);
 
+        // Sync to student_documents if participant has a linked student_id
+        $studentId = (int) ($participant['student_id'] ?? 0);
+        if ($studentId > 0) {
+            $certTitle = trim((string) ($participant['type_name'] ?? 'Certificate'));
+            $this->syncToStudentDocument($studentId, $certTitle, $pdfRelative, $pdfAbsolute);
+        }
+
         return [
             'jpg_path' => $jpgRelative,
             'pdf_path' => $pdfRelative,
@@ -1708,5 +1715,40 @@ class CertificateGenerator
         }
 
         return $normalizedAbsolute;
+    }
+
+    private function syncToStudentDocument(int $studentId, string $certTitle, string $pdfRelative, string $pdfAbsolute): void
+    {
+        $fileSize = is_file($pdfAbsolute) ? filesize($pdfAbsolute) : 0;
+        $fileName = basename($pdfRelative);
+
+        $check = $this->pdo->prepare(
+            "SELECT id FROM student_documents WHERE student_id = :student_id AND type = 'certificate' AND title = :title AND deleted_at IS NULL LIMIT 1"
+        );
+        $check->execute(['student_id' => $studentId, 'title' => $certTitle]);
+
+        if ($check->fetch()) {
+            $update = $this->pdo->prepare(
+                "UPDATE student_documents SET file_name = :file_name, stored_name = :stored_name, file_size = :file_size, updated_at = NOW() WHERE student_id = :student_id AND type = 'certificate' AND title = :title AND deleted_at IS NULL"
+            );
+            $update->execute([
+                'file_name'   => $fileName,
+                'stored_name' => $pdfRelative,
+                'file_size'   => $fileSize,
+                'student_id'  => $studentId,
+                'title'       => $certTitle,
+            ]);
+        } else {
+            $insert = $this->pdo->prepare(
+                "INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_at) VALUES (:student_id, 'certificate', :title, :file_name, :stored_name, 'application/pdf', :file_size, 'verified', NOW())"
+            );
+            $insert->execute([
+                'student_id'  => $studentId,
+                'title'       => $certTitle,
+                'file_name'   => $fileName,
+                'stored_name' => $pdfRelative,
+                'file_size'   => $fileSize,
+            ]);
+        }
     }
 }

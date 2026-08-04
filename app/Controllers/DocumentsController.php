@@ -107,7 +107,8 @@ class DocumentsController extends Controller
         // Available document types for students
         $docTypes = [
             'photo' => 'Student Photo',
-            'aadhar' => 'Student Aadhar Card'
+            'aadhar' => 'Student Aadhar Card',
+            'certificate' => 'Certificate',
         ];
 
         return $this->view('documents/student_documents', compact('students', 'studentId', 'documents', 'docTypes'));

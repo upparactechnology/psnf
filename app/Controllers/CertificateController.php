@@ -120,6 +120,19 @@ class CertificateController extends Controller
 
         $certId = Certificate::create($dbData);
 
+        // Also create student document record so it appears in Academics > Students > Documents
+        $this->db()->insert('student_documents', [
+            'student_id'  => (int)$data['student_id'],
+            'type'        => 'certificate',
+            'title'       => $data['title'],
+            'file_name'   => $data['title'] . '.pdf',
+            'stored_name' => 'certificate:' . $certId,
+            'mime_type'   => 'application/pdf',
+            'file_size'   => 0,
+            'status'      => 'verified',
+            'created_by'  => auth_id(),
+        ]);
+
         // Add timeline record
         $student = $this->db()->selectOne("SELECT first_name, last_name, tenant_id, school_id, branch_id FROM students WHERE id = ?", [(int)$data['student_id']]);
         if ($student) {

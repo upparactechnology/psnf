@@ -2074,3 +2074,32 @@
 #6 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
 #7 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
 #8 {main}
+[04-Aug-2026 12:48:26 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
+[04-Aug-2026 12:53:26 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[04-Aug-2026 12:54:41 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
+[04-Aug-2026 13:00:18 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
+[04-Aug-2026 13:23:49 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
+[04-Aug-2026 13:23:55 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'lec_grace_minutes' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('SELECT lec_grac...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(71): Core\Database->query('SELECT lec_grac...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\AcademicSettingsController.php(75): Core\Database->selectOne('SELECT lec_grac...')
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\AcademicSettingsController->index()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[04-Aug-2026 13:23:57 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'lec_grace_minutes' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('SELECT lec_grac...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(71): Core\Database->query('SELECT lec_grac...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\AcademicSettingsController.php(75): Core\Database->selectOne('SELECT lec_grac...')
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\AcademicSettingsController->index()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[04-Aug-2026 13:24:10 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
+[04-Aug-2026 13:28:32 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
+[04-Aug-2026 13:28:42 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59

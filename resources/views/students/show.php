@@ -327,7 +327,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                       class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <?= \Core\View::csrf() ?>
                     <select name="document_type" class="bg-slate-900/70 border border-slate-700/60 text-slate-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-brand-500 transition-all">
-                        <?php foreach (['birth_certificate'=>'Birth Certificate','aadhar'=>'Aadhar','medical_report'=>'Medical Report','disability_certificate'=>'Disability Certificate','transfer_certificate'=>'Transfer Certificate','other'=>'Other'] as $v=>$l): ?>
+                        <?php foreach (['birth_certificate'=>'Birth Certificate','aadhar'=>'Aadhar','medical_report'=>'Medical Report','disability_certificate'=>'Disability Certificate','transfer_certificate'=>'Transfer Certificate','certificate'=>'Certificate','other'=>'Other'] as $v=>$l): ?>
                         <option value="<?= $v ?>"><?= $l ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -351,15 +351,27 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                 <?php foreach ($s['documents'] as $doc): ?>
                 <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30">
                     <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
+                        <?php if ($doc['type'] === 'certificate'): ?>
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <?php else: ?>
                         <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <?php endif; ?>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium text-white truncate"><?= e($doc['title']) ?></p>
-                        <p class="text-xs text-slate-500"><?= e(str_replace('_',' ', $doc['type'])) ?> · <?= format_bytes((int)$doc['file_size']) ?></p>
+                        <p class="text-xs text-slate-500"><?= e(str_replace('_',' ', $doc['type'])) ?> · <?= $doc['type'] === 'certificate' ? 'View Certificate' : format_bytes((int)$doc['file_size']) ?></p>
                     </div>
-                    <span class="text-xs <?= $doc['status'] === 'verified' ? 'text-emerald-400' : ($doc['status'] === 'rejected' ? 'text-red-400' : 'text-yellow-400') ?>">
-                        <?= ucfirst($doc['status']) ?>
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs <?= $doc['status'] === 'verified' ? 'text-emerald-400' : ($doc['status'] === 'rejected' ? 'text-red-400' : 'text-yellow-400') ?>">
+                            <?= ucfirst($doc['status']) ?>
+                        </span>
+                        <?php if ($doc['type'] === 'certificate' && str_starts_with($doc['stored_name'], 'certificate:')): ?>
+                        <a href="/certificates/<?= (int)substr($doc['stored_name'], 12) ?>/view" target="_blank"
+                           class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-[10px] text-slate-300 transition-colors">
+                            View
+                        </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php endforeach; ?>
             </div>

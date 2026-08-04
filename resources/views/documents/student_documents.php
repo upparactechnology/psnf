@@ -106,6 +106,12 @@ ob_start();
                             <td class="px-5 py-4 whitespace-nowrap text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <?php if ($doc): ?>
+                                    <?php if (str_starts_with($doc['stored_name'], 'certificate:')): ?>
+                                    <a href="/certificates/<?= (int)substr($doc['stored_name'], 12) ?>/view" target="_blank" 
+                                       class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-bold text-[10px] text-slate-700 dark:text-slate-300">
+                                        View
+                                    </a>
+                                    <?php else: ?>
                                     <a href="/psnf/storage/uploads/documents/<?= e($doc['stored_name']) ?>" target="_blank" 
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-bold text-[10px] text-slate-700 dark:text-slate-300">
                                         View
@@ -114,6 +120,7 @@ ob_start();
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-bold text-[10px] text-slate-700 dark:text-slate-300">
                                         Download
                                     </a>
+                                    <?php endif; ?>
                                     <?php endif; ?>
                                     
                                     <!-- Upload button triggers modal/inline form -->
