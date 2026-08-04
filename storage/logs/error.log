@@ -2074,3 +2074,4 @@
 #6 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
 #7 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
 #8 {main}
+[04-Aug-2026 12:25:53 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
