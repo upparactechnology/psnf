@@ -74,7 +74,22 @@ class AuthController extends Controller
 
     public function logout(): string
     {
+        $userSession = \Core\Session::get('user');
+        $isParent = false;
+        if ($userSession) {
+            $role = $userSession['role'] ?? '';
+            $roles = $userSession['roles'] ?? [];
+            if ($role === 'parent' || in_array('parent', (array)$roles, true)) {
+                $isParent = true;
+            }
+        }
+
         $this->authService->logout();
+
+        if ($isParent) {
+            return $this->redirect('/parent-login');
+        }
+
         return $this->redirect('/login');
     }
 

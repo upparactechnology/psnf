@@ -341,14 +341,85 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
             </div>
             <?php endif; ?>
 
-            <?php if (empty($s['documents'])): ?>
+            <?php
+            $studentId = (int)$s['id'];
+            $fullName = trim(($s['first_name'] ?? '') . ' ' . ($s['last_name'] ?? ''));
+
+            $allDocs = $s['documents'] ?? [];
+            $existingTitles = array_column($allDocs, 'title');
+
+            // Fetch any generated certificates for this student that might not be in student_documents yet
+            $genCerts = \Core\Application::$app->db->select("
+                SELECT 
+                    gc.id AS gen_id,
+                    ct.name AS title,
+                    'certificate' AS type,
+                    gc.pdf_path AS stored_name,
+                    'application/pdf' AS mime_type,
+                    'verified' AS status,
+                    gc.generated_at AS created_at,
+                    p.id AS participant_id
+                FROM generated_certificates gc
+                JOIN participants p ON p.id = gc.participant_id
+                JOIN certificate_types ct ON ct.id = p.certificate_type_id
+                WHERE p.student_id = ? OR (p.name IS NOT NULL AND TRIM(p.name) = ?)
+            ", [$studentId, $fullName]);
+
+            foreach ($genCerts as $gCert) {
+                if (!in_array($gCert['title'], $existingTitles, true)) {
+                    $allDocs[] = [
+                        'id'             => 'gen_' . $gCert['gen_id'],
+                        'student_id'     => $studentId,
+                        'type'           => 'certificate',
+                        'title'          => $gCert['title'],
+                        'file_name'      => $gCert['title'] . '.pdf',
+                        'stored_name'    => $gCert['stored_name'],
+                        'mime_type'      => 'application/pdf',
+                        'file_size'      => 0,
+                        'status'         => 'verified',
+                        'created_at'     => $gCert['created_at'],
+                        'participant_id' => $gCert['participant_id'],
+                    ];
+                }
+            }
+            ?>
+
+            <?php if (empty($allDocs)): ?>
             <div class="text-center py-8">
                 <svg class="w-10 h-10 text-slate-700 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 <p class="text-sm text-slate-500">No documents uploaded yet.</p>
             </div>
             <?php else: ?>
             <div class="space-y-2">
-                <?php foreach ($s['documents'] as $doc): ?>
+                <?php foreach ($allDocs as $doc): ?>
+                <?php
+                    $pdfUrl = null;
+                    $jpgUrl = null;
+
+                    $pId = $doc['participant_id'] ?? null;
+                    if (!$pId && str_starts_with((string)$doc['stored_name'], 'generated/')) {
+                        $genRow = \Core\Application::$app->db->selectOne(
+                            "SELECT participant_id FROM generated_certificates WHERE pdf_path = ? OR jpg_path = ? LIMIT 1",
+                            [$doc['stored_name'], $doc['stored_name']]
+                        );
+                        if ($genRow) {
+                            $pId = $genRow['participant_id'];
+                        }
+                    }
+
+                    if ($pId) {
+                        $pdfUrl = url("parent/certificates/" . (int)$pId . "/download?format=pdf&disposition=inline");
+                        $jpgUrl = url("parent/certificates/" . (int)$pId . "/download?format=jpg&disposition=attachment");
+                    } elseif (str_starts_with((string)$doc['stored_name'], 'certificate:')) {
+                        $cId = (int) substr($doc['stored_name'], 12);
+                        $pdfUrl = url("parent/certificates/" . $cId . "/download?format=pdf&disposition=inline");
+                        $jpgUrl = url("parent/certificates/" . $cId . "/download?format=jpg&disposition=attachment");
+                    } elseif (str_starts_with((string)$doc['stored_name'], 'generated/')) {
+                        $pdfUrl = url("public/certificate_generator/" . $doc['stored_name']);
+                    } else {
+                        $pdfUrl = url("storage/uploads/documents/" . $doc['stored_name']);
+                    }
+                ?>
                 <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/30 border border-slate-700/30">
                     <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
                         <?php if ($doc['type'] === 'certificate'): ?>
@@ -359,16 +430,25 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium text-white truncate"><?= e($doc['title']) ?></p>
-                        <p class="text-xs text-slate-500"><?= e(str_replace('_',' ', $doc['type'])) ?> · <?= $doc['type'] === 'certificate' ? 'View Certificate' : format_bytes((int)$doc['file_size']) ?></p>
+                        <p class="text-xs text-slate-500"><?= e(str_replace('_',' ', $doc['type'])) ?> · <?= $doc['type'] === 'certificate' ? 'Official Credential' : format_bytes((int)$doc['file_size']) ?></p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="text-xs <?= $doc['status'] === 'verified' ? 'text-emerald-400' : ($doc['status'] === 'rejected' ? 'text-red-400' : 'text-yellow-400') ?>">
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium <?= $doc['status'] === 'verified' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700/30' : ($doc['status'] === 'rejected' ? 'bg-red-900/30 text-red-400 border border-red-700/30' : 'bg-yellow-900/30 text-yellow-400 border border-yellow-700/30') ?>">
                             <?= ucfirst($doc['status']) ?>
                         </span>
-                        <?php if ($doc['type'] === 'certificate' && str_starts_with($doc['stored_name'], 'certificate:')): ?>
-                        <a href="/certificates/<?= (int)substr($doc['stored_name'], 12) ?>/view" target="_blank"
-                           class="px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-[10px] text-slate-300 transition-colors">
-                            View
+
+                        <?php if ($jpgUrl): ?>
+                        <a href="<?= e($jpgUrl) ?>" download
+                           class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700/50 transition-all">
+                            JPG
+                        </a>
+                        <?php endif; ?>
+
+                        <?php if ($pdfUrl): ?>
+                        <a href="<?= e($pdfUrl) ?>" target="_blank"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-all shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            View & Download PDF
                         </a>
                         <?php endif; ?>
                     </div>

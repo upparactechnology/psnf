@@ -26,10 +26,13 @@ $layout = false; // No layout for printable view
 
         <!-- Header -->
         <div class="border-b-2 border-indigo-600 pb-6 mb-6 flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-black text-indigo-900 tracking-tight">P.S.N.F PUBLIC SCHOOL</h1>
-                <p class="text-sm text-slate-500 font-medium mt-1">123 Education Lane, Learning District, City</p>
-                <p class="text-sm text-slate-500 font-medium">Contact: admin@psnf.edu | +91 98765 43210</p>
+            <div class="flex items-center gap-3">
+                <img src="<?= url('images/logo.png') ?>" class="w-12 h-12 object-contain rounded-xl bg-slate-100 p-1 flex-shrink-0" alt="PSNF Logo">
+                <div>
+                    <h1 class="text-2xl font-black text-indigo-900 tracking-tight">Pearl Special Needs Foundation</h1>
+                    <p class="text-xs text-slate-600 font-medium mt-0.5">Bhathiji Maharaj busstop, Tragad Rd, next to Shree Ganesh Mandir, nr. Shree Ganesh party plot, Tragad, Chandkheda, Ahmedabad, Gujarat 382424</p>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">Website: psnf.org</p>
+                </div>
             </div>
             <div class="text-right">
                 <h2 class="text-2xl font-bold text-slate-800 uppercase tracking-widest text-slate-300">PAYSLIP</h2>

@@ -57,8 +57,13 @@ try {
 $contentType = $format === 'pdf' ? 'application/pdf' : 'image/jpeg';
 $fileName = safe_filename((string) $row['name']) . '_' . (int) $row['id'] . '.' . $format;
 
+$disposition = (string) ($_GET['disposition'] ?? '');
+if (!in_array($disposition, ['attachment', 'inline'], true)) {
+    $disposition = ($format === 'pdf') ? 'inline' : 'attachment';
+}
+
 header('Content-Type: ' . $contentType);
-header('Content-Disposition: attachment; filename="' . $fileName . '"');
+header('Content-Disposition: ' . $disposition . '; filename="' . $fileName . '"');
 header('Content-Length: ' . filesize($absolute));
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');

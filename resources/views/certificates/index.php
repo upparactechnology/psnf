@@ -53,7 +53,7 @@ ob_start();
                     <span class="text-3xs text-slate-400">Issued: <?= e($c['issued_at']) ?></span>
                     
                     <div class="flex items-center gap-2">
-                        <a href="<?= ($c['source'] ?? 'db') === 'generated' ? url('../certificate_generator/index.php?page=download-file&participant_id=' . (int)$c['participant_id'] . '&format=pdf') : url("certificates/{$c['id']}/view") ?>" target="_blank"
+                        <a href="<?= ($c['source'] ?? 'db') === 'generated' ? url('public/certificate_generator/index.php?page=download-file&participant_id=' . (int)$c['participant_id'] . '&format=pdf&disposition=inline') : url("certificates/{$c['id']}/view") ?>" target="_blank"
                            class="px-2.5 py-1 text-2xs font-semibold text-brand-650 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/20 hover:bg-brand-100 dark:hover:bg-brand-900/30 rounded-lg transition-all"
                            title="View Certificate">
                             Print / View

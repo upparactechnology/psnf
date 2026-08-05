@@ -121,4 +121,12 @@ class ParentPortalLoginController extends Controller
         Session::flash('success', 'Account updated successfully! Welcome to the Parent Portal.');
         return $this->redirect('/parent/dashboard');
     }
+
+    public function logout(): string
+    {
+        $authService = new \App\Services\AuthService();
+        $authService->logout();
+        Session::flash('success', 'Logged out successfully from Parent Portal.');
+        return $this->redirect('/parent-login');
+    }
 }

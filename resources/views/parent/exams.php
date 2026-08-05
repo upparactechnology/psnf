@@ -66,11 +66,11 @@
                             <p class="text-[9px] text-slate-500">Issued: <?= date('d M Y', strtotime($cert['issued_at'])) ?></p>
                         </div>
                         <div class="flex gap-2 w-full pt-1">
-                            <a href="/psnf/certificate_generator/index.php?page=download-file&participant_id=<?= (int)$cert['participant_id'] ?>&format=jpg"
+                            <a href="<?= e(url("parent/certificates/" . (int)($cert['participant_id'] ?: $cert['id']) . "/download?format=jpg&disposition=attachment")) ?>" download
                                class="flex-1 text-center py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-bold text-slate-800 dark:text-white border border-slate-250 hover:border-slate-650 transition-all shadow-sm">
                                 JPG
                             </a>
-                            <a href="/psnf/certificate_generator/index.php?page=download-file&participant_id=<?= (int)$cert['participant_id'] ?>&format=pdf"
+                            <a href="<?= e(url("parent/certificates/" . (int)($cert['participant_id'] ?: $cert['id']) . "/download?format=pdf&disposition=inline")) ?>" target="_blank"
                                class="flex-1 text-center py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm">
                                 PDF
                             </a>

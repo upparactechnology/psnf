@@ -2103,3 +2103,13 @@
 [04-Aug-2026 13:24:10 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
 [04-Aug-2026 13:28:32 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
 [04-Aug-2026 13:28:42 Asia/Kolkata] PHP Warning:  Undefined array key "roll_number" in C:\xampp\htdocs\psnf\resources\views\students\show.php on line 59
+[05-Aug-2026 12:48:38 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[05-Aug-2026 12:49:09 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[05-Aug-2026 12:53:19 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[05-Aug-2026 12:56:23 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[05-Aug-2026 12:56:38 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[05-Aug-2026 12:59:03 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[05-Aug-2026 13:01:14 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 95
+[05-Aug-2026 13:03:04 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 101
+[05-Aug-2026 13:07:02 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 103
+[05-Aug-2026 13:45:38 Asia/Kolkata] PHP Warning:  Undefined variable $bgImage in C:\xampp\htdocs\psnf\resources\views\receipts\show.php on line 103

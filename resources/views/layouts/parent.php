@@ -422,7 +422,7 @@
                     <p class="text-sm font-semibold text-slate-800 dark:text-white truncate"><?= e($pUser['name'] ?? '') ?></p>
                     <p class="text-xs text-slate-500 truncate">Parent Account</p>
                 </div>
-                <a x-show="sidebarOpen" href="<?= url('logout') ?>" class="text-slate-500 hover:text-red-400 transition-colors" title="Logout">
+                <a x-show="sidebarOpen" href="<?= url('parent/logout') ?>" class="text-slate-500 hover:text-red-400 transition-colors" title="Logout">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                 </a>
             </div>

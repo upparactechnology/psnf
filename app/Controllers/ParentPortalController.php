@@ -708,26 +708,165 @@ class ParentPortalController extends Controller
         $context = $this->getContext((int)$id);
         $student = $context['active_student'];
 
-        $certificates = $this->db()->select("
+        if (!$student) {
+            return View::render('parent/certificates', array_merge($context, [
+                'title'        => 'Student Certificates',
+                'certificates' => [],
+            ]));
+        }
+
+        $fullName = trim(($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''));
+
+        // 1. Fetch generated certificates from sub-app module
+        $genCertificates = $this->db()->select("
             SELECT 
                 gc.id,
                 ct.name AS title,
                 ct.name AS certificate_type,
                 gc.pdf_path AS file_path,
+                gc.jpg_path AS jpg_path,
                 gc.generated_at AS issued_at,
                 'generated' AS source,
                 p.id AS participant_id
             FROM generated_certificates gc
             JOIN participants p ON p.id = gc.participant_id
             JOIN certificate_types ct ON ct.id = p.certificate_type_id
-            WHERE p.student_id = ?
-            ORDER BY issued_at DESC
-        ", [$student['id']]);
+            WHERE p.student_id = ? OR (p.name IS NOT NULL AND TRIM(p.name) = ?)
+            ORDER BY gc.generated_at DESC
+        ", [$student['id'], $fullName]);
+
+        // 2. Fetch certificates from main system table
+        $hasCertTable = $this->db()->selectOne("SHOW TABLES LIKE 'certificates'");
+        $mainCertificates = [];
+        if ($hasCertTable) {
+            $mainCertificates = $this->db()->select("
+                SELECT 
+                    c.id,
+                    c.title,
+                    c.certificate_type,
+                    c.file_path,
+                    c.file_path AS jpg_path,
+                    c.issued_at,
+                    'main' AS source,
+                    NULL AS participant_id
+                FROM certificates c
+                WHERE c.student_id = ?
+                ORDER BY c.issued_at DESC
+            ", [$student['id']]);
+        }
+
+        $certificates = array_merge($genCertificates, $mainCertificates);
 
         return View::render('parent/certificates', array_merge($context, [
             'title'        => 'Student Certificates',
             'certificates' => $certificates,
         ]));
+    }
+
+    public function downloadCertificate(string $id): void
+    {
+        $format = (string) (Application::$app->request->get('format', 'pdf'));
+        $format = in_array($format, ['pdf', 'jpg'], true) ? $format : 'pdf';
+        $disposition = (string) (Application::$app->request->get('disposition', 'inline'));
+        $disposition = in_array($disposition, ['attachment', 'inline'], true) ? $disposition : 'inline';
+
+        $certId = (int) $id;
+
+        // 1. Try fetching from generated_certificates joined with participants
+        $cert = $this->db()->selectOne("
+            SELECT 
+                gc.id,
+                gc.participant_id,
+                gc.pdf_path,
+                gc.jpg_path,
+                p.name AS recipient_name,
+                p.student_id,
+                ct.name AS title
+            FROM generated_certificates gc
+            JOIN participants p ON p.id = gc.participant_id
+            JOIN certificate_types ct ON ct.id = p.certificate_type_id
+            WHERE p.id = ? OR gc.id = ?
+            LIMIT 1
+        ", [$certId, $certId]);
+
+        if ($cert) {
+            $relative = $format === 'pdf' ? (string)($cert['pdf_path'] ?? '') : (string)($cert['jpg_path'] ?? '');
+            if (empty($relative)) {
+                $relative = (string)($cert['pdf_path'] ?? '');
+            }
+
+            $cleanRel = ltrim(str_replace('\\', '/', $relative), '/');
+            
+            $possiblePaths = [
+                ROOT_PATH . '/public/certificate_generator/' . $cleanRel,
+                ROOT_PATH . '/public/' . $cleanRel,
+                ROOT_PATH . '/' . $cleanRel,
+                STORAGE_PATH . '/' . $cleanRel,
+            ];
+
+            $foundFile = null;
+            foreach ($possiblePaths as $path) {
+                if (is_file($path)) {
+                    $foundFile = $path;
+                    break;
+                }
+            }
+
+            if ($foundFile !== null) {
+                try {
+                    $this->db()->query(
+                        "UPDATE generated_certificates SET download_count = COALESCE(download_count, 0) + 1 WHERE id = ?",
+                        [$cert['id']]
+                    );
+                } catch (\Throwable $e) {}
+
+                $contentType = ($format === 'pdf') ? 'application/pdf' : 'image/jpeg';
+                $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', ($cert['recipient_name'] ?? 'Certificate') . '_' . ($cert['title'] ?? 'Document')) . '.' . $format;
+
+                header('Content-Type: ' . $contentType);
+                header('Content-Disposition: ' . $disposition . '; filename="' . $safeName . '"');
+                header('Content-Length: ' . filesize($foundFile));
+                header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+                header('Pragma: no-cache');
+                readfile($foundFile);
+                exit();
+            }
+        }
+
+        // 2. Check main certificates table
+        $mainCert = $this->db()->selectOne("SELECT * FROM certificates WHERE id = ?", [$certId]);
+        if ($mainCert) {
+            $filePath = (string) $mainCert['file_path'];
+            $cleanPath = ltrim(str_replace('\\', '/', $filePath), '/');
+
+            $possiblePaths = [
+                STORAGE_PATH . '/uploads/certificates/' . basename($cleanPath),
+                ROOT_PATH . '/' . $cleanPath,
+                ROOT_PATH . '/public/' . $cleanPath,
+            ];
+
+            $foundFile = null;
+            foreach ($possiblePaths as $path) {
+                if (is_file($path)) {
+                    $foundFile = $path;
+                    break;
+                }
+            }
+
+            if ($foundFile !== null) {
+                $contentType = 'application/pdf';
+                $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $mainCert['title'] ?? 'Certificate') . '.pdf';
+
+                header('Content-Type: ' . $contentType);
+                header('Content-Disposition: ' . $disposition . '; filename="' . $safeName . '"');
+                header('Content-Length: ' . filesize($foundFile));
+                readfile($foundFile);
+                exit();
+            }
+        }
+
+        Application::$app->response->abort(404, "Certificate document file not found on disk.");
+        exit();
     }
 
     public function medical(string $id): string
