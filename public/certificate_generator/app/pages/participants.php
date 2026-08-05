@@ -185,9 +185,21 @@ if (is_post_request()) {
                 'verify_code' => bin2hex(random_bytes(8)),
             ]);
             $inserted++;
+
+            // Auto-generate individual certificate for this specific student immediately
+            $participantId = (int) db()->lastInsertId();
+            if ($participantId > 0) {
+                try {
+                    $pdfService = new PdfService();
+                    $generator = new CertificateGenerator(db(), $pdfService);
+                    $generator->generateForParticipant($participantId);
+                } catch (\Throwable $e) {
+                    // Continue with next student if one fails
+                }
+            }
         }
 
-        flash('success', "Assigned $inserted student(s) to certificate template. Skipped $skipped (already assigned).");
+        flash('success', "Assigned and generated certificate(s) for $inserted student(s). Skipped $skipped (already assigned).");
         redirect(url('participants', $listParams));
     }
 

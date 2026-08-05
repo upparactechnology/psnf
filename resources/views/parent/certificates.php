@@ -20,27 +20,35 @@
             </div>
         <?php else: ?>
             <?php foreach ($certificates as $cert): ?>
+                <?php 
+                    $targetId = (int) (!empty($cert['participant_id']) ? $cert['participant_id'] : $cert['id']);
+                    $pdfUrl = url("parent/certificates/" . $targetId . "/download?format=pdf&disposition=inline");
+                    $jpgUrl = url("parent/certificates/" . $targetId . "/download?format=jpg&disposition=attachment");
+                ?>
                 <div class="rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/20 p-6 space-y-4 shadow-sm hover:shadow-md transition-all">
                     <div class="space-y-1">
                         <span class="inline-block px-2.5 py-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 rounded-full uppercase tracking-wider">
-                            <?= e($cert['certificate_type']) ?> Category
+                            <?= e($cert['certificate_type'] ?? 'Achievement') ?> Category
                         </span>
                         <h4 class="text-sm font-bold text-slate-800 dark:text-white leading-snug mt-2">
                             <?= e($cert['title']) ?>
                         </h4>
                         <p class="text-xs text-slate-500">
-                            Issued: <?= date('d M Y', strtotime($cert['issued_at'])) ?>
+                            Issued: <?= !empty($cert['issued_at']) ? date('d M Y', strtotime($cert['issued_at'])) : 'N/A' ?>
                         </p>
                     </div>
 
                     <div class="pt-3 border-t border-slate-100 dark:border-slate-800/40 flex gap-3 w-full">
-                        <a href="/psnf/certificate_generator/index.php?page=download-file&participant_id=<?= (int)$cert['participant_id'] ?>&format=jpg"
-                           class="flex-1 text-center py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-bold text-slate-800 dark:text-white border border-slate-200 dark:border-slate-750 hover:border-slate-650 transition-all shadow-sm">
-                            JPG
-                        </a>
-                        <a href="/psnf/certificate_generator/index.php?page=download-file&participant_id=<?= (int)$cert['participant_id'] ?>&format=pdf"
-                           class="flex-1 text-center py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm">
-                            PDF
+                        <?php if ($jpgUrl): ?>
+                            <a href="<?= e($jpgUrl) ?>" download
+                               class="flex-1 text-center py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-750 text-xs font-bold text-slate-800 dark:text-white border border-slate-200 dark:border-slate-750 hover:border-slate-650 transition-all shadow-sm">
+                                JPG
+                            </a>
+                        <?php endif; ?>
+                        <a href="<?= e($pdfUrl) ?>" target="_blank"
+                           class="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            View & Download PDF
                         </a>
                     </div>
                 </div>

@@ -280,8 +280,10 @@ if (is_post_request()) {
                     }
 
                     $fileName = safe_filename((string) $row['name']) . '_' . (int) $row['id'] . '.pdf';
+                    $disposition = (string) ($_GET['disposition'] ?? 'inline');
+                    $disposition = in_array($disposition, ['attachment', 'inline'], true) ? $disposition : 'inline';
                     header('Content-Type: application/pdf');
-                    header('Content-Disposition: attachment; filename="' . $fileName . '"');
+                    header('Content-Disposition: ' . $disposition . '; filename="' . $fileName . '"');
                     header('Content-Length: ' . filesize($absolute));
                     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
                     header('Pragma: no-cache');

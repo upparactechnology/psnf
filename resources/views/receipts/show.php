@@ -1,7 +1,9 @@
 <?php
 $layout    = 'app';
 $paymentId = str_pad((string)$payment['id'], 5, '0', STR_PAD_LEFT);
-$pageTitle = 'Voucher REC-' . $paymentId;
+$studentName = trim(($payment['first_name'] ?? '') . ' ' . ($payment['last_name'] ?? ''));
+$pdfTitle  = $studentName ? ($studentName . ' - Receipt REC-' . $paymentId) : ('Receipt REC-' . $paymentId);
+$pageTitle = $pdfTitle;
 $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Receipts', 'url' => '/receipts'], ['label' => 'Voucher Details']];
 
 // Load Custom Receipt Settings
@@ -29,6 +31,11 @@ ob_start();
 }
 
 @media print {
+    @page {
+        margin: 0;
+        size: auto;
+    }
+
     /* Hide layout sidebars, nav, header, flash alerts and control toolbar */
     aside, header, #flash-container, .print\:hidden {
         display: none !important;
@@ -47,6 +54,7 @@ ob_start();
         height: auto !important;
         min-height: auto !important;
         overflow: visible !important;
+        padding: 12mm !important;
     }
 
     /* Un-restrict layout wrappers so contents can render full page */
@@ -126,16 +134,26 @@ ob_start();
 <div class="max-w-3xl mx-auto space-y-6">
 
     <!-- Action Toolbar (hidden on print) -->
-    <div class="flex items-center justify-between gap-4 p-6 rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur print:hidden">
-        <a href="<?= url('receipts') ?>" class="text-sm text-slate-400 hover:text-white transition-colors">← Back to Registry</a>
-        <div class="flex items-center gap-3">
+    <div class="flex flex-wrap items-center justify-between gap-4 p-6 rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur print:hidden">
+        <a href="<?= url('receipts') ?>" class="text-sm font-semibold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+            Back to Registry
+        </a>
+
+        <div class="flex items-center gap-3 flex-wrap">
             <?php if (has_permission('view_settings')): ?>
-            <a href="<?= url('receipts/settings') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-350 hover:text-white bg-slate-800 border border-slate-700/50 hover:bg-slate-750 transition-all shadow-sm">
+            <a href="<?= url('receipts/settings') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700/50 transition-all shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 Receipt Designer
             </a>
             <?php endif; ?>
-            <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md"
+
+            <button onclick="printOrSavePdf('download')" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Save as PDF
+            </button>
+
+            <button onclick="printOrSavePdf('print')" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md"
                     style="background: var(--receipt-accent);">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                 Print Receipt
@@ -229,17 +247,15 @@ ob_start();
             <div>
                 <!-- Brand logo/name -->
                 <div class="flex items-center gap-3">
-                    <?php if (!empty($payment['tenant_logo'])): ?>
-                    <img src="<?= url('storage/uploads/logo/' . $payment['tenant_logo']) ?>" class="w-11 h-11 object-contain rounded-xl bg-slate-800/40 p-1 print:bg-transparent" alt="Logo">
-                    <?php else: ?>
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold print:hidden"
-                          style="background: linear-gradient(135deg, var(--receipt-accent), #a855f7);">
-                        <?= strtoupper(substr($payment['tenant_name'], 0, 1)) ?>
-                    </div>
-                    <?php endif; ?>
+                    <?php 
+                        $logoUrl = !empty($payment['tenant_logo']) 
+                            ? url('storage/uploads/logo/' . $payment['tenant_logo']) 
+                            : url('images/logo.png');
+                    ?>
+                    <img src="<?= e($logoUrl) ?>" class="w-12 h-12 object-contain rounded-xl bg-white/10 dark:bg-slate-800/40 p-1 print:bg-transparent flex-shrink-0" alt="PSNF Logo">
                     <div>
                         <h2 class="text-lg font-extrabold text-white print:text-black"><?= e($payment['tenant_name']) ?></h2>
-                        <p class="text-xs text-slate-500 print:text-slate-600"><?= e($headerTitle) ?></p>
+                        <p class="text-xs text-slate-500 print:text-slate-600"><?= e($headerTitle) ?> · <span class="font-semibold text-indigo-400 print:text-slate-800">psnf.org</span></p>
                     </div>
                 </div>
             </div>
@@ -253,19 +269,20 @@ ob_start();
         <!-- Meta Details Section -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 py-6 border-b border-slate-800 print:border-slate-300">
             <!-- Student/Recipient details -->
-            <div class="space-y-2">
-                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider print:text-slate-600">Receipt Issued To</h4>
-                <div class="text-sm">
-                    <p class="font-bold text-white print:text-black text-base"><?= e($payment['first_name'] . ' ' . $payment['last_name']) ?></p>
-                    <p class="text-slate-400 print:text-slate-600 mt-1">Admission Number: <span class="font-mono"><?= e($payment['admission_number']) ?></span></p>
-                    <p class="text-slate-400 print:text-slate-600">Class & Section: <?= e($payment['class']) ?> - <?= e($payment['section'] ?: 'Default') ?></p>
+            <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2 print:text-slate-600">Receipt Issued To</span>
+                <h3 class="text-base font-bold text-white print:text-black"><?= e($payment['first_name'] . ' ' . $payment['last_name']) ?></h3>
+                <div class="text-xs space-y-1 mt-1">
+                    <p class="text-slate-400 print:text-slate-600">Admission Number: <span class="font-mono text-white print:text-black"><?= e($payment['admission_number']) ?></span></p>
+                    <p class="text-slate-400 print:text-slate-600">Class & Section: <span class="text-white print:text-black"><?= e($payment['class']) ?> - <?= e($payment['section'] ?: 'Default') ?></span></p>
                 </div>
             </div>
-            <!-- Invoice info / transaction details -->
-            <div class="space-y-2 md:text-right md:flex md:flex-col md:items-end w-full">
-                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider print:text-slate-600">Payment Reference Details</h4>
-                <div class="text-sm md:text-right space-y-1">
-                    <p class="text-slate-400 print:text-slate-600">Method: <span class="text-white print:text-black font-semibold"><?= e($payment['payment_method']) ?></span></p>
+
+            <!-- Payment details -->
+            <div class="text-left md:text-right">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2 print:text-slate-600">Payment Reference Details</span>
+                <div class="text-xs space-y-1">
+                    <p class="text-slate-400 print:text-slate-600">Method: <span class="font-semibold text-white print:text-black"><?= e($payment['payment_method']) ?></span></p>
                     <?php if ($payment['payment_ref']): ?>
                     <p class="text-slate-400 print:text-slate-600">Reference / Txn: <span class="font-mono text-white print:text-black"><?= e($payment['payment_ref']) ?></span></p>
                     <?php endif; ?>
@@ -300,14 +317,21 @@ ob_start();
             </table>
         </div>
 
-        <!-- Totals Block -->
-        <div class="flex justify-end pt-6">
-            <div class="w-full sm:w-1/2 space-y-2 text-sm text-right">
-                <div class="flex justify-between font-bold text-base text-white print:text-black border-t border-slate-800 pt-3 print:border-slate-300">
+        <!-- Totals & Receipt Footer Block -->
+        <div class="pt-6 space-y-4">
+            <div class="flex justify-end">
+                <div class="w-full sm:w-1/2 flex justify-between font-bold text-base text-white print:text-black border-t border-slate-800 pt-3 print:border-slate-300">
                     <span>Total Amount Paid:</span>
                     <span class="font-mono text-emerald-400 print:text-black" style="color: var(--receipt-accent);"><?= number_format((float)$payment['amount'], 2) ?> INR</span>
                 </div>
-                <p class="text-[10px] text-slate-550 print:text-slate-600 italic"><?= e($footerNotes) ?></p>
+            </div>
+            
+            <div class="pt-4 border-t border-slate-800/60 print:border-slate-300 flex items-center justify-between text-xs text-slate-400 print:text-slate-600">
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-indigo-400 print:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                    <a href="https://psnf.org" target="_blank" class="font-bold text-slate-200 hover:text-indigo-400 print:text-black transition-colors">psnf.org</a>
+                </div>
+                <p class="text-[10px] text-slate-500 print:text-slate-600 italic max-w-sm text-right"><?= e($footerNotes) ?></p>
             </div>
         </div>
 
@@ -315,6 +339,35 @@ ob_start();
     <?php endif; ?>
 
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+function printOrSavePdf(action = 'print') {
+    const pdfName = "<?= e($pdfTitle) ?>";
+    const oldTitle = document.title;
+    document.title = pdfName;
+
+    if (action === 'download' && typeof html2pdf !== 'undefined') {
+        const element = document.getElementById('receipt-card');
+        const opt = {
+            margin:       0.2,
+            filename:     pdfName.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() + '.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save().then(() => {
+            document.title = oldTitle;
+        }).catch(() => {
+            window.print();
+            setTimeout(() => { document.title = oldTitle; }, 1000);
+        });
+    } else {
+        window.print();
+        setTimeout(() => { document.title = oldTitle; }, 1000);
+    }
+}
+</script>
 
 <?php
 $content = ob_get_clean();

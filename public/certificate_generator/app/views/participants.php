@@ -101,46 +101,7 @@ $windowStart = max(1, $windowEnd - 4);
         </div>
     </header>
 
-    <section class="panel recipients-filter-panel">
-        <form method="get" class="recipients-filter-form">
-            <input type="hidden" name="page" value="participants">
-            <input type="hidden" name="conference_id" value="<?= e((string) $selectedConferenceId) ?>">
 
-            <div class="recipients-filter-main">
-                <label class="recipients-filter-select">
-                    <span>All Templates</span>
-                    <select name="certificate_type_id" onchange="this.form.submit()">
-                        <option value="0" <?= (int) $selectedTypeId === 0 ? 'selected' : '' ?>>All Templates</option>
-                        <?php foreach ($certificateTypes as $type): ?>
-                            <option value="<?= e((string) $type['id']) ?>" <?= (int) $type['id'] === (int) $selectedTypeId ? 'selected' : '' ?>>
-                                <?= e((string) $type['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-
-                <div class="recipients-status-filter">
-                    <span>Status:</span>
-                    <button type="submit" name="status" value="active" class="recipient-status-tab <?= ($statusFilter === 'active') ? 'is-active' : '' ?>">Active</button>
-                    <button type="submit" name="status" value="pending" class="recipient-status-tab <?= ($statusFilter === 'pending') ? 'is-active' : '' ?>">Pending</button>
-                    <button type="submit" name="status" value="" class="recipient-status-tab <?= ($statusFilter === '') ? 'is-active' : '' ?>">All</button>
-                </div>
-
-                <label class="recipients-search-input">
-                    <span class="sr-only">Search students</span>
-                    <input type="search" name="search" value="<?= e((string) $searchTerm) ?>" placeholder="Search student, email, verify code...">
-                </label>
-
-                <button type="submit" class="button button-muted recipients-filter-apply">Apply</button>
-            </div>
-
-            <aside class="recipients-active-card">
-                <span>Active Credentials</span>
-                <strong><?= e(number_format((int) ($activeRecipientCount ?? 0))) ?></strong>
-                <small>Pending <?= e(number_format((int) ($pendingRecipientCount ?? 0))) ?></small>
-            </aside>
-        </form>
-    </section>
 
     <section class="panel recipients-form-panels" id="studentAssignPanel">
         <details open>
@@ -173,9 +134,27 @@ $windowStart = max(1, $windowEnd - 4);
                 </div>
 
                 <div>
-                    <label style="font-weight: 600; margin-bottom: 5px; display: block;">Select Students</label>
-                    <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ccc; border-radius: 4px; padding: 15px; background: #fff;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px;">
+                        <label style="font-weight: 600; margin: 0;">Select Students (<span id="visibleStudentCount"><?= count($students) ?></span> available)</label>
+                        
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <!-- Select All Checkbox -->
+                            <label style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; cursor: pointer; user-select: none; color: #4f46e5;">
+                                <input type="checkbox" id="selectAllStudentsCheckbox" onchange="toggleSelectAllStudents(this.checked)">
+                                <span>Select All</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Instant Live Filter Search Input -->
+                    <div style="margin-bottom: 10px; position: relative;">
+                        <input type="text" id="studentFilterInput" oninput="filterStudentsList()" placeholder="🔍 Type to search student name, admission no, class..." 
+                               style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; font-family: inherit; outline: none; transition: border-color 0.2s;"
+                               onfocus="this.style.borderColor='#6366f1';" onblur="this.style.borderColor='#cbd5e1';">
+                    </div>
+
+                    <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px; padding: 15px; background: #fff;">
+                        <div id="studentsGridContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
                             <?php foreach ($students as $student): ?>
                                 <?php
                                 $sName = trim($student['first_name'] . ' ' . $student['middle_name'] . ' ' . $student['last_name']);
@@ -184,9 +163,10 @@ $windowStart = max(1, $windowEnd - 4);
                                 }
                                 $classInfo = trim(($student['class'] ?? '') . ' ' . ($student['section'] ?? ''));
                                 $admissionInfo = !empty($student['admission_number']) ? ' (Adm: ' . $student['admission_number'] . ')' : '';
+                                $searchData = strtolower($sName . ' ' . $classInfo . ' ' . $student['admission_number']);
                                 ?>
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; user-select: none;">
-                                    <input type="checkbox" name="student_ids[]" value="<?= e((string) $student['id']) ?>">
+                                <label class="student-item-label" data-search="<?= e($searchData) ?>" style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" name="student_ids[]" value="<?= e((string) $student['id']) ?>" class="student-checkbox">
                                     <span style="font-size: 14px;">
                                         <strong><?= e($sName) ?></strong>
                                         <?php if ($classInfo !== ''): ?>
@@ -197,16 +177,83 @@ $windowStart = max(1, $windowEnd - 4);
                                 </label>
                             <?php endforeach; ?>
                         </div>
+                        <div id="noStudentsFoundMsg" style="display: none; padding: 20px; text-align: center; color: #64748b; font-size: 13px;">
+                            No students match your search criteria.
+                        </div>
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button type="submit" class="button">Assign Selected Students</button>
-                    <button type="button" class="button button-muted" onclick="var cbs=document.querySelectorAll('#studentAssignPanel input[type=checkbox]'); cbs.forEach(cb=>cb.checked=!cb.checked)">Toggle Selection</button>
+                    <button type="button" class="button button-muted" onclick="toggleSelectAllStudents(!document.getElementById('selectAllStudentsCheckbox').checked); document.getElementById('selectAllStudentsCheckbox').checked = !document.getElementById('selectAllStudentsCheckbox').checked;">Toggle Selection</button>
                 </div>
             </form>
         </details>
     </section>
+
+<script>
+function filterStudentsList() {
+    const q = document.getElementById('studentFilterInput').value.toLowerCase().trim();
+    const items = document.querySelectorAll('#studentsGridContainer .student-item-label');
+    let visibleCount = 0;
+
+    items.forEach(item => {
+        const text = item.getAttribute('data-search') || '';
+        if (!q || text.includes(q)) {
+            item.style.display = 'flex';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    const noMsg = document.getElementById('noStudentsFoundMsg');
+    if (noMsg) {
+        noMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    const countSpan = document.getElementById('visibleStudentCount');
+    if (countSpan) {
+        countSpan.textContent = visibleCount;
+    }
+
+    updateSelectAllCheckboxState();
+}
+
+function toggleSelectAllStudents(checked) {
+    const items = document.querySelectorAll('#studentsGridContainer .student-item-label');
+    items.forEach(item => {
+        if (item.style.display !== 'none') {
+            const cb = item.querySelector('input[type="checkbox"]');
+            if (cb) cb.checked = checked;
+        }
+    });
+    updateSelectAllCheckboxState();
+}
+
+function updateSelectAllCheckboxState() {
+    const visibleCbs = Array.from(document.querySelectorAll('#studentsGridContainer .student-item-label'))
+        .filter(item => item.style.display !== 'none')
+        .map(item => item.querySelector('input[type="checkbox"]'))
+        .filter(Boolean);
+
+    const selectAllCb = document.getElementById('selectAllStudentsCheckbox');
+    if (selectAllCb && visibleCbs.length > 0) {
+        selectAllCb.checked = visibleCbs.every(cb => cb.checked);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const grid = document.getElementById('studentsGridContainer');
+    if (grid) {
+        grid.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('student-checkbox')) {
+                updateSelectAllCheckboxState();
+            }
+        });
+    }
+});
+</script>
 
     <?php if (!empty($editingParticipant)): ?>
         <section class="panel recipients-edit-panel">
@@ -272,6 +319,33 @@ $windowStart = max(1, $windowEnd - 4);
     <?php endif; ?>
 
     <section class="panel recipients-table-panel">
+        <!-- Certificate Category Filter & Student Search Bar -->
+        <div style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; border-top-left-radius: 12px; border-top-right-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 280px;">
+                <!-- Category Dropdown Filter -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label for="tableCategoryFilter" style="font-weight: 600; font-size: 13px; color: #475569; white-space: nowrap;">Category:</label>
+                    <select id="tableCategoryFilter" onchange="filterTableRows()" style="padding: 7px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; font-family: inherit; background: #ffffff; color: #1e293b; cursor: pointer;">
+                        <option value="">All Categories</option>
+                        <?php foreach ($certificateTypes as $type): ?>
+                            <option value="<?= e(strtolower($type['name'])) ?>"><?= e($type['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Instant Name Search Input -->
+                <div style="flex: 1; max-width: 380px; position: relative;">
+                    <input type="text" id="tableNameSearch" oninput="filterTableRows()" placeholder="🔍 Search student name, email..." 
+                           style="width: 100%; padding: 7px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; font-family: inherit; background: #ffffff; outline: none; transition: border-color 0.2s;"
+                           onfocus="this.style.borderColor='#6366f1';" onblur="this.style.borderColor='#cbd5e1';">
+                </div>
+            </div>
+
+            <div style="font-size: 13px; color: #64748b; font-weight: 500;">
+                Showing <span id="tableVisibleCount" style="font-weight: 700; color: #4f46e5;"><?= count($participants) ?></span> records
+            </div>
+        </div>
+
         <div class="table-wrap recipients-table-wrap">
             <table class="recipients-table" id="recipientsTable">
                 <thead>
@@ -338,18 +412,7 @@ $windowStart = max(1, $windowEnd - 4);
                                         <button type="submit" class="button button-muted recipient-action-btn">Issue</button>
                                     </form>
 
-                                    <form method="post" data-confirm="Send certificate email to this recipient?">
-                                        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                                        <input type="hidden" name="action" value="send_single_email">
-                                        <input type="hidden" name="conference_id" value="<?= e((string) $selectedConferenceId) ?>">
-                                        <input type="hidden" name="certificate_type_id" value="<?= e((string) $selectedTypeId) ?>">
-                                        <input type="hidden" name="search" value="<?= e((string) ($searchTerm ?? '')) ?>">
-                                        <input type="hidden" name="status" value="<?= e((string) ($statusFilter ?? '')) ?>">
-                                        <input type="hidden" name="page_no" value="<?= e((string) $pageNumber) ?>">
-                                        <input type="hidden" name="participant_id" value="<?= e((string) ($row['id'] ?? 0)) ?>">
-                                        <?php $recipientEmail = trim((string) ($row['email'] ?? '')); ?>
-                                        <button type="submit" class="button button-muted recipient-action-btn" <?= $recipientEmail === '' ? 'disabled title="Recipient email is missing."' : '' ?>>Send Email</button>
-                                    </form>
+
 
                                     <a class="button button-muted recipient-action-btn" href="<?= e(url('participants', $buildRecipientParams(['edit_id' => (int) ($row['id'] ?? 0)]))) ?>">Edit</a>
 
@@ -407,3 +470,35 @@ $windowStart = max(1, $windowEnd - 4);
         <button type="button" class="button button-muted recipient-bulk-btn" data-recipient-bulk-clear>×</button>
     </div>
 </section>
+
+<script>
+function filterTableRows() {
+    const category = document.getElementById('tableCategoryFilter').value.toLowerCase().trim();
+    const query = document.getElementById('tableNameSearch').value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#recipientsTable tbody tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        if (row.classList.contains('recipient-empty-row')) return;
+
+        const studentName = (row.querySelector('.recipient-identity strong')?.textContent || '').toLowerCase();
+        const studentEmail = (row.querySelector('.recipient-identity small')?.textContent || '').toLowerCase();
+        const certCategory = (row.querySelector('.recipient-tag')?.textContent || '').toLowerCase();
+
+        const matchesCategory = !category || certCategory.includes(category);
+        const matchesQuery = !query || studentName.includes(query) || studentEmail.includes(query);
+
+        if (matchesCategory && matchesQuery) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    const countSpan = document.getElementById('tableVisibleCount');
+    if (countSpan) {
+        countSpan.textContent = visibleCount;
+    }
+}
+</script>

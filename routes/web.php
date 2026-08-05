@@ -19,6 +19,8 @@ $router->post('/otp',            [AuthController::class, 'verifyOtp']);
 // Parent Portal Auth
 $router->get('/parent-login',          [\App\Controllers\ParentPortalLoginController::class, 'showLogin'], ['guest']);
 $router->post('/parent-login',         [\App\Controllers\ParentPortalLoginController::class, 'login'], ['rate.limit:10,1']);
+$router->get('/parent/logout',         [\App\Controllers\ParentPortalLoginController::class, 'logout']);
+$router->post('/parent/logout',        [\App\Controllers\ParentPortalLoginController::class, 'logout']);
 $router->get('/parent/change-password', [\App\Controllers\ParentPortalLoginController::class, 'showChangePassword'], ['auth', 'role:parent']);
 $router->post('/parent/change-password',[\App\Controllers\ParentPortalLoginController::class, 'changePassword'], ['auth', 'role:parent']);
 
@@ -90,15 +92,23 @@ $router->post('/students/enrollments/{id}/reject',  [EnrollmentAdminController::
 
 // ─── Hierarchical Academics Module Routes (/academics/*) ──────────────────────
 $router->get('/academics',                            [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth', 'tenant']);
+$router->get('/academic',                             [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth', 'tenant']);
 $router->get('/academics/students',                   [StudentController::class, 'index'],              ['auth', 'permission:view_students']);
+$router->get('/academic/students',                    [StudentController::class, 'index'],              ['auth', 'permission:view_students']);
 $router->get('/academics/students/create',            [StudentController::class, 'create'],             ['auth', 'permission:create_students']);
+$router->get('/academic/students/create',             [StudentController::class, 'create'],             ['auth', 'permission:create_students']);
 $router->post('/academics/students',                  [StudentController::class, 'store'],              ['auth', 'permission:create_students']);
+$router->post('/academic/students',                   [StudentController::class, 'store'],              ['auth', 'permission:create_students']);
 $router->get('/academics/students/{id}',              [StudentController::class, 'show'],               ['auth', 'permission:view_students']);
+$router->get('/academic/students/{id}',               [StudentController::class, 'show'],               ['auth', 'permission:view_students']);
 $router->get('/academics/students/{id}/edit',         [StudentController::class, 'edit'],               ['auth', 'permission:edit_students']);
+$router->get('/academic/students/{id}/edit',          [StudentController::class, 'edit'],               ['auth', 'permission:edit_students']);
 $router->post('/academics/students/{id}',             [StudentController::class, 'update'],             ['auth', 'permission:edit_students']);
+$router->post('/academic/students/{id}',              [StudentController::class, 'update'],             ['auth', 'permission:edit_students']);
 $router->post('/academics/students/{id}/subjects',    [StudentController::class, 'assignSubject'],      ['auth', 'permission:edit_students']);
 $router->post('/academics/students/{id}/subjects/{subjectId}/delete', [StudentController::class, 'removeSubject'], ['auth', 'permission:edit_students']);
 $router->get('/academics/admissions',                 [AdmissionsController::class, 'index'],           ['auth', 'tenant']);
+$router->get('/academic/admissions',                  [AdmissionsController::class, 'index'],           ['auth', 'tenant']);
 $router->get('/academics/classes',                    [ClassesController::class, 'index'],              ['auth', 'tenant']);
 $router->post('/academics/classes',                   [ClassesController::class, 'store'],              ['auth', 'tenant']);
 $router->get('/academics/classes/{id}',               [ClassesController::class, 'show'],               ['auth', 'tenant']);
@@ -281,6 +291,31 @@ $router->post('/certificates',              [CertificateController::class, 'stor
 $router->get('/certificates/{id}/view',     [CertificateController::class, 'show'],   ['auth', 'tenant']);
 $router->post('/certificates/{id}/delete',  [CertificateController::class, 'destroy'],['auth', 'tenant']);
 
+// ─── Finance & Fee Management ────────────────────────────────────────────────
+$router->get('/fees',                         [FeeController::class, 'index'],            ['auth', 'tenant']);
+$router->get('/fees/create',                  [FeeController::class, 'create'],           ['auth', 'tenant']);
+$router->post('/fees',                        [FeeController::class, 'store'],            ['auth', 'tenant']);
+$router->get('/fees/export-csv',              [FeeController::class, 'exportCsv'],        ['auth', 'tenant']);
+$router->post('/fees/{id}/pay',               [FeeController::class, 'recordPayment'],    ['auth', 'tenant']);
+$router->post('/fees/{id}/delete',            [FeeController::class, 'destroy'],          ['auth', 'tenant']);
+
+$router->get('/fees/structures',              [App\Controllers\FeeStructureController::class, 'index'], ['auth', 'tenant']);
+$router->post('/fees/structures',             [App\Controllers\FeeStructureController::class, 'store'], ['auth', 'tenant']);
+
+$router->get('/fees/categories',              [App\Controllers\FeeCategoryController::class, 'index'],  ['auth', 'tenant']);
+$router->post('/fees/categories',             [App\Controllers\FeeCategoryController::class, 'store'],  ['auth', 'tenant']);
+
+$router->get('/fees/batch-generator',         [App\Controllers\BatchFeeGeneratorController::class, 'index'], ['auth', 'tenant']);
+$router->post('/fees/batch-generator',        [App\Controllers\BatchFeeGeneratorController::class, 'generate'], ['auth', 'tenant']);
+
+$router->get('/fees/late-fee-policies',       [App\Controllers\LateFeePolicyController::class, 'index'], ['auth', 'tenant']);
+$router->post('/fees/late-fee-policies',      [App\Controllers\LateFeePolicyController::class, 'store'], ['auth', 'tenant']);
+
+$router->get('/receipts',                     [ReceiptsController::class, 'index'],          ['auth', 'tenant']);
+$router->get('/receipts/settings',            [ReceiptsController::class, 'settings'],       ['auth', 'tenant']);
+$router->post('/receipts/settings',           [ReceiptsController::class, 'saveSettings'],   ['auth', 'tenant']);
+$router->get('/receipts/{id}/view',           [ReceiptsController::class, 'show'],           ['auth', 'tenant']);
+
 // ─── Admissions ──────────────────────────────────────────────────────────────
 $router->get('/admissions', [AdmissionsController::class, 'index'], ['auth', 'tenant']);
 $router->post('/admissions/{id}/status', [AdmissionsController::class, 'updateStatus'], ['auth', 'tenant']);
@@ -339,6 +374,7 @@ $router->post('/parent/students/{id}/attendance/request-leave', [ParentPortalCon
 $router->get('/parent/students/{id}/timetable',    [ParentPortalController::class, 'timetable'],     ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/exams',        [ParentPortalController::class, 'exams'],         ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/certificates', [ParentPortalController::class, 'certificates'],  ['auth', 'role:parent']);
+$router->get('/parent/certificates/{id}/download',   [ParentPortalController::class, 'downloadCertificate'], ['auth']);
 $router->get('/parent/students/{id}/report-card',  [ReportCardController::class, 'parentShow'],      ['auth', 'role:parent']);
 
 $router->get('/parent/students/{id}/transport',    [ParentPortalController::class, 'transport'],     ['auth', 'role:parent']);

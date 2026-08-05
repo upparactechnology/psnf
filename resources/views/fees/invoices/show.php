@@ -1,6 +1,8 @@
 <?php
 $layout    = 'app';
-$pageTitle = 'Invoice Details';
+$studentName = trim(($invoice['first_name'] ?? '') . ' ' . ($invoice['last_name'] ?? ''));
+$pdfTitle  = $studentName ? ($studentName . ' - Invoice ' . $invoice['invoice_number']) : ('Invoice ' . $invoice['invoice_number']);
+$pageTitle = $pdfTitle;
 $breadcrumbs = [
     ['label' => 'Dashboard', 'url' => '/dashboard'], 
     ['label' => 'Fees', 'url' => '/fees'], 
@@ -19,8 +21,13 @@ ob_start();
                 &larr; Back to Invoices
             </a>
         </div>
-        <div class="flex gap-3">
-            <button onclick="window.print()" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl font-bold text-sm transition-colors shadow-sm">
+        <div class="flex items-center gap-3 flex-wrap">
+            <button onclick="printOrSaveInvoicePdf('download')" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-sm transition-all shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Save as PDF
+            </button>
+            <button onclick="printOrSaveInvoicePdf('print')" class="inline-flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl font-bold text-sm transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                 Print Invoice
             </button>
             <?php if ($invoice['status'] !== 'paid'): ?>
@@ -40,9 +47,17 @@ ob_start();
                 <h2 class="text-3xl font-black text-indigo-600 tracking-tight">INVOICE</h2>
                 <p class="text-slate-500 font-medium mt-1">#<?= e($invoice['invoice_number']) ?></p>
             </div>
-            <div class="text-right">
-                <h3 class="text-xl font-bold text-slate-900 dark:text-white">PSNF School ERP</h3>
-                <p class="text-slate-500 text-sm mt-1">123 Education Lane<br>Knowledge City, 10001<br>contact@psnfschool.com</p>
+            <div class="text-right flex flex-col items-end">
+                <div class="flex items-center gap-3 mb-2">
+                    <img src="<?= url('images/logo.png') ?>" class="w-12 h-12 object-contain rounded-xl bg-slate-100 dark:bg-slate-800/40 p-1 flex-shrink-0" alt="PSNF Logo">
+                    <div class="text-right">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Pearl Special Needs Foundation</h3>
+                        <p class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">PSNF School ERP · psnf.org</p>
+                    </div>
+                </div>
+                <p class="text-slate-500 dark:text-slate-400 text-xs mt-1 max-w-xs text-right leading-relaxed">
+                    Bhathiji Maharaj busstop, Tragad Rd, next to Shree Ganesh Mandir, nr. Shree Ganesh party plot, Tragad, Chandkheda, Ahmedabad, Gujarat 382424
+                </p>
             </div>
         </div>
 
@@ -197,17 +212,57 @@ ob_start();
 
 <style>
     @media print {
-        body * {
-            visibility: hidden;
+        @page {
+            margin: 0;
+            size: auto;
         }
-        #printable-invoice, #printable-invoice * {
-            visibility: visible;
+        html, body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            padding: 10mm !important;
+        }
+        aside, header, #flash-container, .no-print, .print\:hidden {
+            display: none !important;
+            visibility: hidden !important;
         }
         #printable-invoice {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            position: static !important;
+            width: 100% !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
         }
     }
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+function printOrSaveInvoicePdf(action = 'print') {
+    const pdfName = "<?= e($pdfTitle) ?>";
+    const oldTitle = document.title;
+    document.title = pdfName;
+
+    if (action === 'download' && typeof html2pdf !== 'undefined') {
+        const element = document.getElementById('printable-invoice');
+        const opt = {
+            margin:       0.3,
+            filename:     pdfName.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() + '.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save().then(() => {
+            document.title = oldTitle;
+        }).catch(() => {
+            window.print();
+            setTimeout(() => { document.title = oldTitle; }, 1000);
+        });
+    } else {
+        window.print();
+        setTimeout(() => { document.title = oldTitle; }, 1000);
+    }
+}
+</script>

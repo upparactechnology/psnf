@@ -194,11 +194,6 @@ if ($userInitials === '') {
                     <span class="nav-link-title">Dashboard</span>
                 </a>
 
-                <a class="nav-link <?= $currentPage === 'generate' ? 'active' : '' ?>" href="<?= e(url('generate')) ?>">
-                    <span class="nav-icon nav-icon-certificates" aria-hidden="true"></span>
-                    <span class="nav-link-title">Certificates</span>
-                </a>
-
                 <a class="nav-link <?= ($currentPage === 'participants' || $currentPage === 'participants-import') ? 'active' : '' ?>" href="<?= e(url('participants')) ?>">
                     <span class="nav-icon nav-icon-recipients" aria-hidden="true"></span>
                     <span class="nav-link-title">Students</span>
