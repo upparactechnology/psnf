@@ -362,8 +362,8 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                 FROM generated_certificates gc
                 JOIN participants p ON p.id = gc.participant_id
                 JOIN certificate_types ct ON ct.id = p.certificate_type_id
-                WHERE p.student_id = ? OR (p.name IS NOT NULL AND TRIM(p.name) = ?)
-            ", [$studentId, $fullName]);
+                WHERE p.student_id = ?
+            ", [$studentId]);
 
             foreach ($genCerts as $gCert) {
                 if (!in_array($gCert['title'], $existingTitles, true)) {

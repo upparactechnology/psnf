@@ -92,15 +92,23 @@ $router->post('/students/enrollments/{id}/reject',  [EnrollmentAdminController::
 
 // ─── Hierarchical Academics Module Routes (/academics/*) ──────────────────────
 $router->get('/academics',                            [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth', 'tenant']);
+$router->get('/academic',                             [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth', 'tenant']);
 $router->get('/academics/students',                   [StudentController::class, 'index'],              ['auth', 'permission:view_students']);
+$router->get('/academic/students',                    [StudentController::class, 'index'],              ['auth', 'permission:view_students']);
 $router->get('/academics/students/create',            [StudentController::class, 'create'],             ['auth', 'permission:create_students']);
+$router->get('/academic/students/create',             [StudentController::class, 'create'],             ['auth', 'permission:create_students']);
 $router->post('/academics/students',                  [StudentController::class, 'store'],              ['auth', 'permission:create_students']);
+$router->post('/academic/students',                   [StudentController::class, 'store'],              ['auth', 'permission:create_students']);
 $router->get('/academics/students/{id}',              [StudentController::class, 'show'],               ['auth', 'permission:view_students']);
+$router->get('/academic/students/{id}',               [StudentController::class, 'show'],               ['auth', 'permission:view_students']);
 $router->get('/academics/students/{id}/edit',         [StudentController::class, 'edit'],               ['auth', 'permission:edit_students']);
+$router->get('/academic/students/{id}/edit',          [StudentController::class, 'edit'],               ['auth', 'permission:edit_students']);
 $router->post('/academics/students/{id}',             [StudentController::class, 'update'],             ['auth', 'permission:edit_students']);
+$router->post('/academic/students/{id}',              [StudentController::class, 'update'],             ['auth', 'permission:edit_students']);
 $router->post('/academics/students/{id}/subjects',    [StudentController::class, 'assignSubject'],      ['auth', 'permission:edit_students']);
 $router->post('/academics/students/{id}/subjects/{subjectId}/delete', [StudentController::class, 'removeSubject'], ['auth', 'permission:edit_students']);
 $router->get('/academics/admissions',                 [AdmissionsController::class, 'index'],           ['auth', 'tenant']);
+$router->get('/academic/admissions',                  [AdmissionsController::class, 'index'],           ['auth', 'tenant']);
 $router->get('/academics/classes',                    [ClassesController::class, 'index'],              ['auth', 'tenant']);
 $router->post('/academics/classes',                   [ClassesController::class, 'store'],              ['auth', 'tenant']);
 $router->get('/academics/classes/{id}',               [ClassesController::class, 'show'],               ['auth', 'tenant']);

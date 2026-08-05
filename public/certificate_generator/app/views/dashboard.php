@@ -160,7 +160,7 @@ $trendClass = static function (float $value): string {
             </header>
             <p class="metric-label">Total Students</p>
             <h3><?= e(number_format((int) ($totalStudents ?? 0))) ?></h3>
-            <p class="metric-footnote"><a href="/psnf/public/academic/students" style="color:#10b981">View in ERP →</a></p>
+            <p class="metric-footnote"><a href="/psnf/public/academics/students" style="color:#10b981">View in ERP →</a></p>
         </article>
 
         <article class="dashboard-metric-card" style="border-color: rgba(245,158,11,0.3);">
@@ -276,7 +276,7 @@ $trendClass = static function (float $value): string {
                     <h3 style="font-size: 13px;">ERP Quick Links</h3>
                 </div>
                 <ul style="list-style:none; padding:0; margin:0; space-y:8px; font-size:13px; display:flex; flex-direction:column; gap:8px;">
-                    <li><a href="/psnf/public/academic/students" style="color:#6366f1;">👨‍🎓 Students</a></li>
+                    <li><a href="/psnf/public/academics/students" style="color:#6366f1;">👨‍🎓 Students</a></li>
                     <li><a href="/psnf/public/fees" style="color:#f59e0b;">💰 Fee Invoices</a></li>
                     <li><a href="/psnf/public/receipts" style="color:#10b981;">🧾 Receipts</a></li>
                     <li><a href="/psnf/public/certificates" style="color:#a855f7;">📜 ERP Certificates</a></li>

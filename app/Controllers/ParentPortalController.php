@@ -731,9 +731,9 @@ class ParentPortalController extends Controller
             FROM generated_certificates gc
             JOIN participants p ON p.id = gc.participant_id
             JOIN certificate_types ct ON ct.id = p.certificate_type_id
-            WHERE p.student_id = ? OR (p.name IS NOT NULL AND TRIM(p.name) = ?)
+            WHERE p.student_id = ?
             ORDER BY gc.generated_at DESC
-        ", [$student['id'], $fullName]);
+        ", [$student['id']]);
 
         // 2. Fetch certificates from main system table
         $hasCertTable = $this->db()->selectOne("SHOW TABLES LIKE 'certificates'");
