@@ -71,11 +71,208 @@ class StaffWorkspaceController extends Controller
 
         $profile = $db->selectOne("SELECT * FROM employee_profiles WHERE employee_id = ?", [$id]);
         $salary  = $db->selectOne("SELECT * FROM salary_structures WHERE employee_id = ?", [$id]);
-        $attendance = $db->select("SELECT * FROM staff_attendance_logs WHERE employee_id = ? ORDER BY date DESC LIMIT 15", [$id]);
         $departments = $db->select("SELECT * FROM departments WHERE is_active = 1");
         $designations = $db->select("SELECT * FROM designations WHERE is_active = 1");
 
-        return $this->view('staff/employee_show', compact('employee', 'profile', 'salary', 'attendance', 'departments', 'designations'));
+        // Attendance month filter
+        $attMonth = (int)($this->request->get('att_month') ?? date('m'));
+        $attYear  = (int)($this->request->get('att_year') ?? date('Y'));
+        $startDate = sprintf('%04d-%02d-01', $attYear, $attMonth);
+        $endDate = date('Y-m-t', strtotime($startDate));
+
+        // Manual attendance logs (staff_attendance_logs)
+        $manualLogs = $db->select("
+            SELECT * FROM staff_attendance_logs 
+            WHERE employee_id = ? AND date BETWEEN ? AND ?
+            ORDER BY date ASC
+        ", [$id, $startDate, $endDate]);
+
+        // Face recognition logs (attendance table) - match by employee_id OR user_id
+        $faceLogs = $db->select("
+            SELECT DATE(check_in) as log_date, MIN(check_in) as first_scan, MAX(check_in) as last_scan,
+                   COUNT(id) as scan_count
+            FROM attendance 
+            WHERE (employee_id = ? OR user_id = (SELECT user_id FROM employees WHERE id = ?))
+              AND DATE(check_in) BETWEEN ? AND ?
+            GROUP BY DATE(check_in)
+            ORDER BY DATE(check_in) ASC
+        ", [$id, $id, $startDate, $endDate]);
+
+        // Build lookup maps
+        $manualMap = [];
+        foreach ($manualLogs as $m) {
+            $manualMap[$m['date']] = $m;
+        }
+        $faceMap = [];
+        foreach ($faceLogs as $f) {
+            $faceMap[$f['log_date']] = $f;
+        }
+
+        // Get employee shift times for late/half-day thresholds
+        $shiftStart = $employee['min_clock_in'] ?? '09:00:00';
+        $shiftEnd = $employee['max_clock_out'] ?? '17:00:00';
+        $graceMinutes = 10;
+        $lateThreshold = date('H:i:s', strtotime($shiftStart) + ($graceMinutes * 60));
+        $halfDayThreshold = date('H:i:s', strtotime($shiftStart) + (3 * 3600));
+        $minHoursForFullDay = 6;
+
+        // Resolve working days from configured working_days_json (source of truth)
+        $shift = $db->selectOne("SELECT working_days_json FROM shift_templates WHERE id = 1");
+        $workingDaysMap = json_decode($shift['working_days_json'] ?? '{}', true) ?: [];
+        $monthKey = sprintf('%02d', $attMonth);
+        $configuredDays = (int)($workingDaysMap[$monthKey] ?? 0);
+
+        // Generate all weekdays (Mon-Sat) for the month
+        $allAttendance = [];
+        $daysInMonth = (int)date('t', strtotime($startDate));
+        $presentCount = 0;
+        $lateCount = 0;
+        $absentCount = 0;
+        $halfDayCount = 0;
+        $leaveCount = 0;
+        $holidayCount = 0;
+        $wfhCount = 0;
+        $totalHours = 0;
+        $totalLateMins = 0;
+
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $dateStr = sprintf('%04d-%02d-%02d', $attYear, $attMonth, $day);
+            $dayOfWeek = date('w', strtotime($dateStr)); // 0=Sun, 6=Sat
+
+            // Skip Sundays only if not using configured days that include them
+            if ($dayOfWeek == 0 && $configuredDays <= 0) continue;
+
+            $entry = [
+                'date' => $dateStr,
+                'day' => date('D', strtotime($dateStr)),
+                'clock_in' => null,
+                'clock_out' => null,
+                'working_hours' => 0,
+                'late_minutes' => 0,
+                'status' => 'absent',
+                'source' => 'none',
+            ];
+
+            // Priority: manual log > face log > absent
+            if (isset($manualMap[$dateStr])) {
+                $m = $manualMap[$dateStr];
+                $entry['clock_in'] = $m['clock_in'];
+                $entry['clock_out'] = $m['clock_out'];
+                $entry['working_hours'] = (float)($m['working_hours'] ?? 0);
+                $entry['late_minutes'] = (int)($m['late_minutes'] ?? 0);
+                $entry['status'] = $m['status'];
+                $entry['source'] = 'manual';
+
+                // Recalculate working_hours if missing
+                if ($entry['working_hours'] == 0 && $entry['clock_in'] && $entry['clock_out']) {
+                    $in = strtotime($entry['clock_in']);
+                    $out = strtotime($entry['clock_out']);
+                    $entry['working_hours'] = round(($out - $in) / 3600, 2);
+                }
+
+                // Recalculate late_minutes if missing
+                if ($entry['late_minutes'] == 0 && $entry['clock_in'] && $entry['status'] === 'late') {
+                    $in = strtotime($entry['clock_in']);
+                    $threshold = strtotime($lateThreshold);
+                    $entry['late_minutes'] = max(0, round(($in - $threshold) / 60));
+                }
+            } elseif (isset($faceMap[$dateStr])) {
+                $f = $faceMap[$dateStr];
+                $firstScan = $f['first_scan'];
+                $lastScan = $f['last_scan'];
+                $entry['clock_in'] = $firstScan;
+                $entry['clock_out'] = $lastScan;
+                $entry['source'] = 'face';
+
+                // Calculate working hours from scans
+                if ($firstScan && $lastScan) {
+                    $in = strtotime($firstScan);
+                    $out = strtotime($lastScan);
+                    $entry['working_hours'] = round(($out - $in) / 3600, 2);
+                }
+
+                // Determine status based on shift rules
+                $clockInTime = date('H:i:s', strtotime($firstScan));
+                if ($clockInTime > $lateThreshold) {
+                    $entry['late_minutes'] = max(0, round((strtotime($clockInTime) - strtotime($lateThreshold)) / 60));
+                }
+
+                if ($entry['working_hours'] < 4) {
+                    $entry['status'] = 'half_day';
+                } elseif ($entry['late_minutes'] > 0) {
+                    $entry['status'] = 'late';
+                } else {
+                    $entry['status'] = 'present';
+                }
+            }
+            // else: remains absent
+
+            // Accumulate summary
+            switch ($entry['status']) {
+                case 'present': $presentCount++; break;
+                case 'late': $lateCount++; break;
+                case 'half_day': $halfDayCount++; break;
+                case 'absent': $absentCount++; break;
+                case 'on_leave': $leaveCount++; break;
+                case 'holiday': $holidayCount++; break;
+                case 'wfh': $wfhCount++; break;
+            }
+            $totalHours += $entry['working_hours'];
+            $totalLateMins += $entry['late_minutes'];
+
+            $allAttendance[] = $entry;
+        }
+
+        // Reverse to show newest first
+        $allAttendance = array_reverse($allAttendance);
+        $totalDays = $configuredDays > 0 ? $configuredDays : count($allAttendance);
+
+        $summary = [
+            'total' => $totalDays,
+            'present_count' => $presentCount,
+            'late_count' => $lateCount,
+            'absent_count' => $absentCount,
+            'half_day_count' => $halfDayCount,
+            'on_leave_count' => $leaveCount,
+            'holiday_count' => $holidayCount,
+            'wfh_count' => $wfhCount,
+            'total_hours' => $totalHours,
+            'avg_hours' => $totalDays > 0 ? round($totalHours / max(1, $presentCount + $lateCount + $halfDayCount), 1) : 0,
+            'total_late_mins' => $totalLateMins,
+        ];
+
+        // ──── Payroll data ────
+        $payrollHistory = $db->select("
+            SELECT pr.*, pi.working_days, pi.present_days, pi.late_days, pi.half_days, 
+                   pi.absent_days, pi.gross_salary, pi.late_deduction, pi.absent_deduction, pi.net_salary
+            FROM payroll_items pi
+            JOIN payroll_runs pr ON pr.id = pi.payroll_run_id
+            WHERE pi.employee_id = ?
+            ORDER BY pr.created_at DESC
+        ", [$id]);
+
+        // Calculate salary breakdown
+        $basicSalary = (float)$employee['salary_basic'];
+        $hra = $basicSalary * 0.40;
+        $medicalAllowance = $salary['medical_allowance'] ?? 0;
+        $transportAllowance = $salary['transport_allowance'] ?? 0;
+        $specialAllowance = $salary['special_allowance'] ?? 0;
+        $pfDeduction = $salary['pf_deduction'] ?? ($basicSalary * 0.12);
+        $esiDeduction = $salary['esi_deduction'] ?? 0;
+        $taxDeduction = $salary['tax_deduction'] ?? 0;
+        $totalAllowances = $hra + $medicalAllowance + $transportAllowance + $specialAllowance;
+        $totalDeductions = $pfDeduction + $esiDeduction + $taxDeduction;
+        $grossMonthly = $basicSalary + $totalAllowances;
+        $netMonthly = $grossMonthly - $totalDeductions;
+
+        return $this->view('staff/employee_show', compact(
+            'employee', 'profile', 'salary', 'allAttendance',
+            'departments', 'designations', 'attMonth', 'attYear', 'summary',
+            'payrollHistory', 'basicSalary', 'hra', 'medicalAllowance',
+            'transportAllowance', 'specialAllowance', 'pfDeduction',
+            'esiDeduction', 'taxDeduction', 'totalAllowances',
+            'totalDeductions', 'grossMonthly', 'netMonthly'
+        ));
     }
 
     public function storeEmployee(): string

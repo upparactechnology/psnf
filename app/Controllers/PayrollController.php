@@ -109,6 +109,33 @@ class PayrollController extends Controller
     public function saveSettings(): string
     {
         $db = $this->db();
+
+        // Handle working days save (separate form)
+        if ($this->request->input('save_working_days')) {
+            $workingDaysMap = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $key = sprintf('%02d', $m);
+                $val = (int) $this->request->input('working_days_' . $key, 0);
+                $workingDaysMap[$key] = $val; // 0 = auto-calculate
+            }
+
+            try {
+                $db->update('shift_templates', [
+                    'working_days_json' => json_encode($workingDaysMap),
+                ], 'id = 1');
+
+                // Force all draft/out_of_sync runs to regenerate
+                $db->query("UPDATE payroll_runs SET status = 'out_of_sync' WHERE status IN ('draft', 'out_of_sync')");
+
+                Session::flash('success', 'Working days configuration saved. Existing draft payroll runs marked out of sync.');
+            } catch (\Throwable $e) {
+                Session::flash('error', 'Failed to save working days: ' . $e->getMessage());
+            }
+
+            return $this->redirect('/payroll/settings');
+        }
+
+        // Normal shift policy save
         $startTime = $this->request->input('start_time', '09:00:00');
         $graceMinutes = (int) $this->request->input('grace_minutes', 15);
         $lateAfter = $this->request->input('late_after', '09:16:00');
@@ -305,9 +332,23 @@ class PayrollController extends Controller
         $globalGrace = (int)($shift['grace_minutes'] ?? 15);
         $halfDayDeductionPercent = (float)($shift['half_day_deduction_percent'] ?? 50.00);
 
-        // Salary Days = Calendar Days
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)date('m', strtotime($targetMonth)), (int)date('Y', strtotime($targetMonth)));
-        $salaryDays = $daysInMonth; 
+        // Resolve working days from configured working_days_json (source of truth)
+        $workingDaysMap = json_decode($shift['working_days_json'] ?? '{}', true) ?: [];
+        $monthNum = (int)date('m', strtotime($targetMonth));
+        $monthKey = sprintf('%02d', $monthNum);
+        $configuredDays = (int)($workingDaysMap[$monthKey] ?? 0);
+
+        if ($configuredDays > 0) {
+            $salaryDays = $configuredDays;
+        } else {
+            // Auto-calculate: all weekdays (Mon-Sat) in the month
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $monthNum, (int)date('Y', strtotime($targetMonth)));
+            $salaryDays = 0;
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $w = (int)date('w', mktime(0, 0, 0, $monthNum, $d, (int)date('Y', strtotime($targetMonth))));
+                if ($w != 0) $salaryDays++; // Skip Sunday
+            }
+        }
 
         $employees = $db->select("SELECT * FROM employees WHERE status = 'active'");
         

@@ -35,6 +35,10 @@ class Response
         if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://') && !str_starts_with($url, '//')) {
             $url = function_exists('url') ? url($url) : $url;
         }
+        // Flush session before redirect so flash messages persist
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
         header("Location: $url", true, $statusCode);
         exit();
     }
