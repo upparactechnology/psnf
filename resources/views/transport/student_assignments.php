@@ -12,7 +12,18 @@ foreach($unassignedStudents as $stu) {
 }
 ?>
 
-<div x-data="assignModalData()" x-init="initMap()" class="space-y-6 max-w-6xl mx-auto">
+<div x-data="{
+    assignModal: false,
+    selectedStudent: '',
+    pickupPoint: '',
+    addresses: <?= htmlspecialchars(json_encode($addressMap), ENT_QUOTES, 'UTF-8') ?>,
+    editModal: false,
+    editId: '',
+    editPickupPoint: '',
+    editPickupTime: '',
+    editLat: 0,
+    editLng: 0
+}" x-init="window.initMap($data, $watch)" class="space-y-6 max-w-6xl mx-auto">
 
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -58,7 +69,7 @@ foreach($unassignedStudents as $stu) {
                             </span>
                         </td>
                         <td class="p-4 text-center flex items-center justify-center gap-2">
-                            <button type="button" @click="openEditModal(<?= $a['id'] ?>, '<?= addslashes(e($a['pickup_point'])) ?>', '<?= addslashes(e($a['pickup_time'])) ?>', <?= (float)($a['pickup_lat'] ?? 0) ?>, <?= (float)($a['pickup_lng'] ?? 0) ?>)" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg font-medium text-xs transition-colors">Edit</button>
+                            <button type="button" @click="window.openEditModal($data, <?= $a['id'] ?>, '<?= addslashes(e($a['pickup_point'])) ?>', '<?= addslashes(e($a['pickup_time'])) ?>', <?= (float)($a['pickup_lat'] ?? 0) ?>, <?= (float)($a['pickup_lng'] ?? 0) ?>)" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg font-medium text-xs transition-colors">Edit</button>
                             <form action="<?= url("transport/assignments/{$a['id']}/remove") ?>" method="POST" class="inline-block" onsubmit="return confirm('Remove student from transport route?')">
                                 <?= \Core\View::csrf() ?>
                                 <button type="submit" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium text-xs transition-colors">Remove</button>
@@ -127,15 +138,13 @@ foreach($unassignedStudents as $stu) {
         </div>
     </div>
 
-    </div>
-
     <!-- Edit Modal -->
     <div x-show="editModal" class="fixed inset-0 z-50 flex items-center justify-center px-4" x-cloak>
         <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" @click="editModal = false"></div>
         <div class="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 z-10" @click.stop>
             <h3 class="text-lg font-bold text-slate-900 dark:text-white">Edit Assignment</h3>
             
-            <form x-ref="editForm" :action="'<?= url('transport/assignments') ?>/' + editId + '/update'" method="POST" class="space-y-4 text-xs">
+            <form x-ref="editForm" @submit.prevent="$refs.editForm.action = '<?= url('transport/assignments') ?>/' + editId + '/update'; $refs.editForm.submit()" method="POST" class="space-y-4 text-xs">
                 <?= \Core\View::csrf() ?>
                 
                 <div class="grid grid-cols-2 gap-4">
@@ -172,98 +181,102 @@ foreach($unassignedStudents as $stu) {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    let map = null;
-    let marker = null;
-    let editMap = null;
-    let editMarker = null;
+    var map = null;
+    var marker = null;
+    var editMap = null;
+    var editMarker = null;
     
-    function assignModalData() {
-        return {
-            assignModal: false,
-            selectedStudent: "",
-            pickupPoint: "",
-            addresses: <?= json_encode($addressMap) ?>,
-            
-            // Edit Modal State
-            editModal: false,
-            editId: '',
-            editPickupPoint: '',
-            editPickupTime: '',
-            editLat: 0,
-            editLng: 0,
-            
-            openEditModal(id, point, time, lat, lng) {
-                this.editId = id;
-                this.editPickupPoint = point;
-                this.editPickupTime = time;
-                this.editLat = lat;
-                this.editLng = lng;
-                this.editModal = true;
-                
-                setTimeout(() => {
-                    if (!editMap) {
-                        editMap = L.map('edit-map').setView([lat || 21.1702, lng || 72.8311], 15);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            attribution: '© OpenStreetMap'
-                        }).addTo(editMap);
+    window.openEditModal = function(data, id, point, time, lat, lng) {
+        data.editId = id;
+        data.editPickupPoint = point;
+        data.editPickupTime = time;
+        data.editLat = lat;
+        data.editLng = lng;
+        data.editModal = true;
+        
+        setTimeout(() => {
+            if (!editMap) {
+                editMap = L.map('edit-map').setView([lat || 21.1702, lng || 72.8311], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(editMap);
 
-                        editMap.on('click', (e) => {
-                            this.editLat = e.latlng.lat;
-                            this.editLng = e.latlng.lng;
-                            document.getElementById('edit_pickup_lat').value = this.editLat;
-                            document.getElementById('edit_pickup_lng').value = this.editLng;
-                            if (editMarker) editMarker.setLatLng(e.latlng);
-                            else editMarker = L.marker(e.latlng).addTo(editMap);
-                        });
-                    } else {
-                        editMap.setView([lat || 21.1702, lng || 72.8311], 15);
-                    }
-                    
-                    if (lat && lng) {
-                        if (editMarker) {
-                            editMarker.setLatLng([lat, lng]);
-                        } else {
-                            editMarker = L.marker([lat, lng]).addTo(editMap);
-                        }
-                    } else if (editMarker) {
-                        editMap.removeLayer(editMarker);
-                        editMarker = null;
-                    }
-                    editMap.invalidateSize();
-                }, 100);
-            },
-            
-            initMap() {
-                if (!map) {
-                    // Default to School location (Surat)
-                    map = L.map('assign-map').setView([21.1702, 72.8311], 13);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap'
-                    }).addTo(map);
-
-                    map.on('click', (e) => {
-                        const lat = e.latlng.lat;
-                        const lng = e.latlng.lng;
-                        
-                        document.getElementById('pickup_lat').value = lat;
-                        document.getElementById('pickup_lng').value = lng;
-                        
-                        if (marker) {
-                            marker.setLatLng(e.latlng);
-                        } else {
-                            marker = L.marker(e.latlng).addTo(map);
-                        }
-                    });
-                }
-                
-                this.$watch('assignModal', value => {
-                    if (value && map) {
-                        setTimeout(() => map.invalidateSize(), 100);
-                    }
+                editMap.on('click', (e) => {
+                    data.editLat = e.latlng.lat;
+                    data.editLng = e.latlng.lng;
+                    document.getElementById('edit_pickup_lat').value = data.editLat;
+                    document.getElementById('edit_pickup_lng').value = data.editLng;
+                    if (editMarker) editMarker.setLatLng(e.latlng);
+                    else editMarker = L.marker(e.latlng).addTo(editMap);
                 });
+            } else {
+                editMap.setView([lat || 21.1702, lng || 72.8311], 15);
             }
-        };
-    }
+            
+            if (lat && lng) {
+                if (editMarker) editMarker.setLatLng([lat, lng]);
+                else editMarker = L.marker([lat, lng]).addTo(editMap);
+            } else if (editMarker) {
+                editMap.removeLayer(editMarker);
+                editMarker = null;
+            }
+            editMap.invalidateSize();
+        }, 100);
+    };
+    
+    window.initMap = function(data, watch) {
+        if (!map) {
+            map = L.map('assign-map').setView([21.1702, 72.8311], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            map.on('click', (e) => {
+                document.getElementById('pickup_lat').value = e.latlng.lat;
+                document.getElementById('pickup_lng').value = e.latlng.lng;
+                if (marker) marker.setLatLng(e.latlng);
+                else marker = L.marker(e.latlng).addTo(map);
+            });
+        }
+        
+        watch('pickupPoint', value => {
+            if (value && map) {
+                const match = value.match(/^\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*$/);
+                if (match) {
+                    const lat = parseFloat(match[1]);
+                    const lng = parseFloat(match[3]);
+                    map.setView([lat, lng], 15);
+                    document.getElementById('pickup_lat').value = lat;
+                    document.getElementById('pickup_lng').value = lng;
+                    if (marker) marker.setLatLng([lat, lng]);
+                    else marker = L.marker([lat, lng]).addTo(map);
+                }
+            }
+        });
+
+        watch('editPickupPoint', value => {
+            if (value && editMap) {
+                const match = value.match(/^\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*$/);
+                if (match) {
+                    const lat = parseFloat(match[1]);
+                    const lng = parseFloat(match[3]);
+                    data.editLat = lat;
+                    data.editLng = lng;
+                    document.getElementById('edit_pickup_lat').value = lat;
+                    document.getElementById('edit_pickup_lng').value = lng;
+                    editMap.setView([lat, lng], 15);
+                    if (editMarker) editMarker.setLatLng([lat, lng]);
+                    else editMarker = L.marker([lat, lng]).addTo(editMap);
+                }
+            }
+        });
+        
+        watch('assignModal', value => {
+            if (value && map) {
+                setTimeout(() => map.invalidateSize(), 100);
+            }
+        });
+    };
 </script>
 
 <?php

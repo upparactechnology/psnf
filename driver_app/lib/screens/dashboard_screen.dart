@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../theme/colors.dart';
 import '../services/api_service.dart';
 import '../main.dart';
@@ -17,6 +19,87 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   bool _isOnline = true;
+  StreamSubscription<Position>? _positionStream;
+  DateTime? _lastPingTime;
+  Position? _lastPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAndStartTracking();
+  }
+
+  void _checkAndStartTracking() {
+    if (ApiService.assignedRoute != null && ApiService.assignedRoute!['status'] == 'en_route') {
+      _startLocationTracking();
+    }
+  }
+
+  Future<void> _startLocationTracking() async {
+    if (_positionStream != null) return;
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) return;
+
+    const LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 5,
+    );
+
+    // Get immediate position first
+    try {
+      Position currentPos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      _handleLocationUpdate(currentPos);
+    } catch (e) {
+      print('Error getting initial location: $e');
+    }
+
+    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
+      _handleLocationUpdate(position);
+    });
+  }
+
+  void _handleLocationUpdate(Position position) {
+    final now = DateTime.now();
+    bool shouldPing = false;
+
+    if (_lastPingTime == null) {
+      shouldPing = true;
+    } else {
+      final diffSeconds = now.difference(_lastPingTime!).inSeconds;
+      
+      // Ping every 2-3 seconds as per new real-time WebSocket architecture
+      if (diffSeconds >= 2) {
+        shouldPing = true;
+      }
+    }
+
+    if (shouldPing) {
+      _lastPingTime = now;
+      _lastPosition = position;
+      ApiService.updateLocation(position.latitude, position.longitude, position.speed * 3.6);
+    }
+  }
+
+  void _stopLocationTracking() {
+    _positionStream?.cancel();
+    _positionStream = null;
+    _lastPingTime = null;
+    _lastPosition = null;
+  }
+
+  @override
+  void dispose() {
+    _stopLocationTracking();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -217,28 +300,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Stats grid (2x2)
-            GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.45,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildStatCard('Total Students', totalStudents.toString(), Icons.people_rounded, const Color(0xFF6366F1)),
-                _buildStatCard('Picked Up', pickedUp.toString(), Icons.check_circle_outline_rounded, const Color(0xFF10B981)),
-                _buildStatCard('Pending', pending.toString(), Icons.pending_actions_rounded, const Color(0xFFF59E0B)),
-                _buildStatCard('On Leave', onLeave.toString(), Icons.airline_seat_recline_normal_rounded, const Color(0xFFEF4444)),
-              ],
-            ),
-            const SizedBox(height: 28),
-
-            // Today's Routes Header
+            // Trip Controls Header
             Row(
               children: [
                 Text(
-                  "Assigned Trip",
+                  "Trip Controls",
                   style: TextStyle(
                     color: mainText,
                     fontSize: 16,
@@ -248,166 +314,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 12),
-
-            if (hasRoute && !isCompleted) ...[
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDark 
-                        ? [const Color(0xFF1E293B).withOpacity(0.8), const Color(0xFF0F172A)]
-                        : [Colors.white, const Color(0xFFF1F5F9)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: borderColor),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark 
+                      ? [const Color(0xFF1E293B).withOpacity(0.8), const Color(0xFF0F172A)]
+                      : [Colors.white, const Color(0xFFF1F5F9)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isEnRoute ? 'Current Trip (Active)' : 'Next Shift',
-                              style: TextStyle(
-                                color: subText,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Assigned Route',
-                              style: TextStyle(
-                                color: mainText,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isEnRoute ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            isEnRoute ? 'EN ROUTE' : 'READY',
-                            style: TextStyle(
-                              color: isEnRoute ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                      ],
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: borderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    isEnRoute ? Icons.directions_bus_rounded : Icons.local_parking_rounded,
+                    size: 64,
+                    color: isEnRoute ? const Color(0xFF10B981) : const Color(0xFF6366F1),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isEnRoute ? 'Trip in Progress' : 'Ready to Start',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: mainText,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _routeInfoTile(totalStudents.toString(), 'Total Stops'),
-                        _routeInfoTile(pending.toString(), 'Remaining'),
-                      ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isEnRoute 
+                        ? 'Your location is currently being shared with parents and admins.'
+                        : 'Start the trip to begin sharing your live location.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: subText,
+                      fontSize: 13,
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 32),
+                  if (!isEnRoute)
                     ElevatedButton(
                       onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const PickupRouteScreen()),
-                        );
+                        await ApiService.startTrip();
+                        await ApiService.fetchAssignedRoute();
+                        _startLocationTracking();
                         setState(() {});
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF10B981),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 4,
                       ),
-                      child: Text(
-                        isEnRoute ? 'Resume Trip' : 'Start Trip',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: const Text('START TRIP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     )
-                  ],
-                ),
+                  else
+                    ElevatedButton(
+                      onPressed: () async {
+                        await ApiService.completeTrip();
+                        await ApiService.fetchAssignedRoute();
+                        _stopLocationTracking();
+                        setState(() {});
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        elevation: 4,
+                      ),
+                      child: const Text('END TRIP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    ),
+                ],
               ),
-              const SizedBox(height: 16),
-            ] else if (isCompleted) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B).withOpacity(0.2) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: borderColor, style: BorderStyle.solid),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(Icons.done_all_rounded, color: Color(0xFF10B981), size: 48),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Trip Completed',
-                      style: TextStyle(
-                        color: mainText,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'You have completed your assigned trip.',
-                      style: TextStyle(
-                        color: subText,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B).withOpacity(0.2) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: borderColor, style: BorderStyle.solid),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(Icons.route_outlined, color: Color(0xFF64748B), size: 48),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No Active Assignment',
-                      style: TextStyle(
-                        color: mainText,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'You are not currently assigned to any active route.',
-                      style: TextStyle(
-                        color: subText,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ],
         ),
       ),

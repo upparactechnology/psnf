@@ -62,6 +62,9 @@ class Attendance(Base):
     id              = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id         = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)    # FK → users.id
     employee_id     = Column(Integer, nullable=True, index=True)    # legacy (kept)
+    tenant_id       = Column(Integer, nullable=True)
+    school_id       = Column(Integer, nullable=True)
+    branch_id       = Column(Integer, nullable=True)
     attendance_date = Column(Date, nullable=True)
     check_in        = Column(DateTime, nullable=True)
     confidence      = Column(Float, nullable=True, default=0.0)

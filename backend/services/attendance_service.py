@@ -129,6 +129,9 @@ class AttendanceService:
         att = Attendance(
             user_id         = user.id,
             employee_id     = None,
+            tenant_id       = user.tenant_id,
+            school_id       = user.school_id,
+            branch_id       = user.branch_id,
             attendance_date = today,
             check_in        = now,
             confidence      = round(confidence, 4),

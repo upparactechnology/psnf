@@ -889,6 +889,7 @@ class ParentPortalController extends Controller
 
         $transport = $this->db()->selectOne(
             "SELECT e.*, CONCAT(e.first_name, ' ', e.last_name) as name, st.pickup_point, st.pickup_time, st.pickup_lat, st.pickup_lng,
+             st.eta_minutes as student_eta, st.remaining_km as student_km,
              (SELECT ts.status FROM trip_students ts JOIN driver_trips dt ON dt.id = ts.trip_id WHERE ts.student_id = st.student_id AND dt.status = 'active' LIMIT 1) as trip_status
              FROM student_transport st
              JOIN employees e ON e.id = st.driver_id
@@ -908,6 +909,41 @@ class ParentPortalController extends Controller
             'campusLat' => $campusLat,
             'campusLng' => $campusLng,
         ]));
+    }
+
+    public function liveEta(string $id): string
+    {
+        header('Content-Type: application/json');
+        $context = $this->getContext((int)$id);
+        $student = $context['active_student'];
+        if (!$student) {
+            return json_encode(['success' => false]);
+        }
+        
+        $transport = $this->db()->selectOne(
+            "SELECT e.eta_minutes as campus_eta, e.remaining_km as campus_km, e.current_speed,
+             st.eta_minutes as student_eta, st.remaining_km as student_km,
+             (SELECT ts.status FROM trip_students ts JOIN driver_trips dt ON dt.id = ts.trip_id WHERE ts.student_id = st.student_id AND dt.status = 'active' LIMIT 1) as trip_status
+             FROM student_transport st
+             JOIN employees e ON e.id = st.driver_id
+             WHERE st.student_id = ? LIMIT 1",
+            [$student['id']]
+        );
+        
+        if (!$transport) {
+            return json_encode(['success' => false]);
+        }
+        
+        $isPickedUp = $transport['trip_status'] === 'Picked Up';
+        $eta = $isPickedUp ? $transport['campus_eta'] : $transport['student_eta'];
+        $km = $isPickedUp ? $transport['campus_km'] : $transport['student_km'];
+        
+        return json_encode([
+            'success' => true,
+            'eta_minutes' => $eta,
+            'remaining_km' => $km,
+            'speed' => $transport['current_speed'] ?? 0
+        ]);
     }
 
     public function fees(string $id): string

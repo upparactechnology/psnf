@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $fastApiBase = 'http://127.0.0.1:8000';
 $endpoint    = $_GET['endpoint'] ?? $_SERVER['PATH_INFO'] ?? '/health';
 
-if (strpos($endpoint, '/api') !== 0 && strpos($endpoint, '/health') !== 0) {
+if (strpos($endpoint, '/api') !== 0 && strpos($endpoint, '/health') !== 0 && strpos($endpoint, '/uploads') !== 0) {
     $endpoint = '/api/' . ltrim($endpoint, '/');
 }
 
@@ -93,6 +93,7 @@ if (!empty($requestBody) && in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE']
 
 $response  = curl_exec($ch);
 $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 $curlError = curl_error($ch);
 curl_close($ch);
 
@@ -112,4 +113,7 @@ if ($response === false || $httpCode === 0) {
 
 // ─── Return upstream response as-is ─────────────────────────────────────────
 http_response_code($httpCode);
+if ($contentType) {
+    header('Content-Type: ' . $contentType);
+}
 echo $response;

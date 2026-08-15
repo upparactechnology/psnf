@@ -7,7 +7,6 @@ header("Pragma: no-cache");
 $layout    = 'app';
 $pageTitle = 'Face Attendance Kiosk';
 $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Attendance'], ['label' => 'Face Kiosk']];
-ob_start();
 ?>
 
 <style>
@@ -256,7 +255,7 @@ ob_start();
 
 <script>
 (function() {
-    const API  = '/psnf/public/attendance/api.php?endpoint=/api/verify-face';
+    const API  = '<?= url('attendance/api.php?endpoint=/api/verify-face') ?>';
     const vid  = document.getElementById('kioskVideo');
     const cap  = document.getElementById('kioskCapCanvas');   // capture
     const ovl  = document.getElementById('kioskOverlayCanvas'); // dark mask overlay
@@ -488,7 +487,7 @@ ob_start();
         const base64Img = cap.toDataURL('image/jpeg', 0.6);
 
         try {
-            const res = await fetch('/psnf/public/attendance/api.php?endpoint=/api/detect-frame', {
+            const res = await fetch('<?= url('attendance/api.php?endpoint=/api/detect-frame') ?>', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({image_base64: base64Img.split(',')[1]})
@@ -709,7 +708,7 @@ ob_start();
 
     window.checkBackend = async function() {
         try {
-            const r = await fetch('/psnf/public/attendance/api.php?endpoint=/health', { method: 'GET' });
+            const r = await fetch('<?= url('attendance/api.php?endpoint=/health') ?>', { method: 'GET' });
             if (r.ok || r.status === 200) {
                 const d = await r.json().catch(() => null);
                 const alive = d && (d.status === 'healthy' || d.model_loaded === true);
@@ -766,6 +765,4 @@ ob_start();
 })();
 </script>
 
-<?php
-$content = ob_get_clean();
-?>
+

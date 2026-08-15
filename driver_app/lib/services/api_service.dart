@@ -11,7 +11,7 @@ class ApiService {
     }
     try {
       if (Platform.isAndroid) {
-        return 'http://192.168.29.240/psnf/public';
+        return 'http://psnf.upparac.com/erpv2/public';
       }
     } catch (e) {
       // Platform check not supported

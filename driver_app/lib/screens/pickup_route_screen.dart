@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+
 
 import '../services/api_service.dart';
 
@@ -14,22 +14,13 @@ class PickupRouteScreen extends StatefulWidget {
 class _PickupRouteScreenState extends State<PickupRouteScreen> {
   List<dynamic> _students = [];
   bool _isLoading = true;
-  StreamSubscription<Position>? _positionStream;
-  DateTime? _lastPingTime;
-  Position? _lastPosition;
-
   @override
   void initState() {
     super.initState();
-    _startTripAndLoad();
-    _startLocationTracking();
+    _fetchAndLoad();
   }
 
-  Future<void> _startTripAndLoad() async {
-    final routeData = ApiService.assignedRoute;
-    if (routeData == null || routeData['status'] != 'en_route') {
-      await ApiService.startTrip();
-    }
+  Future<void> _fetchAndLoad() async {
     await ApiService.fetchAssignedRoute();
     _loadStudents();
   }
@@ -61,57 +52,7 @@ class _PickupRouteScreenState extends State<PickupRouteScreen> {
     }
   }
 
-  Future<void> _startLocationTracking() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
-    }
-
-    if (permission == LocationPermission.deniedForever) return;
-
-    const LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 5,
-    );
-
-    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
-      _handleLocationUpdate(position);
-    });
-  }
-
-  void _handleLocationUpdate(Position position) {
-    final now = DateTime.now();
-    bool shouldPing = false;
-
-    if (_lastPingTime == null) {
-      shouldPing = true;
-    } else {
-      final diffSeconds = now.difference(_lastPingTime!).inSeconds;
-      final speed = position.speed * 3.6; // km/h
-      
-      if (speed > 5 && diffSeconds >= 5) {
-        shouldPing = true;
-      } else if (speed <= 5 && diffSeconds >= 25) {
-        shouldPing = true;
-      }
-    }
-
-    if (shouldPing) {
-      _lastPingTime = now;
-      _lastPosition = position;
-      ApiService.updateLocation(position.latitude, position.longitude, position.speed * 3.6);
-    }
-  }
-
-  @override
-  void dispose() {
-    _positionStream?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

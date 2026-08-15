@@ -271,6 +271,7 @@ $router->post('/transport/{id}/assign',     [TransportController::class, 'assign
 $router->post('/transport/assignments/{id}/update', [TransportController::class, 'updateAssignment'], ['auth', 'tenant']);
 $router->post('/transport/assignments/{id}/remove', [TransportController::class, 'removeAssignment'], ['auth', 'tenant']);
 $router->get('/transport/live-tracking',        [TransportController::class, 'tracking'],           ['auth', 'tenant']);
+$router->get('/transport/logs',                 [TransportController::class, 'viewLogs'],           ['auth', 'tenant']);
 $router->get('/transport/settings',             [TransportController::class, 'settings'],           ['auth', 'tenant']);
 $router->post('/transport/settings',            [TransportController::class, 'storeSettings'],      ['auth', 'tenant']);
 
@@ -378,6 +379,7 @@ $router->get('/parent/certificates/{id}/download',   [ParentPortalController::cl
 $router->get('/parent/students/{id}/report-card',  [ReportCardController::class, 'parentShow'],      ['auth', 'role:parent']);
 
 $router->get('/parent/students/{id}/transport',    [ParentPortalController::class, 'transport'],     ['auth', 'role:parent']);
+$router->get('/parent/students/{id}/live-eta',     [ParentPortalController::class, 'liveEta'],       ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/fees',         [ParentPortalController::class, 'fees'],          ['auth', 'role:parent']);
 $router->post('/parent/students/{id}/fees/{invoice_id}/pay', [ParentPortalController::class, 'payFee'], ['auth', 'role:parent']);
 $router->post('/parent/students/{id}/emergency',   [ParentPortalController::class, 'updateEmergency'],['auth', 'role:parent']);

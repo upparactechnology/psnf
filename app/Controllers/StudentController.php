@@ -307,6 +307,13 @@ class StudentController extends Controller
             }
 
             $this->service->update((int) $id, $validated, $filesData);
+            
+            // Auto generate roll numbers if student is in a class (in case name changed)
+            $studentRow = $this->db()->selectOne("SELECT class_id FROM students WHERE id = ?", [(int)$id]);
+            if ($studentRow && !empty($studentRow['class_id'])) {
+                \App\Models\Student::autoGenerateRollNumbers((int)$studentRow['class_id']);
+            }
+
             $this->flash('success', 'Student profile updated successfully.');
             return $this->redirect("/academics/students/$id");
         } catch (\Throwable $e) {
@@ -348,6 +355,9 @@ class StudentController extends Controller
                      WHERE id = ?",
                     [$classRow['id'], $classRow['main_group_id'], $classRow['name'], $classRow['section'], date('Y-m-d'), (int)$id]
                 );
+                
+                // Auto generate roll numbers for the class
+                \App\Models\Student::autoGenerateRollNumbers($classRow['id']);
             }
         }
 

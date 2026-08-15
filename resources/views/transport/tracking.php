@@ -5,7 +5,6 @@ $breadcrumbs = [
     ['label' => 'Bus & Transport', 'url' => '/transport'],
     ['label' => 'Live Tracking'],
 ];
-ob_start();
 ?>
 
 <div class="space-y-6" x-data="liveTracking()" x-init="init()">
@@ -55,7 +54,7 @@ ob_start();
         </div>
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 shadow-sm">
             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Active Buses</p>
-            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1"><?= count(array_filter($routes, fn($r) => $r['route_status'] === 'en_route')) ?></p>
+            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1"><?= count(array_filter($routes, fn($r) => $r['status'] === 'en_route')) ?></p>
         </div>
         <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/60 shadow-sm">
             <p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide">Students on Bus</p>
@@ -87,8 +86,8 @@ ob_start();
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-                                    <?= $route['route_status'] === 'en_route' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-800' ?>">
-                                    <svg class="w-5 h-5 <?= $route['route_status'] === 'en_route' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <?= $route['status'] === 'en_route' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-slate-100 dark:bg-slate-800' ?>">
+                                    <svg class="w-5 h-5 <?= $route['status'] === 'en_route' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400' ?>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10M18 16h3a1 1 0 001-1v-5a1 1 0 00-1-1h-3V6a1 1 0 00-1-1h-4"/>
                                     </svg>
@@ -99,8 +98,8 @@ ob_start();
                                 </div>
                             </div>
                             <span class="flex-shrink-0 text-2xs px-2 py-0.5 rounded-full font-semibold
-                                <?= $route['route_status'] === 'en_route' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' ?>">
-                                <?= $route['route_status'] === 'en_route' ? 'En Route' : ucfirst($route['route_status']) ?>
+                                <?= $route['status'] === 'en_route' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' ?>">
+                                <?= $route['status'] === 'en_route' ? 'En Route' : ucfirst($route['status']) ?>
                             </span>
                         </div>
                         <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -114,7 +113,7 @@ ob_start();
                             </div>
                             <div class="flex items-center gap-1.5 col-span-2 font-medium">
                                 <svg class="w-3.5 h-3.5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.948V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                <span><?= htmlspecialchars($route['phone']) ?></span>
+                                <span><?= htmlspecialchars($route['driver_phone']) ?></span>
                             </div>
 
                             <!-- Live Speed Indicator Inside Card -->
@@ -137,6 +136,19 @@ ob_start();
                                           x-text="Math.round(routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0) + ' km/h'"></span>
                                 </div>
                             </div>
+                            
+                            <!-- Live ETA & KM Indicator Inside Card -->
+                            <div class="col-span-2 mt-1 py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-950/20 border border-slate-100 dark:border-slate-800/40 flex items-center justify-between text-xs"
+                                 x-show="(routesList.find(r => r.id == <?= $route['id'] ?>)?.eta_minutes) !== null">
+                                <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1 text-2xs font-semibold">
+                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    To Campus:
+                                </span>
+                                <div class="font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                                    <span x-text="(routesList.find(r => r.id == <?= $route['id'] ?>)?.eta_minutes ?? '—') + ' min'"></span>
+                                    <span class="text-slate-400 font-normal text-2xs" x-text="'(' + (routesList.find(r => r.id == <?= $route['id'] ?>)?.remaining_km ?? '—') + ' km)'"></span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Action Buttons Row -->
@@ -148,8 +160,7 @@ ob_start();
                                 <span>View Map</span>
                             </button>
 
-                            <!-- Update Location -->
-                            <button @click.stop="openUpdateModal(<?= $route['id'] ?>, '<?= htmlspecialchars($route['route_name']) ?>', <?= $route['current_latitude'] ?? 13.0827 ?>, <?= $route['current_longitude'] ?? 80.2707 ?>, (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0))"
+                            <button @click.stop="openUpdateModal(<?= $route['id'] ?>, '<?= htmlspecialchars($route['route_name']) ?>', <?= empty($route['lat']) ? 'null' : (float)$route['lat'] ?>, <?= empty($route['lng']) ? 'null' : (float)$route['lng'] ?>, (routesList.find(r => r.id == <?= $route['id'] ?>)?.speed ?? 0))"
                                     class="flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-xs font-semibold bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800/40 hover:bg-brand-100 dark:hover:bg-brand-900/40 transition-all">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                 Update
@@ -278,12 +289,14 @@ const ROUTES_DATA = <?= json_encode(array_map(fn($r) => [
     'driver'      => $r['driver_name'],
     'phone'       => $r['driver_phone'],
     'students'    => $r['student_count'],
-    'status'      => $r['route_status'] ?? 'inactive',
-    'lat'         => (float)($r['current_latitude']  ?? 13.0827),
-    'lng'         => (float)($r['current_longitude'] ?? 80.2707),
-    'speed'       => (float)($r['current_speed'] ?? 0.0),
-    'updated_at'  => $r['last_updated_at'] ?? null,
-], $routes)) ?>;
+    'status'      => $r['status'] ?? 'inactive',
+    'lat'         => isset($r['lat']) ? (float)$r['lat'] : null,
+    'lng'         => isset($r['lng']) ? (float)$r['lng'] : null,
+    'speed'       => (float)($r['speed'] ?? 0.0),
+    'eta_minutes' => isset($r['eta_minutes']) ? (int)$r['eta_minutes'] : null,
+    'remaining_km' => isset($r['remaining_km']) ? (float)$r['remaining_km'] : null,
+    'updated_at'  => $r['updated_at'] ?? null,
+], $routes), JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 
 const UPDATE_URL  = '<?= url('transport/{id}/location') ?>';
 const POLL_URL    = '<?= url('transport/live-data') ?>';
@@ -329,13 +342,13 @@ function liveTracking() {
         // ── Map init ────────────────────────────────────────────────────────────
         initMap() {
             // Determine center: average of all routes with valid coords
-            const validRoutes = ROUTES_DATA.filter(r => r.lat && r.lng);
+            const validRoutes = ROUTES_DATA.filter(r => r.lat !== null && r.lng !== null && r.status === 'en_route');
             const center = validRoutes.length
                 ? [
                     validRoutes.reduce((s, r) => s + parseFloat(r.lat), 0) / validRoutes.length,
                     validRoutes.reduce((s, r) => s + parseFloat(r.lng), 0) / validRoutes.length,
                   ]
-                : [<?= $campusLat ?>, <?= $campusLng ?>];
+                : [<?= (float)($campusLat ?? 23.0225) ?: 23.0225 ?>, <?= (float)($campusLng ?? 72.5714) ?: 72.5714 ?>];
 
             this.map = L.map('live-map', { zoomControl: true }).setView(center, 12);
 
@@ -354,7 +367,7 @@ function liveTracking() {
 
             // Add markers for active routes
             this.routesList.forEach(r => {
-                if (r.status === 'en_route') {
+                if (r.status === 'en_route' && r.lat !== null && r.lng !== null) {
                     this.addOrUpdateMarker(r);
                 }
             });
@@ -522,16 +535,30 @@ function liveTracking() {
                 if (json.success) {
                     // Update local data & marker
                     const r = ROUTES_DATA.find(x => x.id == this.updateRouteId);
-                    if (r) { r.lat = this.updateLat; r.lng = this.updateLng; r.speed = this.updateSpeed; }
+                    if (r) { 
+                        r.lat = this.updateLat; 
+                        r.lng = this.updateLng; 
+                        r.speed = this.updateSpeed; 
+                        r.eta_minutes = json.eta_minutes;
+                        r.remaining_km = json.remaining_km;
+                    }
                     
                     const listRoute = this.routesList.find(x => x.id == this.updateRouteId);
-                    if (listRoute) { listRoute.lat = this.updateLat; listRoute.lng = this.updateLng; listRoute.speed = this.updateSpeed; }
+                    if (listRoute) { 
+                        listRoute.lat = this.updateLat; 
+                        listRoute.lng = this.updateLng; 
+                        listRoute.speed = this.updateSpeed; 
+                        listRoute.eta_minutes = json.eta_minutes;
+                        listRoute.remaining_km = json.remaining_km;
+                    }
                     
                     this.addOrUpdateMarker({
                         ...this.routesList.find(x => x.id == this.updateRouteId),
                         lat: this.updateLat,
                         lng: this.updateLng,
-                        speed: this.updateSpeed
+                        speed: this.updateSpeed,
+                        eta_minutes: json.eta_minutes,
+                        remaining_km: json.remaining_km
                     });
                     this.updateLastUpdated();
                     this.updateModal = false;
@@ -545,17 +572,77 @@ function liveTracking() {
             }
         },
 
-        // ── Polling ──────────────────────────────────────────────────────────────
+        // ── WebSocket Real-Time Tracking ─────────────────────────────────────────
         startPolling() {
-            // Countdown timer (visual)
-            this.countdown = 30;
-            this.countdownTimer = setInterval(() => {
-                this.countdown--;
-                if (this.countdown <= 0) this.countdown = 30;
-            }, 1000);
-
-            // Poll server every 30 seconds
-            this.pollTimer = setInterval(() => this.fetchLiveData(), 30000);
+            // No more countdown timer! Real-time WebSocket connection
+            const wsUrl = 'ws://' + window.location.hostname + ':8080';
+            this.ws = new WebSocket(wsUrl);
+            
+            this.ws.onopen = () => {
+                console.log('Connected to real-time WebSocket server');
+                // Fetch initial data once on load
+                this.fetchLiveData();
+            };
+            
+            this.ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.event === 'gps_update') {
+                        this.handleRealTimeUpdate(data);
+                    }
+                } catch (e) {}
+            };
+            
+            this.ws.onclose = () => {
+                console.log('WebSocket disconnected. Reconnecting in 5s...');
+                setTimeout(() => this.startPolling(), 5000);
+            };
+        },
+        
+        handleRealTimeUpdate(r) {
+            const id = parseInt(r.route_id);
+            const lat = parseFloat(r.lat);
+            const lng = parseFloat(r.lng);
+            const speed = parseFloat(r.speed);
+            const status = r.status;
+            
+            const existing = ROUTES_DATA.find(x => x.id == id);
+            if (existing) {
+                existing.lat = lat;
+                existing.lng = lng;
+                existing.status = status;
+                existing.speed = speed;
+                existing.eta_minutes = r.eta_minutes;
+                existing.remaining_km = r.remaining_km;
+            }
+            
+            const listRoute = this.routesList.find(x => x.id == id);
+            if (listRoute) {
+                listRoute.lat = lat;
+                listRoute.lng = lng;
+                listRoute.status = status;
+                listRoute.speed = speed;
+                listRoute.eta_minutes = r.eta_minutes;
+                listRoute.remaining_km = r.remaining_km;
+            }
+            
+            // Only show marker if active
+            if (status === 'en_route' && lat && lng) {
+                this.addOrUpdateMarker(listRoute || existing);
+                
+                // Auto follow selected driver
+                if (this.selectedRoute == id && this.map) {
+                    // Smooth pan
+                    this.map.panTo([lat, lng], {animate: true, duration: 1.0});
+                    this.selectedRouteCoords = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                }
+            } else {
+                if (this.markers[id]) {
+                    this.map.removeLayer(this.markers[id]);
+                    delete this.markers[id];
+                }
+            }
+            this.updateLastUpdated();
         },
 
         async fetchLiveData() {
@@ -564,38 +651,16 @@ function liveTracking() {
                 const data = await res.json();
                 if (data.routes) {
                     data.routes.forEach(r => {
-                        const existing = ROUTES_DATA.find(x => x.id == r.id);
-                        if (existing) {
-                            existing.lat = r.lat;
-                            existing.lng = r.lng;
-                            existing.status = r.status;
-                            existing.speed = r.speed;
-                        }
-                        const listRoute = this.routesList.find(x => x.id == r.id);
-                        if (listRoute) {
-                            listRoute.lat = r.lat;
-                            listRoute.lng = r.lng;
-                            listRoute.status = r.status;
-                            listRoute.speed = r.speed;
-                        }
-                        
-                        // Only show marker if active
-                        if (r.status === 'en_route') {
-                            this.addOrUpdateMarker(listRoute || r);
-                            
-                            // Auto follow selected driver
-                            if (this.selectedRoute == r.id && this.map) {
-                                this.map.panTo([r.lat, r.lng]);
-                                this.selectedRouteCoords = `${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}`;
-                            }
-                        } else {
-                            if (this.markers[r.id]) {
-                                this.map.removeLayer(this.markers[r.id]);
-                                delete this.markers[r.id];
-                            }
-                        }
+                        this.handleRealTimeUpdate({
+                            route_id: r.id,
+                            lat: r.lat,
+                            lng: r.lng,
+                            status: r.status,
+                            speed: r.speed,
+                            eta_minutes: r.eta_minutes,
+                            remaining_km: r.remaining_km
+                        });
                     });
-                    this.updateLastUpdated();
                 }
             } catch (e) { /* silent */ }
         },
@@ -609,7 +674,3 @@ function liveTracking() {
     };
 }
 </script>
-
-<?php
-$content = ob_get_clean();
-?>

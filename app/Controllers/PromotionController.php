@@ -83,6 +83,16 @@ class PromotionController extends Controller
             }
         }
 
+        if ($count > 0) {
+            // Auto generate roll numbers for destination class
+            \App\Models\Student::autoGenerateRollNumbers($destClassId);
+            
+            // Auto generate roll numbers for source class (since students left it)
+            if ($srcClassId) {
+                \App\Models\Student::autoGenerateRollNumbers($srcClassId);
+            }
+        }
+
         Session::flash('success', "Promotion wizard completed! Promoted {$count} students to {$destClassRow['name']} for {$destYearRow['year_name']}.");
         return $this->redirect('/academics/promotion');
     }

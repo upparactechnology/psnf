@@ -37,6 +37,23 @@ ob_start();
                 </div>
             </div>
         </div>
+        
+        <!-- Google Maps API Configuration -->
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-4 mb-5">
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3 flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Google Maps API Configuration
+            </h3>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Google Maps API Key (with Routes API Enabled)</label>
+                    <input type="password" name="google_maps_api_key" value="<?= e($systemSettings['google_maps_api_key'] ?? '') ?>"
+                           class="w-full bg-slate-900/70 border border-slate-700/60 text-white rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all">
+                    <p class="text-[10px] text-slate-500 mt-1">Required for accurate ETA and Distance calculations in live tracking.</p>
+                </div>
+            </div>
+        </div>
 
         <!-- SMTP Email Server Settings -->
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-4 mb-5">

@@ -107,6 +107,8 @@ class TransportController extends Controller
         return $this->view('transport/student_assignments', compact('assignments', 'unassignedStudents', 'drivers'));
     }
 
+
+
     public function settings(): string
     {
         $campusLat = $this->getSetting('campus_lat', '23.0225');
@@ -143,13 +145,14 @@ class TransportController extends Controller
             CONCAT(e.first_name, ' ', e.last_name) as route_name, CONCAT(e.first_name, ' ', e.last_name) as name, 
             COALESCE(v.vehicle_number, 'No Bus') as bus_number, CONCAT(e.first_name, ' ', e.last_name) as driver_name, e.phone as driver_phone,
             e.current_latitude as lat, e.current_longitude as lng, e.current_speed as speed, e.route_status as status,
-            COALESCE(v.vehicle_number, 'No Bus') as bus
+            COALESCE(v.vehicle_number, 'No Bus') as bus,
+            e.eta_minutes as eta_minutes, e.remaining_km as remaining_km
             FROM employees e
             JOIN designations des ON e.designation_id = des.id
             LEFT JOIN student_transport st ON st.driver_id = e.id
             LEFT JOIN transport_vehicles v ON v.driver_id = e.id
             WHERE e.tenant_id = ? AND des.title = 'Driver' AND e.route_status = 'en_route'
-            GROUP BY e.id
+            GROUP BY e.id, v.vehicle_number
             ORDER BY e.route_status DESC, e.first_name ASC
         ", [$tenantId]);
 
@@ -170,7 +173,9 @@ class TransportController extends Controller
                    e.current_longitude as lng,
                    e.current_speed     as speed,
                    e.last_updated_at   as updated_at,
-                   COUNT(st.id) as students
+                   COUNT(st.id) as students,
+                   e.eta_minutes as eta_minutes,
+                   e.remaining_km as remaining_km
             FROM employees e
             JOIN designations des ON e.designation_id = des.id
             LEFT JOIN student_transport st ON st.driver_id = e.id
@@ -190,6 +195,8 @@ class TransportController extends Controller
             'lng'        => (float)($r['lng']  ?? 0),
             'speed'      => (float)($r['speed'] ?? 0.0),
             'students'   => (int)$r['students'],
+            'eta_minutes' => $r['eta_minutes'] !== null ? (int)$r['eta_minutes'] : null,
+            'remaining_km' => $r['remaining_km'] !== null ? (float)$r['remaining_km'] : null,
             'updated_at' => $r['updated_at'] ? date('h:i A', strtotime($r['updated_at'])) : 'Never',
         ], $rows);
 
@@ -317,7 +324,53 @@ class TransportController extends Controller
             'speed'    => $speed,
         ]);
 
-        echo json_encode(['success' => true, 'lat' => $lat, 'lng' => $lng, 'speed' => $speed]);
+        $this->logTransportAction('GPS_UPDATE', $driver['id'], [
+            'latitude' => $lat,
+            'longitude' => $lng,
+            'speed' => $speed ?? 0
+        ]);
+
+        if ($driver['route_status'] === 'en_route') {
+            $this->checkGoogleETA($driver['id'], $lat, $lng);
+        }
+
+        $emp = $this->db()->selectOne("SELECT eta_minutes, remaining_km, route_status, current_speed FROM employees WHERE id = ?", [$driver['id']]);
+
+        // Push to WebSocket
+        $message = json_encode([
+            'event' => 'gps_update',
+            'route_id' => $driver['id'],
+            'lat' => $lat,
+            'lng' => $lng,
+            'speed' => $emp['current_speed'] ?? 0,
+            'eta_minutes' => $emp['eta_minutes'],
+            'remaining_km' => $emp['remaining_km'],
+            'status' => $emp['route_status']
+        ]);
+        
+        $fp = @fsockopen("127.0.0.1", 8081, $errno, $errstr, 2);
+        if ($fp) {
+            fwrite($fp, $message);
+            fclose($fp);
+            $this->logTransportAction('WEBSOCKET_BROADCAST', $driver['id'], [
+                'payload' => json_decode($message, true),
+                'status' => 'Success'
+            ]);
+        } else {
+            $this->logTransportAction('WEBSOCKET_BROADCAST', $driver['id'], [
+                'payload' => json_decode($message, true),
+                'status' => "Failed (Connection Refused): $errno - $errstr"
+            ]);
+        }
+
+        echo json_encode([
+            'success' => true, 
+            'lat' => $lat, 
+            'lng' => $lng, 
+            'speed' => $emp['current_speed'] ?? 0,
+            'eta_minutes' => $emp['eta_minutes'],
+            'remaining_km' => $emp['remaining_km']
+        ]);
         exit();
     }
 
@@ -448,7 +501,8 @@ class TransportController extends Controller
 
         $studentId   = (int)$this->request->post('student_id');
         $pickupPoint = $this->request->post('pickup_point', 'School Gate');
-        $pickupTime  = $this->request->post('pickup_time', '08:00');
+        $rawPickupTime  = $this->request->post('pickup_time', '08:00 AM');
+        $pickupTime = date('H:i:s', strtotime($rawPickupTime));
         $pickupLat   = $this->request->post('pickup_lat');
         $pickupLng   = $this->request->post('pickup_lng');
 
@@ -501,7 +555,8 @@ class TransportController extends Controller
         }
 
         $pickupPoint = $this->request->post('pickup_point');
-        $pickupTime  = $this->request->post('pickup_time');
+        $rawPickupTime  = $this->request->post('pickup_time');
+        $pickupTime = $rawPickupTime ? date('H:i:s', strtotime($rawPickupTime)) : null;
         $pickupLat   = $this->request->post('pickup_lat');
         $pickupLng   = $this->request->post('pickup_lng');
         
@@ -515,7 +570,7 @@ class TransportController extends Controller
             $data['pickup_lng'] = (float)$pickupLng;
         }
 
-        $this->db()->update('student_transport', $data, ['id' => $assignment['id']]);
+        $this->db()->update('student_transport', $data, 'id = ?', [$assignment['id']]);
         
         Session::flash('success', 'Student assignment updated successfully.');
         return $this->redirect('/transport/student-assignments');
@@ -761,38 +816,317 @@ class TransportController extends Controller
     public function apiUpdateLocation($id): string
     {
         header('Content-Type: application/json');
-        $body = $this->request->getBody();
-        if ($this->request->isJson()) {
-            $data = json_decode(file_get_contents('php://input'), true);
-            $lat = $data['lat'] ?? null;
-            $lng = $data['lng'] ?? null;
-            $speed = $data['speed'] ?? 0;
-        } else {
-            $lat = $_POST['lat'] ?? null;
-            $lng = $_POST['lng'] ?? null;
-            $speed = $_POST['speed'] ?? 0;
+        
+        $userId = auth()['id'] ?? 0;
+        $driver = $this->db()->selectOne("SELECT e.id FROM employees e JOIN designations des ON e.designation_id = des.id WHERE e.user_id = ? AND des.title = 'Driver' LIMIT 1", [$userId]);
+        
+        if (!$driver) {
+            return json_encode(['success' => false, 'message' => 'Driver not found']);
         }
         
+        $driverId = $driver['id'];
+
+        $body = $this->request->getBody();
+        $lat = isset($body['lat']) ? (float)$body['lat'] : null;
+        $lng = isset($body['lng']) ? (float)$body['lng'] : null;
+        $speed = isset($body['speed']) ? (float)$body['speed'] : 0;
+        
         if ($lat && $lng) {
+            // Update driver's live location
             $this->db()->query("
                 UPDATE employees 
                 SET current_latitude = ?, current_longitude = ?, current_speed = ?, last_updated_at = NOW() 
                 WHERE id = ?
-            ", [$lat, $lng, $speed, $id]);
-
-            // Save location history if there's an active trip
-            $activeTrip = $this->db()->selectOne("SELECT id FROM driver_trips WHERE driver_id = ? AND status = 'active'", [$id]);
-            if ($activeTrip) {
-                $this->db()->insert('driver_locations', [
-                    'trip_id' => $activeTrip['id'],
-                    'latitude' => $lat,
-                    'longitude' => $lng,
-                    'speed' => $speed
+            ", [$lat, $lng, $speed, $driverId]);
+            
+            $this->logTransportAction('GPS_UPDATE', $driverId, [
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'speed' => $speed
+            ]);
+            
+            // Check triggers & update ETA (if en_route)
+            $emp = $this->db()->selectOne("SELECT eta_minutes, remaining_km, route_status FROM employees WHERE id = ?", [$driverId]);
+            
+            if ($emp['route_status'] === 'en_route') {
+                $this->checkGoogleETA($driverId, $lat, $lng);
+                
+                // Fetch latest ETA from DB after potential update
+                $emp = $this->db()->selectOne("SELECT eta_minutes, remaining_km, route_status FROM employees WHERE id = ?", [$driverId]);
+            }
+            
+            // Push to WebSocket
+            $message = json_encode([
+                'event' => 'gps_update',
+                'route_id' => $driverId,
+                'lat' => $lat,
+                'lng' => $lng,
+                'speed' => $speed,
+                'eta_minutes' => $emp['eta_minutes'],
+                'remaining_km' => $emp['remaining_km'],
+                'status' => $emp['route_status']
+            ]);
+            
+            $socket = @fsockopen('127.0.0.1', 8081, $errno, $errstr, 1);
+            if ($socket) {
+                fwrite($socket, $message);
+                fclose($socket);
+                $this->logTransportAction('WEBSOCKET_BROADCAST', $driverId, [
+                    'payload' => json_decode($message, true),
+                    'status' => 'Success'
+                ]);
+            } else {
+                $this->logTransportAction('WEBSOCKET_BROADCAST', $driverId, [
+                    'payload' => json_decode($message, true),
+                    'status' => "Failed (Connection Refused): $errno - $errstr"
                 ]);
             }
         }
         
         return json_encode(['success' => true]);
+    }
+    
+    private function checkGoogleETA($driverId, $currentLat, $currentLng)
+    {
+        $apiKey = $this->db()->selectOne("SELECT value FROM system_settings WHERE `key` = 'google_maps_api_key'")['value'] ?? null;
+        if (!$apiKey) {
+            $this->logTransportAction('GOOGLE_API_ERROR', $driverId, [
+                'error' => 'Google Maps API Key not configured in system_settings table (google_maps_api_key).'
+            ]);
+            return;
+        }
+        
+        $activeTrip = $this->db()->selectOne("SELECT id FROM driver_trips WHERE driver_id = ? AND status = 'active'", [$driverId]);
+        if (!$activeTrip) {
+            return;
+        }
+
+        $cacheFile = \STORAGE_PATH . '/logs/eta_trigger_' . $driverId . '.json';
+        $state = file_exists($cacheFile) ? json_decode(file_get_contents($cacheFile), true) : null;
+        
+        $shouldCheck = false;
+        $reason = '';
+        if (!$state) {
+            $shouldCheck = true;
+            $reason = 'First check for active trip';
+        } elseif (($state['trip_id'] ?? 0) != $activeTrip['id']) {
+            $shouldCheck = true;
+            $reason = 'New active trip started (Trip ID changed)';
+        } else {
+            $timeDiff = time() - $state['last_check_time'];
+            if ($timeDiff >= 300) { // 5 minutes
+                $shouldCheck = true;
+                $reason = 'Time interval >= 5 minutes (' . $timeDiff . ' seconds elapsed)';
+            } else {
+                // Approximate distance formula (meters)
+                $earthRadius = 6371000;
+                $latFrom = deg2rad((float)$state['last_lat']);
+                $lonFrom = deg2rad((float)$state['last_lng']);
+                $latTo = deg2rad((float)$currentLat);
+                $lonTo = deg2rad((float)$currentLng);
+                $latDelta = $latTo - $latFrom;
+                $lonDelta = $lonTo - $lonFrom;
+                $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) + cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+                $dist = $angle * $earthRadius;
+                
+                if ($dist > 500) { // 500 meters moved
+                    $shouldCheck = true;
+                    $reason = 'Driver moved > 500m (' . round($dist, 1) . 'm)';
+                }
+            }
+        }
+        
+        if ($shouldCheck) {
+            $campusLat = $this->getSetting('campus_lat', '23.0225');
+            $campusLng = $this->getSetting('campus_lng', '72.5714');
+            
+            $orderedStops = [];
+            if ($activeTrip) {
+                // 1. Fetch waiting students
+                $students = $this->db()->select("
+                    SELECT ts.student_id, st.pickup_lat, st.pickup_lng 
+                    FROM trip_students ts
+                    JOIN student_transport st ON ts.student_id = st.student_id
+                    WHERE ts.trip_id = ? AND ts.status IN ('Waiting', 'Current Stop')
+                ", [$activeTrip['id']]);
+                
+                // 2. Sort stops using nearest-neighbor greedy heuristic
+                $tempStops = $students;
+                $lastLat = $currentLat;
+                $lastLng = $currentLng;
+                
+                while (!empty($tempStops)) {
+                    $nearestIdx = null;
+                    $minDist = PHP_FLOAT_MAX;
+                    foreach ($tempStops as $idx => $stop) {
+                        $dist = $this->haversineDistance($lastLat, $lastLng, $stop['pickup_lat'], $stop['pickup_lng']);
+                        if ($dist < $minDist) {
+                            $minDist = $dist;
+                            $nearestIdx = $idx;
+                        }
+                    }
+                    if ($nearestIdx !== null) {
+                        $orderedStops[] = $tempStops[$nearestIdx];
+                        $lastLat = $tempStops[$nearestIdx]['pickup_lat'];
+                        $lastLng = $tempStops[$nearestIdx]['pickup_lng'];
+                        unset($tempStops[$nearestIdx]);
+                        $tempStops = array_values($tempStops); // reindex
+                    }
+                }
+            }
+            
+            // 3. Construct intermediates waypoints
+            $intermediates = [];
+            foreach ($orderedStops as $stop) {
+                $intermediates[] = [
+                    "location" => [
+                        "latLng" => [
+                            "latitude" => (float)$stop['pickup_lat'],
+                            "longitude" => (float)$stop['pickup_lng']
+                        ]
+                    ]
+                ];
+            }
+            
+            if (count($intermediates) > 25) {
+                $intermediates = array_slice($intermediates, 0, 25);
+            }
+            
+            $url = "https://routes.googleapis.com/directions/v2:computeRoutes";
+            $payload = [
+                "origin" => [
+                    "location" => ["latLng" => ["latitude" => (float)$currentLat, "longitude" => (float)$currentLng]]
+                ],
+                "destination" => [
+                    "location" => ["latLng" => ["latitude" => (float)$campusLat, "longitude" => (float)$campusLng]]
+                ],
+                "travelMode" => "DRIVE",
+                "routingPreference" => "TRAFFIC_AWARE"
+            ];
+            
+            if (!empty($intermediates)) {
+                $payload["intermediates"] = $intermediates;
+            }
+            
+            $this->logTransportAction('GOOGLE_API_CALL', $driverId, [
+                'trigger_reason' => $reason,
+                'origin' => "$currentLat, $currentLng",
+                'destination' => "$campusLat, $campusLng",
+                'intermediates_count' => count($intermediates),
+                'payload' => $payload,
+                'apiKey_masked' => substr($apiKey, 0, 8) . '...'
+            ]);
+            
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                "Content-Type: application/json",
+                "X-Goog-Api-Key: " . trim($apiKey),
+                "X-Goog-FieldMask: routes.duration,routes.distanceMeters,routes.legs.duration,routes.legs.distanceMeters"
+            ]);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            $response = curl_exec($ch);
+            curl_close($ch);
+            
+            $data = json_decode($response, true);
+            if (isset($data['routes'][0])) {
+                $legs = $data['routes'][0]['legs'] ?? [];
+                
+                $cumDurationSec = 0;
+                
+                for ($i = 0; $i < count($legs); $i++) {
+                    $leg = $legs[$i];
+                    $legDurationSec = (int)str_replace('s', '', $leg['duration'] ?? '0s');
+                    $cumDurationSec += $legDurationSec;
+                    
+                    if ($i < count($orderedStops)) {
+                        $stopStudentId = $orderedStops[$i]['student_id'];
+                        $etaMinutes = ceil($cumDurationSec / 60);
+                        
+                        // Calculate direct driving distance straight to student pickup point
+                        $directKm = $this->haversineDistance($currentLat, $currentLng, $orderedStops[$i]['pickup_lat'], $orderedStops[$i]['pickup_lng']) * 1.25;
+                        $remainingKm = round($directKm, 2);
+                        
+                        $this->db()->query("
+                            UPDATE student_transport 
+                            SET eta_minutes = ?, remaining_km = ? 
+                            WHERE student_id = ?
+                        ", [$etaMinutes, $remainingKm, $stopStudentId]);
+                        
+                        // Add 60s passenger boarding delay for subsequent stops
+                        $cumDurationSec += 60;
+                    } else {
+                        // Last leg goes to school campus
+                        $etaMinutes = ceil($cumDurationSec / 60);
+                        
+                        // Calculate direct driving distance straight to school campus
+                        $directKm = $this->haversineDistance($currentLat, $currentLng, $campusLat, $campusLng) * 1.25;
+                        $remainingKm = round($directKm, 2);
+                        
+                        $this->db()->query("UPDATE employees SET eta_minutes = ?, remaining_km = ? WHERE id = ?", [$etaMinutes, $remainingKm, $driverId]);
+                    }
+                }
+                
+                file_put_contents($cacheFile, json_encode([
+                    'last_check_time' => time(),
+                    'last_lat' => $currentLat,
+                    'last_lng' => $currentLng,
+                    'trip_id' => $activeTrip['id']
+                ]));
+                
+                $this->logTransportAction('GOOGLE_API_RESPONSE', $driverId, [
+                    'campus_eta_minutes' => $etaMinutes,
+                    'campus_remaining_km' => $remainingKm,
+                    'legs_parsed' => count($legs)
+                ]);
+            } else {
+                $this->logTransportAction('GOOGLE_API_ERROR', $driverId, [
+                    'raw_response' => $response,
+                    'parsed_payload' => $data
+                ]);
+            }
+        }
+    }
+    
+    private function logTransportAction(string $type, $driverId, array $details): void
+    {
+        $logFile = \STORAGE_PATH . '/logs/transport_activity.json';
+        $dir = dirname($logFile);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+        
+        $logs = [];
+        if (file_exists($logFile)) {
+            $logs = json_decode(file_get_contents($logFile), true) ?: [];
+        }
+        
+        $driver = $this->db()->selectOne("SELECT first_name, last_name FROM employees WHERE id = ?", [$driverId]);
+        $driverName = $driver ? ($driver['first_name'] . ' ' . $driver['last_name']) : 'System';
+        
+        $newLog = [
+            'time' => date('Y-m-d H:i:s'),
+            'type' => $type,
+            'driver_id' => $driverId,
+            'driver_name' => $driverName,
+            'details' => $details
+        ];
+        
+        array_unshift($logs, $newLog);
+        $logs = array_slice($logs, 0, 500); // limit to last 500 logs
+        
+        file_put_contents($logFile, json_encode($logs, JSON_PRETTY_PRINT));
+    }
+    
+    public function viewLogs(): string
+    {
+        $logFile = \STORAGE_PATH . '/logs/transport_activity.json';
+        $logs = [];
+        if (file_exists($logFile)) {
+            $logs = json_decode(file_get_contents($logFile), true) ?: [];
+        }
+        return $this->view('transport/logs', compact('logs'));
     }
 
     public function apiTripHistory(): string

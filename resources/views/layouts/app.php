@@ -22,7 +22,7 @@
         tailwind.config = {
             darkMode: 'class',
             theme: {
-                extend: {
+                extend: {   
                     colors: {
                         brand: {
                             50:  '#f0f4ff',
@@ -225,7 +225,7 @@
             background-color: rgba(241, 245, 249, 0.5) !important;
         }
 
-        html:not(.dark) button[type="submit"]:not(.bg-red-600):not(.bg-emerald-600) {
+        html:not(.dark) button[type="submit"]:not(.bg-red-600):not(.bg-emerald-600):not(.hover\:underline):not([class*="text-"]) {
             color: #ffffff !important;
         }
 
@@ -474,7 +474,8 @@ if ($user) {
             <!-- DYNAMIC CLIENT-SIDE SIDEBAR MODULE SECTIONS (ZERO PAGE RELOAD) -->
             <div x-data="{
                 currentModule() {
-                    const path = (window.location.pathname.replace('/psnf/public', '') || '/').replace(/\/$/, '') || '/';
+                    const basePath = '<?= '/' . trim(config('app.base_path', 'psnf/public'), '/') ?>';
+                    const path = (window.location.pathname.replace(basePath, '') || '/').replace(/\/$/, '') || '/';
                     if (path === '/dashboard' || path === '/teacher/dashboard' || path === '/games' || path === '/') return 'launcher';
                     if (path.startsWith('/settings')) return 'settings';
                     if (path.startsWith('/reports')) return 'reports';
@@ -551,6 +552,7 @@ if ($user) {
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Administration</div>
                     <?php navLink('/transport/settings', $ic['settings'], 'Transport Settings', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/transport/logs', '<svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Transport Logs', $currentPath, $sidebarOpen); ?>
                 </div>
 
                 <!-- STAFF MANAGEMENT WORKSPACE (ENTERPRISE HRMS PERMANENT SIDEBAR) -->

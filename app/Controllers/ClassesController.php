@@ -240,6 +240,10 @@ class ClassesController extends Controller
                  WHERE id IN ($placeholders) AND tenant_id = ?",
                 array_merge([(int)$id, $class['name'], $class['section']], array_map('intval', $studentIds), [$tenantId])
             );
+            
+            // Auto generate roll numbers for the class
+            \App\Models\Student::autoGenerateRollNumbers((int)$id);
+            
             Session::flash('success', count($studentIds) . ' students enrolled successfully.');
         } else {
             Session::flash('error', 'No students selected.');
@@ -259,6 +263,9 @@ class ClassesController extends Controller
              WHERE id = ? AND class_id = ? AND tenant_id = ?",
             [(int)$studentId, (int)$classId, $tenantId]
         );
+
+        // Auto generate roll numbers for the class they were removed from
+        \App\Models\Student::autoGenerateRollNumbers((int)$classId);
 
         Session::flash('success', 'Student removed from class.');
         return $this->redirect('/academics/classes/' . $classId);

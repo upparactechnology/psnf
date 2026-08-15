@@ -116,4 +116,26 @@ class Student extends Model
             'to'   => $status,
         ], $actorId);
     }
+
+    public static function autoGenerateRollNumbers(int $classId): void
+    {
+        $tenantId = \Core\Database::getTenantId();
+        
+        // Fetch all enrolled active students in this class ordered alphabetically
+        $students = static::db()->select(
+            "SELECT id FROM students 
+             WHERE class_id = ? AND tenant_id = ? AND admission_status = 'enrolled' AND deleted_at IS NULL
+             ORDER BY first_name ASC, middle_name ASC, last_name ASC",
+            [$classId, $tenantId]
+        );
+        
+        $roll = 1;
+        foreach ($students as $student) {
+            static::db()->query(
+                "UPDATE students SET roll_number = ? WHERE id = ?",
+                [(string)$roll, $student['id']]
+            );
+            $roll++;
+        }
+    }
 }

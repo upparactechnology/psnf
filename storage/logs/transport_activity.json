@@ -1,0 +1,2155 @@
+[
+    {
+        "time": "2026-08-07 12:43:02",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386817,
+                "lng": 72.5876133,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "11.62",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:43:02",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386817,
+            "longitude": 72.5876133,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:52",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386433,
+                "lng": 72.5874917,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "11.62",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:52",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386433,
+            "longitude": 72.5874917,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:27",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.038673,
+                "lng": 72.5875334,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "11.62",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:27",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.038673,
+            "longitude": 72.5875334,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:21",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386533,
+                "lng": 72.5874867,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "11.62",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:21",
+        "type": "GOOGLE_API_RESPONSE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "campus_eta_minutes": 70,
+            "campus_remaining_km": 11.62,
+            "legs_parsed": 4
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:21",
+        "type": "GOOGLE_API_CALL",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "trigger_reason": "New active trip started (Trip ID changed)",
+            "origin": "23.0386533, 72.5874867",
+            "destination": "23.11871480381384, 72.56136559295895",
+            "intermediates_count": 3,
+            "payload": {
+                "origin": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.0386533,
+                            "longitude": 72.5874867
+                        }
+                    }
+                },
+                "destination": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.11871480381384,
+                            "longitude": 72.56136559295895
+                        }
+                    }
+                },
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE",
+                "intermediates": [
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.01587167,
+                                "longitude": 72.55740767
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.00830361,
+                                "longitude": 72.54038732
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.08832243,
+                                "longitude": 72.54926646
+                            }
+                        }
+                    }
+                ]
+            },
+            "apiKey_masked": "AIzaSyAo..."
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:21",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386533,
+            "longitude": 72.5874867,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:11",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386683,
+                "lng": 72.5875233,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "11.62",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:11",
+        "type": "GOOGLE_API_RESPONSE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "campus_eta_minutes": 70,
+            "campus_remaining_km": 11.62,
+            "legs_parsed": 4
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:10",
+        "type": "GOOGLE_API_CALL",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "trigger_reason": "First check for active trip",
+            "origin": "23.0386683, 72.5875233",
+            "destination": "23.11871480381384, 72.56136559295895",
+            "intermediates_count": 3,
+            "payload": {
+                "origin": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.0386683,
+                            "longitude": 72.5875233
+                        }
+                    }
+                },
+                "destination": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.11871480381384,
+                            "longitude": 72.56136559295895
+                        }
+                    }
+                },
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE",
+                "intermediates": [
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.01587167,
+                                "longitude": 72.55740767
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.00830361,
+                                "longitude": 72.54038732
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.08832243,
+                                "longitude": 72.54926646
+                            }
+                        }
+                    }
+                ]
+            },
+            "apiKey_masked": "AIzaSyAo..."
+        }
+    },
+    {
+        "time": "2026-08-07 12:42:10",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386683,
+            "longitude": 72.5875233,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:41:54",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386983,
+                "lng": 72.5875777,
+                "speed": 2.497588920593262,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:41:54",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386983,
+            "longitude": 72.5875777,
+            "speed": 2.497588920593262
+        }
+    },
+    {
+        "time": "2026-08-07 12:41:45",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387328,
+                "lng": 72.5876276,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:41:45",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387328,
+            "longitude": 72.5876276,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:41:19",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387683,
+                "lng": 72.587675,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:41:19",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387683,
+            "longitude": 72.587675,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:40:39",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386928,
+                "lng": 72.5875681,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:40:39",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386928,
+            "longitude": 72.5875681,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:40:04",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387524,
+                "lng": 72.5877462,
+                "speed": 3.7407387256622315,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:40:04",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387524,
+            "longitude": 72.5877462,
+            "speed": 3.7407387256622315
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:56",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387273,
+                "lng": 72.5876742,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:56",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387273,
+            "longitude": 72.5876742,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:43",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387567,
+                "lng": 72.5877567,
+                "speed": 0.550341010093689,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:43",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387567,
+            "longitude": 72.5877567,
+            "speed": 0.550341010093689
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:36",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387003,
+                "lng": 72.5875634,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:36",
+        "type": "GOOGLE_API_RESPONSE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "campus_eta_minutes": 35,
+            "campus_remaining_km": 13.17,
+            "destinations_parsed": 4
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:36",
+        "type": "GOOGLE_API_CALL",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "trigger_reason": "First check for active trip",
+            "origin": "23.0387003, 72.5875634",
+            "destination_campus": "23.11871480381384, 72.56136559295895",
+            "destinations_count": 4,
+            "payload": {
+                "origins": [
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.0387003,
+                                    "longitude": 72.5875634
+                                }
+                            }
+                        }
+                    }
+                ],
+                "destinations": [
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.11871480381384,
+                                    "longitude": 72.56136559295895
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.01587167,
+                                    "longitude": 72.55740767
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.00830361,
+                                    "longitude": 72.54038732
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.08832243,
+                                    "longitude": 72.54926646
+                                }
+                            }
+                        }
+                    }
+                ],
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE"
+            },
+            "apiKey_masked": "AIzaSyAo..."
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:36",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387003,
+            "longitude": 72.5875634,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:01",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387233,
+                "lng": 72.587735,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:39:00",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387233,
+            "longitude": 72.587735,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:51",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387717,
+                "lng": 72.587725,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:51",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387717,
+            "longitude": 72.587725,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:41",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387152,
+                "lng": 72.5876223,
+                "speed": 0.5637184202671052,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:41",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387152,
+            "longitude": 72.5876223,
+            "speed": 0.5637184202671052
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:31",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387693,
+                "lng": 72.5877096,
+                "speed": 2.9339776754379274,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:31",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387693,
+            "longitude": 72.5877096,
+            "speed": 2.9339776754379274
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:26",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387355,
+                "lng": 72.58765,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:26",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387355,
+            "longitude": 72.58765,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:20",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387733,
+                "lng": 72.58772,
+                "speed": 0.17047600150108339,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:20",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387733,
+            "longitude": 72.58772,
+            "speed": 0.17047600150108339
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:10",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386994,
+                "lng": 72.5875738,
+                "speed": 0,
+                "eta_minutes": 35,
+                "remaining_km": "13.17",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:10",
+        "type": "GOOGLE_API_RESPONSE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "campus_eta_minutes": 35,
+            "campus_remaining_km": 13.17,
+            "destinations_parsed": 4
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:09",
+        "type": "GOOGLE_API_CALL",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "trigger_reason": "New active trip started (Trip ID changed)",
+            "origin": "23.0386994, 72.5875738",
+            "destination_campus": "23.11871480381384, 72.56136559295895",
+            "destinations_count": 4,
+            "payload": {
+                "origins": [
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.0386994,
+                                    "longitude": 72.5875738
+                                }
+                            }
+                        }
+                    }
+                ],
+                "destinations": [
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.11871480381384,
+                                    "longitude": 72.56136559295895
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.01587167,
+                                    "longitude": 72.55740767
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.00830361,
+                                    "longitude": 72.54038732
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "waypoint": {
+                            "location": {
+                                "latLng": {
+                                    "latitude": 23.08832243,
+                                    "longitude": 72.54926646
+                                }
+                            }
+                        }
+                    }
+                ],
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE"
+            },
+            "apiKey_masked": "AIzaSyAo..."
+        }
+    },
+    {
+        "time": "2026-08-07 12:37:09",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386994,
+            "longitude": 72.5875738,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:36:47",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0388095,
+                "lng": 72.5877589,
+                "speed": 3.4707310438156127,
+                "eta_minutes": 70,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:36:47",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0388095,
+            "longitude": 72.5877589,
+            "speed": 3.4707310438156127
+        }
+    },
+    {
+        "time": "2026-08-07 12:36:43",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387379,
+                "lng": 72.5876591,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:36:43",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387379,
+            "longitude": 72.5876591,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:34:36",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.03881,
+                "lng": 72.58776,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:34:36",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.03881,
+            "longitude": 72.58776,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:34:10",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387347,
+                "lng": 72.5876215,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:34:10",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387347,
+            "longitude": 72.5876215,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:34:01",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387733,
+                "lng": 72.5876633,
+                "speed": 1.8011160135269166,
+                "eta_minutes": 70,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:34:01",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387733,
+            "longitude": 72.5876633,
+            "speed": 1.8011160135269166
+        }
+    },
+    {
+        "time": "2026-08-07 12:33:51",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386971,
+                "lng": 72.5875708,
+                "speed": 0,
+                "eta_minutes": 70,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:33:51",
+        "type": "GOOGLE_API_RESPONSE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "campus_eta_minutes": 70,
+            "campus_remaining_km": 26.73,
+            "legs_parsed": 4
+        }
+    },
+    {
+        "time": "2026-08-07 12:33:51",
+        "type": "GOOGLE_API_CALL",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "trigger_reason": "New active trip started (Trip ID changed)",
+            "origin": "23.0386971, 72.5875708",
+            "destination": "23.11871480381384, 72.56136559295895",
+            "intermediates_count": 3,
+            "payload": {
+                "origin": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.0386971,
+                            "longitude": 72.5875708
+                        }
+                    }
+                },
+                "destination": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.11871480381384,
+                            "longitude": 72.56136559295895
+                        }
+                    }
+                },
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE",
+                "intermediates": [
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.01587167,
+                                "longitude": 72.55740767
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.00830361,
+                                "longitude": 72.54038732
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.08832243,
+                                "longitude": 72.54926646
+                            }
+                        }
+                    }
+                ]
+            },
+            "apiKey_masked": "AIzaSyAo..."
+        }
+    },
+    {
+        "time": "2026-08-07 12:33:51",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386971,
+            "longitude": 72.5875708,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:31:27",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387167,
+                "lng": 72.58777,
+                "speed": 0,
+                "eta_minutes": 72,
+                "remaining_km": "27.04",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:31:27",
+        "type": "GOOGLE_API_RESPONSE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "campus_eta_minutes": 72,
+            "campus_remaining_km": 27.04,
+            "legs_parsed": 4
+        }
+    },
+    {
+        "time": "2026-08-07 12:31:27",
+        "type": "GOOGLE_API_CALL",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "trigger_reason": "New active trip started (Trip ID changed)",
+            "origin": "23.0387167, 72.58777",
+            "destination": "23.11871480381384, 72.56136559295895",
+            "intermediates_count": 3,
+            "payload": {
+                "origin": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.0387167,
+                            "longitude": 72.58777
+                        }
+                    }
+                },
+                "destination": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.11871480381384,
+                            "longitude": 72.56136559295895
+                        }
+                    }
+                },
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE",
+                "intermediates": [
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.01587167,
+                                "longitude": 72.55740767
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.00830361,
+                                "longitude": 72.54038732
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.08832243,
+                                "longitude": 72.54926646
+                            }
+                        }
+                    }
+                ]
+            },
+            "apiKey_masked": "AIzaSyAo..."
+        }
+    },
+    {
+        "time": "2026-08-07 12:31:27",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387167,
+            "longitude": 72.58777,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:27:42",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.03876,
+                "lng": 72.587795,
+                "speed": 0,
+                "eta_minutes": 73,
+                "remaining_km": "27.05",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:27:42",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.03876,
+            "longitude": 72.587795,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:25:57",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387617,
+                "lng": 72.5877417,
+                "speed": 0,
+                "eta_minutes": 73,
+                "remaining_km": "27.05",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:25:57",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387617,
+            "longitude": 72.5877417,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:24:37",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387267,
+                "lng": 72.5877067,
+                "speed": 0,
+                "eta_minutes": 73,
+                "remaining_km": "27.05",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:24:37",
+        "type": "GOOGLE_API_RESPONSE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "campus_eta_minutes": 73,
+            "campus_remaining_km": 27.05,
+            "legs_parsed": 4
+        }
+    },
+    {
+        "time": "2026-08-07 12:24:37",
+        "type": "GOOGLE_API_CALL",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "trigger_reason": "Time interval >= 5 minutes (339 seconds elapsed)",
+            "origin": "23.0387267, 72.5877067",
+            "destination": "23.11871480381384, 72.56136559295895",
+            "intermediates_count": 3,
+            "payload": {
+                "origin": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.0387267,
+                            "longitude": 72.5877067
+                        }
+                    }
+                },
+                "destination": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.11871480381384,
+                            "longitude": 72.56136559295895
+                        }
+                    }
+                },
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE",
+                "intermediates": [
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.01587167,
+                                "longitude": 72.55740767
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.00830361,
+                                "longitude": 72.54038732
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.08832243,
+                                "longitude": 72.54926646
+                            }
+                        }
+                    }
+                ]
+            },
+            "apiKey_masked": "AIzaSyAo..."
+        }
+    },
+    {
+        "time": "2026-08-07 12:24:37",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387267,
+            "longitude": 72.5877067,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:23:02",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387567,
+                "lng": 72.587665,
+                "speed": 0,
+                "eta_minutes": 71,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:23:02",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387567,
+            "longitude": 72.587665,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:21:12",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387883,
+                "lng": 72.58771,
+                "speed": 0,
+                "eta_minutes": 71,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:21:12",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387883,
+            "longitude": 72.58771,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:20:47",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387683,
+                "lng": 72.587645,
+                "speed": 0,
+                "eta_minutes": 71,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:20:47",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387683,
+            "longitude": 72.587645,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:19:12",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.03873,
+                "lng": 72.5876717,
+                "speed": 0,
+                "eta_minutes": 71,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:19:12",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.03873,
+            "longitude": 72.5876717,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:18:58",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.038715,
+                "lng": 72.5876183,
+                "speed": 0,
+                "eta_minutes": 71,
+                "remaining_km": "26.73",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:18:58",
+        "type": "GOOGLE_API_RESPONSE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "campus_eta_minutes": 71,
+            "campus_remaining_km": 26.73,
+            "legs_parsed": 4
+        }
+    },
+    {
+        "time": "2026-08-07 12:18:58",
+        "type": "GOOGLE_API_CALL",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "trigger_reason": "Time interval >= 5 minutes (962 seconds elapsed)",
+            "origin": "23.038715, 72.5876183",
+            "destination": "23.11871480381384, 72.56136559295895",
+            "intermediates_count": 3,
+            "payload": {
+                "origin": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.038715,
+                            "longitude": 72.5876183
+                        }
+                    }
+                },
+                "destination": {
+                    "location": {
+                        "latLng": {
+                            "latitude": 23.11871480381384,
+                            "longitude": 72.56136559295895
+                        }
+                    }
+                },
+                "travelMode": "DRIVE",
+                "routingPreference": "TRAFFIC_AWARE",
+                "intermediates": [
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.01587167,
+                                "longitude": 72.55740767
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.00830361,
+                                "longitude": 72.54038732
+                            }
+                        }
+                    },
+                    {
+                        "location": {
+                            "latLng": {
+                                "latitude": 23.08832243,
+                                "longitude": 72.54926646
+                            }
+                        }
+                    }
+                ]
+            },
+            "apiKey_masked": "AIzaSyAo..."
+        }
+    },
+    {
+        "time": "2026-08-07 12:18:58",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.038715,
+            "longitude": 72.5876183,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:18:12",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.038745,
+                "lng": 72.5875783,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:18:12",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:18:12",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.038745,
+            "longitude": 72.5875783,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:17:47",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387933,
+                "lng": 72.5875783,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:17:47",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:17:47",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387933,
+            "longitude": 72.5875783,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:16:52",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387883,
+                "lng": 72.587635,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:16:52",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:16:52",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387883,
+            "longitude": 72.587635,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:16:01",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0390434,
+                "lng": 72.5877057,
+                "speed": 3.80153603553772,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:16:01",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:16:01",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0390434,
+            "longitude": 72.5877057,
+            "speed": 3.80153603553772
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:57",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0388696,
+                "lng": 72.5876332,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:57",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:57",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0388696,
+            "longitude": 72.5876332,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:52",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0390467,
+                "lng": 72.5877033,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "completed"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:52",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0390467,
+            "longitude": 72.5877033,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:46",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.039095,
+                "lng": 72.5877167,
+                "speed": 1.22298002243042,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "completed"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:46",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.039095,
+            "longitude": 72.5877167,
+            "speed": 1.22298002243042
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:39",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0387124,
+                "lng": 72.5875559,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "completed"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:15:39",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0387124,
+            "longitude": 72.5875559,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:11:16",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.038595,
+                "lng": 72.587555,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:11:16",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:11:16",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.038595,
+            "longitude": 72.587555,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:51",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0385467,
+                "lng": 72.58756,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:51",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:51",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0385467,
+            "longitude": 72.58756,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:33",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386183,
+                "lng": 72.5875718,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:33",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:33",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386183,
+            "longitude": 72.5875718,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:25",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0385583,
+                "lng": 72.5875317,
+                "speed": 0.044472001120448114,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:25",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:25",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0385583,
+            "longitude": 72.5875317,
+            "speed": 0.044472001120448114
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:17",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386967,
+                "lng": 72.5875723,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:17",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:17",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386967,
+            "longitude": 72.5875723,
+            "speed": 0
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:15",
+        "type": "WEBSOCKET_BROADCAST",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "payload": {
+                "event": "gps_update",
+                "route_id": 7,
+                "lat": 23.0386967,
+                "lng": 72.5875723,
+                "speed": 0,
+                "eta_minutes": 13,
+                "remaining_km": "4.26",
+                "status": "en_route"
+            },
+            "status": "Success"
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:15",
+        "type": "GOOGLE_API_ERROR",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "error": "Google Maps API Key not configured in Settings table (google_maps_api_key)."
+        }
+    },
+    {
+        "time": "2026-08-07 12:10:15",
+        "type": "GPS_UPDATE",
+        "driver_id": 7,
+        "driver_name": "test driver",
+        "details": {
+            "latitude": 23.0386967,
+            "longitude": 72.5875723,
+            "speed": 0
+        }
+    }
+]

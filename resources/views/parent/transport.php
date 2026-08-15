@@ -44,8 +44,12 @@
             <?php else: ?>
                 <h4 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Estimated Arrival (ETA)</h4>
             <?php endif; ?>
-            <div class="text-4xl font-black text-indigo-600 dark:text-indigo-400 my-2" id="live-eta-text">-- min</div>
-            <p class="text-xs text-slate-600 dark:text-slate-300">Distance: <span id="live-distance-text">-- km</span> | Speed: <span id="live-speed-text"><?= round($transport['current_speed'] ?? 0) ?> km/h</span></p>
+            <?php 
+            $initialEta = $isPickedUp ? ($transport['eta_minutes'] ?? '--') : ($transport['student_eta'] ?? '--');
+            $initialKm = $isPickedUp ? ($transport['remaining_km'] ?? '--') : ($transport['student_km'] ?? '--');
+            ?>
+            <div class="text-4xl font-black text-indigo-600 dark:text-indigo-400 my-2" id="live-eta-text"><?= $initialEta ?> min</div>
+            <p class="text-xs text-slate-600 dark:text-slate-300">Distance: <span id="live-distance-text"><?= $initialKm ?> km</span> | Speed: <span id="live-speed-text"><?= round($transport['current_speed'] ?? 0) ?> km/h</span></p>
         </div>
     </div>
 
@@ -126,7 +130,13 @@ document.addEventListener("DOMContentLoaded", function() {
         calculateETA(currentLat, currentLng, targetLat, targetLng);
     }
 
-    async function calculateETA(lat1, lng1, lat2, lng2) {
+    let lastEtaCall = 0;
+    async function calculateETA(lat1, lng1, lat2, lng2, force = false) {
+        const now = Date.now();
+        if (!force && now - lastEtaCall < 5000) {
+            return;
+        }
+        lastEtaCall = now;
         try {
             const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`;
             const res = await fetch(osrmUrl);
@@ -134,11 +144,6 @@ document.addEventListener("DOMContentLoaded", function() {
             
             if (data.routes && data.routes.length > 0) {
                 const route = data.routes[0];
-                const durationMins = Math.ceil(route.duration / 60);
-                const distanceKm = (route.distance / 1000).toFixed(1);
-                
-                document.getElementById('live-eta-text').innerText = durationMins + ' min';
-                document.getElementById('live-distance-text').innerText = distanceKm + ' km';
                 
                 if (routingLayer) map.removeLayer(routingLayer);
                 
@@ -152,41 +157,73 @@ document.addEventListener("DOMContentLoaded", function() {
             console.error("OSRM Error", e);
         }
     }
+
+    let lastFetchCall = 0;
+    async function fetchLiveEta() {
+        const now = Date.now();
+        if (now - lastFetchCall < 8000) { // Limit DB fetches to once every 8 seconds
+            return;
+        }
+        lastFetchCall = now;
+        try {
+            const res = await fetch('<?= url("parent/students/{$active_student['id']}/live-eta") ?>');
+            const data = await res.json();
+            if (data.success) {
+                if (data.eta_minutes !== null) {
+                    document.getElementById('live-eta-text').innerText = data.eta_minutes + ' min';
+                }
+                if (data.remaining_km !== null) {
+                    document.getElementById('live-distance-text').innerText = data.remaining_km + ' km';
+                }
+                document.getElementById('live-speed-text').innerText = Math.round(data.speed) + ' km/h';
+            }
+        } catch (e) {
+            console.error("Fetch ETA Error", e);
+        }
+    }
     <?php endif; ?>
 
     // Start Polling
-    setInterval(async () => {
+    // Start WebSocket
+    const wsUrl = 'ws://' + window.location.hostname + ':8080';
+    const ws = new WebSocket(wsUrl);
+    
+    ws.onmessage = (event) => {
         try {
-            const res = await fetch('<?= url("transport/live-data") ?>', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            const data = await res.json();
-            if (data.success && data.routes) {
-                const route = data.routes.find(r => r.id === routeId);
-                if (route) {
-                    const isNowActive = route.status === 'en_route';
-                    const wasActive = <?= $isEnRoute ? 'true' : 'false' ?>;
-                    
-                    if (isNowActive !== wasActive) {
-                        window.location.reload();
-                        return;
-                    }
-
-                    <?php if ($isEnRoute): ?>
-                    currentLat = route.lat;
-                    currentLng = route.lng;
-                    
-                    marker.setLatLng([currentLat, currentLng]);
-                    document.getElementById('live-speed-text').innerText = Math.round(route.speed) + ' km/h';
-                    
-                    if (targetLat && targetLng) {
-                        calculateETA(currentLat, currentLng, targetLat, targetLng);
-                    } else {
-                        map.panTo([currentLat, currentLng]);
-                    }
-                    <?php endif; ?>
+            const data = JSON.parse(event.data);
+            if (data.event === 'gps_update' && data.route_id == routeId) {
+                const isNowActive = data.status === 'en_route';
+                const wasActive = <?= $isEnRoute ? 'true' : 'false' ?>;
+                
+                if (isNowActive !== wasActive) {
+                    window.location.reload();
+                    return;
                 }
+
+                <?php if ($isEnRoute): ?>
+                currentLat = data.lat;
+                currentLng = data.lng;
+                
+                marker.setLatLng([currentLat, currentLng]);
+                
+                // Fetch the ultra-accurate Google Routes API calculations from the backend
+                fetchLiveEta();
+                
+                // Recalculate OSRM geometry path
+                if (targetLat && targetLng) {
+                    calculateETA(currentLat, currentLng, targetLat, targetLng);
+                }
+                
+                map.panTo([currentLat, currentLng], {animate: true, duration: 1.0});
+                <?php endif; ?>
             }
         } catch (e) {}
-    }, 10000); // 10 seconds to respect OSRM public API limits
+    };
+    
+    ws.onclose = () => {
+        console.log('WebSocket disconnected. Reconnecting...');
+        setTimeout(() => window.location.reload(), 5000);
+    };
 });
 </script>
 <?php endif; ?>

@@ -2,7 +2,6 @@
 $layout    = 'app';
 $pageTitle = 'Face Registration';
 $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Attendance'], ['label' => 'Face Registration']];
-ob_start();
 
 $isLoggedIn = !empty($_SESSION['face_reg_authenticated']) || !empty($_SESSION['user']);
 $adminName  = $_SESSION['face_reg_user'] ?? ($_SESSION['user']['name'] ?? '');
@@ -342,9 +341,9 @@ const ANGLES = [
     { id:'down',  label:'Down',   icon:'⬇️',  hint:'Tilt your chin slightly downward',     cdCount:2 },
 ];
 
-const API_REG  = '/psnf/public/attendance/api.php?endpoint=/api/register-face';
-const API_LIST = '/psnf/public/attendance/api.php?endpoint=/api/employees/list';  // registered faces list
-const API_DEL  = '/psnf/public/attendance/api.php?endpoint=/api/employees/delete';
+const API_REG  = '<?= url('attendance/api.php?endpoint=/api/register-face') ?>';
+const API_LIST = '<?= url('attendance/api.php?endpoint=/api/employees/list') ?>';  // registered faces list
+const API_DEL  = '<?= url('attendance/api.php?endpoint=/api/employees/delete') ?>';
 
 const vid    = document.getElementById('fregVideo');
 const ovl    = document.getElementById('fregOverlay');
@@ -441,7 +440,7 @@ let selUserId  = null;
 async function loadUsers() {
     const ul = document.getElementById('userList');
     try {
-        const r = await fetch('/psnf/public/attendance/api.php?endpoint=/api/users/list');
+        const r = await fetch('<?= url('attendance/api.php?endpoint=/api/users/list') ?>');
         const d = await r.json();
         allUsers = (d && d.data) ? d.data : [];
         renderUsers(allUsers);
@@ -658,7 +657,7 @@ async function detectAndWait(W, H, cx, cy, rx, ry) {
     const base64Img = capCvs.toDataURL('image/jpeg', 0.6);
 
     try {
-        const res = await fetch('/psnf/public/attendance/api.php?endpoint=/api/detect-frame', {
+        const res = await fetch('<?= url('attendance/api.php?endpoint=/api/detect-frame') ?>', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({image_base64: base64Img.split(',')[1]})
@@ -903,7 +902,7 @@ async function loadEmps() {
 let embCounts = {};
 async function loadEmpEmbCounts() {
     try {
-        const r = await fetch('/psnf/public/attendance/api.php?endpoint=/api/employees/list');
+        const r = await fetch('<?= url('attendance/api.php?endpoint=/api/employees/list') ?>');
         const d = await r.json();
         // embedding_count comes from the API if available
         if (d && d.data) {
@@ -918,9 +917,11 @@ function renderEmps(list) {
     badge.textContent = list.length + ' registered';
     if (!list.length) { body.innerHTML = '<tr><td colspan="6" class="py-3 text-center text-slate-500 text-xs">No registered employees.</td></tr>'; return; }
     body.innerHTML = '';
+    const uploadsBase = '<?= url('attendance/api.php?endpoint=/uploads/') ?>';
     list.forEach((e,i) => {
+        const photoUrl = e.image_path ? uploadsBase + e.image_path.replace(/^uploads\//, '') : '';
         const photo = e.image_path
-            ? `<img src="/psnf/backend/${e.image_path}" class="reg-emp-photo" alt="Face">`
+            ? `<img src="${photoUrl}" class="reg-emp-photo" alt="Face">`
             : `<div class="reg-emp-photo bg-slate-800 flex items-center justify-center text-slate-500">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                </div>`;
@@ -966,6 +967,4 @@ loadEmps();
 })();
 </script>
 
-<?php
-$content = ob_get_clean();
-?>
+

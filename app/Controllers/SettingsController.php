@@ -120,7 +120,8 @@ class SettingsController extends Controller
             'portal_hide_exams', 'portal_allow_payments',
             'hr_leave_quota', 'hr_payroll_date',
             'transport_gps_interval', 'transport_delay_threshold',
-            'security_password_policy', 'security_timeout'
+            'security_password_policy', 'security_timeout',
+            'google_maps_api_key'
         ];
 
         foreach ($sysKeys as $key) {

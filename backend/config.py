@@ -20,7 +20,42 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
-        return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}?charset=utf8mb4"
+        # Load database credentials directly from PHP config/database.php if it exists
+        import re
+        import urllib.parse
+        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "database.php")
+        
+        db_host = self.DB_HOST
+        db_port = self.DB_PORT
+        db_user = self.DB_USER
+        db_pass = self.DB_PASSWORD
+        db_name = self.DB_NAME
+        
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                
+                # Extract string values
+                matches = re.findall(r"['\"](\w+)['\"]\s*=>\s*['\"](.*?)['\"]", content)
+                for key, val in matches:
+                    if key == "host": db_host = val
+                    elif key == "username": db_user = val
+                    elif key == "password": db_pass = val
+                    elif key == "dbname": db_name = val
+                
+                # Extract numeric values
+                num_matches = re.findall(r"['\"](\w+)['\"]\s*=>\s*(\d+)", content)
+                for key, val in num_matches:
+                    if key == "port": db_port = int(val)
+            except Exception as e:
+                pass
+                
+        # URL-encode the username and password to handle special characters (e.g. '@' or ':') safely in SQLAlchemy URLs
+        db_user_encoded = urllib.parse.quote_plus(db_user)
+        db_pass_encoded = urllib.parse.quote_plus(db_pass)
+        
+        return f"mysql+pymysql://{db_user_encoded}:{db_pass_encoded}@{db_host}:{db_port}/{db_name}?charset=utf8mb4"
 
     # AI Recognition & Verification Settings
     SIMILARITY_THRESHOLD: float = float(os.getenv("SIMILARITY_THRESHOLD", "0.55"))  # Standard Sweet Spot (0.50 - 0.60)
