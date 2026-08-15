@@ -17,11 +17,20 @@
         </div>
         <?php else: ?>
         <?php foreach ($announcements as $ann): ?>
-        <div class="rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/20 p-6 space-y-3 hover:border-slate-300 dark:hover:border-slate-800 transition-colors shadow-sm">
+        <div class="rounded-2xl border <?php if (($ann['priority'] ?? 'normal') === 'critical'): ?>border-red-300 dark:border-red-800/40 bg-red-50/50 dark:bg-red-950/20<?php elseif (($ann['priority'] ?? 'normal') === 'urgent'): ?>border-amber-300 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20<?php else: ?>border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/20<?php endif; ?> p-6 space-y-3 hover:border-slate-300 dark:hover:border-slate-800 transition-colors shadow-sm">
             <div class="space-y-1">
-                <span class="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/10 text-brand-655 dark:text-brand-400 text-[9px] font-bold uppercase tracking-wider">
-                    Notice
-                </span>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <?php if (($ann['priority'] ?? 'normal') === 'critical'): ?>
+                        <span class="px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-[9px] font-bold uppercase tracking-wider">Critical</span>
+                    <?php elseif (($ann['priority'] ?? 'normal') === 'urgent'): ?>
+                        <span class="px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] font-bold uppercase tracking-wider">Urgent</span>
+                    <?php else: ?>
+                        <span class="px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/10 text-brand-655 dark:text-brand-400 text-[9px] font-bold uppercase tracking-wider">Notice</span>
+                    <?php endif; ?>
+                    <?php if (!empty($ann['class_name'])): ?>
+                        <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-[9px] font-bold uppercase tracking-wider"><?= e($ann['class_name']) ?></span>
+                    <?php endif; ?>
+                </div>
                 <h4 class="text-base font-bold text-slate-800 dark:text-white mt-1"><?= e($ann['title']) ?></h4>
                 <span class="block text-[10px] text-slate-500 dark:text-slate-400 font-semibold"><?= date('l, d F Y — h:i A', strtotime($ann['published_at'])) ?></span>
             </div>

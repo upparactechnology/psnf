@@ -179,9 +179,16 @@ class ParentPortalController extends Controller
             [$student['id']]
         );
 
-        // 3. Fetch announcements (last 3)
+        // 3. Fetch announcements (last 3, sorted by priority)
         $announcements = $this->db()->select(
-            "SELECT * FROM announcements WHERE target_audience IN ('all', 'parents') ORDER BY published_at DESC LIMIT 3"
+            "SELECT * FROM announcements 
+             WHERE target_audience IN ('all', 'parents')
+               AND (class_name IS NULL OR class_name = ?)
+             ORDER BY 
+               CASE priority WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END,
+               published_at DESC 
+             LIMIT 3",
+            [$student['class']]
         );
 
         // 4. Fetch pending homeworks
@@ -1125,11 +1132,28 @@ class ParentPortalController extends Controller
     public function announcements(): string
     {
         $context = $this->getContext();
-        $announcements = $this->db()->select(
-            "SELECT * FROM announcements
-             WHERE target_audience IN ('all', 'parents')
-             ORDER BY published_at DESC"
-        );
+        $student = $context['active_student'];
+
+        // Fetch announcements: all-class ones + student's class-specific ones
+        if ($student && !empty($student['class'])) {
+            $announcements = $this->db()->select(
+                "SELECT * FROM announcements
+                 WHERE target_audience IN ('all', 'parents')
+                   AND (class_name IS NULL OR class_name = ?)
+                 ORDER BY 
+                   CASE priority WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END,
+                   published_at DESC",
+                [$student['class']]
+            );
+        } else {
+            $announcements = $this->db()->select(
+                "SELECT * FROM announcements
+                 WHERE target_audience IN ('all', 'parents')
+                 ORDER BY 
+                   CASE priority WHEN 'critical' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END,
+                   published_at DESC"
+            );
+        }
 
         return View::render('parent/announcements', array_merge($context, [
             'title'         => 'School Announcements',

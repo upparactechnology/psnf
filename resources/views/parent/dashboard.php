@@ -207,7 +207,17 @@
                     <p class="text-xs text-slate-500 text-center py-4">No recent announcements.</p>
                     <?php else: ?>
                     <?php foreach ($announcements as $ann): ?>
-                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/20 hover:border-slate-300 dark:hover:border-slate-700 transition-colors space-y-1">
+                    <div class="p-3.5 rounded-xl border <?php if (($ann['priority'] ?? 'normal') === 'critical'): ?>border-red-300 dark:border-red-800/40 bg-red-50/50 dark:bg-red-950/20<?php elseif (($ann['priority'] ?? 'normal') === 'urgent'): ?>border-amber-300 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20<?php else: ?>border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/20<?php endif; ?> hover:border-slate-300 dark:hover:border-slate-700 transition-colors space-y-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <?php if (($ann['priority'] ?? 'normal') === 'critical'): ?>
+                                <span class="px-1.5 py-0.5 rounded bg-red-500/10 text-red-600 dark:text-red-400 text-[8px] font-bold uppercase">Critical</span>
+                            <?php elseif (($ann['priority'] ?? 'normal') === 'urgent'): ?>
+                                <span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[8px] font-bold uppercase">Urgent</span>
+                            <?php endif; ?>
+                            <?php if (!empty($ann['class_name'])): ?>
+                                <span class="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-[8px] font-bold uppercase"><?= e($ann['class_name']) ?></span>
+                            <?php endif; ?>
+                        </div>
                         <h4 class="text-xs font-bold text-slate-800 dark:text-white leading-tight"><?= e($ann['title']) ?></h4>
                         <p class="text-[10px] text-slate-450 dark:text-slate-500"><?= date('d M Y, h:i A', strtotime($ann['published_at'])) ?></p>
                         <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 pt-1.5"><?= e($ann['content']) ?></p>

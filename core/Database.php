@@ -126,5 +126,7 @@ class Database
         return ($result['cnt'] ?? 0) > 0;
     }
 
+    public function getLastInsertId(): int|string { return self::$pdo->lastInsertId(); }
+
     public function getQueryCount(): int { return $this->queryCount; }
 }

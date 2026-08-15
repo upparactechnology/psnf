@@ -135,8 +135,8 @@
     "semantic_hash": ""
   },
   "app/Controllers/StaffWorkspaceController.php": {
-    "mtime": 1786776347.7791874,
-    "ast_hash": "898838ed629bab21de7e029d11f84924",
+    "mtime": 1786781020.262459,
+    "ast_hash": "909143271a3c4a2c4065c08eab1438f5",
     "semantic_hash": ""
   },
   "app/Controllers/StudentController.php": {
@@ -8170,8 +8170,8 @@
     "semantic_hash": ""
   },
   "resources/views/dashboard/index.php": {
-    "mtime": 1786771921.8858619,
-    "ast_hash": "86d692120a82898d6a22bf7d5b67bc56",
+    "mtime": 1786780944.4576437,
+    "ast_hash": "2aca2fabe85312d19242a05d4059d99d",
     "semantic_hash": ""
   },
   "resources/views/documents/dashboard.php": {
@@ -8245,8 +8245,8 @@
     "semantic_hash": ""
   },
   "resources/views/layouts/app.php": {
-    "mtime": 1786771921.8908904,
-    "ast_hash": "a950f3ff5b0d10cf1c5113052dcf3741",
+    "mtime": 1786780935.129437,
+    "ast_hash": "f772e2140835c3704ceb328e37435050",
     "semantic_hash": ""
   },
   "resources/views/layouts/auth.php": {
@@ -8390,8 +8390,8 @@
     "semantic_hash": ""
   },
   "resources/views/staff/attendance.php": {
-    "mtime": 1785325059.3040404,
-    "ast_hash": "d1e40d47af749574bb562916606dc559",
+    "mtime": 1786781033.00717,
+    "ast_hash": "8f2a5dfd792cd030b63d206350a752fd",
     "semantic_hash": ""
   },
   "resources/views/staff/attendance_calendar.php": {
@@ -8590,8 +8590,8 @@
     "semantic_hash": ""
   },
   "routes/web.php": {
-    "mtime": 1786084997.6915295,
-    "ast_hash": "d7c2d6eaca2a33464f9292768960242b",
+    "mtime": 1786780992.180282,
+    "ast_hash": "cdc442bc0203c21c48da571d42a5bd1e",
     "semantic_hash": ""
   },
   "staff_app/android/app/build.gradle": {
@@ -11772,6 +11772,51 @@
   "attendance_system_guide.md": {
     "mtime": 1786776363.6900463,
     "ast_hash": "b288c1eea4f696a23f8c4efae41f4b4d",
+    "semantic_hash": ""
+  },
+  "app/Controllers/PayrollController.php": {
+    "mtime": 1786781337.511098,
+    "ast_hash": "18bc60226bb45ad54fca00b3e2380218",
+    "semantic_hash": ""
+  },
+  "database/migrations/043_payroll_attendance_improvements.php": {
+    "mtime": 1786780828.7956467,
+    "ast_hash": "0e6c9a28472dbb730555a3503eac000b",
+    "semantic_hash": ""
+  },
+  "resources/views/payroll/holidays.php": {
+    "mtime": 1786781051.7907052,
+    "ast_hash": "ce592fdd8365674def53b989009a7755",
+    "semantic_hash": ""
+  },
+  "resources/views/payroll/payroll_details.php": {
+    "mtime": 1786781068.6859179,
+    "ast_hash": "1c4097f128ab6b3258fca7eb4c19ed30",
+    "semantic_hash": ""
+  },
+  "resources/views/payroll/payslip.php": {
+    "mtime": 1786781076.9787626,
+    "ast_hash": "84a499ccbc91fa3b82943ecbf023640b",
+    "semantic_hash": ""
+  },
+  "resources/views/payroll/runs.php": {
+    "mtime": 1786781045.4788048,
+    "ast_hash": "f85bf15be48577213cbe49e0a0a25b88",
+    "semantic_hash": ""
+  },
+  "resources/views/payroll/settings.php": {
+    "mtime": 1786781057.7826521,
+    "ast_hash": "6c4e00fe6202e3827f5dcff6c4eabecf",
+    "semantic_hash": ""
+  },
+  "implement_payroll_attendnace_page.md": {
+    "mtime": 1786780199.151001,
+    "ast_hash": "ab18e2a2e59eda8d765bbf1b4d4f06ab",
+    "semantic_hash": ""
+  },
+  "payroll_system_guide.md": {
+    "mtime": 1786776501.385772,
+    "ast_hash": "ca0a48fcc832e86786e4e049f6db189d",
     "semantic_hash": ""
   }
 }

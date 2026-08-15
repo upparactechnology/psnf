@@ -29,8 +29,14 @@ class AnnouncementController extends Controller
             ORDER BY a.published_at DESC
         ", [$tenantId]);
 
+        $classes = $this->db()->select(
+            "SELECT DISTINCT name FROM classes WHERE tenant_id = ? ORDER BY name ASC",
+            [$tenantId]
+        );
+
         return View::render('academics/announcements/index', [
             'announcements' => $announcements,
+            'classes' => array_column($classes, 'name'),
             'title' => 'Manage Announcements',
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
@@ -47,6 +53,8 @@ class AnnouncementController extends Controller
         $title = trim($body['title'] ?? '');
         $content = trim($body['content'] ?? '');
         $targetAudience = $body['target_audience'] ?? 'parents';
+        $className = !empty($body['class_name']) ? $body['class_name'] : null;
+        $priority = $body['priority'] ?? 'normal';
 
         if (empty($title) || empty($content)) {
             Session::flash('error', 'Title and content are required.');
@@ -62,6 +70,8 @@ class AnnouncementController extends Controller
                 'title' => $title,
                 'content' => $content,
                 'target_audience' => $targetAudience,
+                'class_name' => $className,
+                'priority' => $priority,
                 'created_by' => auth_id(),
                 'published_at' => date('Y-m-d H:i:s'),
             ]);

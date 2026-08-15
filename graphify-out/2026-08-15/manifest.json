@@ -135,8 +135,8 @@
     "semantic_hash": ""
   },
   "app/Controllers/StaffWorkspaceController.php": {
-    "mtime": 1785406207.1370165,
-    "ast_hash": "4364c0301dc17cf5492438e7d5df6daa",
+    "mtime": 1786776347.7791874,
+    "ast_hash": "898838ed629bab21de7e029d11f84924",
     "semantic_hash": ""
   },
   "app/Controllers/StudentController.php": {
@@ -11767,6 +11767,11 @@
   "storage/uploads/documents/c909ec22355f22a43678d5e0e51d211d.png": {
     "mtime": 1786772334.6421742,
     "ast_hash": "7491569f5dd4a9cd6b02f368fbf66a57",
+    "semantic_hash": ""
+  },
+  "attendance_system_guide.md": {
+    "mtime": 1786776363.6900463,
+    "ast_hash": "b288c1eea4f696a23f8c4efae41f4b4d",
     "semantic_hash": ""
   }
 }

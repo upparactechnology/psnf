@@ -16,7 +16,7 @@ class PayrollController extends Controller
         return Application::$app->db;
     }
 
-    private function authId(): int
+    protected function authId(): int
     {
         return (int) (Session::get('user')['id'] ?? 1);
     }
@@ -793,5 +793,189 @@ class PayrollController extends Controller
             'new_value' => $newVal,
             'reason'    => $reason
         ]);
+    }
+
+    public function attendance(): string
+    {
+        $db = $this->db();
+        $date = $this->request->get('date', date('Y-m-d'));
+
+        // 1. Fetch Face Recognition Kiosk Attendance logs for target date
+        $faceLogsRaw = $db->select("
+            SELECT 
+                a.id,
+                COALESCE(a.user_id, a.employee_id) as employee_id,
+                a.check_in,
+                a.attendance_date,
+                a.confidence,
+                a.image_path,
+                a.late_exempted,
+                a.late_exemption_reason,
+                COALESCE(u.name, e.first_name, e.emp_code, 'Staff Member') as first_name,
+                COALESCE(e.last_name, '') as last_name,
+                COALESCE(u.employee_id, e.emp_code, CONCAT('EMP-', COALESCE(a.user_id, a.employee_id))) as emp_code,
+                COALESCE(u.designation, d.name, 'General Staff') as department_name,
+                e.min_clock_in
+            FROM attendance a
+            LEFT JOIN users u ON a.user_id = u.id
+            LEFT JOIN employees e ON (a.employee_id = e.id OR e.user_id = a.user_id)
+            LEFT JOIN departments d ON e.department_id = d.id
+            WHERE (DATE(a.check_in) = ? OR a.attendance_date = ?)
+            ORDER BY a.check_in ASC
+        ", [$date, $date]);
+
+        $grouped = [];
+        foreach ($faceLogsRaw as $log) {
+            $empId = $log['employee_id'];
+            if (!isset($grouped[$empId])) {
+                $grouped[$empId] = [
+                    'id' => $log['id'],
+                    'employee_id' => $empId,
+                    'first_name' => $log['first_name'],
+                    'last_name' => $log['last_name'],
+                    'emp_code' => $log['emp_code'],
+                    'department_name' => $log['department_name'],
+                    'min_check_in' => $log['check_in'],
+                    'max_check_in' => $log['check_in'],
+                    'confidence' => $log['confidence'],
+                    'image_path' => $log['image_path'],
+                    'scan_count' => 1,
+                    'min_clock_in' => $log['min_clock_in'],
+                    'late_exempted' => $log['late_exempted'],
+                    'late_exemption_reason' => $log['late_exemption_reason']
+                ];
+            } else {
+                $grouped[$empId]['max_check_in'] = $log['check_in'];
+                $grouped[$empId]['scan_count']++;
+            }
+        }
+
+        $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
+        $globalShiftStart = $shift['start_time'] ?? '09:00:00';
+        $globalGrace = (int)($shift['grace_minutes'] ?? 15);
+
+        $faceLogs = [];
+        foreach ($grouped as $empId => $data) {
+            $clockIn = date('h:i A', strtotime($data['min_check_in']));
+            $clockOut = '--:--';
+            $workingHours = '0 hrs 0 mins';
+            
+            $timeOnly = date('H:i:s', strtotime($data['min_check_in']));
+            $status = 'present';
+            
+            $empShiftStart = !empty($data['min_clock_in']) ? $data['min_clock_in'] : $globalShiftStart;
+            $grace = !empty($data['min_clock_in']) ? 10 : $globalGrace;
+            $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
+            $halfDayTime = !empty($data['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
+            
+            if ($timeOnly > $halfDayTime) {
+                $status = 'half_day';
+            } elseif ($timeOnly > $latePenaltyTime) {
+                $status = 'late';
+            }
+            
+            if ($data['scan_count'] > 1) {
+                $clockOut = date('h:i A', strtotime($data['max_check_in']));
+                $diff = strtotime($data['max_check_in']) - strtotime($data['min_check_in']);
+                $hours = floor($diff / 3600);
+                $mins = floor(($diff % 3600) / 60);
+                $workingHours = "{$hours} hrs {$mins} mins";
+            }
+
+            $faceLogs[] = [
+                'id' => $data['id'],
+                'employee_id' => $empId,
+                'clock_in' => $clockIn,
+                'clock_out' => $clockOut,
+                'working_hours' => $workingHours,
+                'status' => $status,
+                'confidence' => $data['confidence'],
+                'image_path' => $data['image_path'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'emp_code' => $data['emp_code'],
+                'department_name' => $data['department_name'],
+                'source' => 'Face Recognition Kiosk',
+                'late_exempted' => $data['late_exempted'],
+                'late_exemption_reason' => $data['late_exemption_reason']
+            ];
+        }
+
+        // 2. Fetch manual staff attendance logs
+        $manualLogs = $db->select("
+            SELECT 
+                l.id,
+                l.employee_id,
+                l.clock_in,
+                l.clock_out,
+                l.working_hours,
+                l.status,
+                l.late_exempted,
+                l.late_exemption_reason,
+                1.0 as confidence,
+                '' as image_path,
+                e.first_name,
+                e.last_name,
+                e.emp_code,
+                d.name as department_name,
+                'Manual Entry' as source
+            FROM staff_attendance_logs l
+            JOIN employees e ON l.employee_id = e.id
+            LEFT JOIN departments d ON e.department_id = d.id
+            WHERE l.date = ?
+            ORDER BY l.id DESC
+        ", [$date]);
+
+        foreach ($manualLogs as &$mLog) {
+            if (!empty($mLog['clock_in'])) {
+                $mLog['clock_in'] = date('h:i A', strtotime($mLog['clock_in']));
+            }
+            if (!empty($mLog['clock_out']) && $mLog['clock_out'] !== '--:--') {
+                $mLog['clock_out'] = date('h:i A', strtotime($mLog['clock_out']));
+            }
+        }
+
+        $logs = array_merge($faceLogs, $manualLogs);
+        $employees = $db->select("SELECT * FROM employees WHERE status = 'active'");
+
+        return $this->view('payroll/attendance', compact('logs', 'date', 'employees'));
+    }
+
+    public function storeAttendance(): string
+    {
+        $db = $this->db();
+        $employeeId = (int) $this->request->input('employee_id');
+        $date       = $this->request->input('date', date('Y-m-d'));
+        $clockIn    = $this->request->input('clock_in', '09:00');
+        $clockOut   = $this->request->input('clock_out', '17:00');
+        $status     = $this->request->input('status', 'present');
+
+        if ($employeeId > 0) {
+            $db->query("
+                INSERT INTO staff_attendance_logs (tenant_id, employee_id, date, clock_in, clock_out, working_hours, status)
+                VALUES (1, ?, ?, ?, ?, 8.0, ?)
+                ON DUPLICATE KEY UPDATE clock_in = VALUES(clock_in), clock_out = VALUES(clock_out), status = VALUES(status)
+            ", [$employeeId, $date, $clockIn, $clockOut, $status]);
+            
+            $insertedId = (int)$db->getLastInsertId();
+            $this->logAudit('manual_attendance_override', 'staff_attendance_logs', $insertedId ?: $employeeId, null, $status, "Manual override logged for date $date");
+            $this->markAffectedRunsOutOfSync($date);
+            Session::flash('success', "Attendance override log saved successfully.");
+        }
+        
+        return $this->redirect('/payroll/attendance?date=' . $date);
+    }
+
+    public function auditLogs(): string
+    {
+        $db = $this->db();
+        $auditLogs = $db->select("
+            SELECT al.*, u.name as user_name 
+            FROM payroll_audit_logs al
+            JOIN users u ON al.user_id = u.id
+            ORDER BY al.id DESC 
+            LIMIT 200
+        ");
+        return $this->view('payroll/audit', compact('auditLogs'));
     }
 }

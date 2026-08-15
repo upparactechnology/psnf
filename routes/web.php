@@ -76,6 +76,9 @@ $router->post('/payroll/holidays/{id}/delete',      [App\Controllers\PayrollCont
 $router->get('/payroll/settings',                   [App\Controllers\PayrollController::class, 'settings'],     ['auth', 'tenant']);
 $router->post('/payroll/settings/save',             [App\Controllers\PayrollController::class, 'saveSettings'],  ['auth', 'tenant']);
 $router->post('/payroll/attendance/exempt',         [App\Controllers\PayrollController::class, 'exemptLate'],    ['auth', 'tenant']);
+$router->get('/payroll/attendance',                 [App\Controllers\PayrollController::class, 'attendance'],   ['auth', 'tenant']);
+$router->post('/payroll/attendance',                [App\Controllers\PayrollController::class, 'storeAttendance'], ['auth', 'tenant']);
+$router->get('/payroll/audit',                      [App\Controllers\PayrollController::class, 'auditLogs'],    ['auth', 'tenant']);
 
 // Legacy Users & Roles Fallbacks
 $router->get('/users',                  [App\Controllers\StaffWorkspaceController::class, 'employees'],   ['auth', 'tenant']);

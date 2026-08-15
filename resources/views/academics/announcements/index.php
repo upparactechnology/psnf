@@ -23,7 +23,9 @@ $title = "Announcements";
                 <thead class="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/60">
                     <tr>
                         <th class="px-6 py-4">Title</th>
-                        <th class="px-6 py-4">Target Audience</th>
+                        <th class="px-6 py-4">Target</th>
+                        <th class="px-6 py-4">Class</th>
+                        <th class="px-6 py-4">Priority</th>
                         <th class="px-6 py-4">Published At</th>
                         <th class="px-6 py-4">Author</th>
                         <th class="px-6 py-4 text-right">Actions</th>
@@ -32,7 +34,7 @@ $title = "Announcements";
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-800/60">
                     <?php if (empty($announcements)): ?>
                     <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                        <td colspan="7" class="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                             No announcements found. Click "New Announcement" to create one.
                         </td>
                     </tr>
@@ -52,6 +54,22 @@ $title = "Announcements";
                                     <span class="px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg text-xs font-medium border border-amber-200 dark:border-amber-800/50">Teachers</span>
                                 <?php else: ?>
                                     <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700">Staff</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-6 py-4">
+                                <?php if (!empty($announcement['class_name'])): ?>
+                                    <span class="px-2.5 py-1 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 rounded-lg text-xs font-medium border border-cyan-200 dark:border-cyan-800/50"><?= e($announcement['class_name']) ?></span>
+                                <?php else: ?>
+                                    <span class="text-xs text-slate-400">All Classes</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-6 py-4">
+                                <?php if (($announcement['priority'] ?? 'normal') === 'critical'): ?>
+                                    <span class="px-2.5 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-xs font-bold border border-red-200 dark:border-red-800/50">Critical</span>
+                                <?php elseif (($announcement['priority'] ?? 'normal') === 'urgent'): ?>
+                                    <span class="px-2.5 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg text-xs font-semibold border border-amber-200 dark:border-amber-800/50">Urgent</span>
+                                <?php else: ?>
+                                    <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700">Normal</span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -108,6 +126,26 @@ $title = "Announcements";
                             <option value="teachers">Teachers Only</option>
                             <option value="staff">Staff Only</option>
                             <option value="all">Everyone</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Class (Optional)</label>
+                        <select name="class_name" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors">
+                            <option value="">All Classes</option>
+                            <?php foreach ($classes ?? [] as $cls): ?>
+                            <option value="<?= e($cls) ?>"><?= e($cls) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-[10px] text-slate-400 mt-1">Leave blank to send to all classes</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Priority</label>
+                        <select name="priority" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl py-2 px-3 text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors">
+                            <option value="normal">Normal</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="critical">Critical</option>
                         </select>
                     </div>
                     
