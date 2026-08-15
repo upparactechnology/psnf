@@ -10,7 +10,7 @@ $games = [
         'description' => 'Practice counting coins and bills in real-world shopping scenarios',
         'emoji'       => '🪙',
         'color'       => 'amber',
-        'url'         => '/psnf/public/game/money-counting.html',
+        'url'         => url('game/money-counting.html'),
         'tag'         => 'Math / Life Skills',
     ],
     [
@@ -18,7 +18,7 @@ $games = [
         'description' => 'Identify safe and unsafe situations to build safety awareness',
         'emoji'       => '🛡️',
         'color'       => 'red',
-        'url'         => '/psnf/public/game/safe-vs-unsafe.html',
+        'url'         => url('game/safe-vs-unsafe.html'),
         'tag'         => 'Safety Skills',
     ],
     [
@@ -26,7 +26,7 @@ $games = [
         'description' => 'Learn to recognize and understand important safety signs and symbols',
         'emoji'       => '⚠️',
         'color'       => 'orange',
-        'url'         => '/psnf/public/game/safety-signs.html',
+        'url'         => url('game/safety-signs.html'),
         'tag'         => 'Safety Awareness',
     ],
     [
@@ -34,7 +34,7 @@ $games = [
         'description' => 'Drag and drop words to build grammatically correct sentences',
         'emoji'       => '📝',
         'color'       => 'blue',
-        'url'         => '/psnf/public/game/sentence-builder.html',
+        'url'         => url('game/sentence-builder.html'),
         'tag'         => 'Language Arts',
     ],
     [
@@ -42,7 +42,7 @@ $games = [
         'description' => 'Interactive grocery shopping game to practice math and life skills',
         'emoji'       => '🛒',
         'color'       => 'emerald',
-        'url'         => '/psnf/public/game/shopping-store.html',
+        'url'         => url('game/shopping-store.html'),
         'tag'         => 'Life Skills / Math',
     ],
 ];
@@ -65,7 +65,7 @@ $colorMap = [
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Learning Games & Activities</h1>
             <p class="text-xs text-slate-500 mt-0.5">Gamified educational modules and interactive games for students with special education needs</p>
         </div>
-        <a href="/psnf/public/game/index.html" target="_blank" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-pink-600 hover:bg-pink-500 transition-all shadow-sm">🎮 Open Full Game Hub →</a>
+        <a href="<?= url('game/index.html') ?>" target="_blank" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-pink-600 hover:bg-pink-500 transition-all shadow-sm">🎮 Open Full Game Hub →</a>
     </div>
 
     <!-- Games Grid -->

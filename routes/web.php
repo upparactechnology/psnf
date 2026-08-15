@@ -63,6 +63,20 @@ $router->get('/staff/users',            [App\Controllers\StaffWorkspaceControlle
 $router->get('/staff/settings',         [App\Controllers\StaffWorkspaceController::class, 'settings'],    ['auth', 'tenant']);
 $router->post('/staff/settings',        [App\Controllers\StaffWorkspaceController::class, 'saveSettings'],['auth', 'tenant']);
 
+// ─── Payroll Management Workspace (/payroll/*) ────────────────────────────────
+$router->get('/payroll',                            [App\Controllers\PayrollController::class, 'runs'],         ['auth', 'tenant']);
+$router->get('/payroll/runs',                       [App\Controllers\PayrollController::class, 'runs'],         ['auth', 'tenant']);
+$router->post('/payroll/runs/run',                  [App\Controllers\PayrollController::class, 'runPayroll'],   ['auth', 'tenant']);
+$router->get('/payroll/runs/{id}',                  [App\Controllers\PayrollController::class, 'runDetails'],   ['auth', 'tenant']);
+$router->post('/payroll/runs/{id}/regenerate',       [App\Controllers\PayrollController::class, 'regenerate'],   ['auth', 'tenant']);
+$router->get('/payroll/runs/{id}/payslip/{empId}',  [App\Controllers\PayrollController::class, 'payslip'],   ['auth', 'tenant']);
+$router->get('/payroll/holidays',                   [App\Controllers\PayrollController::class, 'holidays'],     ['auth', 'tenant']);
+$router->post('/payroll/holidays',                  [App\Controllers\PayrollController::class, 'storeHoliday'],  ['auth', 'tenant']);
+$router->post('/payroll/holidays/{id}/delete',      [App\Controllers\PayrollController::class, 'deleteHoliday'],['auth', 'tenant']);
+$router->get('/payroll/settings',                   [App\Controllers\PayrollController::class, 'settings'],     ['auth', 'tenant']);
+$router->post('/payroll/settings/save',             [App\Controllers\PayrollController::class, 'saveSettings'],  ['auth', 'tenant']);
+$router->post('/payroll/attendance/exempt',         [App\Controllers\PayrollController::class, 'exemptLate'],    ['auth', 'tenant']);
+
 // Legacy Users & Roles Fallbacks
 $router->get('/users',                  [App\Controllers\StaffWorkspaceController::class, 'employees'],   ['auth', 'tenant']);
 $router->get('/users/attendance',       [App\Controllers\StaffWorkspaceController::class, 'attendance'],  ['auth', 'tenant']);

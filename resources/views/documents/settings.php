@@ -24,7 +24,7 @@ ob_start();
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1">
                         <label class="block text-xs font-semibold text-slate-500">Secure Storage Directory</label>
-                        <input type="text" value="C:/xampp/htdocs/psnf/storage/uploads/documents" disabled
+                        <input type="text" value="<?= e(config('app.uploads_dir') . '/documents') ?>" disabled
                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-400 rounded-xl py-2 px-3 text-xs focus:outline-none">
                     </div>
                     <div class="space-y-1">

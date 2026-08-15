@@ -457,6 +457,8 @@ if ($user) {
                 $module = 'finance';
             } elseif (str_starts_with($currentPath, '/transport')) {
                 $module = 'transport';
+            } elseif (str_starts_with($currentPath, '/payroll')) {
+                $module = 'payroll';
             } elseif (str_starts_with($currentPath, '/users') || str_starts_with($currentPath, '/staff') || str_starts_with($currentPath, '/roles') || str_starts_with($currentPath, '/attendance')) {
                 $module = 'staff';
             } elseif (str_starts_with($currentPath, '/documents')) {
@@ -482,6 +484,7 @@ if ($user) {
                     if (path.startsWith('/academic') || path.startsWith('/students') || path.startsWith('/admissions') || path.startsWith('/classes') || path.startsWith('/timetables') || path.startsWith('/exams') || path.includes('/report-card')) return 'academic';
                     if (path.startsWith('/transport')) return 'transport';
                     if (path.startsWith('/fees') || path.startsWith('/receipts') || path.startsWith('/scholarships') || path.startsWith('/certificates')) return 'finance';
+                    if (path.startsWith('/payroll')) return 'payroll';
                     if (path.startsWith('/medical')) return 'medical';
                     if (path.startsWith('/documents')) return 'documents';
                     if (path.startsWith('/users') || path.startsWith('/staff') || path.startsWith('/roles') || path.startsWith('/attendance')) return 'staff';
@@ -570,7 +573,6 @@ if ($user) {
                     <?php navLink('/attendance/face-kiosk', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>', 'Face Kiosk', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/attendance/face-register', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>', 'Face Register', $currentPath, $sidebarOpen); ?>
                     <?php navLink('/staff/leaves', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>', 'Leave Management', $currentPath, $sidebarOpen); ?>
-                    <?php navLink('/staff/payroll', $ic['fees'], 'Payroll', $currentPath, $sidebarOpen); ?>
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Security</div>
                     <?php navLink('/staff/roles', $ic['roles'], 'Roles & Permissions', $currentPath, $sidebarOpen); ?>
@@ -578,6 +580,14 @@ if ($user) {
 
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Administration</div>
                     <?php navLink('/staff/settings', $ic['settings'], 'Staff Settings', $currentPath, $sidebarOpen); ?>
+                </div>
+
+                <!-- PAYROLL MANAGEMENT WORKSPACE -->
+                <div x-show="currentModule() === 'payroll'" class="space-y-1" x-cloak>
+                    <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Payroll Management</div>
+                    <?php navLink('/payroll/runs', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>', 'Payroll Runs', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/payroll/holidays', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>', 'Holidays Calendar', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/payroll/settings', $ic['settings'], 'Payroll Settings', $currentPath, $sidebarOpen); ?>
                 </div>
 
                 <!-- DOCUMENTS WORKSPACE -->
@@ -809,7 +819,7 @@ document.body.addEventListener('htmx:afterSwap', scrollActiveSidebarIntoView);
 function updateSidebarActiveState() {
     const rawPath = window.location.pathname;
     // Normalize path by stripping base directory prefix if present (e.g. /psnf/public)
-    const basePrefix = '/psnf/public';
+    const basePrefix = '<?= rtrim(parse_url(url('/'), PHP_URL_PATH), '/') ?>';
     let currentPath = rawPath.startsWith(basePrefix) ? rawPath.substring(basePrefix.length) : rawPath;
     currentPath = currentPath.replace(/\/$/, '') || '/';
     

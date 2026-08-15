@@ -12,14 +12,23 @@ class RoleController extends Controller
     public function index(): string
     {
         $roles = Role::allWithPermissionCount();
-        return $this->view('roles/index', ['roles' => $roles]);
+        $permissions = Permission::allGroupedByModule();
+        unset($permissions['branches'], $permissions['schools'], $permissions['tenants']);
+
+        $rolesWithPerms = [];
+        foreach ($roles as $role) {
+            $rolesWithPerms[] = Role::withPermissions((int) $role['id']);
+        }
+
+        return $this->view('roles/index', [
+            'roles' => $rolesWithPerms,
+            'permissions' => $permissions
+        ]);
     }
 
     public function create(): string
     {
-        $permissions = Permission::allGroupedByModule();
-        unset($permissions['branches'], $permissions['schools'], $permissions['tenants']);
-        return $this->view('roles/create', ['permissions' => $permissions]);
+        return $this->redirect('/roles');
     }
 
     public function store(): string
@@ -37,16 +46,21 @@ class RoleController extends Controller
         }
 
         \App\Models\ActivityLog::log('role_created', auth_id(), ['role_id' => $roleId]);
+        
+        if ($this->request->wantsJson()) {
+            return $this->successResponse('Role created successfully.');
+        }
         $this->flash('success', 'Role created.');
         return $this->redirect('/roles');
     }
 
     public function edit(string $id): string
     {
-        $role        = Role::withPermissions((int) $id);
-        $permissions = Permission::allGroupedByModule();
-        unset($permissions['branches'], $permissions['schools'], $permissions['tenants']);
-        return $this->view('roles/edit', compact('role', 'permissions'));
+        if ($this->request->wantsJson()) {
+            $role = Role::withPermissions((int) $id);
+            return $this->successResponse('Role loaded.', ['role' => $role]);
+        }
+        return $this->redirect('/roles');
     }
 
     public function update(string $id): string
@@ -55,10 +69,16 @@ class RoleController extends Controller
         $permIds = $data['permissions'] ?? [];
         unset($data['permissions'], $data['_csrf'], $data['_method']);
 
-        Role::update((int) $id, $data);
+        if (!empty($data)) {
+            Role::update((int) $id, $data);
+        }
         Role::syncPermissions((int) $id, array_map('intval', $permIds));
 
         \App\Models\ActivityLog::log('role_updated', auth_id(), ['role_id' => $id]);
+
+        if ($this->request->wantsJson()) {
+            return $this->successResponse('Role updated successfully.');
+        }
         $this->flash('success', 'Role updated.');
         return $this->redirect('/roles');
     }
@@ -68,7 +88,9 @@ class RoleController extends Controller
         Role::delete((int) $id);
         \App\Models\ActivityLog::log('role_deleted', auth_id(), ['role_id' => $id]);
 
-        if ($this->request->wantsJson()) return $this->successResponse('Role deleted.');
+        if ($this->request->wantsJson()) {
+            return $this->successResponse('Role deleted successfully.');
+        }
         $this->flash('success', 'Role deleted.');
         return $this->redirect('/roles');
     }

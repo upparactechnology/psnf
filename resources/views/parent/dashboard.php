@@ -290,7 +290,7 @@
                     <h4 class="text-xs font-bold text-slate-800 dark:text-white">Interactive Learning Games</h4>
                     <p class="text-[10px] text-slate-605 dark:text-slate-400 leading-snug">Fun, accessible educational games for sentence building, money counting, and safety skills.</p>
                 </div>
-                <a href="/psnf/game/index.html"
+                <a href="<?= url('game/index.html') ?>"
                    class="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-xs font-bold text-white shadow-md transition-all whitespace-nowrap">
                     Play Games
                 </a>

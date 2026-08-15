@@ -108,7 +108,7 @@ ob_start();
         <div class="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 z-10">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white">Edit Subject</h3>
             
-            <form :action="'/psnf/public/academics/subjects/' + editId" method="POST" class="space-y-4 text-xs">
+            <form :action="'<?= url('academics/subjects') ?>/' + editId" method="POST" class="space-y-4 text-xs">
                 <?= \Core\View::csrf() ?>
                 <div>
                     <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Subject Code</label>

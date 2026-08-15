@@ -112,11 +112,11 @@ ob_start();
                                         View
                                     </a>
                                     <?php else: ?>
-                                    <a href="/psnf/storage/uploads/documents/<?= e($doc['stored_name']) ?>" target="_blank" 
+                                    <a href="<?= url('storage/uploads/documents/') ?><?= e($doc['stored_name']) ?>" target="_blank" 
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-bold text-[10px] text-slate-700 dark:text-slate-300">
                                         View
                                     </a>
-                                    <a href="/psnf/storage/uploads/documents/<?= e($doc['stored_name']) ?>" download 
+                                    <a href="<?= url('storage/uploads/documents/') ?><?= e($doc['stored_name']) ?>" download 
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-bold text-[10px] text-slate-700 dark:text-slate-300">
                                         Download
                                     </a>

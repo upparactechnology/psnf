@@ -47,7 +47,7 @@ ob_start();
         <?php endforeach; ?>
 
         <!-- Create Template Card -->
-        <a href="/psnf/public/certificate_generator/index.php?page=certificate-types" target="_blank"
+        <a href="<?= url('certificate_generator/index.php?page=certificate-types') ?>" target="_blank"
            class="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 p-6 flex flex-col items-center justify-center text-center group transition-all">
             <span class="text-3xl text-slate-400 group-hover:scale-110 transition-transform">➕</span>
             <h4 class="font-bold text-slate-800 dark:text-white text-sm mt-3">Add Custom Template</h4>

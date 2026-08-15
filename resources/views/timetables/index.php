@@ -552,7 +552,7 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                     </button>
                 </div>
 
-                <form method="POST" :action="'/psnf/public/academics/timetable/' + editId + '/update'" class="p-6 space-y-4 text-xs">
+                <form method="POST" :action="'<?= url('academics/timetable') ?>/' + editId + '/update'" class="p-6 space-y-4 text-xs">
                     <?= \Core\View::csrf() ?>
                     <input type="hidden" name="class" value="<?= e($selectedClass) ?>">
                     <input type="hidden" name="section" value="<?= e($selectedSection) ?>">

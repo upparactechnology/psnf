@@ -350,13 +350,16 @@ class StaffWorkspaceController extends Controller
                 a.attendance_date,
                 a.confidence,
                 a.image_path,
+                a.late_exempted,
+                a.late_exemption_reason,
                 COALESCE(u.name, e.first_name, e.emp_code, 'Staff Member') as first_name,
                 COALESCE(e.last_name, '') as last_name,
                 COALESCE(u.employee_id, e.emp_code, CONCAT('EMP-', COALESCE(a.user_id, a.employee_id))) as emp_code,
-                COALESCE(u.designation, d.name, 'General Staff') as department_name
+                COALESCE(u.designation, d.name, 'General Staff') as department_name,
+                e.min_clock_in
             FROM attendance a
             LEFT JOIN users u ON a.user_id = u.id
-            LEFT JOIN employees e ON a.employee_id = e.id
+            LEFT JOIN employees e ON (a.employee_id = e.id OR e.user_id = a.user_id)
             LEFT JOIN departments d ON e.department_id = d.id
             WHERE (DATE(a.check_in) = ? OR a.attendance_date = ?)
             ORDER BY a.check_in ASC
@@ -378,7 +381,10 @@ class StaffWorkspaceController extends Controller
                     'max_check_in' => $log['check_in'],
                     'confidence' => $log['confidence'],
                     'image_path' => $log['image_path'],
-                    'scan_count' => 1
+                    'scan_count' => 1,
+                    'min_clock_in' => $log['min_clock_in'],
+                    'late_exempted' => $log['late_exempted'],
+                    'late_exemption_reason' => $log['late_exemption_reason']
                 ];
             } else {
                 $grouped[$empId]['max_check_in'] = $log['check_in'];
@@ -387,10 +393,8 @@ class StaffWorkspaceController extends Controller
         }
 
         $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-        $empShiftStart = $shift['start_time'] ?? '09:00:00';
-        $grace = (int)($shift['grace_minutes'] ?? 15);
-        $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
-        $halfDayTime = $shift['half_day_after'] ?? '12:00:00';
+        $globalShiftStart = $shift['start_time'] ?? '09:00:00';
+        $globalGrace = (int)($shift['grace_minutes'] ?? 15);
 
         $faceLogs = [];
         foreach ($grouped as $empId => $data) {
@@ -400,6 +404,12 @@ class StaffWorkspaceController extends Controller
             
             $timeOnly = date('H:i:s', strtotime($data['min_check_in']));
             $status = 'present';
+            
+            // Resolve employee-specific shift rules
+            $empShiftStart = !empty($data['min_clock_in']) ? $data['min_clock_in'] : $globalShiftStart;
+            $grace = !empty($data['min_clock_in']) ? 10 : $globalGrace;
+            $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
+            $halfDayTime = !empty($data['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
             
             if ($timeOnly > $halfDayTime) {
                 $status = 'half_day';
@@ -428,7 +438,9 @@ class StaffWorkspaceController extends Controller
                 'last_name' => $data['last_name'],
                 'emp_code' => $data['emp_code'],
                 'department_name' => $data['department_name'],
-                'source' => 'Face Recognition Kiosk'
+                'source' => 'Face Recognition Kiosk',
+                'late_exempted' => $data['late_exempted'],
+                'late_exemption_reason' => $data['late_exemption_reason']
             ];
         }
 
@@ -441,6 +453,8 @@ class StaffWorkspaceController extends Controller
                 l.clock_out,
                 l.working_hours,
                 l.status,
+                l.late_exempted,
+                l.late_exemption_reason,
                 1.0 as confidence,
                 '' as image_path,
                 e.first_name,

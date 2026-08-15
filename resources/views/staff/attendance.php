@@ -70,6 +70,11 @@ ob_start();
                             <?= e($l['clock_in'] ?? '--:--') ?>
                             <?php if ($l['status'] === 'late'): ?>
                                 <span class="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded ml-1 uppercase">Late</span>
+                                <?php if (!empty($l['late_exempted'])): ?>
+                                    <span class="text-[9px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded ml-1 uppercase cursor-pointer font-bold" title="Exemption Reason: <?= e($l['late_exemption_reason'] ?? 'Admin override') ?>" onclick="toggleExemption(<?= $l['id'] ?>, '<?= e($l['source']) ?>', false)">Exempted ✓</span>
+                                <?php else: ?>
+                                    <button class="text-[9px] bg-slate-200 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded ml-1 uppercase font-bold" onclick="toggleExemption(<?= $l['id'] ?>, '<?= e($l['source']) ?>', true)">Exempt</button>
+                                <?php endif; ?>
                             <?php elseif ($l['status'] === 'half_day'): ?>
                                 <span class="text-[9px] bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded ml-1 uppercase">Half-Day</span>
                             <?php endif; ?>
@@ -144,6 +149,48 @@ ob_start();
     </div>
 
 </div>
+
+<script>
+function toggleExemption(logId, source, exempt) {
+    if (exempt) {
+        const reason = prompt("Enter reason for lateness exemption:", "Official school duty");
+        if (reason === null) return; // User cancelled
+        
+        fetch("<?= url('payroll/attendance/exempt') ?>", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `log_id=${logId}&source=${source === 'Manual Entry' ? 'manual' : 'kiosk'}&exempt=1&reason=${encodeURIComponent(reason)}`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert("Error: " + data.message);
+            }
+        });
+    } else {
+        if (!confirm("Are you sure you want to remove this exemption?")) return;
+        fetch("<?= url('payroll/attendance/exempt') ?>", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `log_id=${logId}&source=${source === 'Manual Entry' ? 'manual' : 'kiosk'}&exempt=0`
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert("Error: " + data.message);
+            }
+        });
+    }
+}
+</script>
 
 <?php
 $content = ob_get_clean();

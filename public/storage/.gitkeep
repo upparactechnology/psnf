@@ -1,0 +1,3 @@
+# Storage
+# This directory holds logs, uploads, cache, and session files.
+# Ensure this directory is writable by the web server.

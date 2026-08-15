@@ -6,7 +6,7 @@ return [
     'name'        => 'PSNF ERP',
     'version'     => '1.0.0',
     'debug'       => true, // Set to false in production
-    'base_url'    => 'http://localhost/psnf/public',
+    'base_url'    => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/psnf/public',
     'base_path'   => 'psnf/public',
     'timezone'    => 'Asia/Kolkata',
     'locale'      => 'en',
