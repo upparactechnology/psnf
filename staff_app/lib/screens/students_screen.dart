@@ -409,7 +409,9 @@ class _StudentsScreenState extends State<StudentsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Students Directory'),
+        title: const Text('Students Directory', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF0A5C36),
+        iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         actions: [
           TextButton.icon(

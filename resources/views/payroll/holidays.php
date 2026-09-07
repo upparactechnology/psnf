@@ -47,7 +47,9 @@ ob_start();
                     </select>
                 </div>
                 
+                <?php if (has_permission('create_holidays_calendar')): ?>
                 <button type="submit" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 font-semibold text-white transition-all shadow-sm">Save Holiday</button>
+                <?php endif; ?>
             </form>
         </div>
 
@@ -90,10 +92,12 @@ ob_start();
                                 <?php endif; ?>
                             </td>
                             <td class="p-4 text-right">
+                                <?php if (has_permission('delete_holidays_calendar')): ?>
                                 <form action="<?= url('payroll/holidays/' . $h['id'] . '/delete') ?>" method="POST" onsubmit="return confirm('Remove holiday from registry?')">
                                     <?= \Core\View::csrf() ?>
                                     <button type="submit" class="text-2xs font-bold text-rose-500 hover:text-rose-600 transition-colors">Delete</button>
                                 </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>

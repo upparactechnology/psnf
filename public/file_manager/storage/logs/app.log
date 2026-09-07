@@ -19,3 +19,19 @@
 [2026-08-15 11:06:04] UNCAUGHT PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'psnf_drm.folders' doesn't exist in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Folder.php:20
 [2026-08-15 11:06:04] UNCAUGHT PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'psnf_drm.folders' doesn't exist in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Folder.php:20
 [2026-08-15 11:06:21] UNCAUGHT PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'psnf_drm.folders' doesn't exist in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Folder.php:20
+[2026-09-07 20:30:25] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:31:20] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:31:20] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:31:25] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:31:49] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:31:50] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:31:50] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:10] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:10] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:16] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:17] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:17] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:23] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:24] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:24] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24
+[2026-09-07 20:32:38] UNCAUGHT PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'staff_id' in 'where clause' in C:\xampp\htdocs\psnf\public\file_manager\app\Models\Audit.php:24

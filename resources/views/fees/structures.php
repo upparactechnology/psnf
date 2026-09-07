@@ -25,9 +25,11 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Fee Structures</h1>
             <p class="text-sm text-slate-500">Define fee templates for classes and academic years.</p>
         </div>
+        <?php if (has_permission('create_fee_structures')): ?>
         <button @click="openCreate()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium">
             Create Structure
         </button>
+        <?php endif; ?>
     </div>
 
     <!-- Table -->

@@ -45,10 +45,21 @@ class ReportCardController extends Controller
             return [];
         }
         
-        $curriculum = $db->selectOne("
-            SELECT * FROM curriculum_templates 
-            WHERE academic_year_id = ? AND main_group_id = ? AND tenant_id = ? LIMIT 1
-        ", [$class['academic_year_id'], $class['main_group_id'], $tenantId]);
+        $curriculum = null;
+        if (!empty($class['curriculum_template_id'])) {
+            $curriculum = $db->selectOne("
+                SELECT * FROM curriculum_templates 
+                WHERE id = ? AND tenant_id = ? LIMIT 1
+            ", [$class['curriculum_template_id'], $tenantId]);
+        }
+        
+        if (!$curriculum) {
+            $curriculum = $db->selectOne("
+                SELECT * FROM curriculum_templates 
+                WHERE academic_year_id = ? AND main_group_id = ? AND tenant_id = ? 
+                ORDER BY id DESC LIMIT 1
+            ", [$class['academic_year_id'], $class['main_group_id'], $tenantId]);
+        }
         
         if (!$curriculum) {
             return [];
@@ -63,16 +74,17 @@ class ReportCardController extends Controller
         $curriculumTree = [];
         foreach ($sections as $sec) {
             $subjects = $db->select("
-                SELECT cs.*, s.name as subject_name, s.code as subject_code, s.category as subject_category
+                SELECT cs.*, s.name as subject_name, s.code as subject_code, s.category as subject_category, ? as assessment_type
                 FROM curriculum_subjects cs
                 JOIN subjects s ON cs.subject_id = s.id
                 WHERE cs.curriculum_section_id = ?
                 ORDER BY cs.sequence ASC
-            ", [$sec['id']]);
+            ", [$sec['assessment_type'], $sec['id']]);
             
             $curriculumTree[] = [
                 'id' => $sec['id'],
                 'section_name' => $sec['section_name'],
+                'assessment_type' => $sec['assessment_type'],
                 'sort_order' => $sec['sort_order'],
                 'subjects' => $subjects
             ];
@@ -101,12 +113,17 @@ class ReportCardController extends Controller
             [$academicYear, $semester, $tenantId]
         );
 
-        $yearsList = $db->select("SELECT year_name FROM academic_years WHERE tenant_id = ? ORDER BY id DESC", [$tenantId]);
-        $semestersList = $db->select("SELECT name FROM academic_semesters WHERE tenant_id = ? GROUP BY name ORDER BY id ASC", [$tenantId]);
+        $yearsList = $db->select("SELECT id, year_name FROM academic_years WHERE tenant_id = ? ORDER BY id DESC", [$tenantId]);
+
+        // Get selected year ID for semester filtering
+        $selectedYearRow = $db->selectOne("SELECT id FROM academic_years WHERE tenant_id = ? AND year_name = ?", [$tenantId, $academicYear]);
+        $selectedYearId = $selectedYearRow['id'] ?? 0;
+
+        $semestersList = $db->select("SELECT name FROM academic_semesters WHERE tenant_id = ? AND academic_year_id = ? GROUP BY name ORDER BY id ASC", [$tenantId, $selectedYearId]);
 
         // Fallbacks if empty
         if (empty($yearsList)) {
-            $yearsList = [['year_name' => '2024-25'], ['year_name' => '2025-26'], ['year_name' => '2026-27']];
+            $yearsList = [['id' => 0, 'year_name' => $defaultYear]];
         }
         if (empty($semestersList)) {
             $semestersList = [['name' => 'Semester 1'], ['name' => 'Semester 2']];
@@ -128,6 +145,8 @@ class ReportCardController extends Controller
         $academicYear = $this->request->get('academic_year', (!empty($student['academic_year']) ? $student['academic_year'] : $defaultYear));
 
         $db = $this->db();
+        $tenantId = $student['tenant_id'] ?? \Core\Database::getTenantId();
+
         $reportCardRow = $db->selectOne(
             "SELECT * FROM student_report_cards WHERE student_id = ? AND academic_year = ? AND semester = ?",
             [(int) $studentId, $academicYear, $semester]
@@ -149,13 +168,145 @@ class ReportCardController extends Controller
             ];
         }
 
-        $settings = $db->selectOne("SELECT * FROM report_card_settings WHERE tenant_id = ?", [$student['tenant_id'] ?? \Core\Database::getTenantId()]);
+        // Pre-populate/Sync missing academic profile values from exam_results
+        $activeExams = $db->select(
+            "SELECT name, max_marks FROM exams WHERE tenant_id = ? AND semester = ? ORDER BY id ASC",
+            [$tenantId, $semester]
+        );
+
+        $examNames = [$semester];
+        if ($semester === 'Semester 1') {
+            $examNames[] = 'First Term Evaluation';
+        } elseif ($semester === 'Semester 2') {
+            $examNames[] = 'Second Term Evaluation';
+        }
+        foreach ($activeExams as $ae) {
+            $examNames[] = $ae['name'];
+        }
+        $examNames = array_unique($examNames);
+        $placeholders = implode(',', array_fill(0, count($examNames), '?'));
+
+        $examResults = $db->select(
+            "SELECT subject, exam_name, marks_obtained, max_marks, grade FROM exam_results 
+             WHERE student_id = ? AND exam_name IN ($placeholders)",
+            array_merge([$studentId], $examNames)
+        );
+
+        $examMarksMap = [];
+        foreach ($examResults as $er) {
+            $subKey = strtolower(trim($er['subject']));
+            $exName = $er['exam_name'];
+            if ($er['marks_obtained'] == 0 && !empty($er['grade'])) {
+                $examMarksMap[$subKey]['grade'] = $er['grade'];
+            } else {
+                $examMarksMap[$subKey]['marks'][$exName] = (float)$er['marks_obtained'];
+            }
+        }
+
+        $subjectsList = $db->select("
+            SELECT s.id, s.name, sec.assessment_type 
+            FROM subjects s
+            JOIN curriculum_subjects cs ON cs.subject_id = s.id
+            JOIN curriculum_sections sec ON cs.curriculum_section_id = sec.id
+            WHERE s.tenant_id = ?
+        ", [$tenantId]);
+
+        $academicProfile = $reportCard['academic_profile'] ?? [];
+        foreach ($subjectsList as $sub) {
+            $subId = (int)$sub['id'];
+            $subNameLower = strtolower(trim($sub['name']));
+            $assessmentType = $sub['assessment_type'] ?? 'Grade';
+
+            if (!isset($academicProfile[$subId])) {
+                if ($assessmentType === 'Marks') {
+                    $totalObtained = 0.0;
+                    $totalMax = 0.0;
+                    $components = [];
+                    foreach ($activeExams as $ae) {
+                        $exName = $ae['name'];
+                        $max = (float)$ae['max_marks'];
+                        $obt = isset($examMarksMap[$subNameLower]['marks'][$exName]) ? (float)$examMarksMap[$subNameLower]['marks'][$exName] : null;
+                        if ($obt !== null) {
+                            $components[$exName] = $obt;
+                            $totalObtained += $obt;
+                            $totalMax += $max;
+                        }
+                    }
+                    if (!empty($components)) {
+                        $pct = $totalMax > 0 ? ($totalObtained / $totalMax) * 100 : 0.0;
+                        $grade = 'F';
+                        if ($pct >= 90) $grade = 'A+';
+                        elseif ($pct >= 80) $grade = 'A';
+                        elseif ($pct >= 70) $grade = 'B';
+                        elseif ($pct >= 60) $grade = 'C+';
+                        elseif ($pct >= 41) $grade = 'C';
+                        elseif ($pct >= 33) $grade = 'D';
+
+                        $academicProfile[$subId] = [
+                            'marks' => $components,
+                            'total' => $totalObtained,
+                            'pct'   => round($pct, 2),
+                            'grade' => $grade
+                        ];
+                    }
+                } else {
+                    if (isset($examMarksMap[$subNameLower]['grade'])) {
+                        $academicProfile[$subId] = $examMarksMap[$subNameLower]['grade'];
+                    }
+                }
+            }
+        }
+
+        if ($reportCard) {
+            $reportCard['academic_profile'] = $academicProfile;
+        } else {
+            $reportCard = [
+                'id' => 0,
+                'academic_year' => $academicYear,
+                'semester' => $semester,
+                'routine_profile' => [],
+                'learning_skills' => [],
+                'academic_profile' => $academicProfile,
+                'cocurriculum_profile' => [],
+                'attendance_profile' => [],
+                'feedback_text' => '',
+                'authorized_by' => [],
+            ];
+        }
+
+        $settings = $db->selectOne("SELECT * FROM report_card_settings WHERE tenant_id = ?", [$tenantId]);
         if ($settings) {
             $settings['trustees_config'] = json_decode($settings['trustees_config'] ?? '[]', true) ?: [];
         }
 
+        // Auto-calculate attendance from attendance table
+        $semesterRow = $db->selectOne(
+            "SELECT start_date, end_date, total_working_days FROM academic_semesters WHERE tenant_id = ? AND name = ? ORDER BY id ASC LIMIT 1",
+            [$tenantId, $semester]
+        );
+        $autoTotalDays = null;
+        $autoDaysPresent = null;
+        if ($semesterRow && !empty($semesterRow['start_date']) && !empty($semesterRow['end_date'])) {
+            $attendanceRows = $db->select(
+                "SELECT status FROM attendance WHERE student_id = ? AND date >= ? AND date <= ?",
+                [(int) $studentId, $semesterRow['start_date'], $semesterRow['end_date']]
+            );
+            $autoTotalDays = (int) ($semesterRow['total_working_days'] ?? count($attendanceRows));
+            $presentCount = 0;
+            foreach ($attendanceRows as $att) {
+                if (in_array($att['status'], ['present', 'late'], true)) {
+                    $presentCount++;
+                }
+            }
+            $autoDaysPresent = $presentCount;
+        }
+        $attendanceAuto = [
+            'total_days' => $autoTotalDays,
+            'days_present' => $autoDaysPresent,
+        ];
+
         $curriculumTree = $this->resolveCurriculum((int)$studentId, $academicYear);
-        return $this->view('report-cards/edit', compact('student', 'reportCard', 'semester', 'academicYear', 'settings', 'curriculumTree'));
+        return $this->view('report-cards/edit', compact('student', 'reportCard', 'semester', 'academicYear', 'settings', 'curriculumTree', 'attendanceAuto'));
     }
 
     public function store(string $studentId): string
@@ -170,6 +321,11 @@ class ReportCardController extends Controller
         list($defaultYear, $defaultSem) = $this->getDefaults();
         $academicYear = $this->request->input('academic_year', $defaultYear);
         $semester = $this->request->input('semester', $defaultSem);
+
+        if (is_year_locked($academicYear)) {
+            $this->flash('error', 'This academic year is locked. Report card updates are frozen.');
+            return $this->redirect("/students/$studentId/report-card/edit?semester=" . urlencode($semester) . "&academic_year=" . urlencode($academicYear));
+        }
 
         $routineProfile = $this->request->input('routine_profile', []);
         $learningSkills = $this->request->input('learning_skills', []);
@@ -223,7 +379,7 @@ class ReportCardController extends Controller
                         attendance_profile = ?,
                         feedback_text = ?,
                         authorized_by = ?
-                     WHERE id = ?",
+                      WHERE id = ?",
                     [
                         $routineJson,
                         $learningJson,
@@ -253,7 +409,113 @@ class ReportCardController extends Controller
                 ]);
             }
 
-            $this->flash('success', 'Report Card saved successfully.');
+            // Sync back to exam_results
+            $tenantId = $student['tenant_id'] ?? \Core\Database::getTenantId();
+            foreach ($academicProfile as $subId => $val) {
+                if ($val === '' || $val === null) continue;
+                $subjRow = $db->selectOne("
+                    SELECT s.name, sec.assessment_type 
+                    FROM subjects s
+                    JOIN curriculum_subjects cs ON cs.subject_id = s.id
+                    JOIN curriculum_sections sec ON cs.curriculum_section_id = sec.id
+                    WHERE s.id = ? AND s.tenant_id = ? LIMIT 1
+                ", [(int)$subId, $tenantId]);
+                if (!$subjRow) continue;
+                
+                $subjName = $subjRow['name'];
+                $assessmentType = $subjRow['assessment_type'] ?? 'Grade';
+
+                if ($assessmentType === 'Marks') {
+                    if (is_array($val) && isset($val['marks'])) {
+                        foreach ($val['marks'] as $examName => $obtVal) {
+                            if ($obtVal === '' || $obtVal === null) continue;
+                            $obt = (float)$obtVal;
+                            
+                            // Fetch max marks for this component
+                            $examRow = $db->selectOne("SELECT max_marks FROM exams WHERE name = ? AND tenant_id = ? LIMIT 1", [$examName, $tenantId]);
+                            $max = $examRow ? (float)$examRow['max_marks'] : 100.0;
+
+                            $existsExam = $db->selectOne(
+                                "SELECT id FROM exam_results WHERE student_id = ? AND exam_name = ? AND subject = ?",
+                                [(int)$studentId, $examName, $subjName]
+                            );
+                            if ($existsExam) {
+                                $db->update('exam_results', [
+                                    'marks_obtained' => $obt,
+                                    'max_marks'      => $max,
+                                    'grade'          => '',
+                                    'remarks'        => $feedbackText,
+                                    'date_published' => date('Y-m-d'),
+                                ], 'id = ?', [$existsExam['id']]);
+                            } else {
+                                $db->insert('exam_results', [
+                                    'tenant_id'      => $tenantId,
+                                    'school_id'      => $student['school_id'] ?? 1,
+                                    'branch_id'      => $student['branch_id'] ?? 1,
+                                    'student_id'     => (int)$studentId,
+                                    'exam_name'      => $examName,
+                                    'subject'        => $subjName,
+                                    'marks_obtained' => $obt,
+                                    'max_marks'      => $max,
+                                    'grade'          => '',
+                                    'remarks'        => $feedbackText,
+                                    'date_published' => date('Y-m-d'),
+                                ]);
+                            }
+                        }
+                    }
+                } else {
+                    $grade = trim((string)$val);
+                    if ($grade !== '') {
+                        $examNames = [$semester];
+                        if ($semester === 'Semester 1') {
+                            $examNames[] = 'First Term Evaluation';
+                        } elseif ($semester === 'Semester 2') {
+                            $examNames[] = 'Second Term Evaluation';
+                        }
+
+                        $existsExam = null;
+                        $foundExamName = $semester;
+                        foreach ($examNames as $eName) {
+                            $row = $db->selectOne(
+                                "SELECT id FROM exam_results WHERE student_id = ? AND exam_name = ? AND subject = ?",
+                                [(int)$studentId, $eName, $subjName]
+                            );
+                            if ($row) {
+                                $existsExam = $row;
+                                $foundExamName = $eName;
+                                break;
+                            }
+                        }
+
+                        if ($existsExam) {
+                            $db->update('exam_results', [
+                                'marks_obtained' => 0.0,
+                                'max_marks'      => 0.0,
+                                'grade'          => $grade,
+                                'remarks'        => $feedbackText,
+                                'date_published' => date('Y-m-d'),
+                            ], 'id = ?', [$existsExam['id']]);
+                        } else {
+                            $db->insert('exam_results', [
+                                'tenant_id'      => $tenantId,
+                                'school_id'      => $student['school_id'] ?? 1,
+                                'branch_id'      => $student['branch_id'] ?? 1,
+                                'student_id'     => (int)$studentId,
+                                'exam_name'      => $foundExamName,
+                                'subject'        => $subjName,
+                                'marks_obtained' => 0.0,
+                                'max_marks'      => 0.0,
+                                'grade'          => $grade,
+                                'remarks'        => $feedbackText,
+                                'date_published' => date('Y-m-d'),
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            $this->flash('success', 'Report Card saved successfully and synchronized with Assessments.');
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to save Report Card: ' . $e->getMessage());
         }
@@ -353,20 +615,41 @@ class ReportCardController extends Controller
 
     public function parentShow(string $studentId): string
     {
-        // For parent role, check if they are authorized to view this student
-        // Typically, we check if the logged in user is the guardian of this student
         $authId = $this->authId();
         $db = $this->db();
 
-        $guardian = $db->selectOne(
-            "SELECT g.id FROM guardians g 
-             JOIN users u ON g.user_id = u.id 
-             JOIN students s ON s.id = ? 
-             WHERE u.id = ? AND s.tenant_id = g.tenant_id",
-            [(int) $studentId, $authId]
-        );
+        // Build parent context for sidebar layout
+        $guardian = null;
+        $isAdminOrStaff = has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher');
 
-        // Allow access if user is parent role and linked to student
+        if ($isAdminOrStaff) {
+            $sessGuardianId = \Core\Session::get('parent.impersonated_guardian_id');
+            if ($sessGuardianId) {
+                $guardian = $db->selectOne("SELECT * FROM guardians WHERE id = ? AND deleted_at IS NULL LIMIT 1", [(int)$sessGuardianId]);
+            }
+            if (!$guardian) {
+                $guardian = $db->selectOne("SELECT * FROM guardians WHERE deleted_at IS NULL ORDER BY id ASC LIMIT 1");
+                if ($guardian) \Core\Session::set('parent.impersonated_guardian_id', $guardian['id']);
+            }
+        } else {
+            $guardian = $db->selectOne("SELECT * FROM guardians WHERE user_id = ? AND deleted_at IS NULL LIMIT 1", [$authId]);
+        }
+
+        $allStudents = [];
+        $activeStudent = null;
+        if ($guardian) {
+            $allStudents = $db->select(
+                "SELECT s.* FROM students s JOIN guardian_student gs ON gs.student_id = s.id WHERE gs.guardian_id = ? AND s.deleted_at IS NULL",
+                [$guardian['id']]
+            );
+            foreach ($allStudents as $s) {
+                if ((int)$s['id'] === (int)$studentId) {
+                    $activeStudent = $s;
+                    break;
+                }
+            }
+        }
+
         $student = Student::withDetails((int) $studentId);
         if (!$student) {
             $this->response->abort(404);
@@ -405,7 +688,6 @@ class ReportCardController extends Controller
                 }
             }
         } elseif (!empty($reportCards)) {
-            // default to first one
             $first = $reportCards[0];
             $row = $db->selectOne("SELECT * FROM student_report_cards WHERE id = ?", [(int)$first['id']]);
             if ($row) {
@@ -424,7 +706,14 @@ class ReportCardController extends Controller
             }
         }
 
-        return $this->view('parent/report-card', compact('student', 'reportCards', 'selectedReportCard'));
+        return $this->view('parent/report-card', [
+            'student'             => $student,
+            'reportCards'         => $reportCards,
+            'selectedReportCard'  => $selectedReportCard,
+            'guardian'            => $guardian,
+            'all_students'        => $allStudents,
+            'active_student'      => $activeStudent ?: $student,
+        ]);
     }
 
     public function settings(): string

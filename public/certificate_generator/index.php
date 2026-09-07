@@ -10,18 +10,16 @@ $routes = [
     'logout' => ['file' => APP_ROOT . '/app/pages/logout.php', 'auth' => true],
     'dashboard' => ['file' => APP_ROOT . '/app/pages/dashboard.php', 'auth' => true],
     'users' => ['file' => APP_ROOT . '/app/pages/users.php', 'auth' => true, 'roles' => ['super_admin']],
-    'conferences' => ['file' => APP_ROOT . '/app/pages/conferences.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
-    'certificate-types' => ['file' => APP_ROOT . '/app/pages/certificate-types.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
-    'field-editor' => ['file' => APP_ROOT . '/app/pages/field-editor.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
-    'participants' => ['file' => APP_ROOT . '/app/pages/participants.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
-    'participants-import' => ['file' => APP_ROOT . '/app/pages/participants_import.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
+    'conferences' => ['file' => APP_ROOT . '/app/pages/conferences.php', 'auth' => true, 'permission' => 'view_certificates'],
+    'certificate-types' => ['file' => APP_ROOT . '/app/pages/certificate-types.php', 'auth' => true, 'permission' => 'edit_certificates'],
+    'field-editor' => ['file' => APP_ROOT . '/app/pages/field-editor.php', 'auth' => true, 'permission' => 'edit_certificates'],
+    'participants' => ['file' => APP_ROOT . '/app/pages/participants.php', 'auth' => true, 'permission' => 'view_certificates'],
+    'participants-import' => ['file' => APP_ROOT . '/app/pages/participants_import.php', 'auth' => true, 'permission' => 'create_certificates'],
     'download-certificate' => ['file' => APP_ROOT . '/app/pages/download_certificate.php', 'auth' => false],
-    'generate' => ['file' => APP_ROOT . '/app/pages/generate.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
-    'downloads' => ['file' => APP_ROOT . '/app/pages/downloads.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
-    'download-file' => ['file' => APP_ROOT . '/app/pages/download-file.php', 'auth' => false],
-    'emails' => ['file' => APP_ROOT . '/app/pages/emails.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
-    'contact-messages' => ['file' => APP_ROOT . '/app/pages/contact_messages.php', 'auth' => true, 'roles' => ['super_admin', 'school_admin', 'manager']],
-    'settings' => ['file' => APP_ROOT . '/app/pages/settings.php', 'auth' => true, 'roles' => ['super_admin']],
+    'generate' => ['file' => APP_ROOT . '/app/pages/generate.php', 'auth' => true, 'permission' => 'create_certificates'],
+    'emails' => ['file' => APP_ROOT . '/app/pages/emails.php', 'auth' => true, 'permission' => 'create_certificates'],
+    'printer' => ['file' => APP_ROOT . '/app/pages/printer.php', 'auth' => true, 'permission' => 'create_certificates'],
+    'settings' => ['file' => APP_ROOT . '/app/pages/settings.php', 'auth' => true, 'permission' => 'edit_certificates'],
     'verify' => ['file' => APP_ROOT . '/app/pages/verify.php', 'auth' => false],
 ];
 
@@ -39,6 +37,8 @@ if (($route['auth'] ?? true) === true) {
 
 if (isset($route['roles'])) {
     require_roles($route['roles']);
+} elseif (isset($route['permission'])) {
+    require_permission($route['permission']);
 }
 
 $currentPage = $page;

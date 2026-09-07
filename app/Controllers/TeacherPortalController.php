@@ -116,6 +116,13 @@ class TeacherPortalController extends Controller
                 }
             }
             $assignedApps = array_unique($assignedApps);
+        } else {
+            // Default: if no assignment exists and user is teacher, grant teacher apps
+            if (has_role('teacher')) {
+                $assignedApps = [
+                    'academic', 'academic_summary', 'medical', 'games'
+                ];
+            }
         }
 
         // Ensure classes table exists
@@ -162,14 +169,61 @@ class TeacherPortalController extends Controller
             [$user['name'], $todayDay]
         );
 
+        // Fetch recently shared timetables for this teacher (last 7 days)
+        $sharedTimetables = $db->select(
+            "SELECT t.*, u.name as shared_by_name, mg.name as group_name
+             FROM timetables t
+             LEFT JOIN users u ON t.shared_by = u.id
+             LEFT JOIN main_groups mg ON t.main_group_id = mg.id
+             WHERE t.teacher_name = ? AND t.shared_at IS NOT NULL
+             AND t.shared_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+             ORDER BY t.shared_at DESC
+             LIMIT 5",
+            [$user['name']]
+        );
+
         // Fetch announcements
         $announcements = $db->select(
             "SELECT * FROM announcements WHERE tenant_id = ? AND target_audience IN ('all', 'teachers', 'staff') ORDER BY published_at DESC LIMIT 5",
             [$tenantId]
         );
 
+        // Upcoming birthdays (next 2 days) - staff and students
+        $todayDate = date('Y-m-d');
+        $twoDaysLater = date('Y-m-d', strtotime('+2 days'));
+
+        $birthdayStaff = $db->select(
+            "SELECT id, name, dob, 'staff' as type FROM users
+             WHERE tenant_id = ? AND deleted_at IS NULL AND dob IS NOT NULL
+             AND (
+                (MONTH(dob) = ? AND DAY(dob) >= ?)
+                OR (MONTH(dob) = ? AND DAY(dob) <= ?)
+                OR (MONTH(dob) > ? AND MONTH(dob) < ?)
+             )
+             ORDER BY MONTH(dob), DAY(dob) LIMIT 10",
+            [$tenantId, (int)date('m', strtotime($todayDate)), (int)date('d', strtotime($todayDate)),
+             (int)date('m', strtotime($twoDaysLater)), (int)date('d', strtotime($twoDaysLater)),
+             (int)date('m', strtotime($todayDate)), (int)date('m', strtotime($twoDaysLater))]
+        );
+
+        $birthdayStudents = $db->select(
+            "SELECT id, first_name, last_name, dob, 'student' as type FROM students
+             WHERE tenant_id = ? AND deleted_at IS NULL AND dob IS NOT NULL
+             AND (
+                (MONTH(dob) = ? AND DAY(dob) >= ?)
+                OR (MONTH(dob) = ? AND DAY(dob) <= ?)
+                OR (MONTH(dob) > ? AND MONTH(dob) < ?)
+             )
+             ORDER BY MONTH(dob), DAY(dob) LIMIT 10",
+            [$tenantId, (int)date('m', strtotime($todayDate)), (int)date('d', strtotime($todayDate)),
+             (int)date('m', strtotime($twoDaysLater)), (int)date('d', strtotime($twoDaysLater)),
+             (int)date('m', strtotime($todayDate)), (int)date('m', strtotime($twoDaysLater))]
+        );
+
+        $upcomingBirthdays = array_merge($birthdayStaff, $birthdayStudents);
+
         return $this->view('teacher/dashboard', compact(
-            'user', 'teacherAttendance', 'assignedApps', 'stats', 'teacherSchedule', 'announcements'
+            'user', 'teacherAttendance', 'assignedApps', 'stats', 'teacherSchedule', 'announcements', 'upcomingBirthdays', 'sharedTimetables'
         ));
     }
 }

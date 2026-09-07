@@ -45,10 +45,12 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Fee Categories</h1>
             <p class="text-sm text-slate-500 mt-1">Manage global fee types like Tuition, Admission, Transport, etc.</p>
         </div>
+        <?php if (has_permission('create_fee_categories')): ?>
         <button @click="openCreate()" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Add Category
         </button>
+        <?php endif; ?>
     </div>
 
     <!-- Table -->
@@ -98,11 +100,15 @@ ob_start();
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-right space-x-2">
+                            <?php if (has_permission('edit_fee_categories')): ?>
                             <button @click='openEdit(<?= json_encode($cat) ?>)' class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-xs transition-colors">Edit</button>
+                            <?php endif; ?>
+                            <?php if (has_permission('delete_fee_categories')): ?>
                             <form action="<?= url("fees/categories/{$cat['id']}/delete") ?>" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this category?');">
                                 <?= \Core\View::csrf() ?>
                                 <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 font-medium text-xs transition-colors">Delete</button>
                             </form>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

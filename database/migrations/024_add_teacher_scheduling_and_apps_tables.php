@@ -10,11 +10,14 @@ class AddTeacherSchedulingAndAppsTables
     {
         // 1. Add teacher scheduling columns to users table
         // We catch if they already exist, but running direct query is fine.
-        $this->db->query("
-            ALTER TABLE `users`
-            ADD COLUMN `lecture_time` TIME NULL AFTER `settings`,
-            ADD COLUMN `grace_period` INT UNSIGNED NULL DEFAULT 5 AFTER `lecture_time`
-        ");
+        $cols = $this->db->select("SHOW COLUMNS FROM `users` LIKE 'lecture_time'");
+        if (empty($cols)) {
+            $this->db->query("
+                ALTER TABLE `users`
+                ADD COLUMN `lecture_time` TIME NULL AFTER `settings`,
+                ADD COLUMN `grace_period` INT UNSIGNED NULL DEFAULT 5 AFTER `lecture_time`
+            ");
+        }
 
         // 2. Create user_apps table for admin-assigned apps
         $this->db->query("

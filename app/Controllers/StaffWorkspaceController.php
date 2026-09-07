@@ -48,6 +48,92 @@ class StaffWorkspaceController extends Controller
         $sql .= " ORDER BY e.id DESC";
 
         $employees = $db->select($sql, $params);
+
+        // Also fetch teacher/staff users who don't have an employee record yet
+        $userConditions = [
+            "u.id IN (SELECT ur.user_id FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE r.slug IN ('teacher', 'staff', 'therapist', 'driver'))",
+            "u.id NOT IN (SELECT e2.user_id FROM employees e2 WHERE e2.user_id IS NOT NULL)",
+            "u.deleted_at IS NULL"
+        ];
+        $userParams = [];
+
+        if ($search !== '') {
+            $userConditions[] = "(u.name LIKE ? OR u.email LIKE ?)";
+            $userParams[] = "%$search%";
+            $userParams[] = "%$search%";
+        }
+
+        $unlinkedUsers = $db->select(
+            "SELECT u.* FROM users u WHERE " . implode(' AND ', $userConditions),
+            $userParams
+        );
+
+        // Get the Academics department and Teacher designation for defaults
+        $acadDept = $db->selectOne("SELECT id FROM departments WHERE code = 'ACAD' LIMIT 1");
+        $teacherDesig = $db->selectOne("SELECT id FROM designations WHERE code = 'TCH' LIMIT 1");
+        $defaultDeptId = $acadDept['id'] ?? null;
+        $defaultDesigId = $teacherDesig['id'] ?? null;
+
+        foreach ($unlinkedUsers as $u) {
+            $parts = explode(' ', trim($u['name']), 2);
+            $firstName = $parts[0] ?? '';
+            $lastName = $parts[1] ?? '';
+
+            // Resolve role-based department/designation
+            $userRoles = $db->select(
+                "SELECT r.slug FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ?",
+                [$u['id']]
+            );
+            $roleSlugs = array_column($userRoles, 'slug');
+
+            $empDeptId = $defaultDeptId;
+            $empDesigId = $defaultDesigId;
+            $empDeptName = 'Academics';
+            $empDesigTitle = 'Teacher';
+
+            if (in_array('driver', $roleSlugs)) {
+                $empDeptName = 'Support';
+                $empDesigTitle = 'Driver';
+                $d = $db->selectOne("SELECT id FROM departments WHERE code = 'SUPP' LIMIT 1");
+                $empDeptId = $d['id'] ?? $defaultDeptId;
+                $des = $db->selectOne("SELECT id FROM designations WHERE code = 'DRV' LIMIT 1");
+                $empDesigId = $des['id'] ?? $defaultDesigId;
+            } elseif (in_array('therapist', $roleSlugs)) {
+                $empDesigTitle = 'Therapist';
+                $des = $db->selectOne("SELECT id FROM designations WHERE code = 'THER' LIMIT 1");
+                $empDesigId = $des['id'] ?? $defaultDesigId;
+            } elseif (in_array('staff', $roleSlugs) && !in_array('teacher', $roleSlugs)) {
+                $empDeptName = 'Administration';
+                $empDesigTitle = 'Staff Member';
+                $d = $db->selectOne("SELECT id FROM departments WHERE code = 'ADMIN' LIMIT 1");
+                $empDeptId = $d['id'] ?? $defaultDeptId;
+                $des = $db->selectOne("SELECT id FROM designations WHERE code = 'STAFF' LIMIT 1");
+                $empDesigId = $des['id'] ?? $defaultDesigId;
+            }
+
+            if ($deptId !== '' && (int)$empDeptId !== (int)$deptId) {
+                continue;
+            }
+
+            $employees[] = [
+                'id' => null,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'email' => $u['email'],
+                'emp_code' => $u['employee_id'] ?: 'Not Linked',
+                'department_id' => $empDeptId,
+                'designation_id' => $empDesigId,
+                'department_name' => $empDeptName,
+                'designation_title' => $empDesigTitle,
+                'joining_date' => $u['created_at'] ? date('Y-m-d', strtotime($u['created_at'])) : '',
+                'min_clock_in' => null,
+                'max_clock_out' => null,
+                'salary_basic' => 0,
+                'status' => $u['is_active'] ? 'active' : 'inactive',
+                'user_id' => $u['id'],
+            ];
+        }
+
         $departments = $db->select("SELECT * FROM departments WHERE is_active = 1");
         $designations = $db->select("SELECT * FROM designations WHERE is_active = 1");
 
@@ -58,10 +144,11 @@ class StaffWorkspaceController extends Controller
     {
         $id = (int) $id;
         $db = Application::$app->db;
-        $employee = $db->selectOne("SELECT e.*, d.name as department_name, des.title as designation_title 
+        $employee = $db->selectOne("SELECT e.*, d.name as department_name, des.title as designation_title, u.grace_period as user_grace_period
                                    FROM employees e 
                                    LEFT JOIN departments d ON e.department_id = d.id 
                                    LEFT JOIN designations des ON e.designation_id = des.id 
+                                   LEFT JOIN users u ON e.user_id = u.id
                                    WHERE e.id = ?", [$id]);
 
         if (!$employee) {
@@ -111,7 +198,7 @@ class StaffWorkspaceController extends Controller
         // Get employee shift times for late/half-day thresholds
         $shiftStart = $employee['min_clock_in'] ?? '09:00:00';
         $shiftEnd = $employee['max_clock_out'] ?? '17:00:00';
-        $graceMinutes = 10;
+        $graceMinutes = (int)($employee['user_grace_period'] ?? 10);
         $lateThreshold = date('H:i:s', strtotime($shiftStart) + ($graceMinutes * 60));
         $halfDayThreshold = date('H:i:s', strtotime($shiftStart) + (3 * 3600));
         $minHoursForFullDay = 6;
@@ -290,17 +377,6 @@ class StaffWorkspaceController extends Controller
         $codeCount = (int) ($db->selectOne("SELECT COUNT(*) as cnt FROM employees")['cnt'] ?? 0) + 101;
         $empCode   = 'EMP-' . $codeCount;
 
-        $deptName = null;
-        if ($deptId) {
-            $d = $db->selectOne("SELECT name FROM departments WHERE id = ?", [$deptId]);
-            if ($d) $deptName = $d['name'];
-        }
-        $desigTitle = null;
-        if ($desigId) {
-            $des = $db->selectOne("SELECT title FROM designations WHERE id = ?", [$desigId]);
-            if ($des) $desigTitle = $des['title'];
-        }
-
         $empId = (int) $db->insert('employees', [
             'tenant_id'      => 1,
             'emp_code'       => $empCode,
@@ -314,10 +390,6 @@ class StaffWorkspaceController extends Controller
             'joining_date'   => date('Y-m-d'),
             'salary_basic'   => $basicSal,
             'status'         => 'active',
-            'employee_code'  => $empCode,
-            'name'           => trim("$firstName $lastName"),
-            'department'     => $deptName,
-            'designation'    => $desigTitle,
             'created_at'     => now()
         ]);
 
@@ -341,17 +413,6 @@ class StaffWorkspaceController extends Controller
         $maxClockOut = $this->request->input('max_clock_out', '17:00');
         $status     = $this->request->input('status', 'active');
 
-        $deptName = null;
-        if ($deptId) {
-            $d = $db->selectOne("SELECT name FROM departments WHERE id = ?", [$deptId]);
-            if ($d) $deptName = $d['name'];
-        }
-        $desigTitle = null;
-        if ($desigId) {
-            $des = $db->selectOne("SELECT title FROM designations WHERE id = ?", [$desigId]);
-            if ($des) $desigTitle = $des['title'];
-        }
-
         $db->update('employees', [
             'first_name'     => $firstName,
             'last_name'      => $lastName,
@@ -362,10 +423,6 @@ class StaffWorkspaceController extends Controller
             'max_clock_out'  => $maxClockOut,
             'salary_basic'   => $basicSal,
             'status'         => $status,
-            'employee_code'  => $db->selectOne("SELECT emp_code FROM employees WHERE id = ?", [$id])['emp_code'] ?? null,
-            'name'           => trim("$firstName $lastName"),
-            'department'     => $deptName,
-            'designation'    => $desigTitle,
             'updated_at'     => now()
         ], 'id = ?', [$id]);
 
@@ -391,17 +448,63 @@ class StaffWorkspaceController extends Controller
         $name = trim($this->request->get('name', ''));
         $code = strtoupper(trim($this->request->get('code', 'DEP-' . rand(100, 999))));
         $desc = trim($this->request->get('description', ''));
+        $addNext = !empty($_POST['_add_next']);
 
         if ($name !== '') {
             $db->insert('departments', [
-                'tenant_id'   => 1,
+                'tenant_id'   => \Core\Database::getTenantId(),
                 'name'        => $name,
                 'code'        => $code,
                 'description' => $desc,
                 'is_active'   => 1
             ]);
-            $this->flash('success', "Department $name created successfully.");
+            $this->flash('success', "Department '{$name}' created successfully.");
         }
+        if ($addNext) {
+            return $this->redirect('/staff/departments?add_next=1');
+        }
+        return $this->redirect('/staff/departments');
+    }
+
+    public function updateDepartment(string $id): string
+    {
+        $db = Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+        $name = trim($this->request->get('name', ''));
+        $code = strtoupper(trim($this->request->get('code', '')));
+        $desc = trim($this->request->get('description', ''));
+
+        if ($name !== '') {
+            $db->update('departments', [
+                'name'        => $name,
+                'code'        => $code,
+                'description' => $desc,
+            ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
+            $this->flash('success', "Department updated successfully.");
+        }
+        return $this->redirect('/staff/departments');
+    }
+
+    public function deleteDepartment(string $id): string
+    {
+        $db = Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+
+        $dept = $db->selectOne("SELECT id, name FROM departments WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        if (!$dept) {
+            $this->flash('error', 'Department not found.');
+            return $this->redirect('/staff/departments');
+        }
+
+        // Check if any employees are assigned to this department
+        $staffCount = $db->selectOne("SELECT COUNT(*) as cnt FROM employees WHERE department_id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        if (($staffCount['cnt'] ?? 0) > 0) {
+            $this->flash('error', "Cannot delete '{$dept['name']}': {$staffCount['cnt']} staff member(s) are assigned to it. Reassign them first.");
+            return $this->redirect('/staff/departments');
+        }
+
+        $db->query("DELETE FROM departments WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        $this->flash('success', "Department '{$dept['name']}' deleted successfully.");
         return $this->redirect('/staff/departments');
     }
 
@@ -418,20 +521,65 @@ class StaffWorkspaceController extends Controller
     public function storeDesignation(): string
     {
         $db = Application::$app->db;
-        $title = trim($this->request->get('title', ''));
-        $code  = strtoupper(trim($this->request->get('code', 'DES-' . rand(100, 999))));
-        $desc  = trim($this->request->get('description', ''));
+        $title = trim($this->request->post('title', ''));
+        $code  = strtoupper(trim($this->request->post('code', 'DES-' . rand(100, 999))));
+        $desc  = trim($this->request->post('description', ''));
+        $addNext = !empty($_POST['_add_next']);
 
         if ($title !== '') {
             $db->insert('designations', [
-                'tenant_id'   => 1,
+                'tenant_id'   => \Core\Database::getTenantId(),
                 'title'       => $title,
                 'code'        => $code,
                 'description' => $desc,
                 'is_active'   => 1
             ]);
-            $this->flash('success', "Designation $title created successfully.");
+            $this->flash('success', "Designation '{$title}' created successfully.");
         }
+        if ($addNext) {
+            return $this->redirect('/staff/designations?add_next=1');
+        }
+        return $this->redirect('/staff/designations');
+    }
+
+    public function updateDesignation(string $id): string
+    {
+        $db = Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+        $title = trim($this->request->post('title', ''));
+        $code  = strtoupper(trim($this->request->post('code', '')));
+        $desc  = trim($this->request->post('description', ''));
+
+        if ($title !== '') {
+            $db->update('designations', [
+                'title'       => $title,
+                'code'        => $code,
+                'description' => $desc,
+            ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
+            $this->flash('success', "Designation updated successfully.");
+        }
+        return $this->redirect('/staff/designations');
+    }
+
+    public function deleteDesignation(string $id): string
+    {
+        $db = Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+
+        $desig = $db->selectOne("SELECT id, title FROM designations WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        if (!$desig) {
+            $this->flash('error', 'Designation not found.');
+            return $this->redirect('/staff/designations');
+        }
+
+        $staffCount = $db->selectOne("SELECT COUNT(*) as cnt FROM employees WHERE designation_id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        if (($staffCount['cnt'] ?? 0) > 0) {
+            $this->flash('error', "Cannot delete '{$desig['title']}': {$staffCount['cnt']} staff member(s) are assigned to it. Reassign them first.");
+            return $this->redirect('/staff/designations');
+        }
+
+        $db->query("DELETE FROM designations WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        $this->flash('success', "Designation '{$desig['title']}' deleted successfully.");
         return $this->redirect('/staff/designations');
     }
 
@@ -453,7 +601,7 @@ class StaffWorkspaceController extends Controller
         $firstDayOfWeek = 1;
 
         if ($employeeId) {
-            $selectedEmp = $db->selectOne("SELECT * FROM employees WHERE id = ?", [$employeeId]);
+            $selectedEmp = $db->selectOne("SELECT e.*, u.grace_period as user_grace_period FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.id = ?", [$employeeId]);
             
             $startDate = $month . '-01';
             $endDate = date('Y-m-t', strtotime($startDate));
@@ -476,7 +624,7 @@ class StaffWorkspaceController extends Controller
             
             $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
             $empShiftStart = !empty($selectedEmp['min_clock_in']) ? $selectedEmp['min_clock_in'] : ($shift['start_time'] ?? '09:00:00');
-            $grace = !empty($selectedEmp['min_clock_in']) ? 10 : (int)($shift['grace_minutes'] ?? 15);
+            $grace = !empty($selectedEmp['min_clock_in']) ? (int)($selectedEmp['user_grace_period'] ?? 10) : (int)($shift['grace_minutes'] ?? 15);
             $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
             $halfDayTime = !empty($selectedEmp['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
 
@@ -547,13 +695,14 @@ class StaffWorkspaceController extends Controller
                 a.attendance_date,
                 a.confidence,
                 a.image_path,
-                a.late_exempted,
-                a.late_exemption_reason,
+                0 as late_exempted,
+                NULL as late_exemption_reason,
                 COALESCE(u.name, e.first_name, e.emp_code, 'Staff Member') as first_name,
                 COALESCE(e.last_name, '') as last_name,
                 COALESCE(u.employee_id, e.emp_code, CONCAT('EMP-', COALESCE(a.user_id, a.employee_id))) as emp_code,
                 COALESCE(u.designation, d.name, 'General Staff') as department_name,
-                e.min_clock_in
+                e.min_clock_in,
+                u.grace_period as user_grace_period
             FROM attendance a
             LEFT JOIN users u ON a.user_id = u.id
             LEFT JOIN employees e ON (a.employee_id = e.id OR e.user_id = a.user_id)
@@ -604,7 +753,7 @@ class StaffWorkspaceController extends Controller
             
             // Resolve employee-specific shift rules
             $empShiftStart = !empty($data['min_clock_in']) ? $data['min_clock_in'] : $globalShiftStart;
-            $grace = !empty($data['min_clock_in']) ? 10 : $globalGrace;
+            $grace = !empty($data['min_clock_in']) ? (int)($data['user_grace_period'] ?? 10) : $globalGrace;
             $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
             $halfDayTime = !empty($data['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
             
@@ -650,8 +799,8 @@ class StaffWorkspaceController extends Controller
                 l.clock_out,
                 l.working_hours,
                 l.status,
-                l.late_exempted,
-                l.late_exemption_reason,
+                0 as late_exempted,
+                NULL as late_exemption_reason,
                 1.0 as confidence,
                 '' as image_path,
                 e.first_name,
@@ -794,7 +943,7 @@ class StaffWorkspaceController extends Controller
             // Fallback just in case
             if ($workingDays == 0) $workingDays = 26;
 
-            $employees = $db->select("SELECT * FROM employees WHERE status = 'active'");
+            $employees = $db->select("SELECT e.*, u.grace_period as user_grace_period FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.status = 'active'");
             
             $totalGross = 0;
             $totalNet = 0;
@@ -807,7 +956,7 @@ class StaffWorkspaceController extends Controller
                 
                 // Determine shift settings for employee (template vs customized)
                 $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : ($shift['start_time'] ?? '09:00:00');
-                $grace = !empty($e['min_clock_in']) ? 10 : (int)($shift['grace_minutes'] ?? 15);
+                $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : (int)($shift['grace_minutes'] ?? 15);
                 
                 $startTimeSecs = strtotime($empShiftStart);
                 $latePenaltyTime = date('H:i:s', $startTimeSecs + ($grace * 60));
@@ -954,7 +1103,99 @@ class StaffWorkspaceController extends Controller
     public function roles(): string
     {
         $roles = Role::allWithPermissionCount();
-        return $this->view('staff/roles', compact('roles'));
+        
+        $games = [
+            [
+                'title'       => 'Money Counting',
+                'description' => 'Practice counting coins and bills in real-world shopping scenarios',
+                'emoji'       => '🪙',
+                'color'       => 'amber',
+                'url'         => url('game/money-counting.html'),
+                'tag'         => 'Math / Life Skills',
+                'target_roles' => ['Teacher', 'Therapist', 'Parent'],
+                'permission'  => 'view_game_money_counting',
+            ],
+            [
+                'title'       => 'Safe vs Unsafe',
+                'description' => 'Identify safe and unsafe situations to build safety awareness',
+                'emoji'       => '🛡️',
+                'color'       => 'red',
+                'url'         => url('game/safe-vs-unsafe.html'),
+                'tag'         => 'Safety Skills',
+                'target_roles' => ['Teacher', 'Therapist', 'Parent', 'Staff'],
+                'permission'  => 'view_game_safe_vs_unsafe',
+            ],
+            [
+                'title'       => 'Safety Signs',
+                'description' => 'Learn to recognize and understand important safety signs and symbols',
+                'emoji'       => '⚠️',
+                'color'       => 'orange',
+                'url'         => url('game/safety-signs.html'),
+                'tag'         => 'Safety Awareness',
+                'target_roles' => ['Teacher', 'Therapist', 'Parent'],
+                'permission'  => 'view_game_safety_signs',
+            ],
+            [
+                'title'       => 'Sentence Builder',
+                'description' => 'Drag and drop words to build grammatically correct sentences',
+                'emoji'       => '📝',
+                'color'       => 'blue',
+                'url'         => url('game/sentence-builder.html'),
+                'tag'         => 'Language Arts',
+                'target_roles' => ['Teacher', 'Therapist'],
+                'permission'  => 'view_game_sentence_builder',
+            ],
+            [
+                'title'       => 'Shopping Store',
+                'description' => 'Interactive grocery shopping game to practice math and life skills',
+                'emoji'       => '🛒',
+                'color'       => 'emerald',
+                'url'         => url('game/shopping-store.html'),
+                'tag'         => 'Life Skills / Math',
+                'target_roles' => ['Teacher', 'Therapist', 'Parent'],
+                'permission'  => 'view_game_shopping_store',
+            ],
+        ];
+        
+        return $this->view('staff/roles', compact('roles', 'games'));
+    }
+
+    public function storeRole(): string
+    {
+        $data = $this->request->getBody();
+        $data['slug'] = strtolower(str_replace(' ', '_', $data['name']));
+        $data['created_by'] = auth_id();
+
+        unset($data['_csrf']);
+        \App\Models\Role::create($data);
+        \App\Models\ActivityLog::log('role_created', auth_id(), ['role_name' => $data['name']]);
+
+        $this->flash('success', 'Role created.');
+        return $this->redirect('/staff/roles');
+    }
+
+    public function updateRole(string $id): string
+    {
+        $data = $this->request->getBody();
+        unset($data['_csrf'], $data['_method']);
+
+        if (!empty($data)) {
+            \App\Models\Role::update((int) $id, $data);
+        }
+
+        \App\Models\ActivityLog::log('role_updated', auth_id(), ['role_id' => $id]);
+
+        $this->flash('success', 'Role updated.');
+        return $this->redirect('/staff/roles');
+    }
+
+    public function deleteRole(string $id): string
+    {
+        \App\Models\Role::delete((int) $id);
+        \App\Models\ActivityLog::log('role_deleted', auth_id(), ['role_id' => $id]);
+
+        $this->flash('success', 'Role deleted.');
+        return $this->redirect('/staff/roles');
     }
 
     public function users(): string
@@ -972,13 +1213,46 @@ class StaffWorkspaceController extends Controller
     public function settings(): string
     {
         $db = Application::$app->db;
-        $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-        return $this->view('staff/settings', compact('shift'));
+        $tenantId = \Core\Database::getTenantId();
+
+        // Ensure academic_year_id column exists on shift_templates
+        try { $db->query("ALTER TABLE `shift_templates` ADD COLUMN `academic_year_id` INT UNSIGNED NULL AFTER `tenant_id`"); } catch (\Throwable $e) {}
+
+        $years = $db->select("SELECT * FROM academic_years WHERE tenant_id = ? ORDER BY id DESC", [$tenantId]);
+
+        $selectedYearId = (int) $this->request->get('year_id', 0);
+        if (!$selectedYearId && !empty($years)) {
+            foreach ($years as $y) { if ($y['status'] === 'current') { $selectedYearId = (int) $y['id']; break; } }
+            if (!$selectedYearId) $selectedYearId = (int) $years[0]['id'];
+        }
+
+        $shift = $db->selectOne("SELECT * FROM shift_templates WHERE tenant_id = ? AND academic_year_id = ? ORDER BY id DESC LIMIT 1", [$tenantId, $selectedYearId]);
+        if (!$shift) {
+            // Fall back to global template (id=1) or create one for this year
+            $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
+            if ($shift && $selectedYearId) {
+                $shiftData = $shift;
+                unset($shiftData['id']);
+                $shiftData['academic_year_id'] = $selectedYearId;
+                $shiftData['tenant_id'] = $tenantId;
+                $db->insert('shift_templates', $shiftData);
+                $shift = $db->selectOne("SELECT * FROM shift_templates WHERE tenant_id = ? AND academic_year_id = ? ORDER BY id DESC LIMIT 1", [$tenantId, $selectedYearId]);
+            }
+        }
+
+        return $this->view('staff/settings', compact('shift', 'years', 'selectedYearId'));
     }
 
     public function saveSettings(): string
     {
         $db = Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+
+        // Ensure academic_year_id column exists
+        try { $db->query("ALTER TABLE `shift_templates` ADD COLUMN `academic_year_id` INT UNSIGNED NULL AFTER `tenant_id`"); } catch (\Throwable $e) {}
+
+        $selectedYearId = (int) $this->request->input('academic_year_id', 0);
+
         $workingDaysJson = [];
         for ($m = 1; $m <= 12; $m++) {
             $monthStr = sprintf('%02d', $m);
@@ -995,23 +1269,37 @@ class StaffWorkspaceController extends Controller
         $halfDayDeductionPercent = (float) $this->request->input('half_day_deduction_percent', 50.00);
         $lecGraceMinutes = (int) $this->request->input('lec_grace_minutes', 5);
 
-        try {
-            $db->update('shift_templates', [
-                'working_days_json' => $workingDaysJsonEncoded,
-                'start_time' => $startTime,
-                'grace_minutes' => $graceMinutes,
-                'late_after' => $lateAfter,
-                'half_day_after' => $halfDayAfter,
-                'late_limit_count' => $lateLimitCount,
-                'late_deduction_percent' => $lateDeductionPercent,
-                'half_day_deduction_percent' => $halfDayDeductionPercent,
-                'lec_grace_minutes' => $lecGraceMinutes,
-            ], 'id = 1');
+        $updateData = [
+            'working_days_json' => $workingDaysJsonEncoded,
+            'start_time' => $startTime,
+            'grace_minutes' => $graceMinutes,
+            'late_after' => $lateAfter,
+            'half_day_after' => $halfDayAfter,
+            'late_limit_count' => $lateLimitCount,
+            'late_deduction_percent' => $lateDeductionPercent,
+            'half_day_deduction_percent' => $halfDayDeductionPercent,
+            'lec_grace_minutes' => $lecGraceMinutes,
+        ];
 
-            $this->flash('success', 'Staff shift policies and payroll rules saved successfully.');
+        try {
+            // Find existing shift for this year
+            $existing = $db->selectOne("SELECT id FROM shift_templates WHERE tenant_id = ? AND academic_year_id = ? ORDER BY id DESC LIMIT 1", [$tenantId, $selectedYearId]);
+            if ($existing) {
+                $db->update('shift_templates', $updateData, 'id = ?', [(int)$existing['id']]);
+            } else {
+                $updateData['tenant_id'] = $tenantId;
+                $updateData['academic_year_id'] = $selectedYearId;
+                $updateData['name'] = 'Default Shift';
+                $db->insert('shift_templates', $updateData);
+            }
+
+            // Mark all draft/out_of_sync payroll runs so they regenerate
+            $db->query("UPDATE payroll_runs SET status = 'out_of_sync' WHERE status IN ('draft', 'out_of_sync')");
+
+            $this->flash('success', 'Staff settings saved. Existing draft payroll runs marked out of sync.');
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to save staff settings: ' . $e->getMessage());
         }
-        return $this->redirect('/staff/settings');
+        return $this->redirect('/staff/settings?year_id=' . $selectedYearId);
     }
 }

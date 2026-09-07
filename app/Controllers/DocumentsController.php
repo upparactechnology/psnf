@@ -20,6 +20,7 @@ class DocumentsController extends Controller
     public function dashboard(): string
     {
         $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
         
         // Count totals
         $studentDocsCount = (int) ($db->selectOne("SELECT COUNT(*) as cnt FROM student_documents WHERE deleted_at IS NULL")['cnt'] ?? 0);
@@ -30,6 +31,7 @@ class DocumentsController extends Controller
         $totalDocuments = $studentDocsCount + $staffDocsCount + $parentDocsCount + $driverDocsCount;
         
         $generatedCertsCount = (int) ($db->selectOne("SELECT COUNT(*) as cnt FROM generated_certificates")['cnt'] ?? 0);
+        $studentIdsCount = (int) ($db->selectOne("SELECT COUNT(*) as cnt FROM students WHERE deleted_at IS NULL AND is_active = 1")['cnt'] ?? 0);
         $receiptsCount = (int) ($db->selectOne("SELECT COUNT(*) as cnt FROM fee_payments")['cnt'] ?? 0);
         
         // Pending verification
@@ -38,6 +40,102 @@ class DocumentsController extends Controller
         $pendingParent = (int) ($db->selectOne("SELECT COUNT(*) as cnt FROM parent_documents WHERE status = 'pending' AND deleted_at IS NULL")['cnt'] ?? 0);
         $pendingDriver = (int) ($db->selectOne("SELECT COUNT(*) as cnt FROM driver_documents WHERE status = 'pending' AND deleted_at IS NULL")['cnt'] ?? 0);
         $pendingVerification = $pendingStudent + $pendingStaff + $pendingParent + $pendingDriver;
+
+        // Dynamic expiry alerts — documents expiring within 30 days or already expired
+        $expiryAlerts = [];
+
+        // Staff documents expiring soon
+        $staffExpiring = $db->select("
+            SELECT sd.title, sd.type, sd.expiry_date, e.first_name, e.last_name, e.id as staff_id
+            FROM staff_documents sd
+            JOIN employees e ON e.id = sd.staff_id
+            WHERE sd.expiry_date IS NOT NULL 
+              AND sd.deleted_at IS NULL
+              AND sd.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY sd.expiry_date ASC
+            LIMIT 5
+        ");
+        foreach ($staffExpiring as $doc) {
+            $daysLeft = (int) (strtotime($doc['expiry_date']) - strtotime('now')) / 86400;
+            $expiryAlerts[] = [
+                'type' => $daysLeft < 0 ? 'expired' : 'expiring',
+                'category' => 'staff',
+                'title' => $doc['type'] . ' — ' . $doc['first_name'] . ' ' . $doc['last_name'],
+                'detail' => $daysLeft < 0
+                    ? 'Expired ' . abs($daysLeft) . ' days ago'
+                    : 'Expires in ' . $daysLeft . ' days',
+                'expiry_date' => $doc['expiry_date'],
+                'link' => '/documents/staff-documents?staff_id=' . $doc['staff_id'],
+                'link_text' => 'View Record',
+            ];
+        }
+
+        // Driver documents expiring soon
+        $driverExpiring = $db->select("
+            SELECT dd.title, dd.type, dd.expiry_date, td.name as driver_name, td.id as driver_id
+            FROM driver_documents dd
+            JOIN transport_drivers td ON td.id = dd.driver_id
+            WHERE dd.expiry_date IS NOT NULL 
+              AND dd.deleted_at IS NULL
+              AND dd.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY dd.expiry_date ASC
+            LIMIT 5
+        ");
+        foreach ($driverExpiring as $doc) {
+            $daysLeft = (int) (strtotime($doc['expiry_date']) - strtotime('now')) / 86400;
+            $expiryAlerts[] = [
+                'type' => $daysLeft < 0 ? 'expired' : 'expiring',
+                'category' => 'driver',
+                'title' => $doc['type'] . ' — ' . $doc['driver_name'],
+                'detail' => $daysLeft < 0
+                    ? 'Expired ' . abs($daysLeft) . ' days ago'
+                    : 'Expires in ' . $daysLeft . ' days',
+                'expiry_date' => $doc['expiry_date'],
+                'link' => '/documents/driver-documents?driver_id=' . $doc['driver_id'],
+                'link_text' => 'Renew Record',
+            ];
+        }
+
+        // Driver license expiry from transport_drivers
+        $licenseExpiring = $db->select("
+            SELECT license_number, license_expiry, name, id
+            FROM transport_drivers
+            WHERE license_expiry IS NOT NULL
+              AND license_expiry <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+              AND status = 'active'
+            ORDER BY license_expiry ASC
+            LIMIT 3
+        ");
+        foreach ($licenseExpiring as $drv) {
+            $daysLeft = (int) (strtotime($drv['license_expiry']) - strtotime('now')) / 86400;
+            $expiryAlerts[] = [
+                'type' => $daysLeft < 0 ? 'expired' : 'expiring',
+                'category' => 'driver',
+                'title' => 'License — ' . $drv['name'],
+                'detail' => $daysLeft < 0
+                    ? 'License #' . $drv['license_number'] . ' expired ' . abs($daysLeft) . ' days ago'
+                    : 'License #' . $drv['license_number'] . ' expires in ' . $daysLeft . ' days',
+                'expiry_date' => $drv['license_expiry'],
+                'link' => '/documents/driver-documents?driver_id=' . $drv['id'],
+                'link_text' => 'Renew Record',
+            ];
+        }
+
+        // Sort by expiry date, most urgent first
+        usort($expiryAlerts, fn($a, $b) => strtotime($a['expiry_date']) - strtotime($b['expiry_date']));
+        $expiryAlerts = array_slice($expiryAlerts, 0, 5);
+
+        if (empty($expiryAlerts)) {
+            $expiryAlerts[] = [
+                'type' => 'none',
+                'category' => 'system',
+                'title' => 'All Clear',
+                'detail' => 'No documents expiring in the next 30 days.',
+                'expiry_date' => null,
+                'link' => '#',
+                'link_text' => '',
+            ];
+        }
 
         // Dynamic recent activity
         $recentUploads = $db->select("
@@ -76,7 +174,7 @@ class DocumentsController extends Controller
 
         return $this->view('documents/dashboard', compact(
             'totalDocuments', 'studentDocsCount', 'staffDocsCount', 'parentDocsCount', 'driverDocsCount',
-            'generatedCertsCount', 'receiptsCount', 'pendingVerification', 'recentActivity'
+            'generatedCertsCount', 'studentIdsCount', 'receiptsCount', 'pendingVerification', 'recentActivity', 'expiryAlerts'
         ));
     }
 
@@ -247,7 +345,7 @@ class DocumentsController extends Controller
         $tenantId = Database::getTenantId();
         
         $drivers = $db->select("
-            SELECT e.id, CONCAT(e.first_name, ' ', e.last_name) as name, e.phone, e.license_number
+            SELECT e.id, CONCAT(e.first_name, ' ', e.last_name) as name, e.phone
             FROM employees e
             JOIN designations des ON e.designation_id = des.id
             WHERE e.tenant_id = ? AND des.title = 'Driver'

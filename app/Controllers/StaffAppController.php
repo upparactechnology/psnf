@@ -153,7 +153,7 @@ class StaffAppController extends Controller
 
         // Determine Shift Logic
         $empShiftStart = (!empty($employee) && !empty($employee['min_clock_in'])) ? $employee['min_clock_in'] : ($shift['start_time'] ?? '09:00:00');
-        $gracePeriod = (!empty($employee) && !empty($employee['min_clock_in'])) ? 10 : (int)($shift['grace_minutes'] ?? 15);
+        $gracePeriod = (!empty($employee) && !empty($employee['min_clock_in'])) ? (int)($user['grace_period'] ?? 10) : (int)($shift['grace_minutes'] ?? 15);
         $startTimeSecs = strtotime($empShiftStart);
         $halfDayTimeStr = (!empty($employee) && !empty($employee['min_clock_in'])) ? date('H:i:s', $startTimeSecs + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
 
@@ -308,16 +308,42 @@ class StaffAppController extends Controller
         }
 
         $today = date('Y-m-d');
-        
-        // Fetch all active students, left join with today's attendance
+
+        // Get classes assigned to this teacher (as class teacher)
+        $assignedClasses = $this->db()->select(
+            "SELECT name, section FROM classes WHERE class_teacher_id = ?",
+            [$userId]
+        );
+
+        // Build class name list for filtering (e.g. "3-A", "4-B")
+        $classNames = [];
+        foreach ($assignedClasses as $ac) {
+            $name = trim(($ac['name'] ?? '') . ' ' . ($ac['section'] ?? ''));
+            if ($name !== '') {
+                $classNames[] = $name;
+            }
+        }
+
+        // If teacher has no assigned classes, return empty list
+        if (empty($classNames)) {
+            return $this->respondJson([
+                'success' => true,
+                'classes' => [],
+                'students' => [],
+                'assigned_classes' => []
+            ]);
+        }
+
+        // Fetch students only from assigned classes, left join with today's attendance
+        $placeholders = implode(',', array_fill(0, count($classNames), '?'));
         $records = $this->db()->select("
             SELECT s.id, s.first_name, s.last_name, s.photo, s.class, 
                    COALESCE(a.status, 'pending') as status
             FROM students s 
             LEFT JOIN attendance a ON a.student_id = s.id AND a.date = ?
-            WHERE s.deleted_at IS NULL AND s.is_active = 1
+            WHERE s.deleted_at IS NULL AND s.is_active = 1 AND s.class IN ($placeholders)
             ORDER BY s.class ASC, s.first_name ASC
-        ", [$today]);
+        ", array_merge([$today], $classNames));
 
         $students = [];
         $classes = [];
@@ -332,7 +358,7 @@ class StaffAppController extends Controller
                 'id' => $r['id'],
                 'name' => $r['first_name'] . ' ' . $r['last_name'],
                 'class' => $className,
-                'status' => $r['status'], // 'present', 'absent', 'late', 'pending'
+                'status' => $r['status'],
                 'photo' => $r['photo'] ? url('uploads/' . $r['photo']) : null
             ];
         }
@@ -340,7 +366,8 @@ class StaffAppController extends Controller
         return $this->respondJson([
             'success' => true,
             'classes' => $classes,
-            'students' => $students
+            'students' => $students,
+            'assigned_classes' => $classNames
         ]);
     }
 

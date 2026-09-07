@@ -10,13 +10,28 @@ $breadcrumbs = [
 ];
 ob_start();
 
-$scores = json_decode($reportCard['academic_profile'] ?? '{}', true) ?: [];
+$scores = $reportCard['academic_profile'] ?? [];
+if (is_string($scores)) {
+    $scores = json_decode($scores, true) ?: [];
+}
+
+$activeExams = \Core\Application::$app->db->select(
+    "SELECT name, max_marks FROM exams WHERE tenant_id = ? AND semester = ? ORDER BY id ASC",
+    [$student['tenant_id'], $semester]
+);
 ?>
+<?php $isLocked = is_year_locked($academicYear); ?>
 
 <div class="max-w-6xl mx-auto space-y-6 py-2" x-data="{ activeTab: 'sec_<?= !empty($curriculumTree) ? $curriculumTree[0]['id'] : 'summary' ?>' }">
 
     <!-- Profile Header -->
     <div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <?php if ($isLocked): ?>
+            <div class="w-full mb-2 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-500 text-xs font-bold flex items-center gap-2">
+                <span>🔒</span>
+                <span>This academic year is locked. Report card updates are frozen. (Only administrators can modify report cards.)</span>
+            </div>
+        <?php endif; ?>
         <div>
             <h2 class="text-xl font-bold text-slate-900 dark:text-white">Progress Report Card Editor</h2>
             <p class="text-xs text-slate-500 mt-0.5">
@@ -97,34 +112,115 @@ $scores = json_decode($reportCard['academic_profile'] ?? '{}', true) ?: [];
                             <?php 
                                 $val = $scores[$cs['subject_id']] ?? '';
                             ?>
-                            <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div class="space-y-0.5">
-                                    <span class="font-black text-slate-850 dark:text-white text-xs"><?= e($cs['subject_name']) ?></span>
-                                    <span class="text-3xs block text-slate-400 font-mono">Code: <?= e($cs['subject_code']) ?> &middot; Type: <?= e($cs['assessment_type']) ?></span>
-                                </div>
+                            
+                            <?php if ($cs['assessment_type'] === 'Marks'): ?>
+                                <?php 
+                                    if (!is_array($val)) {
+                                        $val = ['marks' => []];
+                                    }
+                                ?>
+                                <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                     x-data="{
+                                         scores: {
+                                             <?php foreach ($activeExams as $exam) {
+                                                 $valObt = $val['marks'][$exam['name']] ?? '';
+                                                 echo "'" . e($exam['name']) . "': " . ($valObt !== '' ? (float)$valObt : "''") . ", ";
+                                             } ?>
+                                         },
+                                         maxMarks: {
+                                             <?php foreach ($activeExams as $exam) {
+                                                 echo "'" . e($exam['name']) . "': " . (float)$exam['max_marks'] . ", ";
+                                             } ?>
+                                         },
+                                         sumScores() {
+                                             return Object.values(this.scores).reduce((a, b) => (parseFloat(a) || 0) + (parseFloat(b) || 0), 0);
+                                         },
+                                         sumMax() {
+                                             return Object.values(this.maxMarks).reduce((a, b) => (parseFloat(a) || 0) + (parseFloat(b) || 0), 0);
+                                         },
+                                         calculateGrade(obt, max) {
+                                             if (!max || max == 0) return 'F';
+                                             let pct = (obt / max) * 100;
+                                             if (pct >= 90) return 'A+';
+                                             if (pct >= 80) return 'A';
+                                             if (pct >= 70) return 'B';
+                                             if (pct >= 60) return 'C+';
+                                             if (pct >= 41) return 'C';
+                                             if (pct >= 33) return 'D';
+                                             return 'F';
+                                         }
+                                     }"
+                                >
+                                    <!-- Name -->
+                                    <div class="space-y-0.5">
+                                        <span class="font-black text-slate-850 dark:text-white text-xs"><?= e($cs['subject_name']) ?></span>
+                                        <span class="text-3xs block text-slate-400 font-mono">Code: <?= e($cs['subject_code']) ?> &middot; Type: <?= e($cs['assessment_type']) ?></span>
+                                    </div>
 
-                                <div class="sm:w-2/3">
-                                    <?php if ($cs['assessment_type'] === 'Marks'): ?>
-                                        <input type="text" name="academic_profile[<?= $cs['subject_id'] ?>]" value="<?= e($val) ?>" placeholder="Enter marks/score (e.g. 85, B+)" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
-                                    <?php elseif ($cs['assessment_type'] === 'Grade'): ?>
-                                        <select name="academic_profile[<?= $cs['subject_id'] ?>]" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
-                                            <option value="">-- Choose Grade --</option>
-                                            <?php foreach (['A', 'B', 'C', 'D', 'E', 'F'] as $gOption): ?>
-                                                <option value="<?= $gOption ?>" <?= $val === $gOption ? 'selected' : '' ?>><?= $gOption ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    <?php else: // Rating ?>
+                                    <!-- Component Inputs and Dynamic Calculations -->
+                                    <div class="sm:w-2/3 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                         <div class="flex flex-wrap items-center gap-3">
-                                            <?php foreach (['A' => 'Excellent (A)', 'B' => 'Good (B)', 'C' => 'Needs Improvement (C)', 'R' => 'Refused (R)', 'N/A' => 'N/A'] as $rKey => $rLbl): ?>
-                                                <label class="flex items-center gap-1.5 cursor-pointer">
-                                                    <input type="radio" name="academic_profile[<?= $cs['subject_id'] ?>]" value="<?= $rKey ?>" <?= $val === $rKey ? 'checked' : '' ?> class="text-indigo-600 focus:ring-indigo-500">
-                                                    <span class="text-3xs font-bold text-slate-600 dark:text-slate-400"><?= $rLbl ?></span>
-                                                </label>
+                                            <?php foreach ($activeExams as $exam): ?>
+                                                <div class="space-y-1">
+                                                    <label class="block text-[10px] text-slate-400 font-bold"><?= e($exam['name']) ?> (Max <?= number_format((float)$exam['max_marks'], 0) ?>)</label>
+                                                    <input type="number" 
+                                                           step="0.01" 
+                                                           max="<?= (float)$exam['max_marks'] ?>"
+                                                           name="academic_profile[<?= $cs['subject_id'] ?>][marks][<?= e($exam['name']) ?>]"
+                                                           x-model.number="scores['<?= e($exam['name']) ?>']"
+                                                           placeholder="-" 
+                                                           <?= $isLocked ? 'disabled' : '' ?>
+                                                           class="w-20 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono text-center text-xs focus:outline-none focus:border-indigo-500">
+                                                </div>
                                             <?php endforeach; ?>
                                         </div>
-                                    <?php endif; ?>
+
+                                        <!-- Sum of scores -->
+                                        <div class="flex items-center gap-4 text-center font-mono text-xs">
+                                            <div>
+                                                <span class="block text-[9px] text-slate-450 uppercase font-sans font-bold">Total</span>
+                                                <span class="font-bold text-slate-800 dark:text-slate-200" x-text="sumScores().toFixed(1) + ' / ' + sumMax().toFixed(1)"></span>
+                                                <input type="hidden" name="academic_profile[<?= $cs['subject_id'] ?>][total]" :value="sumScores().toFixed(2)">
+                                                <input type="hidden" name="academic_profile[<?= $cs['subject_id'] ?>][pct]" :value="sumMax() > 0 ? (sumScores() / sumMax() * 100).toFixed(2) : '0.00'">
+                                                <input type="hidden" name="academic_profile[<?= $cs['subject_id'] ?>][grade]" :value="calculateGrade(sumScores(), sumMax())">
+                                            </div>
+                                            <div>
+                                                <span class="block text-[9px] text-slate-450 uppercase font-sans font-bold">Grade</span>
+                                                <span x-text="calculateGrade(sumScores(), sumMax())" 
+                                                      class="px-2 py-0.5 rounded bg-indigo-950/40 text-indigo-400 border border-indigo-900/30 font-bold">
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            <?php else: ?>
+                                <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <div class="space-y-0.5">
+                                        <span class="font-black text-slate-850 dark:text-white text-xs"><?= e($cs['subject_name']) ?></span>
+                                        <span class="text-3xs block text-slate-400 font-mono">Code: <?= e($cs['subject_code']) ?> &middot; Type: <?= e($cs['assessment_type']) ?></span>
+                                    </div>
+
+                                    <div class="sm:w-2/3">
+                                        <?php if ($cs['assessment_type'] === 'Grade'): ?>
+                                            <select name="academic_profile[<?= $cs['subject_id'] ?>]" <?= $isLocked ? 'disabled' : '' ?> class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
+                                                <option value="">-- Choose Grade --</option>
+                                                <?php foreach (['A+', 'A', 'B', 'C+', 'C', 'D', 'F'] as $gOption): ?>
+                                                    <option value="<?= $gOption ?>" <?= $val === $gOption ? 'selected' : '' ?>><?= $gOption ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        <?php else: // Rating ?>
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <?php foreach (['A' => 'Excellent (A)', 'B' => 'Good (B)', 'C' => 'Needs Improvement (C)', 'R' => 'Refused (R)', 'N/A' => 'N/A'] as $rKey => $rLbl): ?>
+                                                    <label class="flex items-center gap-1.5 cursor-pointer">
+                                                        <input type="radio" name="academic_profile[<?= $cs['subject_id'] ?>]" value="<?= $rKey ?>" <?= $val === $rKey ? 'checked' : '' ?> <?= $isLocked ? 'disabled' : '' ?> class="text-indigo-600 focus:ring-indigo-500">
+                                                        <span class="text-3xs font-bold text-slate-600 dark:text-slate-400"><?= $rLbl ?></span>
+                                                    </label>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -139,24 +235,32 @@ $scores = json_decode($reportCard['academic_profile'] ?? '{}', true) ?: [];
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div class="space-y-1">
                         <label class="block font-bold text-slate-700 dark:text-slate-350">General Comments / Teacher Feedback</label>
-                        <textarea name="feedback_text" rows="4" placeholder="Type term feedback..." class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950"><?= e($reportCard['feedback_text'] ?? '') ?></textarea>
+                        <textarea name="feedback_text" rows="4" placeholder="Type term feedback..." <?= $isLocked ? 'disabled' : '' ?> class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950"><?= e($reportCard['feedback_text'] ?? '') ?></textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-slate-700 dark:text-slate-350">Total Days</label>
-                            <input type="number" name="attendance_profile[total_days]" value="<?= e($reportCard['attendance_profile']['total_days'] ?? '') ?>" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
+                            <input type="number" name="attendance_profile[total_days]" value="<?= e($reportCard['attendance_profile']['total_days'] ?? $attendanceAuto['total_days'] ?? '') ?>" <?= $isLocked ? 'disabled' : '' ?> class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
+                            <?php if (empty($reportCard['attendance_profile']['total_days']) && !empty($attendanceAuto['total_days'])): ?>
+                                <p class="text-2xs text-indigo-500 mt-0.5">Auto from semester settings</p>
+                            <?php endif; ?>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-slate-700 dark:text-slate-350">Days Present</label>
-                            <input type="number" name="attendance_profile[days_present]" value="<?= e($reportCard['attendance_profile']['days_present'] ?? '') ?>" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
+                            <input type="number" name="attendance_profile[days_present]" value="<?= e($reportCard['attendance_profile']['days_present'] ?? $attendanceAuto['days_present'] ?? '') ?>" <?= $isLocked ? 'disabled' : '' ?> class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
+                            <?php if (empty($reportCard['attendance_profile']['days_present']) && !empty($attendanceAuto['days_present'])): ?>
+                                <p class="text-2xs text-indigo-500 mt-0.5">Auto from attendance records</p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
                 <div class="pt-4 flex justify-end">
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-md transition-all">
-                        Save Report Card
-                    </button>
+                    <?php if (!$isLocked): ?>
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-white shadow-md transition-all">
+                            Save Report Card
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

@@ -17,6 +17,11 @@ class AttendanceController extends Controller
 
     public function index(): string
     {
+        // Route to calendar view if requested
+        if ($this->request->get('view') === 'calendar') {
+            return $this->calendar();
+        }
+
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
 
@@ -124,6 +129,157 @@ class AttendanceController extends Controller
 
         return $this->view('attendance/index', compact(
             'classes', 'selectedClass', 'selectedSection', 'selectedDate', 'students', 'attendanceMap', 'pendingLeaves'
+        ));
+    }
+
+    public function calendar(): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+
+        $selectedClass   = trim((string)$this->request->get('class', ''));
+        $selectedSection = trim((string)$this->request->get('section', ''));
+        $month           = trim((string)$this->request->get('month', date('Y-m')));
+        $studentId       = (int)$this->request->get('student_id', 0);
+
+        // Ensure classes table exists
+        $db->query("
+            CREATE TABLE IF NOT EXISTS `classes` (
+                `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `tenant_id` INT UNSIGNED NOT NULL,
+                `school_id` INT UNSIGNED NOT NULL,
+                `branch_id` INT UNSIGNED NOT NULL,
+                `name` VARCHAR(100) NOT NULL,
+                `section` VARCHAR(50) NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY `uq_class_section` (`tenant_id`, `name`, `section`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        // Fetch classes
+        $classes = $db->select(
+            "SELECT name as class, COALESCE(section, '') as section 
+             FROM classes 
+             WHERE tenant_id = ? 
+             ORDER BY name ASC, section ASC",
+            [$tenantId]
+        );
+
+        if (empty($classes)) {
+            $classes = $db->select(
+                "SELECT class, COALESCE(section, '') as section 
+                 FROM students 
+                 WHERE tenant_id = ? AND deleted_at IS NULL AND admission_status = 'enrolled' AND class IS NOT NULL AND class != ''
+                 GROUP BY class, section 
+                 ORDER BY class ASC, section ASC",
+                [$tenantId]
+            );
+        }
+
+        // Auto-select first class if none selected
+        if (empty($selectedClass) && !empty($classes)) {
+            $selectedClass = $classes[0]['class'];
+            $selectedSection = $classes[0]['section'];
+        }
+
+        // Fetch students for selected class
+        $students = [];
+        if ($selectedClass) {
+            $students = $db->select(
+                "SELECT id, first_name, last_name, class, section FROM students 
+                 WHERE tenant_id = ? AND class = ? AND COALESCE(section, '') = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
+                 ORDER BY first_name ASC",
+                [$tenantId, $selectedClass, $selectedSection]
+            );
+        }
+
+        // If specific student selected, filter to just that student
+        $selectedStudent = null;
+        if ($studentId && !empty($students)) {
+            foreach ($students as $s) {
+                if ((int)$s['id'] === $studentId) {
+                    $selectedStudent = $s;
+                    break;
+                }
+            }
+        }
+
+        // Build calendar data for the month
+        $monthStart = $month . '-01';
+        $daysInMonth = (int)date('t', strtotime($monthStart));
+        $firstDayOfWeek = (int)date('w', strtotime($monthStart));
+        $monthName = date('F Y', strtotime($monthStart));
+
+        $calData = [];
+        $weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        // Initialize all days
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $dateStr = $month . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
+            $dayOfWeek = date('w', strtotime($dateStr));
+            $dayName = $weekDays[$dayOfWeek];
+
+            if ($dayOfWeek == 0) { // Sunday
+                $calData[$day] = ['status' => 'sunday', 'in' => '', 'out' => '', 'date' => $dateStr];
+            } elseif (strtotime($dateStr) > strtotime('today')) {
+                $calData[$day] = ['status' => 'pending', 'in' => '', 'out' => '', 'date' => $dateStr];
+            } else {
+                $calData[$day] = ['status' => 'absent', 'in' => '', 'out' => '', 'date' => $dateStr];
+            }
+        }
+
+        // If we have students, fetch attendance data
+        if (!empty($students)) {
+            $studentIds = array_column($students, 'id');
+            $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+
+            // Fetch attendance for the month
+            $records = $db->select(
+                "SELECT student_id, status, date, remarks FROM attendance 
+                 WHERE student_id IN ($placeholders) 
+                 AND date >= ? AND date <= ?",
+                array_merge($studentIds, [$monthStart, date('Y-m-t', strtotime($monthStart))])
+            );
+
+            // If specific student selected, filter records
+            if ($studentId) {
+                $records = array_filter($records, fn($r) => (int)$r['student_id'] === $studentId);
+            }
+
+            // Map attendance to calendar days
+            foreach ($records as $r) {
+                $day = (int)date('d', strtotime($r['date']));
+                if (isset($calData[$day]) && $calData[$day]['status'] !== 'sunday') {
+                    $calData[$day]['status'] = $r['status'] ?? 'absent';
+                }
+            }
+
+            // If specific student, get their check-in/out times from face recognition
+            if ($studentId) {
+                $faceRecords = $db->select(
+                    "SELECT DATE(check_in) as att_date, 
+                            MIN(TIME(check_in)) as check_in_time,
+                            MAX(CASE WHEN check_out IS NOT NULL THEN TIME(check_out) END) as check_out_time
+                     FROM attendance 
+                     WHERE user_id = ? AND DATE(check_in) >= ? AND DATE(check_in) <= ?
+                     GROUP BY DATE(check_in)",
+                    [$studentId, $monthStart, date('Y-m-t', strtotime($monthStart))]
+                );
+
+                foreach ($faceRecords as $fr) {
+                    $day = (int)date('d', strtotime($fr['att_date']));
+                    if (isset($calData[$day])) {
+                        $calData[$day]['in'] = $fr['check_in_time'] ? date('h:i A', strtotime($fr['check_in_time'])) : '';
+                        $calData[$day]['out'] = $fr['check_out_time'] ? date('h:i A', strtotime($fr['check_out_time'])) : '';
+                    }
+                }
+            }
+        }
+
+        return $this->view('attendance/student_calendar', compact(
+            'classes', 'selectedClass', 'selectedSection', 'month', 'monthName',
+            'daysInMonth', 'firstDayOfWeek', 'calData', 'students', 'studentId', 'selectedStudent', 'weekDays'
         ));
     }
 

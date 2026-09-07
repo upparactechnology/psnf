@@ -105,6 +105,7 @@ class GuardianController extends Controller
                 'email' => $userEmail,
                 'phone' => $data['phone'],
                 'password' => password_hash($data['phone'], PASSWORD_BCRYPT, ['cost' => 12]),
+                'first_login' => 1,
                 'created_by' => auth_id()
             ];
             $userId = (int) \App\Models\User::create($userData);
@@ -199,6 +200,7 @@ class GuardianController extends Controller
                 'email' => $userEmail,
                 'phone' => $data['phone'],
                 'password' => password_hash($data['phone'], PASSWORD_BCRYPT, ['cost' => 12]),
+                'first_login' => 1,
                 'created_by' => auth_id()
             ];
             $userId = (int) \App\Models\User::create($userData);

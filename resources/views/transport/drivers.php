@@ -13,7 +13,9 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Transport Drivers Directory</h1>
             <p class="text-xs text-slate-500 mt-0.5">Licensed bus drivers, phone numbers, license numbers & assigned vehicles</p>
         </div>
+        <?php if (has_permission('create_transport_drivers')): ?>
         <a href="<?= url('users/create?redirect_to=/transport/drivers') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Add Driver</a>
+        <?php endif; ?>
     </div>
 
     <!-- Drivers Grid -->

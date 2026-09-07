@@ -35,6 +35,7 @@ class _SpeedMonitorScreenState extends State<SpeedMonitorScreen> {
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 2,
+      timeInterval: 1000,
     );
 
     _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {

@@ -16,9 +16,26 @@ class TransportController extends Controller
         return Application::$app->db;
     }
 
+    private function ensureTransportColumns(): void
+    {
+        $cols = [
+            "ALTER TABLE `employees` ADD COLUMN `route_status` VARCHAR(20) DEFAULT 'idle'",
+            "ALTER TABLE `employees` ADD COLUMN `current_latitude` DECIMAL(10,7) NULL",
+            "ALTER TABLE `employees` ADD COLUMN `current_longitude` DECIMAL(10,7) NULL",
+            "ALTER TABLE `employees` ADD COLUMN `current_speed` DECIMAL(5,2) DEFAULT 0",
+            "ALTER TABLE `employees` ADD COLUMN `eta_minutes` INT DEFAULT 0",
+            "ALTER TABLE `employees` ADD COLUMN `remaining_km` DECIMAL(6,2) DEFAULT 0",
+        ];
+        foreach ($cols as $sql) {
+            try { $this->db()->query($sql); } catch (\Throwable $e) {}
+        }
+    }
+
     public function overview(): string
     {
         $tenantId = \Core\Database::getTenantId();
+        $this->ensureTransportColumns();
+
         $totalVehicles = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM transport_vehicles WHERE tenant_id = ?", [$tenantId])['cnt'] ?? 0);
         $totalDrivers  = (int) ($this->db()->selectOne("SELECT COUNT(*) as cnt FROM employees e JOIN designations des ON e.designation_id = des.id WHERE e.tenant_id = ? AND des.title = 'Driver'", [$tenantId])['cnt'] ?? 0);
         $totalStudents = (int) ($this->db()->selectOne("SELECT COUNT(st.id) as cnt FROM student_transport st JOIN employees e ON st.driver_id = e.id WHERE e.tenant_id = ?", [$tenantId])['cnt'] ?? 0);
@@ -139,6 +156,7 @@ class TransportController extends Controller
     public function tracking(): string
     {
         $tenantId = \Core\Database::getTenantId();
+        $this->ensureTransportColumns();
 
         $routes = $this->db()->select("
             SELECT e.id, e.first_name, e.last_name, e.phone, e.route_status, COUNT(st.id) as student_count, 

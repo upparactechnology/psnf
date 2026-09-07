@@ -13,7 +13,9 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Staff Directory</h1>
             <p class="text-xs text-slate-500 mt-0.5">Manage employee records, departments, designations & profile details</p>
         </div>
+        <?php if (has_permission('create_staff_directory')): ?>
         <a href="<?= url('users/create?redirect_to=/staff/employees') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Add New Employee</a>
+        <?php endif; ?>
     </div>
 
     <!-- Filter Bar -->
@@ -56,7 +58,11 @@ ob_start();
                                     <?= strtoupper(substr($emp['first_name'], 0, 1) . substr($emp['last_name'], 0, 1)) ?>
                                 </div>
                                 <div>
-                                    <a href="<?= url('staff/employees/' . $emp['id']) ?>" class="font-bold text-slate-900 dark:text-white hover:text-indigo-500"><?= e($emp['first_name'] . ' ' . $emp['last_name']) ?></a>
+                                    <?php if ($emp['id']): ?>
+                                        <a href="<?= url('staff/employees/' . $emp['id']) ?>" class="font-bold text-slate-900 dark:text-white hover:text-indigo-500"><?= e($emp['first_name'] . ' ' . $emp['last_name']) ?></a>
+                                    <?php else: ?>
+                                        <span class="font-bold text-slate-900 dark:text-white"><?= e($emp['first_name'] . ' ' . $emp['last_name']) ?></span>
+                                    <?php endif; ?>
                                     <p class="text-2xs text-slate-400"><?= e($emp['email']) ?></p>
                                 </div>
                             </div>
@@ -73,7 +79,11 @@ ob_start();
                             <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-500 uppercase"><?= e($emp['status']) ?></span>
                         </td>
                         <td class="p-4 text-right">
-                            <a href="<?= url('staff/employees/' . $emp['id']) ?>" class="text-indigo-500 font-bold hover:underline">Profile →</a>
+                            <?php if ($emp['id']): ?>
+                                <a href="<?= url('staff/employees/' . $emp['id']) ?>" class="text-indigo-500 font-bold hover:underline">Profile →</a>
+                            <?php else: ?>
+                                <span class="text-slate-400 text-2xs">No record</span>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

@@ -12,6 +12,7 @@ from database.connection import init_db, SessionLocal
 from database.models import FaceEmbedding, ERPUser
 from recognition.detector import FaceDetector
 from recognition.embedding import EmbeddingExtractor
+from recognition.model_manager import model_manager
 from recognition.matcher import matcher
 from services.face_service import FaceService
 from services.attendance_service import AttendanceService
@@ -19,55 +20,49 @@ from services.attendance_service import AttendanceService
 from routes import register, verify, attendance, detect
 from utils.logger import logger
 
-# ─── InsightFace Global Handle ──────────────────────────────────────────────────
-insight_app = None
+# ─── Global detector reference (for routes/detect.py import) ────────────────────
 detector = None
+
+def _load_insightface():
+    """Load InsightFace model — called lazily by ModelManager on first request."""
+    import insightface
+    app = insightface.app.FaceAnalysis(
+        name=settings.MODEL_NAME,
+        allowed_modules=['detection', 'recognition'],
+        providers=['CPUExecutionProvider']
+    )
+    app.prepare(ctx_id=0, det_size=(settings.DETECTION_SIZE, settings.DETECTION_SIZE))
+    return app
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Application startup — loads InsightFace buffalo_l model (MANDATORY).
-    If InsightFace fails to load, the service will NOT start.
+    Application startup — configures lazy-loading ModelManager.
+    InsightFace model loads on first request, not at startup.
     """
     logger.info("=" * 60)
     logger.info("  PSNF Face Recognition Attendance Backend")
-    logger.info("  Engine: InsightFace (buffalo_l) — MANDATORY MODE")
+    logger.info("  Engine: InsightFace (buffalo_l) — LAZY LOAD MODE")
+    logger.info(f"  Idle timeout: {settings.MODEL_IDLE_TIMEOUT}s")
+    logger.info(f"  No-face idle timeout: {settings.NO_FACE_IDLE_TIMEOUT}s")
     logger.info("=" * 60)
 
     # 1. Initialize Database Tables
     init_db()
 
-    # 2. Load InsightFace — MANDATORY, no fallback
-    global insight_app
-    try:
-        import insightface
-        logger.info(f"Loading InsightFace model: '{settings.MODEL_NAME}' ...")
-        insight_app = insightface.app.FaceAnalysis(
-            name=settings.MODEL_NAME,
-            allowed_modules=['detection', 'recognition'],
-            providers=['CPUExecutionProvider']
-        )
-        insight_app.prepare(ctx_id=0, det_size=(settings.DETECTION_SIZE, settings.DETECTION_SIZE))
-        logger.info(f"✅ InsightFace '{settings.MODEL_NAME}' loaded successfully on CPU.")
-    except ImportError:
-        logger.critical("❌ FATAL: 'insightface' package is NOT installed.")
-        logger.critical("   Run:  pip install insightface onnxruntime opencv-python-headless")
-        raise RuntimeError(
-            "InsightFace is not installed. "
-            "Please run: pip install -r requirements.txt  and restart the service."
-        )
-    except Exception as e:
-        logger.critical(f"❌ FATAL: InsightFace model failed to load: {str(e)}")
-        logger.critical(
-            "   Ensure the model 'buffalo_l' is downloaded. "
-            "Run once: python -c \"import insightface; insightface.app.FaceAnalysis(name='buffalo_l').prepare(ctx_id=0)\""
-        )
-        raise RuntimeError(f"InsightFace model load failed: {str(e)}")
+    # 2. Configure ModelManager (lazy load — no model loaded yet)
+    model_manager.configure(
+        idle_timeout=settings.MODEL_IDLE_TIMEOUT,
+        no_face_idle_timeout=settings.NO_FACE_IDLE_TIMEOUT,
+        load_fn=_load_insightface
+    )
+    model_manager.start()
 
-    # 3. Instantiate Recognition Components (InsightFace only, no fallback)
+    # 3. Instantiate Recognition Components with getter pattern
     global detector
-    detector  = FaceDetector(app_model=insight_app)
-    extractor = EmbeddingExtractor(app_model=insight_app)
+    detector  = FaceDetector(model_getter=model_manager.get_model, model_manager=model_manager)
+    extractor = EmbeddingExtractor(model_getter=model_manager.get_model)
 
     # 4. Instantiate Services
     face_service       = FaceService(detector=detector, extractor=extractor)
@@ -96,14 +91,17 @@ async def lifespan(app: FastAPI):
 
         matcher.load_cache(cache_dict)
         total = sum(len(v) for v in cache_dict.values())
-        logger.info(f"✅ Loaded {total} embeddings for {len(cache_dict)} employee(s) into cache.")
+        logger.info(f"Loaded {total} embeddings for {len(cache_dict)} employee(s) into cache.")
     except Exception as db_err:
         logger.error(f"Error populating embedding cache: {str(db_err)}")
     finally:
         db.close()
 
-    logger.info("🚀 Service ready — InsightFace engine active.")
+    logger.info("Service ready — model will load on first face recognition request.")
     yield
+
+    # 7. Shutdown: stop auto-unloader thread and release model
+    model_manager.stop()
     logger.info("Shutting down Face Recognition Service...")
 
 
@@ -138,11 +136,12 @@ app.include_router(detect.router, prefix="/api", tags=["Detect"])
 @app.get("/", tags=["Health"])
 @app.get("/health", tags=["Health"])
 async def health_check():
-    model_loaded = insight_app is not None
+    model_loaded = model_manager.is_loaded()
     return {
-        "status": "healthy" if model_loaded else "degraded",
+        "status": "healthy",
         "engine": "InsightFace (buffalo_l)",
         "model_loaded": model_loaded,
+        "idle_timeout_seconds": settings.MODEL_IDLE_TIMEOUT,
         "service": settings.APP_NAME,
         "version": "2.0.0",
         "similarity_threshold": settings.SIMILARITY_THRESHOLD,

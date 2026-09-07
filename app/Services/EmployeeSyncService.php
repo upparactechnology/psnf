@@ -21,60 +21,28 @@ class EmployeeSyncService
     ];
 
     /**
-     * Ensure default departments and designations exist.
-     * Returns an array mapping codes to IDs.
+     * Look up existing departments and designations by code.
+     * Returns an array mapping codes to IDs (only for records that exist).
      */
     public static function ensureDefaultDepartmentsAndDesignations(): array
     {
         $db = Application::$app->db;
         
-        // Departments
-        $depts = [
-            'ACAD'  => ['name' => 'Academics', 'desc' => 'Academic and Teaching staff'],
-            'ADMIN' => ['name' => 'Administration', 'desc' => 'School management and administrative staff'],
-            'SUPP'  => ['name' => 'Support', 'desc' => 'Operations, IT, and Transport Support staff']
-        ];
-        
+        $deptCodes = ['ACAD', 'ADMIN', 'SUPP'];
         $deptIds = [];
-        foreach ($depts as $code => $info) {
+        foreach ($deptCodes as $code) {
             $existing = $db->selectOne("SELECT id FROM departments WHERE code = ? LIMIT 1", [$code]);
             if ($existing) {
                 $deptIds[$code] = (int) $existing['id'];
-            } else {
-                $id = $db->insert('departments', [
-                    'tenant_id'   => 1,
-                    'name'        => $info['name'],
-                    'code'        => $code,
-                    'description' => $info['desc'],
-                    'is_active'   => 1
-                ]);
-                $deptIds[$code] = (int) $id;
             }
         }
 
-        // Designations
-        $desigs = [
-            'TCH'   => ['title' => 'Teacher', 'desc' => 'Class teacher / Subject teacher'],
-            'ADMIN' => ['title' => 'Administrator', 'desc' => 'System / School Administrator'],
-            'STAFF' => ['title' => 'Staff Member', 'desc' => 'General administration staff'],
-            'DRV'   => ['title' => 'Driver', 'desc' => 'Transport driver / operator'],
-            'THER'  => ['title' => 'Therapist', 'desc' => 'Therapy specialist']
-        ];
-
+        $desigCodes = ['TCH', 'ADMIN', 'STAFF', 'DRV', 'THER'];
         $desigIds = [];
-        foreach ($desigs as $code => $info) {
+        foreach ($desigCodes as $code) {
             $existing = $db->selectOne("SELECT id FROM designations WHERE code = ? LIMIT 1", [$code]);
             if ($existing) {
                 $desigIds[$code] = (int) $existing['id'];
-            } else {
-                $id = $db->insert('designations', [
-                    'tenant_id'   => 1,
-                    'title'       => $info['title'],
-                    'code'        => $code,
-                    'description' => $info['desc'],
-                    'is_active'   => 1
-                ]);
-                $desigIds[$code] = (int) $id;
             }
         }
 
@@ -160,10 +128,6 @@ class EmployeeSyncService
                 'phone'          => $user['phone'] ?? null,
                 'status'         => $status,
                 'branch_id'      => $user['branch_id'] ?? 1,
-                'employee_code'  => $existingEmp['emp_code'],
-                'name'           => trim("$firstName $lastName"),
-                'department'     => $deptName,
-                'designation'    => $desigTitle,
                 'updated_at'     => now()
             ], 'id = ?', [$existingEmp['id']]);
 
@@ -190,10 +154,6 @@ class EmployeeSyncService
                 'joining_date'   => date('Y-m-d'),
                 'salary_basic'   => 35000.00,
                 'status'         => $status,
-                'employee_code'  => $empCode,
-                'name'           => trim("$firstName $lastName"),
-                'department'     => $deptName,
-                'designation'    => $desigTitle,
                 'created_at'     => now()
             ]);
 

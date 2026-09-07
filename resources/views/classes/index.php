@@ -6,7 +6,8 @@ ob_start();
 ?>
 
 <div x-data="{ 
-    showCreateModal: false,
+    showCreateModal: <?= isset($_GET['add_next']) ? 'true' : 'false' ?>,
+    addNext: false,
     selectedGroupId: '<?= $groups[0]['id'] ?? '' ?>',
     selectedYearId: '<?= $years[0]['id'] ?? '' ?>'
 }" class="space-y-6 max-w-6xl mx-auto py-2">
@@ -17,10 +18,12 @@ ob_start();
             <h2 class="text-xl font-bold text-slate-900 dark:text-white">Classes & Sections</h2>
             <p class="text-xs text-slate-500 mt-0.5">Directory of active classes, section configurations, and enrolled students</p>
         </div>
+        <?php if (has_permission('create_classes')): ?>
         <button @click="showCreateModal = true" 
                 class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-sm transition-all">
             + Create Class
         </button>
+        <?php endif; ?>
     </div>
 
     <!-- Class Grid -->
@@ -84,6 +87,7 @@ ob_start();
             
             <form action="<?= url('academics/classes') ?>" method="POST" class="space-y-4 text-xs">
                 <?= \Core\View::csrf() ?>
+                <input type="hidden" name="_add_next" :value="addNext ? '1' : '0'">
                 <div class="grid grid-cols-2 gap-3">
                     <div class="space-y-1">
                         <label class="block font-bold text-slate-700 dark:text-slate-300">Class Name</label>
@@ -138,7 +142,8 @@ ob_start();
 
                 <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                     <button type="button" @click="showCreateModal = false" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500">Create Class</button>
+                    <button type="submit" @click="addNext = false" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold">Save & Close</button>
+                    <button type="submit" @click="addNext = true" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500">Save & Add Next</button>
                 </div>
             </form>
         </div>

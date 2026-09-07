@@ -3,9 +3,23 @@
 <div class="space-y-6">
 
     <!-- Report Card Info -->
-    <div class="p-5 rounded-2xl border bg-white dark:bg-slate-900/30 border-slate-200 dark:border-white/5 shadow-sm">
-        <h3 class="text-base font-bold text-slate-800 dark:text-white">Evaluations & Certificates</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Academic progress charts, test performance logs, and issued achievements</p>
+    <div class="p-5 rounded-2xl border bg-white dark:bg-slate-900/30 border-slate-200 dark:border-white/5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h3 class="text-base font-bold text-slate-800 dark:text-white">Evaluations & Certificates</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Academic progress charts, test performance logs, and issued achievements</p>
+        </div>
+        <?php if (!empty($academic_years)): ?>
+        <form method="GET" class="flex gap-2">
+            <select name="academic_year_id" onchange="this.form.submit()"
+                    class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-300 text-xs rounded-xl px-3.5 py-2 focus:outline-none focus:border-brand-500">
+                <?php foreach ($academic_years as $ay): ?>
+                    <option value="<?= e((string)$ay['id']) ?>" <?= (int)$ay['id'] === $selected_year_id ? 'selected' : '' ?>>
+                        <?= e($ay['year_name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </form>
+        <?php endif; ?>
     </div>
 
     <!-- Layout Grid -->

@@ -148,7 +148,7 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
             <div class="space-y-1.5">
                 <label class="block text-xs font-medium text-slate-400">Active Status</label>
                 <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="is_active" value="1" checked class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500/30">
+                    <input type="checkbox" name="is_active" value="1" <?= ($fn('is_active') ?: '1') ? 'checked' : '' ?> class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500/30">
                     <span class="text-sm text-slate-300">Account is active</span>
                 </label>
             </div>
@@ -157,6 +157,7 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
         <!-- Roles -->
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 mb-5">
             <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3 mb-4">Assign Roles</h3>
+            <p class="text-xs text-slate-500 mb-3">Modules and pages visible to this user are determined by their assigned role permissions.</p>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <?php foreach ($roles as $role): ?>
                 <label class="flex items-center gap-2 cursor-pointer p-3 rounded-xl border border-slate-700/30 hover:border-slate-600/50 hover:bg-slate-800/30 transition-all">

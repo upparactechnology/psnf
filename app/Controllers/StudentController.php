@@ -34,20 +34,43 @@ class StudentController extends Controller
 
         $statuses = Student::statusCounts();
 
+        // Pending online enrollments (admin only)
+        $pendingEnrollments = [];
+        $schools = [];
+        $branches = [];
+        if (has_permission('approve_enrollments')) {
+            $db = \Core\Application::$app->db;
+            $pendingEnrollments = $db->select(
+                "SELECT * FROM online_enrollments WHERE status = 'pending' ORDER BY created_at DESC"
+            );
+            $schools = $db->select("SELECT id, name FROM schools WHERE is_active = 1 AND deleted_at IS NULL ORDER BY name ASC");
+            $branches = $db->select("SELECT id, name, school_id FROM branches WHERE is_active = 1 AND deleted_at IS NULL ORDER BY name ASC");
+        }
+
         if ($this->isHtmx() && ($this->request->get('search') !== null || $this->request->get('status') !== null || $this->request->get('disability') !== null)) {
             if (file_exists(VIEWS_PATH . '/students/_table.php')) {
                 return $this->view('students/_table', array_merge($result, ['search' => $search, 'statuses' => $statuses]));
             }
         }
 
-        return $this->view('students/index', array_merge($result, ['search' => $search, 'statuses' => $statuses, 'filters' => $filters]));
+        return $this->view('students/index', array_merge($result, [
+            'search' => $search,
+            'statuses' => $statuses,
+            'filters' => $filters,
+            'pendingEnrollments' => $pendingEnrollments,
+            'schools' => $schools,
+            'branches' => $branches,
+        ]));
     }
 
     public function create(): string
     {
-        $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
-        $branches = \Core\Application::$app->db->select("SELECT id, name, school_id FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
-        return $this->view('students/create', compact('schools', 'branches'));
+        $tenantId = \Core\Database::getTenantId();
+        $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [$tenantId]);
+        $branches = \Core\Application::$app->db->select("SELECT id, name, school_id FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [$tenantId]);
+        $classes  = \Core\Application::$app->db->select("SELECT id, name, section FROM classes WHERE tenant_id = ? AND deleted_at IS NULL ORDER BY name ASC", [$tenantId]);
+        $academicYears = \Core\Application::$app->db->select("SELECT id, year_name FROM academic_years WHERE tenant_id = ? ORDER BY year_name DESC", [$tenantId]);
+        return $this->view('students/create', compact('schools', 'branches', 'classes', 'academicYears'));
     }
 
     public function store(): string
@@ -76,6 +99,10 @@ class StudentController extends Controller
             'allergies'              => 'nullable',
             'triggers'               => 'nullable',
             'medications'            => 'nullable',
+            'class'                  => 'nullable|max:50',
+            'section'                => 'nullable|max:20',
+            'academic_year'          => 'nullable|max:20',
+            'enrolled_date'          => 'nullable|date',
         ];
 
         $validator = new \Core\Validator($data, $rules);
@@ -124,7 +151,7 @@ class StudentController extends Controller
                 return $this->successResponse('Student created.', ['id' => $studentId], 201);
             }
 
-            return $this->redirect("/academics/students/$studentId");
+            return $this->redirect('/students');
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to create student. ' . $e->getMessage());
             return $this->redirect('/academics/students/create');
@@ -309,7 +336,7 @@ class StudentController extends Controller
             $this->service->update((int) $id, $validated, $filesData);
             
             // Auto generate roll numbers if student is in a class (in case name changed)
-            $studentRow = $this->db()->selectOne("SELECT class_id FROM students WHERE id = ?", [(int)$id]);
+            $studentRow = \Core\Application::$app->db->selectOne("SELECT class_id FROM students WHERE id = ?", [(int)$id]);
             if ($studentRow && !empty($studentRow['class_id'])) {
                 \App\Models\Student::autoGenerateRollNumbers((int)$studentRow['class_id']);
             }

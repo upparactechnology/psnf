@@ -500,13 +500,21 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                 let poseValid = false;
                 let poseMsg = 'Align face in oval';
 
-                // We want them looking straight ahead for attendance, but with looser constraints for ease of use
-                if (Math.abs(yaw) < 0.45 && pitch > 0.65 && pitch < 1.7) {
+                // Haar cascade mode (pitch=0, yaw=0) — skip pose check, just check face center
+                const isHaarMode = (pitch === 0.0 && yaw === 0.0);
+
+                if (isHaarMode) {
+                    // Haar detected a face — just check if it's centered in the oval
                     poseValid = true;
                 } else {
-                    if (Math.abs(yaw) >= 0.45) poseMsg = 'Look straight ahead';
-                    else if (pitch <= 0.65) poseMsg = 'Tilt head slightly up';
-                    else if (pitch >= 1.7) poseMsg = 'Tilt head slightly down';
+                    // InsightFace mode — full pose validation
+                    if (Math.abs(yaw) < 0.45 && pitch > 0.65 && pitch < 1.7) {
+                        poseValid = true;
+                    } else {
+                        if (Math.abs(yaw) >= 0.45) poseMsg = 'Look straight ahead';
+                        else if (pitch <= 0.65) poseMsg = 'Tilt head slightly up';
+                        else if (pitch >= 1.7) poseMsg = 'Tilt head slightly down';
+                    }
                 }
 
                 // Check if bounding box center is roughly within the circle

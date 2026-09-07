@@ -30,18 +30,20 @@ ob_start();
                 <p class="text-indigo-200 mt-2 text-sm font-medium">Real-time ledger analytics & revenue management</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="<?= url('fees/export') ?>" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg border border-white/20">
+                <a href="<?= url('fees/export') ?>" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-md px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg border border-white/20" style="color: #fff !important">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     Export Ledger
                 </a>
-                <a href="<?= url('fees/batch-generator') ?>" class="inline-flex items-center gap-2 bg-indigo-500/80 hover:bg-indigo-500 backdrop-blur-md text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg border border-indigo-400/50">
+                <a href="<?= url('fees/batch-generator') ?>" class="inline-flex items-center gap-2 bg-indigo-500/80 hover:bg-indigo-500 backdrop-blur-md px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg border border-indigo-400/50" style="color: #fff !important">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     Batch Generator
                 </a>
-                <a href="<?= url('fees/create') ?>" class="inline-flex items-center gap-2 bg-white text-indigo-900 hover:bg-indigo-50 px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-xl">
+                <?php if (has_permission('create_all_invoices')): ?>
+                <a href="<?= url('fees/create') ?>" class="inline-flex items-center gap-2 bg-white hover:bg-indigo-50 px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-xl" style="color: #312e81 !important">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     New Invoice
                 </a>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -285,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
             datasets: [{
                 label: 'Revenue Collected',
-                data: [12000, 19000, 15000, 22000, 18000, 24000, 21000, 28000, 25000, 31000, 29000, 35000],
+                data: [<?= implode(',', array_values($chartData)) ?>],
                 borderColor: '#6366f1',
                 backgroundColor: gradient,
                 borderWidth: 3,

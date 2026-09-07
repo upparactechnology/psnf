@@ -110,116 +110,96 @@ foreach ($permissions as $module => $perms) {
 
                 <!-- Matrix Table -->
                 <div class="overflow-x-auto min-h-[400px]">
-                    <table class="w-full text-left border-collapse table-fixed">
+                    <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-slate-100 dark:border-slate-800 text-2xs font-bold text-slate-400 uppercase tracking-wider">
-                                <th class="py-2.5 px-4 w-5/12 text-left">Module / Permission Title</th>
-                                <th class="py-2.5 px-4 w-7/60 text-center">View</th>
-                                <th class="py-2.5 px-4 w-7/60 text-center">Analytics</th>
-                                <th class="py-2.5 px-4 w-7/60 text-center">Create</th>
-                                <th class="py-2.5 px-4 w-7/60 text-center">Edit</th>
-                                <th class="py-2.5 px-4 w-7/60 text-center">Delete</th>
+                                <th class="py-2.5 px-4 text-left">Module / Page</th>
+                                <th class="py-2.5 px-4 text-center w-16">View</th>
+                                <th class="py-2.5 px-4 text-center w-16">Create</th>
+                                <th class="py-2.5 px-4 text-center w-16">Edit</th>
+                                <th class="py-2.5 px-4 text-center w-16">Delete</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                            <template x-for="row in tableRows" :key="row.type + '-' + (row.id || row.label)">
-                                <tr :class="row.type === 'header' ? 'bg-slate-50/50 dark:bg-slate-900/50' : 'hover:bg-slate-50 dark:hover:bg-slate-800/10 transition-all'">
-                                    
-                                    <!-- Category Heading Row -->
-                                    <template x-if="row.type === 'header'">
-                                        <td colspan="6" class="py-2.5 px-4 font-bold text-slate-500 uppercase tracking-wider text-2xs" x-text="row.label"></td>
-                                    </template>
+                            <template x-for="(mod, modIdx) in permissionMetadata" :key="mod.module">
+                                <template x-for="(row, rowIdx) in getModuleRows(mod, modIdx)" :key="row.key">
+                                    <tr :class="row.isHeader ? 'bg-slate-50/50 dark:bg-slate-900/50' : 'hover:bg-slate-50 dark:hover:bg-slate-800/10 transition-all'">
+                                        <!-- Module Header -->
+                                        <template x-if="row.isHeader">
+                                            <td colspan="5" class="py-2.5 px-4 font-bold text-slate-500 uppercase tracking-wider text-2xs cursor-pointer select-none" @click="toggleModule(modIdx)">
+                                                <div class="flex items-center gap-2">
+                                                    <svg class="w-3 h-3 transition-transform" :class="expandedModules[modIdx] ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                                                    <span x-text="mod.module"></span>
+                                                    <span class="text-3xs font-normal text-slate-400 normal-case tracking-normal" x-text="'(' + mod.items.length + ' pages)'"></span>
+                                                </div>
+                                            </td>
+                                        </template>
 
-                                    <!-- Individual Permission Name -->
-                                    <template x-if="row.type === 'permission'">
-                                        <td class="py-3 px-4 text-slate-850 dark:text-slate-200"
-                                            :class="row.depth > 0 ? 'text-xs pl-8 font-normal' : 'text-xs font-semibold'"
-                                            :style="'padding-left: ' + (row.depth * 1.5 + 1) + 'rem'">
-                                            <span x-text="row.depth > 0 ? '└── ' + row.name : row.name"></span>
-                                        </td>
-                                    </template>
-                                    
-                                    <!-- VIEW COLUMN -->
-                                    <template x-if="row.type === 'permission'">
-                                        <td class="py-3 px-4 text-center">
-                                            <template x-if="row.col === 'view'">
-                                                <input type="checkbox" :value="row.id" 
-                                                       :disabled="getActiveRole()?.slug === 'super_admin' || isPermissionDisabled(row.slug)"
-                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermissionChecked(row.id)"
-                                                       @change="togglePermission(row.id, $event.target.checked)"
+                                        <!-- Page Row -->
+                                        <template x-if="!row.isHeader">
+                                            <td class="py-3 px-4 text-slate-850 dark:text-slate-200 text-xs font-normal" style="padding-left: 2.5rem">
+                                                <span x-text="row.name"></span>
+                                            </td>
+                                        </template>
+
+                                        <!-- View Column -->
+                                        <template x-if="!row.isHeader && row.viewSlug">
+                                            <td class="py-3 px-4 text-center">
+                                                <input type="checkbox"
+                                                       :disabled="getActiveRole()?.slug === 'super_admin'"
+                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermChecked(row.viewSlug)"
+                                                       @change="togglePermBySlug(row.viewSlug, $event.target.checked)"
                                                        class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
-                                            </template>
-                                            <template x-if="row.col !== 'view'">
-                                                <span class="text-slate-300 dark:text-slate-700/60">-</span>
-                                            </template>
-                                        </td>
-                                    </template>
+                                            </td>
+                                        </template>
+                                        <template x-if="!row.isHeader && !row.viewSlug">
+                                            <td class="py-3 px-4 text-center"><span class="text-slate-300 dark:text-slate-700/60">-</span></td>
+                                        </template>
 
-                                    <!-- ANALYTICS COLUMN -->
-                                    <template x-if="row.type === 'permission'">
-                                        <td class="py-3 px-4 text-center">
-                                            <template x-if="row.col === 'analytics'">
-                                                <input type="checkbox" :value="row.id" 
-                                                       :disabled="getActiveRole()?.slug === 'super_admin' || isPermissionDisabled(row.slug)"
-                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermissionChecked(row.id)"
-                                                       @change="togglePermission(row.id, $event.target.checked)"
+                                        <!-- Create Column -->
+                                        <template x-if="!row.isHeader && row.createSlug">
+                                            <td class="py-3 px-4 text-center">
+                                                <input type="checkbox"
+                                                       :disabled="getActiveRole()?.slug === 'super_admin'"
+                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermChecked(row.createSlug)"
+                                                       @change="togglePermBySlug(row.createSlug, $event.target.checked)"
                                                        class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
-                                            </template>
-                                            <template x-if="row.col !== 'analytics'">
-                                                <span class="text-slate-300 dark:text-slate-700/60">-</span>
-                                            </template>
-                                        </td>
-                                    </template>
+                                            </td>
+                                        </template>
+                                        <template x-if="!row.isHeader && !row.createSlug">
+                                            <td class="py-3 px-4 text-center"><span class="text-slate-300 dark:text-slate-700/60">-</span></td>
+                                        </template>
 
-                                    <!-- CREATE COLUMN -->
-                                    <template x-if="row.type === 'permission'">
-                                        <td class="py-3 px-4 text-center">
-                                            <template x-if="row.col === 'create'">
-                                                <input type="checkbox" :value="row.id" 
-                                                       :disabled="getActiveRole()?.slug === 'super_admin' || isPermissionDisabled(row.slug)"
-                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermissionChecked(row.id)"
-                                                       @change="togglePermission(row.id, $event.target.checked)"
+                                        <!-- Edit Column -->
+                                        <template x-if="!row.isHeader && row.editSlug">
+                                            <td class="py-3 px-4 text-center">
+                                                <input type="checkbox"
+                                                       :disabled="getActiveRole()?.slug === 'super_admin'"
+                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermChecked(row.editSlug)"
+                                                       @change="togglePermBySlug(row.editSlug, $event.target.checked)"
                                                        class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
-                                            </template>
-                                            <template x-if="row.col !== 'create'">
-                                                <span class="text-slate-300 dark:text-slate-700/60">-</span>
-                                            </template>
-                                        </td>
-                                    </template>
+                                            </td>
+                                        </template>
+                                        <template x-if="!row.isHeader && !row.editSlug">
+                                            <td class="py-3 px-4 text-center"><span class="text-slate-300 dark:text-slate-700/60">-</span></td>
+                                        </template>
 
-                                    <!-- EDIT COLUMN -->
-                                    <template x-if="row.type === 'permission'">
-                                        <td class="py-3 px-4 text-center">
-                                            <template x-if="row.col === 'edit'">
-                                                <input type="checkbox" :value="row.id" 
-                                                       :disabled="getActiveRole()?.slug === 'super_admin' || isPermissionDisabled(row.slug)"
-                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermissionChecked(row.id)"
-                                                       @change="togglePermission(row.id, $event.target.checked)"
+                                        <!-- Delete Column -->
+                                        <template x-if="!row.isHeader && row.delSlug">
+                                            <td class="py-3 px-4 text-center">
+                                                <input type="checkbox"
+                                                       :disabled="getActiveRole()?.slug === 'super_admin'"
+                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermChecked(row.delSlug)"
+                                                       @change="togglePermBySlug(row.delSlug, $event.target.checked)"
                                                        class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
-                                            </template>
-                                            <template x-if="row.col !== 'edit'">
-                                                <span class="text-slate-300 dark:text-slate-700/60">-</span>
-                                            </template>
-                                        </td>
-                                    </template>
+                                            </td>
+                                        </template>
+                                        <template x-if="!row.isHeader && !row.delSlug">
+                                            <td class="py-3 px-4 text-center"><span class="text-slate-300 dark:text-slate-700/60">-</span></td>
+                                        </template>
 
-                                    <!-- DELETE COLUMN -->
-                                    <template x-if="row.type === 'permission'">
-                                        <td class="py-3 px-4 text-center">
-                                            <template x-if="row.col === 'delete'">
-                                                <input type="checkbox" :value="row.id" 
-                                                       :disabled="getActiveRole()?.slug === 'super_admin' || isPermissionDisabled(row.slug)"
-                                                       :checked="getActiveRole()?.slug === 'super_admin' || isPermissionChecked(row.id)"
-                                                       @change="togglePermission(row.id, $event.target.checked)"
-                                                       class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-indigo-600 focus:ring-indigo-500/30 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
-                                            </template>
-                                            <template x-if="row.col !== 'delete'">
-                                                <span class="text-slate-300 dark:text-slate-700/60">-</span>
-                                            </template>
-                                        </td>
-                                    </template>
-
-                                </tr>
+                                    </tr>
+                                </template>
                             </template>
                         </tbody>
                     </table>
@@ -326,469 +306,176 @@ function rolesPermissionsDashboard() {
         showCreateModal: false,
         showEditModal: false,
         saving: false,
-        tableRows: [],
         slugToIdMap: {},
-        idToSlugMap: {},
-        
-        // Define hierarchy dependencies (childSlug: parentSlug)
-        permissionDependencies: {
-            'create_users': 'view_users',
-            'edit_users': 'view_users',
-            'delete_users': 'view_users',
-            'assign_roles': 'view_users',
-            
-            'create_roles': 'view_roles',
-            'edit_roles': 'view_roles',
-            'delete_roles': 'view_roles',
-            
-            'create_branches': 'view_branches',
-            'edit_branches': 'view_branches',
-            'delete_branches': 'view_branches',
-            
-            'create_schools': 'view_schools',
-            'edit_schools': 'view_schools',
-            'delete_schools': 'view_schools',
-            
-            'create_tenants': 'view_tenants',
-            'edit_tenants': 'view_tenants',
-            'delete_tenants': 'view_tenants',
-            
-            'create_students': 'view_students',
-            'edit_students': 'view_students',
-            'delete_students': 'view_students',
-            'approve_admissions': 'view_students',
-            
-            'upload_documents': 'view_documents',
-            'edit_documents': 'view_documents',
-            'verify_documents': 'view_documents',
-            'delete_documents': 'view_documents',
-            
-            'export_reports': 'view_reports',
-            'assign_permissions': 'view_permissions',
-            
-            'logout': 'login',
-            'manage_sessions': 'login',
-            
-            'driver_app_drop_route': 'driver_app',
-            'driver_app_early_leave': 'driver_app',
-            'driver_app_pickup_route': 'driver_app',
-            'driver_app_safety_center': 'driver_app',
-            'driver_app_sos': 'driver_app',
-            'driver_app_speed_monitor': 'driver_app',
-            'driver_app_students_onboard': 'driver_app',
-            'driver_app_trip_logs': 'driver_app',
-            
-            'teacher_app_student_details': 'teacher_portal',
-            'teacher_app_half_leave_notification': 'teacher_portal',
-            'teacher_app_timetables': 'teacher_portal',
-            'access_exams_app': 'teacher_portal',
-            
-            'staff_app_student_details': 'teacher_staff_app',
-            'staff_app_half_leave_notification': 'teacher_staff_app',
-            'staff_app_half_leave_details': 'teacher_staff_app',
-            
-            'see_student_guardian': 'parents_portal',
-            'see_student_medical': 'parents_portal',
-            'see_student_name': 'parents_portal',
-        },
-
-        modalRoleData: {
-            id: null,
-            name: '',
-            level: 10,
-            description: ''
-        },
+        expandedModules: {},
+        permissionMetadata: [
+            { module: "Academic", items: [
+                { name: "Academic Years", view: "view_academic_years", create: "create_academic_years", edit: "edit_academic_years", del: "delete_academic_years" },
+                { name: "Main Groups", view: "view_main_groups", create: "create_main_groups", edit: "edit_main_groups", del: "delete_main_groups" },
+                { name: "Curriculum", view: "view_curriculum", create: "create_curriculum", edit: "edit_curriculum", del: "delete_curriculum" },
+                { name: "Subjects", view: "view_subjects", create: "create_subjects", edit: "edit_subjects", del: "delete_subjects" },
+                { name: "Classes", view: "view_classes", create: "create_classes", edit: "edit_classes", del: "delete_classes" },
+                { name: "Students", view: "view_students_list", create: "create_students_list", edit: "edit_students_list", del: "delete_students_list" },
+                { name: "Teachers", view: "view_teachers", create: "create_teachers", edit: "edit_teachers", del: "delete_teachers" },
+                { name: "Attendance", view: "view_acad_attendance", create: "create_acad_attendance", edit: "edit_acad_attendance", del: "delete_acad_attendance" },
+                { name: "Timetable", view: "view_timetable", create: "create_timetable", edit: "edit_timetable", del: "delete_timetable" },
+                { name: "Assessments", view: "view_assessments", create: "create_assessments", edit: "edit_assessments", del: "delete_assessments" },
+                { name: "Exams Setup", view: "view_exams", create: "create_exams", edit: "edit_exams", del: "delete_exams" },
+                { name: "Report Cards", view: "view_report_cards", create: "create_report_cards", edit: "edit_report_cards", del: "delete_report_cards" },
+                { name: "Promotion", view: "view_promotion", create: "create_promotion", edit: "edit_promotion", del: "delete_promotion" },
+                { name: "Announcements", view: "view_announcements", create: "create_announcements", edit: "edit_announcements", del: "delete_announcements" },
+                { name: "Settings", view: "view_academic_settings", edit: "edit_academic_settings" }
+            ]},
+            { module: "Staff", items: [
+                { name: "Staff Overview", view: "view_staff_overview" },
+                { name: "Staff Directory", view: "view_staff_directory", create: "create_staff_directory", edit: "edit_staff_directory", del: "delete_staff_directory" },
+                { name: "Departments", view: "view_departments", create: "create_departments", edit: "edit_departments", del: "delete_departments" },
+                { name: "Designations", view: "view_designations", create: "create_designations", edit: "edit_designations", del: "delete_designations" },
+                { name: "Staff Attendance", view: "view_staff_attendance", create: "create_staff_attendance", edit: "edit_staff_attendance", del: "delete_staff_attendance" },
+                { name: "Face Kiosk", view: "view_face_kiosk", create: "create_face_kiosk" },
+                { name: "Face Register", view: "view_face_register", create: "create_face_register", edit: "edit_face_register", del: "delete_face_register" },
+                { name: "Leave Management", view: "view_leave_management", create: "create_leave_management", edit: "edit_leave_management", del: "delete_leave_management" },
+                { name: "Roles & Permissions", view: "view_staff_roles", create: "create_staff_roles", edit: "edit_staff_roles", del: "delete_staff_roles" },
+                { name: "User Accounts", view: "view_staff_user_accounts", create: "create_staff_user_accounts", edit: "edit_staff_user_accounts", del: "delete_staff_user_accounts" },
+                { name: "Staff Settings", view: "view_staff_settings", edit: "edit_staff_settings" }
+            ]},
+            { module: "Fees", items: [
+                { name: "Fees Dashboard", view: "view_fees_dashboard" },
+                { name: "All Invoices", view: "view_all_invoices", create: "create_all_invoices", edit: "edit_all_invoices", del: "delete_all_invoices" },
+                { name: "Fee Structures", view: "view_fee_structures", create: "create_fee_structures", edit: "edit_fee_structures", del: "delete_fee_structures" },
+                { name: "Batch Generator", view: "view_batch_generator", create: "create_batch_generator" },
+                { name: "Receipts Log", view: "view_receipts_log", create: "create_receipts_log" },
+                { name: "Fee Categories", view: "view_fee_categories", create: "create_fee_categories", edit: "edit_fee_categories", del: "delete_fee_categories" },
+                { name: "Late Fee Policies", view: "view_late_fee_policies", create: "create_late_fee_policies", edit: "edit_late_fee_policies", del: "delete_late_fee_policies" }
+            ]},
+            { module: "Transport", items: [
+                { name: "Transport Overview", view: "view_transport_overview" },
+                { name: "Drivers", view: "view_transport_drivers", create: "create_transport_drivers", edit: "edit_transport_drivers", del: "delete_transport_drivers" },
+                { name: "Student Assignments", view: "view_student_transport", create: "create_student_transport", edit: "edit_student_transport", del: "delete_student_transport" },
+                { name: "Live Tracking", view: "view_live_tracking" },
+                { name: "Transport Settings", view: "view_transport_settings", edit: "edit_transport_settings" },
+                { name: "Transport Logs", view: "view_transport_logs" }
+            ]},
+            { module: "Payroll", items: [
+                { name: "Payroll Runs", view: "view_payroll_runs", create: "create_payroll_runs", edit: "edit_payroll_runs", del: "delete_payroll_runs" },
+                { name: "Detailed Attendance", view: "view_payroll_attendance" },
+                { name: "Holidays Calendar", view: "view_holidays_calendar", create: "create_holidays_calendar", edit: "edit_holidays_calendar", del: "delete_holidays_calendar" },
+                { name: "Audit History Logs", view: "view_payroll_audit" }
+            ]},
+            { module: "Documents", items: [
+                { name: "Documents Overview", view: "view_documents_overview" },
+                { name: "Student Documents", view: "view_student_documents", create: "create_student_documents", edit: "edit_student_documents", del: "delete_student_documents" },
+                { name: "Parent Documents", view: "view_parent_documents", create: "create_parent_documents", edit: "edit_parent_documents", del: "delete_parent_documents" },
+                { name: "Driver Documents", view: "view_driver_documents", create: "create_driver_documents", edit: "edit_driver_documents", del: "delete_driver_documents" }
+            ]},
+            { module: "Certificate Generator", items: [
+                { name: "Certificates – View", view: "view_certificates" },
+                { name: "Certificates – Create", create: "create_certificates" },
+                { name: "Certificates – Edit", edit: "edit_certificates" },
+                { name: "Certificates – Delete", del: "delete_certificates" }
+            ]},
+            { module: "File Manager", items: [
+                { name: "File Manager – View", view: "view_file_manager" },
+                { name: "File Manager – Upload", create: "upload_file_manager" },
+                { name: "File Manager – Delete", del: "delete_file_manager" },
+                { name: "File Manager – Share", create: "share_file_manager" }
+            ]},
+            { module: "Reports", items: [
+                { name: "Reports Overview", view: "view_reports_overview" },
+                { name: "Financial Reports", view: "view_financial_reports", create: "export_financial_reports" },
+                { name: "Student Reports", view: "view_student_reports", create: "export_student_reports" },
+                { name: "Staff & HR Reports", view: "view_staff_reports", create: "export_staff_reports" },
+                { name: "WhatsApp Logs", view: "view_whatsapp_logs" }
+            ]},
+            { module: "Settings", items: [
+                { name: "General Settings", view: "view_general_settings", edit: "edit_general_settings" },
+                { name: "Integrations & APIs", view: "view_integrations", edit: "edit_integrations" },
+                { name: "System Configurations", view: "view_system_config", edit: "edit_system_config" }
+            ]},
+            { module: "Online Enrollment", items: [
+                { name: "Enrollments", view: "view_enrollments", create: "approve_enrollments", del: "reject_enrollments" }
+            ]},
+            { module: "Games", items: [
+                { name: "Games Overview", view: "view_games_overview" },
+                { name: "Money Counting", view: "view_game_money_counting", create: "create_game_money_counting", edit: "edit_game_money_counting", del: "delete_game_money_counting" },
+                { name: "Safe vs Unsafe", view: "view_game_safe_vs_unsafe", create: "create_game_safe_vs_unsafe", edit: "edit_game_safe_vs_unsafe", del: "delete_game_safe_vs_unsafe" },
+                { name: "Safety Signs", view: "view_game_safety_signs", create: "create_game_safety_signs", edit: "edit_game_safety_signs", del: "delete_game_safety_signs" },
+                { name: "Sentence Builder", view: "view_game_sentence_builder", create: "create_game_sentence_builder", edit: "edit_game_sentence_builder", del: "delete_game_sentence_builder" },
+                { name: "Shopping Store", view: "view_game_shopping_store", create: "create_game_shopping_store", edit: "edit_game_shopping_store", del: "delete_game_shopping_store" }
+            ]}
+        ],
+        modalRoleData: { id: null, name: '', level: 10, description: '' },
 
         init() {
-            // Build slug map
-            this.allPermissions.forEach(p => {
-                this.slugToIdMap[p.slug] = p.id;
-                this.idToSlugMap[p.id] = p.slug;
-            });
+            this.allPermissions.forEach(p => { this.slugToIdMap[p.slug] = p.id; });
+            this.permissionMetadata.forEach((mod, idx) => { this.expandedModules[idx] = false; });
+            if (this.roles.length > 0) this.activeRoleId = this.roles[0].id;
+        },
 
-            // Define structural metadata template
-            const permissionMetadata = [
-                {
-                    module: "Audit Logs",
-                    items: [
-                        { name: "View Audit Logs", slug: "view_audit_logs", col: "view" }
-                    ]
-                },
-                {
-                    module: "Authentication",
-                    items: [
-                        { name: "Login", slug: "login", col: "view", children: ["logout", "manage_sessions"] },
-                        { name: "Logout", slug: "logout", col: "edit" },
-                        { name: "Manage Sessions", slug: "manage_sessions", col: "edit" }
-                    ]
-                },
-                {
-                    module: "Branches",
-                    items: [
-                        { name: "View Branches", slug: "view_branches", col: "view", children: ["create_branches", "edit_branches", "delete_branches"] },
-                        { name: "Create Branches", slug: "create_branches", col: "create" },
-                        { name: "Edit Branches", slug: "edit_branches", col: "edit" },
-                        { name: "Delete Branches", slug: "delete_branches", col: "delete" }
-                    ]
-                },
-                {
-                    module: "Schools",
-                    items: [
-                        { name: "View Schools", slug: "view_schools", col: "view", children: ["create_schools", "edit_schools", "delete_schools"] },
-                        { name: "Create Schools", slug: "create_schools", col: "create" },
-                        { name: "Edit Schools", slug: "edit_schools", col: "edit" },
-                        { name: "Delete Schools", slug: "delete_schools", col: "delete" }
-                    ]
-                },
-                {
-                    module: "Tenants",
-                    items: [
-                        { name: "View Tenants", slug: "view_tenants", col: "view", children: ["create_tenants", "edit_tenants", "delete_tenants"] },
-                        { name: "Create Tenants", slug: "create_tenants", col: "create" },
-                        { name: "Edit Tenants", slug: "edit_tenants", col: "edit" },
-                        { name: "Delete Tenants", slug: "delete_tenants", col: "delete" }
-                    ]
-                },
-                {
-                    module: "Users",
-                    items: [
-                        { name: "View Users", slug: "view_users", col: "view", children: ["create_users", "edit_users", "delete_users", "assign_roles"] },
-                        { name: "Create Users", slug: "create_users", col: "create" },
-                        { name: "Edit Users", slug: "edit_users", col: "edit" },
-                        { name: "Delete Users", slug: "delete_users", col: "delete" },
-                        { name: "Assign Roles", slug: "assign_roles", col: "edit" }
-                    ]
-                },
-                {
-                    module: "Roles",
-                    items: [
-                        { name: "View Roles", slug: "view_roles", col: "view", children: ["create_roles", "edit_roles", "delete_roles"] },
-                        { name: "Create Roles", slug: "create_roles", col: "create" },
-                        { name: "Edit Roles", slug: "edit_roles", col: "edit" },
-                        { name: "Delete Roles", slug: "delete_roles", col: "delete" }
-                    ]
-                },
-                {
-                    module: "Permissions",
-                    items: [
-                        { name: "View Permissions", slug: "view_permissions", col: "view", children: ["assign_permissions"] },
-                        { name: "Assign Permissions", slug: "assign_permissions", col: "edit" }
-                    ]
-                },
-                {
-                    module: "Students & Admissions",
-                    items: [
-                        { name: "View Students & Admissions", slug: "view_students", col: "view", children: ["create_students", "edit_students", "delete_students", "approve_admissions"] },
-                        { name: "Create Students", slug: "create_students", col: "create" },
-                        { name: "Edit Students", slug: "edit_students", col: "edit" },
-                        { name: "Delete Students", slug: "delete_students", col: "delete" },
-                        { name: "Approve Admissions", slug: "approve_admissions", col: "edit" }
-                    ]
-                },
-                {
-                    module: "Documents",
-                    items: [
-                        { name: "View Documents", slug: "view_documents", col: "view", children: ["upload_documents", "verify_documents", "delete_documents"] },
-                        { name: "Upload Documents", slug: "upload_documents", col: "create" },
-                        { name: "Verify Documents", slug: "verify_documents", col: "edit" },
-                        { name: "Delete Documents", slug: "delete_documents", col: "delete" }
-                    ]
-                },
-                {
-                    module: "Reports",
-                    items: [
-                        { name: "View Reports", slug: "view_reports", col: "view", children: ["export_reports"] },
-                        { name: "Export Reports", slug: "export_reports", col: "analytics" }
-                    ]
-                },
-                {
-                    module: "Settings",
-                    items: [
-                        { name: "View Settings", slug: "view_settings", col: "view", children: ["edit_settings"] },
-                        { name: "Edit Settings", slug: "edit_settings", col: "edit" }
-                    ]
-                },
-                {
-                    module: "Portal Access: Teacher App",
-                    items: [
-                        { name: "Teacher Portal", slug: "teacher_portal", col: "view", children: ["teacher_app_student_details", "teacher_app_half_leave_notification", "teacher_app_timetables", "access_exams_app"] },
-                        { name: "Student Details", slug: "teacher_app_student_details", col: "view" },
-                        { name: "Half Leave Notification", slug: "teacher_app_half_leave_notification", col: "view" },
-                        { name: "Timetables", slug: "teacher_app_timetables", col: "view" },
-                        { name: "Access Exams App", slug: "access_exams_app", col: "view" }
-                    ]
-                },
-                {
-                    module: "Portal Access: Staff App",
-                    items: [
-                        { name: "Teacher Staff App", slug: "teacher_staff_app", col: "view", children: ["staff_app_student_details", "staff_app_half_leave_notification", "staff_app_half_leave_details"] },
-                        { name: "Student Details", slug: "staff_app_student_details", col: "view" },
-                        { name: "Half Leave Notification", slug: "staff_app_half_leave_notification", col: "view" },
-                        { name: "Half Leave Details", slug: "staff_app_half_leave_details", col: "view" }
-                    ]
-                },
-                {
-                    module: "Portal Access: Parents Portal",
-                    items: [
-                        { name: "Parents Portal", slug: "parents_portal", col: "view", children: ["see_student_name", "see_student_medical", "see_student_guardian"] },
-                        { name: "See Student Name", slug: "see_student_name", col: "view" },
-                        { name: "See Student Medical", slug: "see_student_medical", col: "view" },
-                        { name: "See Student Guardian", slug: "see_student_guardian", col: "view" }
-                    ]
-                },
-                {
-                    module: "Portal Access: Driver App",
-                    items: [
-                        { name: "Driver App", slug: "driver_app", col: "view", children: [
-                            "driver_app_pickup_route", "driver_app_drop_route", "driver_app_students_onboard", 
-                            "driver_app_safety_center", "driver_app_speed_monitor", "driver_app_sos", 
-                            "driver_app_trip_logs", "driver_app_early_leave"
-                        ]},
-                        { name: "Pickup Route", slug: "driver_app_pickup_route", col: "view" },
-                        { name: "Drop Route", slug: "driver_app_drop_route", col: "view" },
-                        { name: "Students Onboard", slug: "driver_app_students_onboard", col: "view" },
-                        { name: "Safety Center", slug: "driver_app_safety_center", col: "view" },
-                        { name: "Speed Monitor", slug: "driver_app_speed_monitor", col: "view" },
-                        { name: "SOS", slug: "driver_app_sos", col: "view" },
-                        { name: "Trip Logs", slug: "driver_app_trip_logs", col: "analytics" },
-                        { name: "Early Leave", slug: "driver_app_early_leave", col: "view" }
-                    ]
-                }
-            ];
+        toggleModule(idx) { this.expandedModules[idx] = !this.expandedModules[idx]; },
 
-            // Build hierarchical rows
-            const mappedSlugs = new Set();
-            permissionMetadata.forEach(mod => {
-                // Add header row
-                this.tableRows.push({ type: 'header', label: mod.module });
-
-                mod.items.forEach(item => {
-                    const id = this.slugToIdMap[item.slug];
-                    if (id) {
-                        // Check if it's a child (has a dependency)
-                        const parentSlug = this.permissionDependencies[item.slug];
-                        const depth = parentSlug ? 1 : 0;
-                        
-                        this.tableRows.push({
-                            type: 'permission',
-                            id: Number(id),
-                            name: item.name,
-                            slug: item.slug,
-                            col: item.col,
-                            depth: depth,
-                            parentSlug: parentSlug || null
-                        });
-                        mappedSlugs.add(item.slug);
-                    }
+        getModuleRows(mod, modIdx) {
+            const rows = [{ key: 'h-' + modIdx, isHeader: true }];
+            if (this.expandedModules[modIdx]) {
+                mod.items.forEach((item, i) => {
+                    rows.push({ key: 'r-' + modIdx + '-' + i, isHeader: false, name: item.name, viewSlug: item.view || null, createSlug: item.create || null, editSlug: item.edit || null, delSlug: item.del || null });
                 });
-            });
-
-            // Add fallbacks for unmapped items
-            const fallbacks = [];
-            this.allPermissions.forEach(p => {
-                if (!mappedSlugs.has(p.slug)) {
-                    let col = 'view';
-                    if (p.slug.includes('create') || p.slug.includes('upload')) col = 'create';
-                    else if (p.slug.includes('edit') || p.slug.includes('update') || p.slug.includes('assign') || p.slug.includes('approve') || p.slug.includes('verify')) col = 'edit';
-                    else if (p.slug.includes('delete') || p.slug.includes('remove') || p.slug.includes('destroy')) col = 'delete';
-                    else if (p.slug.includes('analytics') || p.slug.includes('report') || p.slug.includes('log')) col = 'analytics';
-
-                    fallbacks.push({
-                        type: 'permission',
-                        id: Number(p.id),
-                        name: p.name,
-                        slug: p.slug,
-                        col: col,
-                        depth: 0,
-                        parentSlug: null
-                    });
-                }
-            });
-            if (fallbacks.length > 0) {
-                this.tableRows.push({ type: 'header', label: "Other Systems" });
-                this.tableRows = this.tableRows.concat(fallbacks);
             }
-
-            // Select active role
-            if (this.roles.length > 0) {
-                this.activeRoleId = this.roles[0].id;
-            }
+            return rows;
         },
 
-        selectRole(roleId) {
-            this.activeRoleId = roleId;
-        },
-
-        getActiveRole() {
-            return this.roles.find(r => r.id === this.activeRoleId);
-        },
-
-        isPermissionDisabled(slug) {
-            const role = this.getActiveRole();
-            if (role?.slug === 'super_admin') return false;
-
-            const parentSlug = this.permissionDependencies[slug];
-            if (!parentSlug) return false;
-
-            // If there's a parent, the child is disabled if the parent is NOT checked
-            const parentId = this.slugToIdMap[parentSlug];
-            if (!parentId) return false;
-
-            return !this.isPermissionChecked(parentId);
-        },
-
-        isPermissionChecked(permId) {
+        isPermChecked(slug) {
             const role = this.getActiveRole();
             if (!role) return false;
-            
-            // Super Admin has all permissions automatically
             if (role.slug === 'super_admin') return true;
-
-            const isChecked = role.permission_ids.map(Number).includes(Number(permId));
-            
-            // Check inheritance: if it is a child, it can only be checked if its parent is checked
-            const slug = this.idToSlugMap[permId];
-            if (slug && isChecked) {
-                const parentSlug = this.permissionDependencies[slug];
-                if (parentSlug) {
-                    const parentId = this.slugToIdMap[parentSlug];
-                    if (parentId && !role.permission_ids.map(Number).includes(Number(parentId))) {
-                        return false; // Parent not checked, so child must behave as unchecked
-                    }
-                }
-            }
-
-            return isChecked;
+            const id = this.slugToIdMap[slug];
+            return id ? role.permission_ids.map(Number).includes(Number(id)) : false;
         },
 
-        togglePermission(permId, checked) {
+        togglePermBySlug(slug, checked) {
             const role = this.getActiveRole();
             if (!role || role.slug === 'super_admin') return;
-
-            permId = Number(permId);
-            const slug = this.idToSlugMap[permId];
+            const id = this.slugToIdMap[slug];
+            if (!id) return;
             let pIds = role.permission_ids.map(Number);
-
-            if (checked) {
-                // Check this permission
-                if (!pIds.includes(permId)) {
-                    pIds.push(permId);
-                }
-
-                // If child is checked -> automatically check the parent!
-                if (slug) {
-                    const parentSlug = this.permissionDependencies[slug];
-                    if (parentSlug) {
-                        const parentId = this.slugToIdMap[parentSlug];
-                        if (parentId && !pIds.includes(Number(parentId))) {
-                            pIds.push(Number(parentId));
-                        }
-                    }
-                }
-            } else {
-                // Uncheck this permission
-                pIds = pIds.filter(id => id !== permId);
-
-                // If parent is unchecked -> automatically uncheck all children!
-                if (slug) {
-                    // Find all kids
-                    Object.keys(this.permissionDependencies).forEach(childSlug => {
-                        if (this.permissionDependencies[childSlug] === slug) {
-                            const childId = this.slugToIdMap[childSlug];
-                            if (childId) {
-                                pIds = pIds.filter(id => id !== Number(childId));
-                            }
-                        }
-                    });
-                }
-            }
+            if (checked) { if (!pIds.includes(Number(id))) pIds.push(Number(id)); }
+            else { pIds = pIds.filter(x => x !== Number(id)); }
             role.permission_ids = pIds;
         },
+
+        selectRole(roleId) { this.activeRoleId = roleId; },
+
+        getActiveRole() { return this.roles.find(r => r.id === this.activeRoleId); },
 
         async savePermissions() {
             const role = this.getActiveRole();
             if (!role || role.slug === 'super_admin') return;
-
             this.saving = true;
             try {
                 const formData = new FormData();
                 formData.append('_csrf', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                
-                // Ensure only checked permissions (that are also active/not disabled by parent) are saved
-                const finalPermsToSave = role.permission_ids.filter(id => {
-                    const slug = this.idToSlugMap[id];
-                    if (!slug) return true;
-                    const parentSlug = this.permissionDependencies[slug];
-                    if (!parentSlug) return true;
-                    const parentId = this.slugToIdMap[parentSlug];
-                    return role.permission_ids.map(Number).includes(Number(parentId));
-                });
-
-                finalPermsToSave.forEach(id => formData.append('permissions[]', id));
-
-                const response = await fetch('<?= url('roles') ?>/' + role.id, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
+                role.permission_ids.forEach(id => formData.append('permissions[]', id));
+                const response = await fetch('<?= url('roles') ?>/' + role.id, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const res = await response.json();
-                if (res.success) {
-                    alert('Permissions updated successfully!');
-                } else {
-                    alert('Failed to save permissions: ' + (res.message || 'Unknown error'));
-                }
-            } catch (err) {
-                console.error(err);
-                alert('An error occurred while saving.');
-            } finally {
-                this.saving = false;
-            }
+                if (res.success) { alert('Permissions updated successfully!'); } else { alert('Failed: ' + (res.message || 'Unknown error')); }
+            } catch (err) { console.error(err); alert('An error occurred while saving.'); }
+            finally { this.saving = false; }
         },
 
         setPreset(type) {
             const role = this.getActiveRole();
             if (!role || role.slug === 'super_admin') return;
-
             let targetIds = [];
-
             if (type === 'viewer') {
-                // Collect parent permissions (usually 'view' columns)
-                this.tableRows.forEach(row => {
-                    if (row.type === 'permission' && !row.parentSlug && row.col === 'view') {
-                        targetIds.push(Number(row.id));
-                    }
-                });
+                this.permissionMetadata.forEach(mod => { mod.items.forEach(item => { if (item.view) { const id = this.slugToIdMap[item.view]; if (id) targetIds.push(Number(id)); } }); });
             } else if (type === 'editor') {
-                // Collect everything
-                this.tableRows.forEach(row => {
-                    if (row.type === 'permission') {
-                        targetIds.push(Number(row.id));
-                    }
-                });
-            } else if (type === 'clear') {
-                targetIds = [];
+                this.permissionMetadata.forEach(mod => { mod.items.forEach(item => { ['view','create','edit','del'].forEach(col => { if (item[col]) { const id = this.slugToIdMap[item[col]]; if (id) targetIds.push(Number(id)); } }); }); });
             }
-
             role.permission_ids = targetIds;
         },
 
-        openCreateModal() {
-            this.modalRoleData = { id: null, name: '', level: 10, description: '' };
-            this.showCreateModal = true;
-        },
-
-        openEditModal(role) {
-            this.modalRoleData = {
-                id: role.id,
-                name: role.name,
-                level: Number(role.level),
-                description: role.description
-            };
-            this.showEditModal = true;
-        },
+        openCreateModal() { this.modalRoleData = { id: null, name: '', level: 10, description: '' }; this.showCreateModal = true; },
+        openEditModal(role) { this.modalRoleData = { id: role.id, name: role.name, level: Number(role.level), description: role.description }; this.showEditModal = true; },
 
         async submitCreate() {
             try {
@@ -797,25 +484,10 @@ function rolesPermissionsDashboard() {
                 formData.append('name', this.modalRoleData.name);
                 formData.append('level', this.modalRoleData.level);
                 formData.append('description', this.modalRoleData.description);
-
-                const response = await fetch('<?= url('roles') ?>', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
+                const response = await fetch('<?= url('roles') ?>', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const res = await response.json();
-                if (res.success) {
-                    window.location.reload();
-                } else {
-                    alert('Error creating role: ' + (res.message || ''));
-                }
-            } catch (err) {
-                console.error(err);
-                alert('An error occurred.');
-            }
+                if (res.success) { window.location.reload(); } else { alert('Error: ' + (res.message || '')); }
+            } catch (err) { console.error(err); alert('An error occurred.'); }
         },
 
         async submitEdit() {
@@ -825,53 +497,22 @@ function rolesPermissionsDashboard() {
                 formData.append('name', this.modalRoleData.name);
                 formData.append('level', this.modalRoleData.level);
                 formData.append('description', this.modalRoleData.description);
-
-                const response = await fetch('<?= url('roles') ?>/' + this.modalRoleData.id, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
+                const response = await fetch('<?= url('roles') ?>/' + this.modalRoleData.id, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const res = await response.json();
-                if (res.success) {
-                    window.location.reload();
-                } else {
-                    alert('Error updating role: ' + (res.message || ''));
-                }
-            } catch (err) {
-                console.error(err);
-                alert('An error occurred.');
-            }
+                if (res.success) { window.location.reload(); } else { alert('Error: ' + (res.message || '')); }
+            } catch (err) { console.error(err); alert('An error occurred.'); }
         },
 
         async deleteRole(roleId) {
             if (!confirm('Are you sure you want to delete this role?')) return;
-
             try {
                 const formData = new FormData();
                 formData.append('_csrf', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
                 formData.append('_method', 'DELETE');
-
-                const response = await fetch('<?= url('roles') ?>/' + roleId, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
+                const response = await fetch('<?= url('roles') ?>/' + roleId, { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const res = await response.json();
-                if (res.success) {
-                    window.location.reload();
-                } else {
-                    alert('Error deleting role: ' + (res.message || ''));
-                }
-            } catch (err) {
-                console.error(err);
-                alert('An error occurred.');
-            }
+                if (res.success) { window.location.reload(); } else { alert('Error: ' + (res.message || '')); }
+            } catch (err) { console.error(err); alert('An error occurred.'); }
         }
     };
 }

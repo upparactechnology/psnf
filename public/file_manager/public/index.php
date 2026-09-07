@@ -2,33 +2,81 @@
 // ─── PSNF ERP Session Bridge: Auto-login from main ERP ─────────────────────
 // The main ERP uses session name 'PSNF_SESSION'. We read it first, extract
 // the logged-in user, then restore our own session for the file manager.
+// Staff/teacher/driver roles are routed to the staff portal; admin roles
+// go to the admin portal.
 
 $erpUser = null;
 
-if (empty($_SESSION['admin_id'])) {
-    // Read the ERP session
-    $currentSessionId = session_id();
-    if (!empty($currentSessionId)) {
-        // Already started — suspend it briefly
-        session_write_close();
-    }
-
-    session_name('PSNF_SESSION');
-    session_start();
-    $erpUser = $_SESSION['user'] ?? null;
+// Always read the ERP session to determine correct portal type
+$currentSessionId = session_id();
+if (!empty($currentSessionId)) {
     session_write_close();
+}
 
-    // Restore file manager session
-    session_name('PSNF_FM_SESSION');
-    session_start();
+session_name('PSNF_SESSION');
+session_start();
+$erpUser = $_SESSION['user'] ?? null;
+session_write_close();
 
-    if ($erpUser && !empty($erpUser['id'])) {
+// Restore file manager session
+session_name('PSNF_FM_SESSION');
+session_start();
+
+if ($erpUser && !empty($erpUser['id'])) {
+    $erpRoles = $erpUser['roles'] ?? [];
+    $staffRoles = ['teacher', 'staff', 'driver'];
+    $isStaff = !empty(array_intersect($erpRoles, $staffRoles));
+
+    if ($isStaff) {
+        // Staff user — ensure they have staff_id, not admin_id
+        if (!empty($_SESSION['admin_id'])) {
+            unset($_SESSION['admin_id'], $_SESSION['admin_name']);
+        }
+        // Look up this ERP user in the file manager's staff table by email
+        $erpEmail = $erpUser['email'] ?? '';
+        if ($erpEmail !== '' && empty($_SESSION['staff_id'])) {
+            try {
+                $fmDb = require __DIR__ . '/../config/database.php';
+                $pdo = new PDO(
+                    "mysql:host={$fmDb['host']};port={$fmDb['port']};dbname={$fmDb['database']};charset={$fmDb['charset']}",
+                    $fmDb['username'],
+                    $fmDb['password'],
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                );
+                $stmt = $pdo->prepare("SELECT id, name FROM staff WHERE email = ? AND is_active = 1 LIMIT 1");
+                $stmt->execute([$erpEmail]);
+                $staffRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$staffRow) {
+                    // Auto-create staff record from ERP user data
+                    $erpName = $erpUser['name'] ?? 'Staff';
+                    $defaultPass = password_hash('changeme123', PASSWORD_BCRYPT);
+                    $ins = $pdo->prepare("INSERT INTO staff (name, email, password, is_active) VALUES (?, ?, ?, 1)");
+                    $ins->execute([$erpName, $erpEmail, $defaultPass]);
+                    $staffId = (int) $pdo->lastInsertId();
+                    if ($staffId > 0) {
+                        $staffRow = ['id' => $staffId, 'name' => $erpName];
+                    }
+                }
+
+                if ($staffRow) {
+                    $_SESSION['staff_id']   = (int) $staffRow['id'];
+                    $_SESSION['staff_name'] = (string) ($staffRow['name'] ?? $erpUser['name'] ?? 'Staff');
+                }
+            } catch (\Throwable $e) {
+                // DB error — fall through
+            }
+        }
+        $_SESSION['erp_bridged'] = true;
+    } else {
+        // Admin/manager roles — ensure they have admin_id, not staff_id
+        if (!empty($_SESSION['staff_id'])) {
+            unset($_SESSION['staff_id'], $_SESSION['staff_name']);
+        }
         $_SESSION['admin_id']   = (int) $erpUser['id'];
         $_SESSION['admin_name'] = (string) ($erpUser['name'] ?? 'ERP User');
         $_SESSION['erp_bridged'] = true;
     }
-} else {
-    // Session already active — just continue
 }
 // ────────────────────────────────────────────────────────────────────────────
 

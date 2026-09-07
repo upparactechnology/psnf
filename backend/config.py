@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     MODEL_NAME: str = os.getenv("MODEL_NAME", "buffalo_l")
     DETECTION_SIZE: int = int(os.getenv("DETECTION_SIZE", "640"))
     MIN_FACE_SIZE: int = int(os.getenv("MIN_FACE_SIZE", "60"))
+    MODEL_IDLE_TIMEOUT: int = int(os.getenv("MODEL_IDLE_TIMEOUT", "600"))  # seconds before model auto-unloads
+    NO_FACE_IDLE_TIMEOUT: int = int(os.getenv("NO_FACE_IDLE_TIMEOUT", "300"))  # seconds with no face detected before model unloads
 
     # Image Quality Thresholds
     BLUR_THRESHOLD: float = float(os.getenv("BLUR_THRESHOLD", "40.0"))  # Laplacian variance threshold

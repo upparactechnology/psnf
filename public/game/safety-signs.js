@@ -107,9 +107,14 @@ function checkSelection() {
   if (state.selectedSignId === target.id) {
     state.stars += STARS_PER_ROUND; state.xp += XP_PER_ROUND;
     updateStats(); fireConfetti();
-    showSuccessFeedback(`Correct! +${STARS_PER_ROUND} Stars, +${XP_PER_ROUND} XP`, `Correct! This is ${target.name} sign.`);
+    showSuccessFeedback(
+      `Correct! +${STARS_PER_ROUND} Stars, +${XP_PER_ROUND} XP`, 
+      `Correct! This is ${target.name} sign.`,
+      () => {
+        nextRound();
+      }
+    );
     state.locked = true;
-    setTimeout(nextRound, 900);
   } else {
     if (selectedCard) { selectedCard.classList.add("wrong"); setTimeout(() => selectedCard.classList.remove("wrong"), 350); }
     showErrorFeedback("Try again.", "Try again");
@@ -163,7 +168,7 @@ function speak(text) {
   u.lang = "en-IN";
   window.speechSynthesis.speak(u);
 }
-function playFeedback(kind) {
+function playFeedback(kind, onComplete) {
   const ac = new (window.AudioContext || window.webkitAudioContext)(); const now = ac.currentTime;
 
   if (kind === "success") {
@@ -184,22 +189,12 @@ function playFeedback(kind) {
       osc.stop(now + index * 0.08 + 0.4);
     });
 
-    // Play Applause Audio File for max 3 seconds with a smooth fade-out
-    const applause = new Audio("vvqne-applause-383901.mp3");
-    applause.volume = 1.0;
-    applause.play().then(() => {
-      setTimeout(() => {
-        let fadeInterval = setInterval(() => {
-          if (applause.volume > 0.1) {
-            applause.volume -= 0.1;
-          } else {
-            clearInterval(fadeInterval);
-            applause.pause();
-            applause.currentTime = 0;
-          }
-        }, 50);
-      }, 2500);
-    }).catch(err => console.error("Error playing applause sound:", err));
+    // Play our new global success overlay with audio and video
+    if (window.playSuccessOverlay) {
+      window.playSuccessOverlay(onComplete);
+    } else if (onComplete) {
+      onComplete();
+    }
   } else {
     // Failure Buzzer: Descending triangle wave with slide
     const osc = ac.createOscillator();
@@ -226,8 +221,8 @@ function flashFeedback(kind) {
   window.setTimeout(() => el.appShell.classList.remove(className), 520);
 }
 
-function showSuccessFeedback(message, voiceText) {
-  flashFeedback("success"); playFeedback("success"); showToast(message, "success"); speak(`Hurray! ${voiceText || message}`);
+function showSuccessFeedback(message, voiceText, onComplete) {
+  flashFeedback("success"); playFeedback("success", onComplete); showToast(message, "success"); speak(`Hurray! ${voiceText || message}`);
 }
 
 function showErrorFeedback(message, voiceText) {

@@ -28,7 +28,7 @@ $redirectUrl = $isTeachersOnly ? '/academics/teachers' : '/users';
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 Attendance Log
             </a>
-            <?php if (has_permission('create_users')): ?>
+            <?php if (has_permission('create_staff_user_accounts')): ?>
             <a href="<?= url('users/create?redirect_to=' . urlencode($redirectUrl)) ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #a855f7);">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 + Add Account
@@ -162,14 +162,14 @@ $redirectUrl = $isTeachersOnly ? '/academics/teachers' : '/users';
                                 <span>HR Profile</span>
                             </a>
                             <?php endif; ?>
-                            <?php if (has_permission('edit_users')): ?>
+                            <?php if (has_permission('edit_staff_user_accounts')): ?>
                             <a href="<?= url('users/'.$u['id'].'/edit?redirect_to=' . urlencode($redirectUrl)) ?>" 
                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-indigo-400 border border-indigo-500/20 hover:bg-slate-700 transition-all" title="Edit">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                 <span>Edit</span>
                             </a>
                             <?php endif; ?>
-                            <?php if (has_permission('delete_users') && $u['id'] !== auth_id()): ?>
+                            <?php if (has_permission('delete_staff_user_accounts') && $u['id'] !== auth_id()): ?>
                             <form method="POST" action="<?= url('users/'.$u['id'].'?redirect_to=' . urlencode($redirectUrl)) ?>" onsubmit="return confirm('Delete this user?')" class="inline-block">
                                 <?= \Core\View::csrf() ?>
                                 <input type="hidden" name="_method" value="DELETE">

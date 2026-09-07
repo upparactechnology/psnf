@@ -206,3 +206,566 @@
 #4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
 #5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
 #6 {main}
+[19-Aug-2026 13:41:05 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[19-Aug-2026 13:41:13 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[19-Aug-2026 14:31:28 Asia/Kolkata] Exception: SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'medical_certificate'
+#0 C:\xampp\htdocs\psnf\core\Database.php(59): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\psnf\database\migrations\023_add_medical_certificate_to_attendance_table.php(11): Core\Database->query('\r\n            A...')
+#2 C:\xampp\htdocs\psnf\core\Migration.php(58): AddMedicalCertificateToAttendanceTable->up()
+#3 C:\xampp\htdocs\psnf\test.php(17): Core\Migration->run()
+#4 {main}
+[19-Aug-2026 14:31:44 Asia/Kolkata] Exception: SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'lecture_time'
+#0 C:\xampp\htdocs\psnf\core\Database.php(59): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\psnf\database\migrations\024_add_teacher_scheduling_and_apps_tables.php(13): Core\Database->query('\r\n            A...')
+#2 C:\xampp\htdocs\psnf\core\Migration.php(58): AddTeacherSchedulingAndAppsTables->up()
+#3 C:\xampp\htdocs\psnf\test.php(17): Core\Migration->run()
+#4 {main}
+[19-Aug-2026 14:31:56 Asia/Kolkata] Exception: SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'fields_config'
+#0 C:\xampp\htdocs\psnf\core\Database.php(59): PDOStatement->execute(Array)
+#1 C:\xampp\htdocs\psnf\database\migrations\028_add_fields_config_to_report_card_settings.php(11): Core\Database->query('ALTER TABLE `re...')
+#2 C:\xampp\htdocs\psnf\core\Migration.php(58): AddFieldsConfigToReportCardSettings->up()
+#3 C:\xampp\htdocs\psnf\test.php(17): Core\Migration->run()
+#4 {main}
+[19-Aug-2026 14:34:26 Asia/Kolkata] Exception: json_decode(): Argument #1 ($json) must be of type string, array given
+#0 C:\xampp\htdocs\psnf\resources\views\report-cards\edit.php(13): json_decode(Array, true)
+#1 C:\xampp\htdocs\psnf\core\View.php(20): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('report-cards/ed...', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php(206): Core\Controller->view('report-cards/ed...', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\ReportCardController->edit('6')
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[20-Aug-2026 11:54:00 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'working_days_json' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('SELECT working_...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(71): Core\Database->query('SELECT working_...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php(206): Core\Database->selectOne('SELECT working_...')
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StaffWorkspaceController->showEmployee(3)
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 11:54:08 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'working_days_json' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('SELECT working_...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(71): Core\Database->query('SELECT working_...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php(206): Core\Database->selectOne('SELECT working_...')
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StaffWorkspaceController->showEmployee(3)
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 11:54:11 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'working_days_json' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('SELECT working_...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(71): Core\Database->query('SELECT working_...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php(206): Core\Database->selectOne('SELECT working_...')
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StaffWorkspaceController->showEmployee(3)
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 12:00:39 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\psnf\public\index.php:10) in C:\xampp\htdocs\psnf\core\Response.php on line 42
+[20-Aug-2026 12:20:29 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\psnf\public\index.php:10) in C:\xampp\htdocs\psnf\core\Response.php on line 42
+[20-Aug-2026 12:24:38 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\psnf\public\index.php:10) in C:\xampp\htdocs\psnf\core\Response.php on line 42
+[20-Aug-2026 13:07:13 Asia/Kolkata] PHP Fatal error:  Cannot redeclare App\Controllers\ExamsController::bulkEntry() in C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php on line 530
+[20-Aug-2026 13:07:15 Asia/Kolkata] PHP Fatal error:  Cannot redeclare App\Controllers\ExamsController::bulkEntry() in C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php on line 530
+[20-Aug-2026 13:07:16 Asia/Kolkata] PHP Fatal error:  Cannot redeclare App\Controllers\ExamsController::bulkEntry() in C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php on line 530
+[20-Aug-2026 13:07:43 Asia/Kolkata] PHP Fatal error:  Cannot redeclare App\Controllers\ExamsController::bulkEntry() in C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php on line 530
+[20-Aug-2026 13:07:43 Asia/Kolkata] PHP Fatal error:  Cannot redeclare App\Controllers\ExamsController::bulkEntry() in C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php on line 530
+[20-Aug-2026 13:55:52 Asia/Kolkata] Exception: is_year_locked(): Argument #1 ($year) must be of type string|int, null given, called in C:\xampp\htdocs\psnf\resources\views\academics\curriculum_manager.php on line 7
+#0 C:\xampp\htdocs\psnf\resources\views\academics\curriculum_manager.php(7): is_year_locked(NULL)
+#1 C:\xampp\htdocs\psnf\core\View.php(20): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('academics/curri...', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\CurriculumManagerController.php(102): Core\Controller->view('academics/curri...', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\CurriculumManagerController->index()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[20-Aug-2026 13:56:40 Asia/Kolkata] Exception: is_year_locked(): Argument #1 ($year) must be of type string|int, null given, called in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 15
+#0 C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php(15): is_year_locked(NULL)
+#1 C:\xampp\htdocs\psnf\core\View.php(20): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('exams/bulk_entr...', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php(296): Core\Controller->view('exams/bulk_entr...', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\ExamsController->bulkEntry()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[20-Aug-2026 14:30:29 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'l.late_exempted' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('\n            SE...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(66): Core\Database->query('\n            SE...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php(773): Core\Database->select('\n            SE...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StaffWorkspaceController->attendance()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 14:39:37 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'l.late_exempted' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('\n            SE...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(66): Core\Database->query('\n            SE...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php(814): Core\Database->select('\n            SE...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StaffWorkspaceController->attendance()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 14:39:54 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'l.late_exempted' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('\n            SE...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(66): Core\Database->query('\n            SE...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StaffWorkspaceController.php(814): Core\Database->select('\n            SE...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StaffWorkspaceController->attendance()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 14:59:16 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'e.route_status' in 'where clause'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('SELECT COUNT(*)...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(71): Core\Database->query('SELECT COUNT(*)...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\TransportController.php(25): Core\Database->selectOne('SELECT COUNT(*)...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\TransportController->overview()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 15:03:49 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'e.last_updated_at' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('\r\n            S...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(66): Core\Database->query('\r\n            S...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\TransportController.php(187): Core\Database->select('\r\n            S...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\TransportController->liveData()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 16:08:19 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'e.license_number' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('\r\n            S...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(66): Core\Database->query('\r\n            S...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\DocumentsController.php(347): Core\Database->select('\r\n            S...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\DocumentsController->driverDocuments()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[20-Aug-2026 16:19:30 Asia/Kolkata] WhatsApp Notification sent to 919427961426
+[20-Aug-2026 16:56:01 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:02 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:06 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:07 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:08 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:10 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:12 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:14 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:15 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:25 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:26 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:26 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:43 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:44 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:56:44 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 16:57:32 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\SubjectsController.php(28): str_pad(103, 3, '0', 0)
+#1 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\SubjectsController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#4 {main}
+[20-Aug-2026 22:24:54 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[21-Aug-2026 00:50:30 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'employee_code' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('INSERT INTO `em...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(79): Core\Database->query('INSERT INTO `em...', Array)
+#2 C:\xampp\htdocs\psnf\app\Services\EmployeeSyncService.php(147): Core\Database->insert('employees', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\UserController.php(158): App\Services\EmployeeSyncService::syncUserToEmployee(21)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\UserController->store()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 00:53:15 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'name' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('INSERT INTO `em...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(79): Core\Database->query('INSERT INTO `em...', Array)
+#2 C:\xampp\htdocs\psnf\app\Services\EmployeeSyncService.php(146): Core\Database->insert('employees', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\UserController.php(158): App\Services\EmployeeSyncService::syncUserToEmployee(22)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\UserController->store()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 01:32:50 Asia/Kolkata] Exception: Call to undefined method App\Controllers\TimetablesController::clearTimetable()
+#0 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#1 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#2 {main}
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:36:48 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:37:09 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:37:31 Asia/Kolkata] Exception: Class "Session" not found
+#0 C:\xampp\htdocs\psnf\resources\views\layouts\app.php(517): can('view_general_se...')
+#1 C:\xampp\htdocs\psnf\core\View.php(36): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('roles/index', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\RoleController.php(23): Core\Controller->view('roles/index', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\RoleController->index()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 01:37:32 Asia/Kolkata] Exception: Class "Session" not found
+#0 C:\xampp\htdocs\psnf\resources\views\layouts\app.php(517): can('view_general_se...')
+#1 C:\xampp\htdocs\psnf\core\View.php(36): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('roles/index', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\RoleController.php(23): Core\Controller->view('roles/index', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\RoleController->index()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 01:42:28 Asia/Kolkata] Exception: Class "Session" not found
+#0 C:\xampp\htdocs\psnf\resources\views\layouts\app.php(517): can('view_general_se...')
+#1 C:\xampp\htdocs\psnf\core\View.php(36): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('roles/index', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\RoleController.php(23): Core\Controller->view('roles/index', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\RoleController->index()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 01:42:34 Asia/Kolkata] Exception: Class "Session" not found
+#0 C:\xampp\htdocs\psnf\resources\views\layouts\app.php(517): can('view_general_se...')
+#1 C:\xampp\htdocs\psnf\core\View.php(36): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('exams/index', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php(77): Core\Controller->view('exams/index', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\ExamsController->index()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 01:45:33 Asia/Kolkata] Exception: Class "Session" not found
+#0 C:\xampp\htdocs\psnf\resources\views\layouts\app.php(517): can('view_general_se...')
+#1 C:\xampp\htdocs\psnf\core\View.php(36): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('exams/index', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php(77): Core\Controller->view('exams/index', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\ExamsController->index()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 01:45:34 Asia/Kolkata] Exception: Class "Session" not found
+#0 C:\xampp\htdocs\psnf\resources\views\layouts\app.php(517): can('view_general_se...')
+#1 C:\xampp\htdocs\psnf\core\View.php(36): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('exams/index', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\ExamsController.php(77): Core\Controller->view('exams/index', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\ExamsController->index()
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 01:49:23 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 10:37:20 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 13:28:29 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:17 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 111
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:01:19 Asia/Kolkata] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\psnf\resources\views\exams\bulk_entry.php on line 160
+[21-Aug-2026 14:28:45 Asia/Kolkata] Exception: json_decode(): Argument #1 ($json) must be of type string, array given
+#0 C:\xampp\htdocs\psnf\resources\views\report-cards\view.php(29): json_decode(Array, true)
+#1 C:\xampp\htdocs\psnf\core\View.php(20): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('report-cards/vi...', Array)
+#3 C:\xampp\htdocs\psnf\app\Controllers\ReportCardController.php(587): Core\Controller->view('report-cards/vi...', Array)
+#4 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\ReportCardController->show('2')
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[21-Aug-2026 17:10:10 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[21-Aug-2026 17:24:26 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'e.last_updated_at' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('\r\n            S...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(66): Core\Database->query('\r\n            S...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\TransportController.php(187): Core\Database->select('\r\n            S...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\TransportController->liveData()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[21-Aug-2026 17:24:54 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'e.last_updated_at' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('\r\n            S...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(66): Core\Database->query('\r\n            S...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\TransportController.php(187): Core\Database->select('\r\n            S...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\TransportController->liveData()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[21-Aug-2026 17:25:07 Asia/Kolkata] PHP Warning:  Undefined array key "destination" in C:\xampp\htdocs\psnf\resources\views\transport\logs.php on line 122
+[21-Aug-2026 17:25:07 Asia/Kolkata] PHP Warning:  Undefined array key "destination" in C:\xampp\htdocs\psnf\resources\views\transport\logs.php on line 122
+[21-Aug-2026 17:38:34 Asia/Kolkata] Exception: Undefined constant "colors"
+#0 [internal function]: Core\View::{closure}(Array)
+#1 C:\xampp\htdocs\psnf\resources\views\reports\students.php(328): array_map(Object(Closure), Array)
+#2 C:\xampp\htdocs\psnf\core\View.php(20): require('C:\\xampp\\htdocs...')
+#3 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('reports/student...', Array)
+#4 C:\xampp\htdocs\psnf\app\Controllers\ReportsController.php(297): Core\Controller->view('reports/student...', Array)
+#5 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\ReportsController->students()
+#6 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#7 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#8 {main}
+[22-Aug-2026 16:53:08 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[02-Sep-2026 11:44:51 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[02-Sep-2026 11:44:51 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[02-Sep-2026 11:45:39 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
+#4 {main}
+[02-Sep-2026 15:27:59 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'status' in 'where clause'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('SELECT id, name...')
+#1 C:\xampp\htdocs\psnf\app\Controllers\StudentController.php(46): Core\Database->query('SELECT id, name...')
+#2 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StudentController->index()
+#3 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#4 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#5 {main}
+[02-Sep-2026 15:28:53 Asia/Kolkata] Exception: count(): Argument #1 ($value) must be of type Countable|array, PDOStatement given
+#0 C:\xampp\htdocs\psnf\core\View.php(20): require()
+#1 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('students/index', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StudentController.php(56): Core\Controller->view('students/index', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StudentController->index()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[02-Sep-2026 15:28:59 Asia/Kolkata] Exception: count(): Argument #1 ($value) must be of type Countable|array, PDOStatement given
+#0 C:\xampp\htdocs\psnf\core\View.php(20): require()
+#1 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('students/index', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StudentController.php(56): Core\Controller->view('students/index', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StudentController->index()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[02-Sep-2026 15:36:11 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'deleted_at' in 'where clause'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('SELECT id, name...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(66): Core\Database->query('SELECT id, name...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\StudentController.php(71): Core\Database->select('SELECT id, name...', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\StudentController->create()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[02-Sep-2026 15:46:01 Asia/Kolkata] Exception: Cannot use object of type PDOStatement as array
+#0 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\EnrollmentAdminController->quickEnroll('66')
+#1 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#2 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#3 {main}
+[02-Sep-2026 15:46:58 Asia/Kolkata] Exception: Call to undefined function App\Controllers\current_user()
+#0 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\EnrollmentAdminController->quickEnroll('66')
+#1 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#2 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#3 {main}
+[02-Sep-2026 15:48:00 Asia/Kolkata] Exception: Call to undefined function current_user()
+#0 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\EnrollmentAdminController->quickEnroll('66')
+#1 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#2 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#3 {main}
+[02-Sep-2026 15:48:24 Asia/Kolkata] Exception: Call to undefined function current_user()
+#0 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\EnrollmentAdminController->quickEnroll('66')
+#1 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#2 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#3 {main}
+[02-Sep-2026 15:50:13 Asia/Kolkata] Exception: Call to undefined method Core\Database::uuid()
+#0 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\EnrollmentAdminController->quickEnroll('66')
+#1 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#2 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#3 {main}
+[02-Sep-2026 15:51:19 Asia/Kolkata] Exception: Call to undefined method Core\Database::lastInsertId()
+#0 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\EnrollmentAdminController->quickEnroll('66')
+#1 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#2 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#3 {main}
+[03-Sep-2026 10:36:01 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'tenant_id' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('INSERT INTO eme...')
+#1 C:\xampp\htdocs\psnf\app\Controllers\EnrollmentAdminController.php(355): Core\Database->query('INSERT INTO eme...', Array)
+#2 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\EnrollmentAdminController->quickEnroll('65')
+#3 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#4 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#5 {main}
+[03-Sep-2026 11:26:00 Asia/Kolkata] Exception: Call to undefined method Core\Database::prepare()
+#0 {main}
+[03-Sep-2026 11:26:06 Asia/Kolkata] Exception: Call to undefined method Core\Database::prepare()
+#0 {main}
+[03-Sep-2026 11:35:36 Asia/Kolkata] Exception: str_pad(): Argument #1 ($string) must be of type string, int given
+#0 C:\xampp\htdocs\psnf\app\Controllers\AttendanceController.php(219): str_pad(1, 2, '0', 0)
+#1 C:\xampp\htdocs\psnf\app\Controllers\AttendanceController.php(22): App\Controllers\AttendanceController->calendar()
+#2 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\AttendanceController->index()
+#3 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#4 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#5 {main}
+[07-Sep-2026 15:15:11 Asia/Kolkata] Exception: SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'roll_number'
+#0 C:\xampp\htdocs\psnf\database\migrations\032_add_roll_number_to_students.php(13): PDO->exec('ALTER TABLE `st...')
+#1 C:\xampp\htdocs\psnf\core\Migration.php(61): Database\Migrations\AddRollNumberToStudents->up(Object(PDO))
+#2 C:\xampp\htdocs\psnf\routes\web.php(407): Core\Migration->run()
+#3 [internal function]: Core\Application->{closure}()
+#4 C:\xampp\htdocs\psnf\core\Router.php(87): call_user_func_array(Object(Closure), Array)
+#5 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#6 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#7 {main}
+[07-Sep-2026 19:48:49 Asia/Kolkata] Exception: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'first_login' in 'field list'
+#0 C:\xampp\htdocs\psnf\core\Database.php(58): PDO->prepare('UPDATE `users` ...')
+#1 C:\xampp\htdocs\psnf\core\Database.php(87): Core\Database->query('UPDATE `users` ...', Array)
+#2 C:\xampp\htdocs\psnf\app\Controllers\ParentPortalLoginController.php(105): Core\Database->update('users', Array, 'id = ?', Array)
+#3 C:\xampp\htdocs\psnf\core\Router.php(102): App\Controllers\ParentPortalLoginController->changePassword()
+#4 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#5 C:\xampp\htdocs\psnf\public\index.php(38): Core\Application->run()
+#6 {main}
+[07-Sep-2026 19:49:01 Asia/Kolkata] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\xampp\htdocs\psnf\public\index.php:10) in C:\xampp\htdocs\psnf\core\Response.php on line 42
+[07-Sep-2026 19:49:43 Asia/Kolkata] Exception: SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'roll_number'
+#0 C:\xampp\htdocs\psnf\database\migrations\032_add_roll_number_to_students.php(13): PDO->exec('ALTER TABLE `st...')
+#1 C:\xampp\htdocs\psnf\core\Migration.php(61): Database\Migrations\AddRollNumberToStudents->up(Object(PDO))
+#2 C:\xampp\htdocs\psnf\run_migration.php(14): Core\Migration->run()
+#3 {main}

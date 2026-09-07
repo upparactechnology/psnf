@@ -24,7 +24,9 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: const Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF0A5C36),
+        iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -62,20 +64,34 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE6F4EA),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        staffRole,
-                        style: const TextStyle(
-                          color: Color(0xFF137333),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6F4EA),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            staffRole,
+                            style: const TextStyle(
+                              color: Color(0xFF137333),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Text(
+                          staffId.isNotEmpty ? staffId : '',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

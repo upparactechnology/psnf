@@ -8,6 +8,19 @@
             <h3 class="text-base font-bold text-slate-800 dark:text-white">Fee Invoices & Payments</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400">Manage school fee payments, track invoices, and download transaction logs</p>
         </div>
+        <div class="flex items-center gap-3">
+            <?php if (!empty($academic_years)): ?>
+            <form method="GET" class="flex gap-2">
+                <select name="academic_year_id" onchange="this.form.submit()"
+                        class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-300 text-xs rounded-xl px-3.5 py-2 focus:outline-none focus:border-brand-500">
+                    <?php foreach ($academic_years as $ay): ?>
+                        <option value="<?= e((string)$ay['id']) ?>" <?= (int)$ay['id'] === $selected_year_id ? 'selected' : '' ?>>
+                            <?= e($ay['year_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+            <?php endif; ?>
         <div class="flex gap-4">
             <!-- Paid summary -->
             <?php
@@ -28,6 +41,7 @@
                 <span class="text-[9px] font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wider block">Total Outstanding</span>
                 <span class="text-lg font-bold text-red-600 dark:text-red-400 block mt-0.5"><?= number_format($totalUnpaidVal, 2) ?> INR</span>
             </div>
+        </div>
         </div>
     </div>
 

@@ -51,6 +51,7 @@ $ext = strtolower(pathinfo((string)$resource['file_name'], PATHINFO_EXTENSION));
       }
 
       async function renderAll(){
+        const scrollRatio = host.scrollTop / (host.scrollHeight || 1);
         host.innerHTML='';
         const maxW = host.clientWidth - 24;
         const maxH = host.clientHeight - 24;
@@ -69,6 +70,7 @@ $ext = strtolower(pathinfo((string)$resource['file_name'], PATHINFO_EXTENSION));
           await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
         }
         zoomLabel.textContent = Math.round(zoom * 100) + '%';
+        host.scrollTop = scrollRatio * host.scrollHeight;
       }
 
       document.getElementById('zoomInBtn').addEventListener('click',()=>{zoom=Math.min(3,zoom+0.1);renderAll();});

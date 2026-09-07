@@ -13,7 +13,9 @@ ob_start();
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">User Login Accounts</h1>
             <p class="text-xs text-slate-500 mt-0.5">Authentication accounts separated from employee profiles (Drivers & Cleaners may have no login access)</p>
         </div>
+        <?php if (has_permission('create_staff_user_accounts')): ?>
         <a href="<?= url('users/create') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Create User Account</a>
+        <?php endif; ?>
     </div>
 
     <!-- Users Table -->
@@ -50,10 +52,13 @@ ob_start();
                         <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-500 uppercase">ACTIVE</span>
                     </td>
                     <td class="p-4 text-right flex items-center justify-end gap-2">
+                        <?php if (has_permission('edit_staff_user_accounts')): ?>
                         <a href="<?= url('users/' . $u['id'] . '/edit') ?>?redirect_to=<?= urlencode('/staff/users') ?>" 
                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 text-indigo-400 hover:bg-slate-700 hover:text-white transition-all text-2xs font-bold border border-indigo-500/10">
                             Edit
                         </a>
+                        <?php endif; ?>
+                        <?php if (has_permission('delete_staff_user_accounts')): ?>
                         <form action="<?= url('users/' . $u['id']) ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this user account?')" class="inline">
                             <?= \Core\View::csrf() ?>
                             <input type="hidden" name="_method" value="DELETE">
@@ -62,6 +67,7 @@ ob_start();
                                 Delete
                             </button>
                         </form>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>

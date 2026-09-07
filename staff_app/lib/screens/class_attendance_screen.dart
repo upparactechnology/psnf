@@ -235,10 +235,14 @@ class _ClassAttendanceScreenState extends State<ClassAttendanceScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        '${item['class']}',
-                                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                                      Flexible(
+                                        child: Text(
+                                          '${item['class']}',
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                                        ),
                                       ),
                                       const SizedBox(width: 8),
                                       Container(

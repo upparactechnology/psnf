@@ -172,7 +172,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-sm font-semibold text-slate-300">Emergency Contacts</h3>
-                <?php if (has_permission('edit_students')): ?>
+                <?php if (has_permission('edit_students_list')): ?>
                 <button @click="showAddContact = !showAddContact" class="text-xs text-brand-400 hover:text-brand-300 transition-colors">+ Add Contact</button>
                 <?php endif; ?>
             </div>
@@ -195,7 +195,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
             </div>
             <?php endif; ?>
 
-            <?php if (has_permission('edit_students')): ?>
+            <?php if (has_permission('edit_students_list')): ?>
             <form x-show="showAddContact" hx-post="<?= url('students/'.$s['id'].'/emergency-contacts') ?>"
                   hx-on::after-request="showAddContact = false"
                   class="mt-4 grid grid-cols-2 gap-3 p-4 rounded-xl bg-slate-800/30 border border-slate-700/30">
@@ -311,7 +311,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5">
             <div class="flex items-center justify-between mb-5">
                 <h3 class="text-sm font-semibold text-slate-300">Student Documents</h3>
-                <?php if (has_permission('upload_documents')): ?>
+                <?php if (has_permission('create_student_documents')): ?>
                 <button @click="showUpload = !showUpload" class="inline-flex items-center gap-1.5 text-xs text-brand-400 hover:text-brand-300 transition-colors">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                     Upload Document
@@ -319,7 +319,7 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                 <?php endif; ?>
             </div>
 
-            <?php if (has_permission('upload_documents')): ?>
+            <?php if (has_permission('create_student_documents')): ?>
             <div x-show="showUpload" class="mb-5 p-4 rounded-xl bg-slate-800/30 border border-slate-700/30 space-y-3">
                 <form hx-post="<?= url('students/'.$s['id'].'/documents') ?>"
                       hx-encoding="multipart/form-data"

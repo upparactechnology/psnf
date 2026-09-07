@@ -99,75 +99,6 @@ class PayrollController extends Controller
         return $this->redirect('/payroll/holidays');
     }
 
-    public function settings(): string
-    {
-        $db = $this->db();
-        $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-        return $this->view('payroll/settings', compact('shift'));
-    }
-
-    public function saveSettings(): string
-    {
-        $db = $this->db();
-
-        // Handle working days save (separate form)
-        if ($this->request->input('save_working_days')) {
-            $workingDaysMap = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $key = sprintf('%02d', $m);
-                $val = (int) $this->request->input('working_days_' . $key, 0);
-                $workingDaysMap[$key] = $val; // 0 = auto-calculate
-            }
-
-            try {
-                $db->update('shift_templates', [
-                    'working_days_json' => json_encode($workingDaysMap),
-                ], 'id = 1');
-
-                // Force all draft/out_of_sync runs to regenerate
-                $db->query("UPDATE payroll_runs SET status = 'out_of_sync' WHERE status IN ('draft', 'out_of_sync')");
-
-                Session::flash('success', 'Working days configuration saved. Existing draft payroll runs marked out of sync.');
-            } catch (\Throwable $e) {
-                Session::flash('error', 'Failed to save working days: ' . $e->getMessage());
-            }
-
-            return $this->redirect('/payroll/settings');
-        }
-
-        // Normal shift policy save
-        $startTime = $this->request->input('start_time', '09:00:00');
-        $graceMinutes = (int) $this->request->input('grace_minutes', 15);
-        $lateAfter = $this->request->input('late_after', '09:16:00');
-        $halfDayAfter = $this->request->input('half_day_after', '12:00:00');
-        $lateLimitCount = (int) $this->request->input('late_limit_count', 3);
-        $lateDeductionPercent = (float) $this->request->input('late_deduction_percent', 10.00);
-        $halfDayDeductionPercent = (float) $this->request->input('half_day_deduction_percent', 50.00);
-        $lecGraceMinutes = (int) $this->request->input('lec_grace_minutes', 5);
-
-        try {
-            $db->update('shift_templates', [
-                'start_time' => $startTime,
-                'grace_minutes' => $graceMinutes,
-                'late_after' => $lateAfter,
-                'half_day_after' => $halfDayAfter,
-                'late_limit_count' => $lateLimitCount,
-                'late_deduction_percent' => $lateDeductionPercent,
-                'half_day_deduction_percent' => $halfDayDeductionPercent,
-                'lec_grace_minutes' => $lecGraceMinutes,
-            ], 'id = 1');
-
-            // Force all draft runs to become out of sync when shift policies change
-            $db->query("UPDATE payroll_runs SET status = 'out_of_sync' WHERE status = 'draft'");
-
-            Session::flash('success', 'Shift policies and payroll rules saved.');
-        } catch (\Throwable $e) {
-            Session::flash('error', 'Failed to save settings: ' . $e->getMessage());
-        }
-
-        return $this->redirect('/payroll/settings');
-    }
-
     public function runDetails(string $id): string
     {
         $db = $this->db();
@@ -350,7 +281,7 @@ class PayrollController extends Controller
             }
         }
 
-        $employees = $db->select("SELECT * FROM employees WHERE status = 'active'");
+        $employees = $db->select("SELECT e.*, u.grace_period as user_grace_period FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.status = 'active'");
         
         $totalGross = 0;
         $totalDeductions = 0;
@@ -424,7 +355,7 @@ class PayrollController extends Controller
 
                             // Recalculate late status based on custom shift start if set
                             $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : $globalShiftStart;
-                            $grace = !empty($e['min_clock_in']) ? 10 : $globalGrace;
+                            $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : $globalGrace;
                             $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
                             if ($checkIn && $checkIn > $latePenaltyTime) {
                                 $isLate = true;
@@ -444,7 +375,7 @@ class PayrollController extends Controller
 
                             // Check shift start rules
                             $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : $globalShiftStart;
-                            $grace = !empty($e['min_clock_in']) ? 10 : $globalGrace;
+                            $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : $globalGrace;
                             $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
                             $halfDayTime = !empty($e['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
 
@@ -676,7 +607,7 @@ class PayrollController extends Controller
         $globalShiftStart = $shift['start_time'] ?? '09:00:00';
         $globalGrace = (int)($shift['grace_minutes'] ?? 15);
 
-        $e = $db->selectOne("SELECT * FROM employees WHERE id = ?", [$employeeId]);
+        $e = $db->selectOne("SELECT e.*, u.grace_period as user_grace_period FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.id = ?", [$employeeId]);
         if (!$e) return [];
 
         $chronology = [];
@@ -713,7 +644,7 @@ class PayrollController extends Controller
                         $reason = $manual['late_exemption_reason'] ?? '';
 
                         $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : $globalShiftStart;
-                        $grace = !empty($e['min_clock_in']) ? 10 : $globalGrace;
+                        $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : $globalGrace;
                         $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
                         if ($manual['clock_in'] && $manual['clock_in'] > $latePenaltyTime) {
                             $isLate = true;
@@ -723,7 +654,7 @@ class PayrollController extends Controller
                         $checkIn = date('H:i:s', strtotime($kiosk['check_in']));
                         
                         $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : $globalShiftStart;
-                        $grace = !empty($e['min_clock_in']) ? 10 : $globalGrace;
+                        $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : $globalGrace;
                         $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
                         $halfDayTime = !empty($e['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
 
@@ -850,13 +781,14 @@ class PayrollController extends Controller
                 a.attendance_date,
                 a.confidence,
                 a.image_path,
-                a.late_exempted,
-                a.late_exemption_reason,
+                0 as late_exempted,
+                NULL as late_exemption_reason,
                 COALESCE(u.name, e.first_name, e.emp_code, 'Staff Member') as first_name,
                 COALESCE(e.last_name, '') as last_name,
                 COALESCE(u.employee_id, e.emp_code, CONCAT('EMP-', COALESCE(a.user_id, a.employee_id))) as emp_code,
                 COALESCE(u.designation, d.name, 'General Staff') as department_name,
-                e.min_clock_in
+                e.min_clock_in,
+                u.grace_period as user_grace_period
             FROM attendance a
             LEFT JOIN users u ON a.user_id = u.id
             LEFT JOIN employees e ON (a.employee_id = e.id OR e.user_id = a.user_id)
@@ -882,6 +814,7 @@ class PayrollController extends Controller
                     'image_path' => $log['image_path'],
                     'scan_count' => 1,
                     'min_clock_in' => $log['min_clock_in'],
+                    'user_grace_period' => $log['user_grace_period'],
                     'late_exempted' => $log['late_exempted'],
                     'late_exemption_reason' => $log['late_exemption_reason']
                 ];
@@ -905,7 +838,7 @@ class PayrollController extends Controller
             $status = 'present';
             
             $empShiftStart = !empty($data['min_clock_in']) ? $data['min_clock_in'] : $globalShiftStart;
-            $grace = !empty($data['min_clock_in']) ? 10 : $globalGrace;
+            $grace = !empty($data['min_clock_in']) ? (int)($data['user_grace_period'] ?? 10) : $globalGrace;
             $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
             $halfDayTime = !empty($data['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
             
@@ -951,8 +884,8 @@ class PayrollController extends Controller
                 l.clock_out,
                 l.working_hours,
                 l.status,
-                l.late_exempted,
-                l.late_exemption_reason,
+                0 as late_exempted,
+                NULL as late_exemption_reason,
                 1.0 as confidence,
                 '' as image_path,
                 e.first_name,

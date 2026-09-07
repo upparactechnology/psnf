@@ -6,7 +6,18 @@ use App\Models\User;
 use App\Models\Audit;
 
 class AdminAuthController extends Controller {
-  public function loginView(): void { $this->view('auth/admin_login'); }
+  public function loginView(): void {
+    // If already authenticated (admin or staff via bridge), redirect to appropriate portal
+    if (!empty($_SESSION['admin_id'])) {
+      $this->redirect('/admin/dashboard');
+      return;
+    }
+    if (!empty($_SESSION['staff_id']) && !empty($_SESSION['erp_bridged'])) {
+      $this->redirect('/staff/dashboard');
+      return;
+    }
+    $this->view('auth/admin_login');
+  }
 
   public function login(): void {
     try {

@@ -9,15 +9,18 @@ class EmbeddingExtractor:
     InsightFace-only embedding extractor.
     Produces a 512-dim L2-normalized face feature vector via buffalo_l model.
     No fallback — InsightFace is MANDATORY.
+
+    Accepts a model_getter callable that lazily loads and returns
+    the InsightFace model on demand.
     """
 
-    def __init__(self, app_model: Any):
-        if app_model is None:
+    def __init__(self, model_getter):
+        if model_getter is None:
             raise RuntimeError(
-                "EmbeddingExtractor requires an InsightFace app model. "
-                "Ensure InsightFace is loaded before instantiating this class."
+                "EmbeddingExtractor requires a model_getter callable. "
+                "Pass model_manager.get_model as the getter."
             )
-        self.app_model = app_model
+        self._model_getter = model_getter
 
     def extract_embedding(self, img_bgr: np.ndarray) -> np.ndarray:
         """
@@ -25,7 +28,7 @@ class EmbeddingExtractor:
         Raises ValueError if no face is detected in the image.
         """
         try:
-            faces = self.app_model.get(img_bgr)
+            faces = self._model_getter().get(img_bgr)
         except Exception as e:
             logger.error(f"InsightFace embedding extraction error: {str(e)}")
             raise RuntimeError(f"InsightFace failed to process image: {str(e)}")

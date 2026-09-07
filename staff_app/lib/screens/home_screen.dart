@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         bottomRight: Radius.circular(36),
                       ),
                     ),
-                    padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
+                    padding: EdgeInsets.only(top: MediaQuery.of(context).viewPadding.top + 16, left: 24, right: 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -379,49 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            if (_actionLoading)
-                              const CircularProgressIndicator()
-                            else if (_attendanceData['checked_in'] == false)
-                              ElevatedButton.icon(
-                                onPressed: _handleCheckIn,
-                                icon: const Icon(Icons.login_rounded, color: Colors.white),
-                                label: const Text('Check In Now', style: TextStyle(fontWeight: FontWeight.bold)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0A5C36),
-                                  foregroundColor: Colors.white,
-                                  minimumSize: const Size(double.infinity, 48),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              )
-                            else if (_attendanceData['checked_in'] == true && _attendanceData['check_out_time'] == null)
-                              ElevatedButton.icon(
-                                onPressed: _handleCheckOut,
-                                icon: const Icon(Icons.logout_rounded, color: Colors.white),
-                                label: const Text('Check Out Now', style: TextStyle(fontWeight: FontWeight.bold)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFC5221F),
-                                  foregroundColor: Colors.white,
-                                  minimumSize: const Size(double.infinity, 48),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                              )
-                            else
-                              Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey.shade100),
-                                ),
-                                width: double.infinity,
-                                child: const Center(
-                                  child: Text(
-                                    'Today\'s Attendance Completed 🎉',
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF137333)),
-                                  ),
-                                ),
-                              ),
+
                           ],
                         ),
                       ),
@@ -509,9 +467,11 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(title, style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
                 Text(
                   val,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,

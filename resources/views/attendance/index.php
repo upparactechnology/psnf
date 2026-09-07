@@ -13,7 +13,13 @@ ob_start();
             <h2 class="text-xl font-bold text-white">Attendance Registry</h2>
             <p class="text-sm text-slate-500 mt-0.5">Record and view daily student attendance logs</p>
         </div>
-        <div><a href="<?= url('academics/attendance/leaves') ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-all border border-amber-500/20"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> View All Leave Applications</a></div>
+        <div class="flex items-center gap-2">
+            <div class="flex bg-slate-800 p-1 rounded-xl">
+                <span class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow">Daily List</span>
+                <a href="<?= url('academics/attendance?view=calendar') ?>" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-colors">Monthly Calendar</a>
+            </div>
+            <a href="<?= url('academics/attendance/leaves') ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 transition-all border border-amber-500/20"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Leave Applications</a>
+        </div>
     </div>
 
     <?php if (!empty($pendingLeaves)): ?>

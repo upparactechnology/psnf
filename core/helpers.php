@@ -262,15 +262,30 @@ if (!function_exists('e')) {
 if (!function_exists('dashboard_url')) {
     function dashboard_url(): string
     {
-        if (has_role('super_admin') || has_role('school_admin') || has_role('manager')) {
-            return '/dashboard';
-        }
-        if (has_role('teacher')) {
-            return '/teacher/dashboard';
-        }
         if (has_role('parent')) {
             return '/parent/dashboard';
         }
         return '/dashboard';
+    }
+}
+
+if (!function_exists('is_year_locked')) {
+    function is_year_locked(int|string $year): bool
+    {
+        if (has_role('super_admin')) {
+            return false;
+        }
+
+        $db = \Core\Application::$app->db;
+        if (is_numeric($year)) {
+            $row = $db->selectOne("SELECT status FROM academic_years WHERE id = ? LIMIT 1", [(int)$year]);
+        } else {
+            $row = $db->selectOne("SELECT status FROM academic_years WHERE year_name = ? LIMIT 1", [$year]);
+        }
+        
+        if ($row) {
+            return in_array($row['status'], ['locked', 'archived']);
+        }
+        return false;
     }
 }

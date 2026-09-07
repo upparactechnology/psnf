@@ -11,6 +11,7 @@ ob_start();
         <p class="text-sm text-slate-500 mt-0.5">Manage organization details and school parameters</p>
     </div>
 
+    <?php if (has_permission('edit_general_settings')): ?>
     <form method="POST" action="<?= url('settings') ?>" enctype="multipart/form-data" x-data="{ loading: false }" @submit="loading = true">
         <?= \Core\View::csrf() ?>
 
@@ -264,7 +265,8 @@ ob_start();
             <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">
                 Send Test Message
             </button>
-        </form>
+    </form>
+    <?php endif; ?>
     </div>
 </div>
 

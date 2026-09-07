@@ -51,6 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 5,
+      timeInterval: 1000,
     );
 
     // Get immediate position first
@@ -75,8 +76,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } else {
       final diffSeconds = now.difference(_lastPingTime!).inSeconds;
       
-      // Ping every 2-3 seconds as per new real-time WebSocket architecture
-      if (diffSeconds >= 2) {
+      // Ping every 1 second for real-time speed tracking
+      if (diffSeconds >= 1) {
         shouldPing = true;
       }
     }

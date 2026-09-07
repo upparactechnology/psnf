@@ -83,7 +83,23 @@ class FeeController extends Controller
             LIMIT 10
         ", [$tenantId]);
 
-        return $this->view('fees/index', compact('invoices', 'stats', 'status', 'search', 'view', 'recentParentPayments'));
+        // Monthly revenue data for chart (current year)
+        $monthlyRevenue = $this->db()->select("
+            SELECT MONTH(fp.paid_at) as month, COALESCE(SUM(fp.amount), 0) as total
+            FROM fee_payments fp
+            JOIN fee_invoices fi ON fi.id = fp.invoice_id
+            WHERE fi.tenant_id = ? AND YEAR(fp.paid_at) = YEAR(CURDATE())
+            GROUP BY MONTH(fp.paid_at)
+            ORDER BY month ASC
+        ", [$tenantId]);
+
+        // Build 12-month array
+        $chartData = array_fill(1, 12, 0);
+        foreach ($monthlyRevenue as $row) {
+            $chartData[(int)$row['month']] = (float)$row['total'];
+        }
+
+        return $this->view('fees/index', compact('invoices', 'stats', 'status', 'search', 'view', 'recentParentPayments', 'chartData'));
     }
 
     public function exportCsv(): void

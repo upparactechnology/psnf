@@ -5,7 +5,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Fe
 ob_start();
 ?>
 
-<div class="space-y-6" x-data="{ modalOpen: false }">
+<div class="space-y-6" x-data="{ modalOpen: <?= isset($_GET['add_next']) ? 'true' : 'false' ?>, addNext: false }">
     <!-- Header -->
     <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
@@ -71,6 +71,7 @@ ob_start();
         <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md" @click.away="modalOpen = false">
             <form action="<?= url("fees/structures/{$structure['id']}/items") ?>" method="POST">
                 <?= \Core\View::csrf() ?>
+                <input type="hidden" name="_add_next" :value="addNext ? '1' : '0'">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
                     <h3 class="text-lg font-semibold">Add Fee Item</h3>
                 </div>
@@ -110,7 +111,8 @@ ob_start();
                 </div>
                 <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-right space-x-2">
                     <button type="button" @click="modalOpen = false" class="px-4 py-2 font-medium text-slate-600">Cancel</button>
-                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-medium">Add Item</button>
+                    <button type="submit" @click="addNext = false" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl font-medium">Save & Close</button>
+                    <button type="submit" @click="addNext = true" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-medium">Save & Add Next</button>
                 </div>
             </form>
         </div>

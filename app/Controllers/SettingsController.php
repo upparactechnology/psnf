@@ -97,6 +97,11 @@ class SettingsController extends Controller
 
         // Update School Info
         if (isset($data['school_name'])) {
+            // Ensure extra columns exist
+            try { $db->query("ALTER TABLE `schools` ADD COLUMN `website` VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+            try { $db->query("ALTER TABLE `schools` ADD COLUMN `principal` VARCHAR(191) NULL"); } catch (\Throwable $e) {}
+            try { $db->query("ALTER TABLE `schools` ADD COLUMN `affiliation` VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+
             $schoolData = [
                 'name'             => $data['school_name'] ?? '',
                 'email'            => $data['school_email'] ?? '',
@@ -107,6 +112,9 @@ class SettingsController extends Controller
                 'pincode'          => $data['school_pincode'] ?? '',
                 'established_year' => !empty($data['school_established_year']) ? (int)$data['school_established_year'] : null,
                 'type'             => $data['school_type'] ?? 'special_needs',
+                'website'          => $data['school_website'] ?? null,
+                'principal'        => $data['school_principal'] ?? null,
+                'affiliation'      => $data['school_affiliation'] ?? null,
             ];
             $db->update('schools', $schoolData, 'id = ?', [$schoolId]);
         }

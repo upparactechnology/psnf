@@ -5,7 +5,7 @@ $breadcrumbs = [];
 ob_start();
 ?>
 
-<div x-data="{ viewMode: 'grid' }" class="space-y-6 max-w-6xl mx-auto">
+<div x-data="studentDirectory()" class="space-y-6 max-w-6xl mx-auto">
 
     <!-- Top Header & Quick Action Buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -14,6 +14,17 @@ ob_start();
             <p class="text-xs text-slate-500 mt-0.5"><?= number_format($total ?? 0) ?> registered students</p>
         </div>
         <div class="flex items-center gap-3">
+            <!-- Pending Online Applications Badge -->
+            <?php if (!empty($pendingEnrollments) && has_permission('approve_enrollments')): ?>
+            <button @click="showPendingModal = true" class="relative inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Pending Applications
+                <span class="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 text-2xs font-bold text-white bg-amber-500 rounded-full ring-2 ring-white dark:ring-slate-900">
+                    <?= count($pendingEnrollments) ?>
+                </span>
+            </button>
+            <?php endif; ?>
+
             <!-- View Mode Switcher -->
             <div class="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/50">
                 <button @click="viewMode = 'grid'" :class="viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'" class="p-1.5 rounded-lg text-xs font-semibold transition-all" title="Grid Cards View">
@@ -24,7 +35,7 @@ ob_start();
                 </button>
             </div>
 
-            <?php if (has_permission('create_students')): ?>
+            <?php if (has_permission('create_students_list')): ?>
             <a href="<?= url('students/create') ?>" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:opacity-90 bg-brand-600 hover:bg-brand-500">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 + Student
@@ -33,7 +44,113 @@ ob_start();
         </div>
     </div>
 
+    <!-- PENDING ENROLLMENTS MODAL -->
+    <?php if (has_permission('approve_enrollments')): ?>
+    <div x-show="showPendingModal" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Backdrop -->
+            <div x-show="showPendingModal" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500/75 dark:bg-gray-900/80" @click="showPendingModal = false"></div>
 
+            <!-- Modal Panel -->
+            <div x-show="showPendingModal" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="relative inline-block align-bottom bg-white dark:bg-slate-900 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+                
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Pending Online Applications</h3>
+                        <p class="text-xs text-slate-500 mt-0.5"><?= count($pendingEnrollments) ?> application(s) awaiting review</p>
+                    </div>
+                    <button @click="showPendingModal = false" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="px-6 py-4 max-h-[60vh] overflow-y-auto">
+                    <?php if (empty($pendingEnrollments)): ?>
+                    <div class="text-center py-12">
+                        <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <p class="text-sm text-slate-500">No pending applications</p>
+                    </div>
+                    <?php else: ?>
+                    <div class="space-y-3">
+                        <?php foreach ($pendingEnrollments as $enrollment): ?>
+                        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                    <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0 text-sm font-bold text-slate-600 dark:text-slate-300">
+                                        👤
+                                    </div>
+                                    <div class="min-w-0">
+                                        <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate"><?= e($enrollment['student_full_name']) ?></h4>
+                                        <p class="text-2xs text-slate-500 mt-0.5">
+                                            <span class="font-mono"><?= e($enrollment['application_code']) ?></span>
+                                            &middot; Applied <?= date('M d, Y', strtotime($enrollment['created_at'])) ?>
+                                        </p>
+                                        <div class="flex items-center gap-2 mt-1 text-2xs text-slate-500">
+                                            <span>DOB: <?= e($enrollment['dob']) ?></span>
+                                            &middot;
+                                            <span class="capitalize"><?= e($enrollment['gender']) ?></span>
+                                            &middot;
+                                            <span>Father: <?= e($enrollment['father_name'] ?? 'N/A') ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Enroll Button + School/Branch Selection -->
+                                <div class="flex-shrink-0" x-data="{ open: false }">
+                                    <button @click="open = !open" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-2xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        Enroll
+                                    </button>
+
+                                    <!-- School/Branch Dropdown -->
+                                    <div x-show="open" @click.away="open = false" x-cloak x-transition class="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-10">
+                                        <h5 class="text-xs font-bold text-slate-900 dark:text-white mb-3">Select School & Branch</h5>
+                                        <form method="POST" action="<?= url('students/enrollments/' . $enrollment['id'] . '/quick-enroll') ?>" class="space-y-3">
+                                            <div>
+                                                <label class="block text-2xs font-semibold text-slate-600 dark:text-slate-400 mb-1">School *</label>
+                                                <select name="school_id" required class="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                                                    <option value="">Select School</option>
+                                                    <?php foreach ($schools as $school): ?>
+                                                    <option value="<?= $school['id'] ?>"><?= e($school['name']) ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-2xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Branch *</label>
+                                                <select name="branch_id" required class="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                                                    <option value="">Select Branch</option>
+                                                    <?php foreach ($branches as $branch): ?>
+                                                    <option value="<?= $branch['id'] ?>" data-school="<?= $branch['school_id'] ?>"><?= e($branch['name']) ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div class="flex items-center gap-2 pt-1">
+                                                <button type="submit" onclick="return confirm('Enroll this student into the system?')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-2xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                                    Confirm Enroll
+                                                </button>
+                                                <button type="button" @click="open = false" class="px-3 py-2 rounded-lg text-2xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">Cancel</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                    <button @click="showPendingModal = false" class="w-full px-4 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Search Input -->
     <div class="relative">
@@ -139,6 +256,15 @@ ob_start();
     </div>
 
 </div>
+
+<script>
+function studentDirectory() {
+    return {
+        viewMode: 'grid',
+        showPendingModal: false,
+    }
+}
+</script>
 
 <?php
 $content = ob_get_clean();

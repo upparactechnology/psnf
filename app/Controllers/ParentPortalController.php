@@ -107,10 +107,52 @@ class ParentPortalController extends Controller
             }
         }
 
+        // Fetch academic years for the tenant
+        $tenantId = (int)($guardian['tenant_id'] ?? 1);
+        $academicYears = $this->db()->select(
+            "SELECT * FROM academic_years WHERE tenant_id = ? ORDER BY year_name DESC",
+            [$tenantId]
+        );
+
+        // Determine selected academic year (from GET param or current)
+        $selectedYearId = (int) Application::$app->request->get('academic_year_id', '');
+        $selectedYear = null;
+        $yearStart = null;
+        $yearEnd = null;
+        if (!empty($academicYears)) {
+            if ($selectedYearId > 0) {
+                foreach ($academicYears as $ay) {
+                    if ((int)$ay['id'] === $selectedYearId) {
+                        $selectedYear = $ay;
+                        break;
+                    }
+                }
+            }
+            if (!$selectedYear) {
+                // Auto-select current year
+                foreach ($academicYears as $ay) {
+                    if (($ay['status'] ?? '') === 'current') {
+                        $selectedYear = $ay;
+                        break;
+                    }
+                }
+                if (!$selectedYear) {
+                    $selectedYear = $academicYears[0];
+                }
+            }
+            $yearStart = $selectedYear['start_date'] ?? null;
+            $yearEnd = $selectedYear['end_date'] ?? null;
+        }
+
         return [
-            'guardian'       => $guardian,
-            'all_students'   => $students,
-            'active_student' => $activeStudent,
+            'guardian'        => $guardian,
+            'all_students'    => $students,
+            'active_student'  => $activeStudent,
+            'academic_years'  => $academicYears,
+            'selected_year'   => $selectedYear,
+            'selected_year_id' => $selectedYear ? (int)$selectedYear['id'] : 0,
+            'year_start'      => $yearStart,
+            'year_end'        => $yearEnd,
         ];
     }
 
@@ -156,7 +198,6 @@ class ParentPortalController extends Controller
                 'homeworks'         => [],
                 'unpaidTotal'       => 0.0,
                 'transport'         => null,
-                'recentMessages'    => [],
             ]));
         }
 
@@ -214,16 +255,6 @@ class ParentPortalController extends Controller
             [$student['id']]
         );
 
-        // 7. Recent messages (last 2)
-        $recentMessages = $this->db()->select(
-            "SELECT cm.*, u.name as sender_name
-             FROM communication_messages cm
-             JOIN users u ON u.id = cm.sender_id
-             WHERE cm.sender_id = ? OR cm.receiver_id = ?
-             ORDER BY cm.created_at DESC LIMIT 2",
-            [$context['guardian']['user_id'], $context['guardian']['user_id']]
-        );
-
         // 8. Fetch recent exam results
         $exams = $this->db()->select(
             "SELECT * FROM exam_results WHERE student_id = ? ORDER BY date_published DESC LIMIT 3",
@@ -237,6 +268,27 @@ class ParentPortalController extends Controller
             [$student['class'], $student['section'], $todayDay]
         );
 
+        // 10. Check if child's birthday is within next 2 days
+        $upcomingBirthdays = [];
+        if (!empty($student['dob'])) {
+            $dob = $student['dob'];
+            $bdayThisYear = date('Y') . date('-m-d', strtotime($dob));
+            if (strtotime($bdayThisYear) < strtotime('today')) {
+                $bdayThisYear = date('Y', strtotime('+1 year')) . date('-m-d', strtotime($dob));
+            }
+            $daysUntil = (int) ((strtotime($bdayThisYear) - strtotime('today')) / 86400);
+            if ($daysUntil >= 0 && $daysUntil <= 2) {
+                $age = date('Y', strtotime($bdayThisYear)) - date('Y', strtotime($dob));
+                $upcomingBirthdays[] = [
+                    'name' => $student['first_name'] . ' ' . $student['last_name'],
+                    'dob' => $dob,
+                    'age' => $age,
+                    'days_until' => $daysUntil,
+                    'type' => 'student'
+                ];
+            }
+        }
+
         return View::render('parent/dashboard', array_merge($context, [
             'title'             => 'Parent Dashboard',
             'attendanceRate'    => $attendanceRate,
@@ -245,9 +297,9 @@ class ParentPortalController extends Controller
             'homeworks'         => $homeworks,
             'unpaidTotal'       => $unpaidTotal,
             'transport'         => $transport,
-            'recentMessages'    => $recentMessages,
             'exams'             => $exams,
             'timetable'         => $timetable,
+            'upcomingBirthdays' => $upcomingBirthdays,
         ]));
     }
 
@@ -255,16 +307,30 @@ class ParentPortalController extends Controller
     {
         $context = $this->getContext((int)$id);
         $student = $context['active_student'];
+        $yearStart = $context['year_start'];
+        $yearEnd = $context['year_end'];
 
-        // Get logs for the current month/year
+        // Get logs for the current month/year within the selected academic year
         $month = Application::$app->request->get('month', date('m'));
         $year  = Application::$app->request->get('year', date('Y'));
 
+        // Build date filter based on academic year
+        $dateWhere = '';
+        $dateParams = [];
+        if ($yearStart && $yearEnd) {
+            $dateWhere = 'AND a.date >= :year_start AND a.date <= :year_end';
+            $dateParams['year_start'] = $yearStart;
+            $dateParams['year_end'] = $yearEnd;
+        }
+
+        // Filter by month/year within academic year range
+        $monthWhere = 'AND MONTH(a.date) = :month AND YEAR(a.date) = :year';
+
         $logs = $this->db()->select(
-            "SELECT * FROM attendance
-             WHERE student_id = ? AND MONTH(date) = ? AND YEAR(date) = ?
-             ORDER BY date DESC",
-            [$student['id'], $month, $year]
+            "SELECT a.* FROM attendance a
+             WHERE a.student_id = :student_id {$dateWhere} {$monthWhere}
+             ORDER BY a.date DESC",
+            array_merge(['student_id' => $student['id'], 'month' => $month, 'year' => $year], $dateParams)
         );
 
         // Calculate summary
@@ -678,12 +744,23 @@ class ParentPortalController extends Controller
     {
         $context = $this->getContext((int)$id);
         $student = $context['active_student'];
+        $yearStart = $context['year_start'];
+        $yearEnd = $context['year_end'];
+
+        // Filter by academic year date range
+        $dateWhere = '';
+        $dateParams = [];
+        if ($yearStart && $yearEnd) {
+            $dateWhere = 'AND date_published >= :year_start AND date_published <= :year_end';
+            $dateParams['year_start'] = $yearStart;
+            $dateParams['year_end'] = $yearEnd;
+        }
 
         $results = $this->db()->select(
             "SELECT * FROM exam_results
-             WHERE student_id = ?
+             WHERE student_id = :student_id {$dateWhere}
              ORDER BY date_published DESC, subject ASC",
-            [$student['id']]
+            array_merge(['student_id' => $student['id']], $dateParams)
         );
 
         // Fetch generated certificates from the sub-app module
@@ -957,12 +1034,23 @@ class ParentPortalController extends Controller
     {
         $context = $this->getContext((int)$id);
         $student = $context['active_student'];
+        $yearStart = $context['year_start'];
+        $yearEnd = $context['year_end'];
+
+        // Filter by academic year date range
+        $dateWhere = '';
+        $dateParams = [];
+        if ($yearStart && $yearEnd) {
+            $dateWhere = 'AND fi.due_date >= :year_start AND fi.due_date <= :year_end';
+            $dateParams['year_start'] = $yearStart;
+            $dateParams['year_end'] = $yearEnd;
+        }
 
         $invoices = $this->db()->select(
-            "SELECT * FROM fee_invoices
-             WHERE student_id = ?
-             ORDER BY due_date DESC",
-            [$student['id']]
+            "SELECT * FROM fee_invoices fi
+             WHERE fi.student_id = :student_id {$dateWhere}
+             ORDER BY fi.due_date DESC",
+            array_merge(['student_id' => $student['id']], $dateParams)
         );
 
         $payments = $this->db()->select(
@@ -1161,100 +1249,6 @@ class ParentPortalController extends Controller
         ]));
     }
 
-    public function communication(): string
-    {
-        $context = $this->getContext();
-        $parentUserId = (int)$context['guardian']['user_id'];
-
-        // Fetch direct message log with the school staff (we default staff to admin@psnf.edu / ID 1)
-        $staffUser = $this->db()->selectOne("SELECT id, name FROM users WHERE email = 'admin@psnf.edu' LIMIT 1");
-        $staffId = $staffUser ? (int)$staffUser['id'] : 1;
-
-        $messages = $this->db()->select(
-            "SELECT cm.*, sender.name as sender_name, receiver.name as receiver_name
-             FROM communication_messages cm
-             JOIN users sender ON sender.id = cm.sender_id
-             JOIN users receiver ON receiver.id = cm.receiver_id
-             WHERE (cm.sender_id = ? AND cm.receiver_id = ?)
-                OR (cm.sender_id = ? AND cm.receiver_id = ?)
-             ORDER BY cm.created_at ASC",
-            [$parentUserId, $staffId, $staffId, $parentUserId]
-        );
-
-        // Mark incoming messages as read
-        $this->db()->query(
-            "UPDATE communication_messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?",
-            [$staffId, $parentUserId]
-        );
-
-        return View::render('parent/communication', array_merge($context, [
-            'title'    => 'Parent-Teacher Messages',
-            'messages' => $messages,
-            'staff'    => $staffUser ?: ['id' => 1, 'name' => 'School Admin'],
-        ]));
-    }
-
-    public function sendMessage(): string
-    {
-        $context = $this->getContext();
-        $parentUserId = (int)$context['guardian']['user_id'];
-        $message = Application::$app->request->post('message');
-
-        $staffUser = $this->db()->selectOne("SELECT id FROM users WHERE email = 'admin@psnf.edu' LIMIT 1");
-        $staffId = $staffUser ? (int)$staffUser['id'] : 1;
-
-        if ($message) {
-            $activeStudent = $context['active_student'];
-            $tenantId = $activeStudent ? $activeStudent['tenant_id'] : $context['guardian']['tenant_id'];
-            $schoolId = $activeStudent ? $activeStudent['school_id'] : 1;
-            $branchId = $activeStudent ? $activeStudent['branch_id'] : 1;
-
-            $this->db()->insert('communication_messages', [
-                'tenant_id'   => $tenantId,
-                'school_id'   => $schoolId,
-                'branch_id'   => $branchId,
-                'sender_id'   => $parentUserId,
-                'receiver_id' => $staffId,
-                'subject'     => 'Parent Portal Inquiry',
-                'message'     => $message,
-                'is_read'     => 0,
-                'created_at'  => now(),
-            ]);
-        }
-
-        if (Application::$app->request->isHtmx()) {
-            // Re-render communication chat list directly
-            $messages = $this->db()->select(
-                "SELECT cm.*, sender.name as sender_name, receiver.name as receiver_name
-                 FROM communication_messages cm
-                 JOIN users sender ON sender.id = cm.sender_id
-                 JOIN users receiver ON receiver.id = cm.receiver_id
-                 WHERE (cm.sender_id = ? AND cm.receiver_id = ?)
-                    OR (cm.sender_id = ? AND cm.receiver_id = ?)
-                 ORDER BY cm.created_at ASC",
-                [$parentUserId, $staffId, $staffId, $parentUserId]
-            );
-
-            // Output message bubbles fragment directly
-            $html = '';
-            foreach ($messages as $msg) {
-                $isMe = (int)$msg['sender_id'] === $parentUserId;
-                $align = $isMe ? 'justify-end' : 'justify-start';
-                $color = $isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none';
-                $html .= '<div class="flex ' . $align . ' gap-3 mb-4">
-                            <div class="max-w-[70%] p-3.5 rounded-2xl shadow-md ' . $color . '">
-                                <p class="text-sm">' . nl2br(htmlspecialchars($msg['message'])) . '</p>
-                                <span class="block text-[10px] text-right mt-1 opacity-70">' . date('h:i A', strtotime($msg['created_at'])) . '</span>
-                            </div>
-                         </div>';
-            }
-            return $html;
-        }
-
-        Application::$app->response->redirect('/parent/communication');
-        exit();
-    }
-
     // ─────────────────────────────────────────────────────────────────────────
     // JSON API CONTROLLER METHODS (FOR RETURNING DATA)
     // ─────────────────────────────────────────────────────────────────────────
@@ -1440,65 +1434,6 @@ class ParentPortalController extends Controller
         return $this->respondJson([
             'success'       => true,
             'announcements' => $announcements
-        ]);
-    }
-
-    public function apiMessages(): string
-    {
-        $context = $this->getContext();
-        $parentUserId = (int)$context['guardian']['user_id'];
-
-        $messages = $this->db()->select(
-            "SELECT cm.*, sender.name as sender_name, receiver.name as receiver_name
-             FROM communication_messages cm
-             JOIN users sender ON sender.id = cm.sender_id
-             JOIN users receiver ON receiver.id = cm.receiver_id
-             WHERE cm.sender_id = ? OR cm.receiver_id = ?
-             ORDER BY cm.created_at ASC",
-            [$parentUserId, $parentUserId]
-        );
-
-        return $this->respondJson([
-            'success'  => true,
-            'messages' => $messages
-        ]);
-    }
-
-    public function apiSendMessage(): string
-    {
-        $context = $this->getContext();
-        $parentUserId = (int)$context['guardian']['user_id'];
-
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
-        $message = $input['message'] ?? null;
-
-        $staffUser = $this->db()->selectOne("SELECT id FROM users WHERE email = 'admin@psnf.edu' LIMIT 1");
-        $staffId = $staffUser ? (int)$staffUser['id'] : 1;
-
-        if (!$message) {
-            return $this->respondJson(['success' => false, 'message' => 'Empty message content'], 400);
-        }
-
-        $activeStudent = $context['active_student'];
-        $tenantId = $activeStudent ? $activeStudent['tenant_id'] : $context['guardian']['tenant_id'];
-        $schoolId = $activeStudent ? $activeStudent['school_id'] : 1;
-        $branchId = $activeStudent ? $activeStudent['branch_id'] : 1;
-
-        $this->db()->insert('communication_messages', [
-            'tenant_id'   => $tenantId,
-            'school_id'   => $schoolId,
-            'branch_id'   => $branchId,
-            'sender_id'   => $parentUserId,
-            'receiver_id' => $staffId,
-            'subject'     => 'API message',
-            'message'     => $message,
-            'is_read'     => 0,
-            'created_at'  => now(),
-        ]);
-
-        return $this->respondJson([
-            'success' => true,
-            'message' => 'Message sent successfully'
         ]);
     }
 

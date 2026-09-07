@@ -101,6 +101,37 @@ $fn     = fn($k) => $old[$k] ?? '';
                     </div>
                 </div>
 
+                <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3">Enrollment Details</h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Class</label>
+                        <input type="text" name="class" value="<?= e($fn('class')) ?>" list="class-list" class="<?= inputClass('class', $errors) ?>" placeholder="e.g. 10">
+                        <datalist id="class-list">
+                            <?php foreach ($classes as $cls): ?>
+                            <option value="<?= e($cls['name']) ?>">
+                            <?php endforeach; ?>
+                        </datalist>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Section</label>
+                        <input type="text" name="section" value="<?= e($fn('section')) ?>" class="<?= inputClass('section', $errors) ?>" placeholder="e.g. A">
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Academic Year</label>
+                        <input type="text" name="academic_year" value="<?= e($fn('academic_year')) ?>" list="year-list" class="<?= inputClass('academic_year', $errors) ?>" placeholder="e.g. 2026-2027">
+                        <datalist id="year-list">
+                            <?php foreach ($academicYears as $yr): ?>
+                            <option value="<?= e($yr['year_name']) ?>">
+                            <?php endforeach; ?>
+                        </datalist>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Enrolled Date</label>
+                        <input type="date" name="enrolled_date" value="<?= e($fn('enrolled_date') ?: date('Y-m-d')) ?>" class="<?= inputClass('enrolled_date', $errors) ?>">
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Aadhar Number</label>

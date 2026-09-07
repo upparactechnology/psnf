@@ -1,1 +1,115 @@
-*.zip
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+venv/
+backend/.env
+
+# ─── Uploads (user-generated content) ────────────────────
+storage/uploads/
+backend/uploads/
+online_enrollment/uploads/
+public/uploads/
+public/certificate_generator/generated/
+public/certificate_generator/uploads/
+public/file_manager/storage/private/
+
+# ─── Logs ────────────────────────────────────────────────
+storage/logs/*.log
+public/file_manager/storage/logs/*.log
+public/certificate_generator/storage/*.log
+
+# ─── Database dumps ──────────────────────────────────────
+*.sql
+
+# ─── PDF files ───────────────────────────────────────────
+*.pdf
+
+# ─── Documentation (root level) ──────────────────────────
+*.md
+ai-context.md
+architecture.md
+design.md
+features.md
+implementation.md
+implementation_plan.md
+implement_payroll_attendnace_page.md
+modules.md
+prd.md
+rules.md
+schema.md
+techspec.md
+tracker.md
+ui_enhancements.md
+vision.md
+workflow_access_control.md
+appflow.md
+attendance_system_guide.md
+payroll_system_guide.md
+
+# ─── Debug / Test files ─────────────────────────────────
+check_duplicates.php
+check_table.php
+fix.php
+test.php
+test_cert.pdf
+test_req.php
+
+# ─── Windows scripts ────────────────────────────────────
+*.bat
+*.ps1
+install_flutter.bat
+install_flutter.ps1
+start_backend.bat
+
+# ─── Claude/AI agent files ──────────────────────────────
+.agents/
+graphify-out/
+
+# ─── Flutter build artifacts ────────────────────────────
+staff_app/build/
+staff_app/.dart_tool/
+staff_app/.flutter-plugins-dependencies
+staff_app/.metadata
+staff_app/android/gradle/
+staff_app/android/gradlew
+staff_app/android/gradlew.bat
+staff_app/android/.gradle/
+staff_app/ios/Pods/
+staff_app/ios/.symlinks/
+staff_app/linux/flutter/ephemeral/
+staff_app/macos/Pods/
+staff_app/macos/Flutter/ephemeral/
+staff_app/windows/flutter/ephemeral/
+
+driver_app/build/
+driver_app/.dart_tool/
+driver_app/.flutter-plugins-dependencies
+driver_app/.metadata
+driver_app/android/gradle/
+driver_app/android/gradlew
+driver_app/android/gradlew.bat
+driver_app/android/.gradle/
+driver_app/ios/Pods/
+driver_app/ios/.symlinks/
+driver_app/linux/flutter/ephemeral/
+driver_app/macos/Pods/
+driver_app/macos/Flutter/ephemeral/
+driver_app/windows/flutter/ephemeral/
+driver_app/refactor_dashboard.py
+
+# ─── Node modules (if any) ──────────────────────────────
+node_modules/
+
+# ─── IDE ─────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── OS files ────────────────────────────────────────────
+.DS_Store
+Thumbs.db

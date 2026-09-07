@@ -80,6 +80,11 @@ $settingDefinitions = [
             'type' => 'number',
             'default' => '3',
         ],
+        'printing_email' => [
+            'label' => 'Printing Service Email',
+            'type' => 'email',
+            'default' => '',
+        ],
 ];
 
 $fontUploadStyles = [

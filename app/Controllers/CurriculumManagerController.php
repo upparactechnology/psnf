@@ -25,8 +25,8 @@ class CurriculumManagerController extends Controller
         $mainGroups = $db->select("SELECT * FROM main_groups WHERE tenant_id = ? AND is_active = 1", [$tenantId]);
 
         // Selected filter state
-        $selectedYearId = $this->request->input('academic_year_id');
-        $selectedGroupId = $this->request->input('main_group_id');
+        $selectedYearId = (int) $this->request->input('academic_year_id');
+        $selectedGroupId = (int) $this->request->input('main_group_id');
 
         if (!$selectedYearId && !empty($years)) {
             // Find current active year
@@ -92,6 +92,7 @@ class CurriculumManagerController extends Controller
                         'id' => $sec['id'],
                         'section_name' => $sec['section_name'],
                         'sort_order' => $sec['sort_order'],
+                        'assessment_type' => $sec['assessment_type'] ?? 'Grade',
                         'subjects' => $subjects
                     ];
                 }
@@ -113,6 +114,11 @@ class CurriculumManagerController extends Controller
         $groupId = (int)$this->request->input('main_group_id');
         $name = trim($this->request->input('name', ''));
         $description = trim($this->request->input('description', ''));
+
+        if (is_year_locked($yearId)) {
+            Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
+            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+        }
 
         if (empty($name)) {
             Session::flash('error', 'Curriculum Name is required.');
@@ -147,8 +153,14 @@ class CurriculumManagerController extends Controller
     {
         $db = $this->db();
         $sectionName = trim($this->request->input('section_name', ''));
-        $yearId = $this->request->input('academic_year_id');
-        $groupId = $this->request->input('main_group_id');
+        $assessmentType = trim($this->request->input('assessment_type', 'Grade'));
+        $yearId = (int) $this->request->input('academic_year_id');
+        $groupId = (int) $this->request->input('main_group_id');
+
+        if (is_year_locked($yearId)) {
+            Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
+            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        }
 
         if (empty($sectionName)) {
             Session::flash('error', 'Section Name is required.');
@@ -161,10 +173,47 @@ class CurriculumManagerController extends Controller
         $db->insert('curriculum_sections', [
             'curriculum_template_id' => (int)$templateId,
             'section_name' => $sectionName,
-            'sort_order' => $nextOrder
+            'sort_order' => $nextOrder,
+            'assessment_type' => $assessmentType
         ]);
 
         Session::flash('success', 'Curriculum Section added.');
+        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+    }
+
+    public function updateSection(): string
+    {
+        $db = $this->db();
+        $id = (int)$this->request->input('section_id');
+        $sectionName = trim($this->request->input('section_name', ''));
+        $assessmentType = trim($this->request->input('assessment_type', 'Grade'));
+        $yearId = (int) $this->request->input('academic_year_id');
+        $groupId = $this->request->input('main_group_id');
+
+        $sec = $db->selectOne("SELECT curriculum_template_id FROM curriculum_sections WHERE id = ?", [$id]);
+        $templateId = $sec['curriculum_template_id'] ?? '';
+
+        if (is_year_locked($yearId)) {
+            Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
+            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        }
+
+        if (empty($sectionName)) {
+            Session::flash('error', 'Section Name is required.');
+            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        }
+
+        try {
+            $db->update('curriculum_sections', [
+                'section_name' => $sectionName,
+                'assessment_type' => $assessmentType
+            ], 'id = ?', [(int)$id]);
+
+            Session::flash('success', 'Curriculum Section updated successfully.');
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Failed to update section: ' . $e->getMessage());
+        }
+
         return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
     }
 
@@ -172,48 +221,75 @@ class CurriculumManagerController extends Controller
     {
         $db = $this->db();
         $sectionId = (int)$this->request->input('section_id');
-        $subjectId = (int)$this->request->input('subject_id');
-        $assessmentType = $this->request->input('assessment_type', 'Marks');
+        $subjectIdsRaw = $this->request->input('subject_ids', '');
         $isRequired = (int)$this->request->input('is_required', 1);
-        $yearId = $this->request->input('academic_year_id');
+        $yearId = (int) $this->request->input('academic_year_id');
         $groupId = $this->request->input('main_group_id');
 
-        $sec = $db->selectOne("SELECT curriculum_template_id FROM curriculum_sections WHERE id = ?", [$sectionId]);
+        $subjectIds = array_filter(array_map('intval', explode(',', $subjectIdsRaw)));
+
+        if (empty($subjectIds)) {
+            Session::flash('error', 'Please select at least one subject.');
+            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+        }
+
+        $sec = $db->selectOne("SELECT curriculum_template_id, assessment_type FROM curriculum_sections WHERE id = ?", [$sectionId]);
         $templateId = $sec['curriculum_template_id'] ?? '';
+        $assessmentType = $sec['assessment_type'] ?? 'Grade';
 
-        // Check if subject is already in the section
-        $existing = $db->selectOne("
-            SELECT id FROM curriculum_subjects 
-            WHERE curriculum_section_id = ? AND subject_id = ?
-        ", [(int)$sectionId, $subjectId]);
-
-        if ($existing) {
-            Session::flash('error', 'Subject is already added to this curriculum section.');
+        if (is_year_locked($yearId)) {
+            Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
             return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
         }
 
         $maxSeq = $db->selectOne("SELECT MAX(sequence) as max_seq FROM curriculum_subjects WHERE curriculum_section_id = ?", [(int)$sectionId]);
-        $nextSeq = ($maxSeq['max_seq'] ?? 0) + 1;
+        $nextSeq = ($maxSeq['max_seq'] ?? 0);
 
-        $db->insert('curriculum_subjects', [
-            'curriculum_section_id' => (int)$sectionId,
-            'subject_id' => $subjectId,
-            'is_required' => $isRequired,
-            'default_grade' => null,
-            'visible' => 1,
-            'sequence' => $nextSeq,
-            'assessment_type' => $assessmentType
-        ]);
+        $added = 0;
+        $skipped = 0;
 
-        Session::flash('success', 'Subject added to Curriculum Section.');
+        foreach ($subjectIds as $subjectId) {
+            $existing = $db->selectOne("
+                SELECT id FROM curriculum_subjects 
+                WHERE curriculum_section_id = ? AND subject_id = ?
+            ", [(int)$sectionId, $subjectId]);
+
+            if ($existing) {
+                $skipped++;
+                continue;
+            }
+
+            $nextSeq++;
+            $db->insert('curriculum_subjects', [
+                'curriculum_section_id' => (int)$sectionId,
+                'subject_id' => $subjectId,
+                'is_required' => $isRequired,
+                'default_grade' => null,
+                'visible' => 1,
+                'sequence' => $nextSeq,
+                'assessment_type' => $assessmentType
+            ]);
+            $added++;
+        }
+
+        $msg = "{$added} subject(s) added to Curriculum Section.";
+        if ($skipped > 0) {
+            $msg .= " {$skipped} already existed and were skipped.";
+        }
+        Session::flash('success', $msg);
         return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
     }
 
     public function destroyCurriculumSubject(string $id): string
     {
         $db = $this->db();
-        $yearId = $this->request->input('academic_year_id');
+        $yearId = (int) $this->request->input('academic_year_id');
         $groupId = $this->request->input('main_group_id');
+
+        if (is_year_locked($yearId)) {
+            Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
+            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+        }
 
         $cs = $db->selectOne("
             SELECT sec.curriculum_template_id 
@@ -233,8 +309,13 @@ class CurriculumManagerController extends Controller
     {
         $db = $this->db();
         $orders = $this->request->input('sequence', []);
-        $yearId = $this->request->input('academic_year_id');
+        $yearId = (int) $this->request->input('academic_year_id');
         $groupId = $this->request->input('main_group_id');
+
+        if (is_year_locked($yearId)) {
+            Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
+            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+        }
 
         $templateId = '';
         if (!empty($orders)) {
@@ -256,5 +337,40 @@ class CurriculumManagerController extends Controller
 
         Session::flash('success', 'Curriculum sequence updated.');
         return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+    }
+
+    public function destroyTemplate(string $id): string
+    {
+        $db = $this->db();
+        $template = $db->selectOne("SELECT id, academic_year_id, main_group_id FROM curriculum_templates WHERE id = ?", [(int)$id]);
+
+        if (!$template) {
+            Session::flash('error', 'Template not found.');
+            return $this->redirect("/academics/curriculum");
+        }
+
+        $yearId = (int)$template['academic_year_id'];
+        $groupId = $template['main_group_id'];
+
+        if (is_year_locked($yearId)) {
+            Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
+            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+        }
+
+        $sectionIds = array_column(
+            $db->select("SELECT id FROM curriculum_sections WHERE curriculum_template_id = ?", [(int)$id]),
+            'id'
+        );
+
+        if (!empty($sectionIds)) {
+            $placeholders = implode(',', array_fill(0, count($sectionIds), '?'));
+            $db->query("DELETE FROM curriculum_subjects WHERE curriculum_section_id IN ({$placeholders})", $sectionIds);
+            $db->query("DELETE FROM curriculum_sections WHERE curriculum_template_id = ?", [(int)$id]);
+        }
+
+        $db->query("DELETE FROM curriculum_templates WHERE id = ?", [(int)$id]);
+
+        Session::flash('success', 'Curriculum template deleted.');
+        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
     }
 }

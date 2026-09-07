@@ -91,6 +91,7 @@ class FeeStructureController extends Controller
     public function addItem(string $id): string
     {
         $data = $this->request->getBody();
+        $addNext = !empty($_POST['_add_next']);
         
         $this->db()->insert('fee_structure_items', [
             'fee_structure_id' => (int)$id,
@@ -102,6 +103,9 @@ class FeeStructureController extends Controller
         ]);
         
         Session::flash('success', 'Item added to structure.');
+        if ($addNext) {
+            return $this->redirect("/fees/structures/{$id}?add_next=1");
+        }
         return $this->redirect("/fees/structures/{$id}");
     }
 

@@ -11,12 +11,9 @@ class DashboardController extends Controller
 {
     public function index(): string
     {
-        if (!has_role('super_admin') && !has_role('school_admin') && !has_role('manager')) {
+        if (!has_role('super_admin') && !has_role('school_admin') && !has_role('manager') && !has_role('teacher')) {
             if (has_role('parent')) {
                 $this->redirect('/parent/dashboard');
-            }
-            if (has_role('teacher')) {
-                $this->redirect('/teacher/dashboard');
             }
         }
 
@@ -27,41 +24,49 @@ class DashboardController extends Controller
         $user = User::find($sessionUser['id']);
         $tenantId = $user['tenant_id'];
 
-        // Determine assigned apps
-        $assignedApps = [];
-        $hasAppAccessRecords = $db->selectOne("SELECT 1 FROM user_apps WHERE user_id = ?", [$user['id']]);
-        
-        if ($hasAppAccessRecords) {
-            $userApps = $db->select("SELECT app_name FROM user_apps WHERE user_id = ?", [$user['id']]);
-            $rawApps = array_column($userApps, 'app_name');
-            foreach ($rawApps as $rawApp) {
-                if ($rawApp === 'staff_dashboard') {
-                    $assignedApps = array_merge($assignedApps, [
-                        'academic', 'academic_summary', 'hr', 'access_control', 'finance', 
-                        'transport', 'file_manager', 'games', 'config', 'report_cards'
-                    ]);
-                } elseif ($rawApp === 'driver_app') {
-                    $assignedApps[] = 'transport';
-                } elseif ($rawApp === 'teacher_app') {
-                    $assignedApps = array_merge($assignedApps, [
-                        'academic', 'academic_summary', 'games', 'report_cards'
-                    ]);
-                } elseif ($rawApp === 'parents_dashboard') {
-                    // Parents dashboard doesn't need admin launcher items
-                } else {
-                    $assignedApps[] = $rawApp;
-                }
-            }
-            $assignedApps = array_unique($assignedApps);
-        } else {
-            // Default: if no assignment exists and user is admin/manager/teacher, grant all apps.
-            if (has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher')) {
-                $assignedApps = [
-                    'academic', 'academic_summary', 'hr', 'access_control', 'finance', 
-                    'transport', 'file_manager', 'games', 'config', 'report_cards'
-                ];
+        // Teacher attendance auto check-in
+        if (has_role('teacher')) {
+            $today = date('Y-m-d');
+            $todayDayOfWeek = date('l');
+            $teacherAttendance = $db->selectOne(
+                "SELECT * FROM teacher_attendance WHERE user_id = ? AND attendance_date = ?",
+                [$user['id'], $today]
+            );
+            $firstLecture = $db->selectOne(
+                "SELECT start_time FROM timetables WHERE teacher_name = ? AND day_of_week = ? ORDER BY start_time ASC LIMIT 1",
+                [$user['name'], $todayDayOfWeek]
+            );
+            $lectureTime = $firstLecture['start_time'] ?? ($user['lecture_time'] ?? null);
+            if ($lectureTime && !$teacherAttendance) {
+                $openedAt = date('Y-m-d H:i:s');
+                $shiftPolicy = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
+                $grace = (int) ($shiftPolicy['lec_grace_minutes'] ?? ($user['grace_period'] ?? 5));
+                $lectureTimestamp = strtotime($today . ' ' . $lectureTime);
+                $cutoffTimestamp = $lectureTimestamp + ($grace * 60);
+                $status = (time() <= $cutoffTimestamp) ? 'on_time' : 'late';
+                $db->insert('teacher_attendance', [
+                    'tenant_id'       => $user['tenant_id'],
+                    'school_id'       => $user['school_id'],
+                    'branch_id'       => $user['branch_id'],
+                    'user_id'         => $user['id'],
+                    'attendance_date' => $today,
+                    'opened_at'       => $openedAt,
+                    'status'          => $status,
+                    'lecture_time'    => $lectureTime,
+                    'grace_period'    => $grace
+                ]);
+                \App\Models\ActivityLog::log('teacher_attendance_checkin', $user['id'], [
+                    'status'    => $status,
+                    'opened_at' => $openedAt
+                ]);
             }
         }
+
+        // Determine assigned apps - teachers and admins get full access
+        $assignedApps = [
+            'academic', 'academic_summary', 'hr', 'access_control', 'finance', 
+            'transport', 'file_manager', 'games', 'config', 'report_cards'
+        ];
 
         // Ensure classes table exists
         $db->query("
@@ -111,8 +116,44 @@ class DashboardController extends Controller
             [$tenantId]
         );
 
+        // Upcoming birthdays (next 2 days) - students and staff
+        $today = date('Y-m-d');
+        $twoDaysLater = date('Y-m-d', strtotime('+2 days'));
+        $todayMD = date('m-d');
+        $twoDaysMD = date('m-d', strtotime('+2 days'));
+
+        $birthdayStudents = $db->select(
+            "SELECT id, first_name, last_name, dob, 'student' as type FROM students
+             WHERE tenant_id = ? AND deleted_at IS NULL AND dob IS NOT NULL
+             AND (
+                (MONTH(dob) = ? AND DAY(dob) >= ?)
+                OR (MONTH(dob) = ? AND DAY(dob) <= ?)
+                OR (MONTH(dob) > ? AND MONTH(dob) < ?)
+             )
+             ORDER BY MONTH(dob), DAY(dob) LIMIT 10",
+            [$tenantId, (int)date('m', strtotime($today)), (int)date('d', strtotime($today)),
+             (int)date('m', strtotime($twoDaysLater)), (int)date('d', strtotime($twoDaysLater)),
+             (int)date('m', strtotime($today)), (int)date('m', strtotime($twoDaysLater))]
+        );
+
+        $birthdayStaff = $db->select(
+            "SELECT id, name, dob, 'staff' as type FROM users
+             WHERE tenant_id = ? AND deleted_at IS NULL AND dob IS NOT NULL
+             AND (
+                (MONTH(dob) = ? AND DAY(dob) >= ?)
+                OR (MONTH(dob) = ? AND DAY(dob) <= ?)
+                OR (MONTH(dob) > ? AND MONTH(dob) < ?)
+             )
+             ORDER BY MONTH(dob), DAY(dob) LIMIT 10",
+            [$tenantId, (int)date('m', strtotime($today)), (int)date('d', strtotime($today)),
+             (int)date('m', strtotime($twoDaysLater)), (int)date('d', strtotime($twoDaysLater)),
+             (int)date('m', strtotime($today)), (int)date('m', strtotime($twoDaysLater))]
+        );
+
+        $upcomingBirthdays = array_merge($birthdayStudents, $birthdayStaff);
+
         return $this->view('dashboard/index', compact(
-            'stats', 'statusCounts', 'recentLogs', 'recentStudents', 'user', 'assignedApps'
+            'stats', 'statusCounts', 'recentLogs', 'recentStudents', 'user', 'assignedApps', 'upcomingBirthdays'
         ));
     }
 

@@ -1,6 +1,46 @@
 <?php $layout = 'parent'; ?>
 
-<div class="space-y-6" x-data="{ emergencyModal: false }">
+<div class="space-y-6" x-data="{ emergencyModal: false, birthdayModal: false }" x-init="setTimeout(() => { if (window.upcomingBirthdays && window.upcomingBirthdays.length > 0) birthdayModal = true; }, 1200)">
+
+    <!-- Birthday Popup Modal -->
+    <?php if (!empty($upcomingBirthdays)): ?>
+    <script>
+        window.upcomingBirthdays = <?= json_encode($upcomingBirthdays) ?>;
+    </script>
+
+    <div x-show="birthdayModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center p-4" style="display: none;">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="birthdayModal = false"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div class="bg-gradient-to-r from-pink-500 to-rose-500 p-5 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">🎂</span>
+                        <div>
+                            <h3 class="text-lg font-bold">Birthday Coming Up!</h3>
+                            <p class="text-pink-100 text-xs"><?= e($active_student['first_name'] ?? 'Your child') ?>'s birthday is near</p>
+                        </div>
+                    </div>
+                    <button @click="birthdayModal = false" class="text-white/80 hover:text-white text-xl">&times;</button>
+                </div>
+            </div>
+            <div class="p-6 text-center">
+                <?php foreach ($upcomingBirthdays as $b):
+                    $label = $b['days_until'] === 0 ? '🎂 Today!' : ($b['days_until'] === 1 ? 'Tomorrow!' : "In {$b['days_until']} days");
+                ?>
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-pink-400 to-rose-400 text-white flex items-center justify-center text-3xl font-bold mx-auto mb-4">
+                    <?= strtoupper(substr($b['name'], 0, 1)) ?>
+                </div>
+                <h4 class="text-xl font-bold text-slate-900 dark:text-white"><?= e($b['name']) ?></h4>
+                <p class="text-sm text-slate-500 mt-1"><?= date('d M Y', strtotime($b['dob'])) ?><?= $b['age'] ? " — Turning {$b['age']}" : '' ?></p>
+                <p class="text-lg font-bold text-pink-600 dark:text-pink-400 mt-3"><?= $label ?></p>
+                <?php endforeach; ?>
+            </div>
+            <div class="p-3 border-t border-slate-100 dark:border-slate-800 text-center">
+                <button @click="birthdayModal = false" class="px-4 py-2 rounded-xl bg-pink-500 text-white text-xs font-semibold hover:bg-pink-600 transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <?php if (!$active_student): ?>
     <!-- Empty State for new Parent (No Children Enrolled yet) -->
@@ -35,6 +75,9 @@
             <div>
                 <h2 class="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Hello, <?= e($guardian['name']) ?> 👋</h2>
                 <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Here is a quick overview of your child, <strong class="text-indigo-650 dark:text-indigo-400 font-semibold"><?= e($active_student['first_name'] . ' ' . $active_student['last_name']) ?></strong>.</p>
+                <?php if (!empty($selected_year)): ?>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Academic Year: <span class="font-semibold text-indigo-500 dark:text-indigo-400"><?= e($selected_year['year_name']) ?></span></p>
+                <?php endif; ?>
             </div>
             <div class="flex flex-wrap gap-3.5">
                 
@@ -280,18 +323,6 @@
                     <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
-            </div>
-
-            <!-- Communication Shortcut Card -->
-            <div class="p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-slate-900 dark:to-indigo-950 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between gap-4 shadow-sm">
-                <div class="space-y-1 max-w-[70%]">
-                    <h4 class="text-xs font-bold text-slate-800 dark:text-white">Need to text a teacher?</h4>
-                    <p class="text-[10px] text-slate-605 dark:text-slate-400 leading-snug">Send visual concerns or transport adjustments directly through staff communication.</p>
-                </div>
-                <a href="<?= url('parent/communication') ?>"
-                   class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-md transition-all">
-                    Chat
-                </a>
             </div>
 
             <!-- Interactive Learning Games Shortcut Card -->

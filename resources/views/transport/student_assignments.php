@@ -31,7 +31,9 @@ foreach($unassignedStudents as $stu) {
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Student Transport Assignments</h1>
             <p class="text-xs text-slate-500 mt-0.5">Map students to routes, assigned vehicles, drivers, pickup stops & pickup times</p>
         </div>
+        <?php if (has_permission('create_student_transport')): ?>
         <button @click="assignModal = true" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Assign Student to Route</button>
+        <?php endif; ?>
     </div>
 
     <!-- Student Assignments Table -->
@@ -69,11 +71,15 @@ foreach($unassignedStudents as $stu) {
                             </span>
                         </td>
                         <td class="p-4 text-center flex items-center justify-center gap-2">
+                            <?php if (has_permission('edit_student_transport')): ?>
                             <button type="button" @click="window.openEditModal($data, <?= $a['id'] ?>, '<?= addslashes(e($a['pickup_point'])) ?>', '<?= addslashes(e($a['pickup_time'])) ?>', <?= (float)($a['pickup_lat'] ?? 0) ?>, <?= (float)($a['pickup_lng'] ?? 0) ?>)" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg font-medium text-xs transition-colors">Edit</button>
+                            <?php endif; ?>
+                            <?php if (has_permission('delete_student_transport')): ?>
                             <form action="<?= url("transport/assignments/{$a['id']}/remove") ?>" method="POST" class="inline-block" onsubmit="return confirm('Remove student from transport route?')">
                                 <?= \Core\View::csrf() ?>
                                 <button type="submit" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium text-xs transition-colors">Remove</button>
                             </form>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

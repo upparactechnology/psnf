@@ -52,20 +52,10 @@ $pageHeaderByPage = [
         'title' => 'Campaigns',
         'description' => 'Configure email delivery templates and track campaign activity.',
     ],
-    'downloads' => [
-        'section' => 'Operations',
-        'title' => 'Analytics',
-        'description' => 'Review download activity, verification usage, and distribution insights.',
-    ],
     'conferences' => [
         'section' => 'Master Data',
         'title' => 'Conferences',
         'description' => 'Manage conference workspaces, years, and related certificate programs.',
-    ],
-    'contact-messages' => [
-        'section' => 'Master Data',
-        'title' => 'Inbox',
-        'description' => 'Review incoming contact requests and follow up with stakeholders.',
     ],
     'users' => [
         'section' => 'Admin',
@@ -215,6 +205,35 @@ if ($userInitials === '') {
                     <span class="nav-icon nav-icon-editor" aria-hidden="true"></span>
                     <span class="nav-link-title">Field Editor</span>
                 </a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-group-title">
+                    <span>Actions</span>
+                    <span class="nav-group-caret" aria-hidden="true"></span>
+                </div>
+
+                <a class="nav-link <?= $currentPage === 'generate' ? 'active' : '' ?>" href="<?= e(url('generate')) ?>">
+                    <span class="nav-icon" aria-hidden="true">📄</span>
+                    <span class="nav-link-title">Certificates</span>
+                </a>
+
+                <a class="nav-link <?= $currentPage === 'emails' ? 'active' : '' ?>" href="<?= e(url('emails')) ?>">
+                    <span class="nav-icon" aria-hidden="true">✉️</span>
+                    <span class="nav-link-title">Email Campaigns</span>
+                </a>
+
+                <a class="nav-link <?= $currentPage === 'printer' ? 'active' : '' ?>" href="<?= e(url('printer')) ?>">
+                    <span class="nav-icon" aria-hidden="true">🖨️</span>
+                    <span class="nav-link-title">Print Queue</span>
+                </a>
+
+                <?php if ($userRole === 'super_admin'): ?>
+                <a class="nav-link <?= $currentPage === 'settings' ? 'active' : '' ?>" href="<?= e(url('settings')) ?>">
+                    <span class="nav-icon" aria-hidden="true">⚙️</span>
+                    <span class="nav-link-title">Settings</span>
+                </a>
+                <?php endif; ?>
             </div>
         </nav>
     </aside>

@@ -1,210 +1,141 @@
 <?php
 $layout    = 'app';
-$pageTitle = 'Exams & Grades';
-$breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Exams']];
+$pageTitle = 'Exams Setup';
+$breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Exams Setup']];
 ob_start();
 ?>
 
-<div x-data="{ showAddModal: false }" class="space-y-6">
+<div class="space-y-6">
 
-    <!-- Header section -->
+    <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur">
         <div>
-            <h2 class="text-xl font-bold text-white">Exams & Evaluations</h2>
-            <p class="text-sm text-slate-500 mt-0.5">Manage report cards, graded evaluations, and student progress metrics</p>
+            <h2 class="text-xl font-bold text-white">Exams Setup</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Manage exam definitions — Semester 1 & 2 evaluations, unit tests, projects</p>
         </div>
         <div class="flex items-center gap-3">
-            <a href="<?= url('exams/bulk-entry') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700/60 transition-all">
-                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M3 18h18M3 6h18"/></svg>
-                Bulk Excel Entry Kiosk
+            <a href="<?= url('academics/exams/marksheet') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700/60 transition-all">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Marksheet
             </a>
-            <button @click="showAddModal = true" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90 bg-gradient-to-r from-indigo-500 to-purple-600">
+            <a href="<?= url('academics/assessments') ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700/60 transition-all">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M3 18h18M3 6h18"/></svg>
+                Bulk Marks Entry
+            </a>
+            <a href="<?= url('academics/exams/create?academic_year_id=' . $selectedYearId . '&main_group_id=' . $selectedGroupId . '&semester=' . urlencode($selectedSemester)) ?>" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white transition-all shadow-lg hover:opacity-90 bg-gradient-to-r from-indigo-500 to-purple-600">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                Record Grade
-            </button>
+                Create Exam
+            </a>
         </div>
     </div>
 
-    <!-- Filter Card -->
+    <!-- Filter -->
     <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 shadow-sm">
-        <form method="GET" action="<?= url('exams') ?>" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-            <div class="space-y-1.5 col-span-2">
-                <label class="block text-xs font-medium text-slate-400">Class & Section</label>
-                <select name="class_section" required onchange="
-                    const val = this.value.split('|');
-                    document.getElementById('class_input').value = val[0] || '';
-                    document.getElementById('section_input').value = val[1] || '';
-                " class="w-full bg-slate-900 border border-slate-800 text-slate-350 rounded-xl py-2.5 px-4 text-xs focus:outline-none focus:border-brand-500 transition-all">
-                    <?php foreach ($classes as $c): ?>
-                        <?php 
-                            $optionVal = $c['class'] . '|' . $c['section'];
-                            $selected = ($selectedClass === $c['class'] && $selectedSection === $c['section']) ? 'selected' : '';
-                        ?>
-                        <option value="<?= $optionVal ?>" <?= $selected ?>><?= e($c['class']) ?> - <?= e($c['section'] ?: 'Default') ?></option>
+        <form method="GET" action="<?= url('academics/exams') ?>" class="flex flex-wrap items-end gap-3 text-xs">
+            <div class="space-y-1">
+                <label class="block text-[10px] font-medium text-slate-400 uppercase tracking-wider">Academic Year</label>
+                <select name="academic_year_id" class="bg-slate-950 border border-slate-800 text-slate-300 rounded-xl py-2 px-4 text-xs focus:outline-none focus:border-brand-500">
+                    <?php foreach ($years as $y): ?>
+                        <option value="<?= $y['id'] ?>" <?= (isset($selectedYearId) && $selectedYearId == $y['id']) ? 'selected' : '' ?>><?= e($y['year_name']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <input type="hidden" name="class" id="class_input" value="<?= e($selectedClass) ?>">
-                <input type="hidden" name="section" id="section_input" value="<?= e($selectedSection) ?>">
             </div>
-
-            <div>
-                <button type="submit" class="w-full inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all bg-slate-800 hover:bg-slate-750 border border-slate-700/50 shadow-md">
-                    Load Records
-                </button>
+            <div class="space-y-1">
+                <label class="block text-[10px] font-medium text-slate-400 uppercase tracking-wider">Main Group</label>
+                <select name="main_group_id" class="bg-slate-950 border border-slate-800 text-slate-300 rounded-xl py-2 px-4 text-xs focus:outline-none focus:border-brand-500">
+                    <?php foreach ($mainGroups as $g): ?>
+                        <option value="<?= $g['id'] ?>" <?= $selectedGroupId == $g['id'] ? 'selected' : '' ?>><?= e($g['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
+            <div class="space-y-1">
+                <label class="block text-[10px] font-medium text-slate-400 uppercase tracking-wider">Semester</label>
+                <select name="semester" class="bg-slate-950 border border-slate-800 text-slate-300 rounded-xl py-2 px-4 text-xs focus:outline-none focus:border-brand-500">
+                    <option value="">All Semesters</option>
+                    <option value="Semester 1" <?= $selectedSemester === 'Semester 1' ? 'selected' : '' ?>>Semester 1</option>
+                    <option value="Semester 2" <?= $selectedSemester === 'Semester 2' ? 'selected' : '' ?>>Semester 2</option>
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-800 hover:bg-slate-750 border border-slate-700/50 shadow-md">
+                Filter
+            </button>
         </form>
     </div>
 
-    <!-- Grades Table -->
+    <!-- Exams List -->
     <div class="rounded-2xl border border-slate-800/60 bg-slate-900/20 overflow-hidden shadow-sm">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="border-b border-slate-800 bg-slate-900/50">
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Student</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Evaluation Term</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Score</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Grade</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Remarks</th>
-                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Exam Name</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Semester</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Max Marks</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Subjects</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-850">
-                    <?php if (empty($examResults)): ?>
+                    <?php if (empty($exams)): ?>
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-                            No graded evaluation records found for this class.
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                            No exams found. Create your first exam to get started.
                         </td>
                     </tr>
                     <?php else: ?>
-                        <?php foreach ($examResults as $r): ?>
+                        <?php foreach ($exams as $ex): ?>
+                            <?php
+                                $examSubjectIds = json_decode($ex['subject_ids'] ?? 'null', true) ?: [];
+                            ?>
                         <tr class="hover:bg-slate-900/30 transition-colors">
-                            <!-- Student Details -->
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                                        <?= strtoupper(substr($r['first_name'], 0, 1) . substr($r['last_name'], 0, 1)) ?>
+                                        <?= strtoupper(substr($ex['name'], 0, 2)) ?>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-semibold text-white"><?= e($r['first_name'] . ' ' . $r['last_name']) ?></p>
-                                        <p class="text-xs text-slate-500 font-mono"><?= e($r['admission_number']) ?></p>
+                                        <p class="text-sm font-semibold text-white"><?= e($ex['name']) ?></p>
+                                        <p class="text-xs text-slate-500 font-mono">ID: <?= $ex['id'] ?></p>
                                     </div>
                                 </div>
                             </td>
-
-                            <!-- Exam Name -->
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-350 font-medium">
-                                <?= e($r['exam_name']) ?>
-                            </td>
-
-                            <!-- Subject -->
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-350">
-                                <?= e($r['subject']) ?>
-                            </td>
-
-                            <!-- Score -->
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-350 text-center font-mono font-medium">
-                                <?= $r['marks_obtained'] ?> / <?= $r['max_marks'] ?>
-                            </td>
-
-                            <!-- Grade -->
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <span class="text-xs font-bold font-mono px-2.5 py-1 rounded-lg bg-indigo-950/40 text-indigo-400 border border-indigo-900/30">
-                                    <?= e($r['grade']) ?>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-lg <?= $ex['semester'] === 'Semester 1' ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/30' : 'bg-amber-950/40 text-amber-400 border border-amber-900/30' ?>">
+                                    <?= e($ex['semester']) ?>
                                 </span>
                             </td>
-
-                            <!-- Remarks -->
-                            <td class="px-6 py-4 text-xs text-slate-400 max-w-xs truncate" title="<?= e($r['remarks']) ?>">
-                                <?= e($r['remarks']) ?>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-350 text-center font-mono font-medium">
+                                <?= $ex['max_marks'] ?>
                             </td>
-
-                            <!-- Date Published -->
-                            <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-500 font-mono">
-                                <?= format_date($r['date_published']) ?>
+                            <td class="px-6 py-4">
+                                <?php if (!empty($examSubjectIds)): ?>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700/50"><?= count($examSubjectIds) ?> subjects selected</span>
+                                <?php else: ?>
+                                    <span class="text-[10px] text-slate-600 italic">All subjects</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="<?= url('academics/exams/' . $ex['id'] . '/edit') ?>"
+                                       class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] bg-slate-850 text-indigo-400 hover:bg-slate-800 border border-indigo-500/10">
+                                        Edit
+                                    </a>
+                                    <form action="<?= url('academics/exams/' . $ex['id'] . '/delete') ?>" method="POST" onsubmit="return confirm('Delete this exam?')" class="inline">
+                                        <?= \Core\View::csrf() ?>
+                                        <input type="hidden" name="main_group_id" value="<?= e($selectedGroupId) ?>">
+                                        <input type="hidden" name="academic_year_id" value="<?= e($selectedYearId) ?>">
+                                        <input type="hidden" name="semester" value="<?= e($selectedSemester) ?>">
+                                        <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[10px] bg-slate-855 text-red-400 hover:bg-slate-800 border border-red-500/10">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
             </table>
-        </div>
-    </div>
-
-    <!-- Record Grade Modal Dialog -->
-    <div x-show="showAddModal" class="fixed inset-0 overflow-y-auto z-[9999]" x-cloak>
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <!-- Backdrop -->
-            <div x-show="showAddModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity" @click="showAddModal = false"></div>
-
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-            <!-- Modal Content -->
-            <div x-show="showAddModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" 
-                 class="inline-block align-middle bg-slate-900 border border-slate-800 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                
-                <div class="p-6 border-b border-slate-800 flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-white">Record Grade</h3>
-                    <button @click="showAddModal = false" class="text-slate-500 hover:text-white transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-
-                <form method="POST" action="<?= url('exams/store') ?>" class="p-6 space-y-4">
-                    <?= \Core\View::csrf() ?>
-
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Select Student <span class="text-red-400">*</span></label>
-                        <select name="student_id" required class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-brand-500">
-                            <option value="">Select Student...</option>
-                            <?php foreach ($students as $stu): ?>
-                                <option value="<?= $stu['id'] ?>"><?= e($stu['first_name'] . ' ' . $stu['last_name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-medium text-slate-400">Evaluation Term <span class="text-red-400">*</span></label>
-                            <input type="text" name="exam_name" required placeholder="e.g. First Term Evaluation" class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-brand-500">
-                        </div>
-
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-medium text-slate-400">Subject Name <span class="text-red-400">*</span></label>
-                            <input type="text" name="subject" required placeholder="e.g. Music Therapy" class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-brand-500">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-medium text-slate-400">Marks Obtained <span class="text-red-400">*</span></label>
-                            <input type="number" step="0.01" name="marks_obtained" required placeholder="e.g. 42.5" class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-brand-500">
-                        </div>
-
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-medium text-slate-400">Max Marks <span class="text-red-400">*</span></label>
-                            <input type="number" step="0.01" name="max_marks" required placeholder="e.g. 50" class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-brand-500">
-                        </div>
-
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-medium text-slate-400">Grade Letter <span class="text-red-400">*</span></label>
-                            <input type="text" name="grade" required placeholder="e.g. A+" class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-brand-500">
-                        </div>
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <label class="block text-xs font-medium text-slate-400">Teacher Remarks / Notes</label>
-                        <textarea name="remarks" rows="2" placeholder="Teacher comments regarding student participation and development..." class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-brand-500 resize-none"></textarea>
-                    </div>
-
-                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-                        <button type="button" @click="showAddModal = false" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white border border-slate-800 hover:bg-slate-850">Cancel</button>
-                        <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-brand-650 hover:bg-brand-500 transition-all shadow-md">Record Result</button>
-                    </div>
-                </form>
-
-            </div>
         </div>
     </div>
 

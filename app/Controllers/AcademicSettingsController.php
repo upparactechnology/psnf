@@ -40,6 +40,9 @@ class AcademicSettingsController extends Controller
                 `name` VARCHAR(50) NOT NULL,
                 `status` ENUM('OPEN', 'LOCKED') DEFAULT 'OPEN',
                 `date_range` VARCHAR(100) NULL,
+                `start_date` DATE DEFAULT NULL,
+                `end_date` DATE DEFAULT NULL,
+                `total_working_days` INT DEFAULT NULL,
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
@@ -50,15 +53,6 @@ class AcademicSettingsController extends Controller
         } catch (\Throwable $e) {
             // Column already exists
         }
-
-        // Seed default academic years if empty
-        $tenantId = \Core\Database::getTenantId() ?: 1;
-        $count = $db->selectOne("SELECT COUNT(*) as c FROM academic_years WHERE tenant_id = ?", [$tenantId])['c'] ?? 0;
-        if ($count == 0) {
-            $db->insert('academic_years', ['tenant_id' => $tenantId, 'year_name' => '2024-25', 'status' => 'archived']);
-            $db->insert('academic_years', ['tenant_id' => $tenantId, 'year_name' => '2025-26', 'status' => 'unlocked']);
-            $db->insert('academic_years', ['tenant_id' => $tenantId, 'year_name' => '2026-27', 'status' => 'current']);
-        }
     }
 
     public function index(): string
@@ -68,14 +62,77 @@ class AcademicSettingsController extends Controller
         $tenantId = \Core\Database::getTenantId();
 
         $years = $db->select("SELECT * FROM academic_years WHERE tenant_id = ? ORDER BY id DESC", [$tenantId]);
-        $semesters = $db->select("SELECT * FROM academic_semesters WHERE tenant_id = ? ORDER BY id ASC", [$tenantId]);
+
+        // Semester year filter
+        $selectedYearId = (int) $this->request->get('year_id', 0);
+        if (!$selectedYearId && !empty($years)) {
+            foreach ($years as $y) {
+                if ($y['status'] === 'current') { $selectedYearId = (int) $y['id']; break; }
+            }
+            if (!$selectedYearId) $selectedYearId = (int) $years[0]['id'];
+        }
+        $semesters = $db->select("SELECT * FROM academic_semesters WHERE tenant_id = ? AND academic_year_id = ? ORDER BY id ASC", [$tenantId, $selectedYearId]);
+
         $students = $db->select("SELECT id, first_name, last_name, admission_number, class, section FROM students WHERE tenant_id = ? AND deleted_at IS NULL ORDER BY first_name ASC", [$tenantId]);
         $subjects = $db->select("SELECT * FROM subjects WHERE tenant_id = ? ORDER BY name ASC", [$tenantId]);
 
         $shift = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
         $lecGraceMinutes = $shift['lec_grace_minutes'] ?? 5;
 
-        return $this->view('academics/settings', compact('years', 'semesters', 'students', 'subjects', 'lecGraceMinutes'));
+        // Selected year info for calendar
+        $selectedYear = null;
+        foreach ($years as $y) {
+            if ((int)$y['id'] === $selectedYearId) { $selectedYear = $y; break; }
+        }
+
+        return $this->view('academics/settings', compact('years', 'semesters', 'students', 'subjects', 'lecGraceMinutes', 'selectedYearId', 'selectedYear'));
+    }
+
+    public function storeSemester(): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        $yearId = (int) $this->request->input('academic_year_id');
+        $name = trim($this->request->input('name', ''));
+        $dateRange = trim($this->request->input('date_range', ''));
+        $startDate = $this->request->input('start_date', '') ?: null;
+        $endDate = $this->request->input('end_date', '') ?: null;
+        $totalWorkingDays = $this->request->input('total_working_days', '') !== '' ? (int) $this->request->input('total_working_days') : null;
+
+        if (empty($name) || !$yearId) {
+            Session::flash('error', 'Semester name and academic year are required.');
+            return $this->redirect('/academics/settings?tab=semesters&year_id=' . $yearId);
+        }
+
+        try {
+            $db->insert('academic_semesters', [
+                'tenant_id' => $tenantId,
+                'academic_year_id' => $yearId,
+                'name' => $name,
+                'status' => 'OPEN',
+                'date_range' => $dateRange ?: null,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'total_working_days' => $totalWorkingDays,
+            ]);
+            Session::flash('success', "Semester '{$name}' created successfully.");
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Failed to create semester: ' . $e->getMessage());
+        }
+
+        return $this->redirect('/academics/settings?tab=semesters&year_id=' . $yearId);
+    }
+
+    public function deleteSemester(string $id): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        $yearId = (int) $this->request->input('academic_year_id');
+
+        $db->query("DELETE FROM academic_semesters WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        Session::flash('success', "Semester deleted successfully.");
+
+        return $this->redirect('/academics/settings?tab=semesters&year_id=' . $yearId);
     }
 
     public function saveAttendanceSettings(): string
@@ -106,14 +163,102 @@ class AcademicSettingsController extends Controller
         }
 
         try {
-            $db->insert('academic_years', [
+            // Ensure year-scoped columns exist
+            try { $db->query("ALTER TABLE `classes` ADD COLUMN `academic_year_id` INT UNSIGNED NULL"); } catch (\Throwable $e) {}
+            try { $db->query("ALTER TABLE `classes` ADD COLUMN `main_group_id` INT UNSIGNED NULL"); } catch (\Throwable $e) {}
+            try { $db->query("ALTER TABLE `shift_templates` ADD COLUMN `academic_year_id` INT UNSIGNED NULL AFTER `tenant_id`"); } catch (\Throwable $e) {}
+
+            $newYearId = $db->insert('academic_years', [
                 'tenant_id' => $tenantId,
                 'year_name' => $yearName,
                 'status' => 'unlocked'
             ]);
-            Session::flash('success', "Academic Year '{$yearName}' created successfully.");
+
+            // Find the most recent existing year to copy from
+            $sourceYear = $db->selectOne("SELECT * FROM academic_years WHERE tenant_id = ? AND id != ? ORDER BY id DESC LIMIT 1", [$tenantId, $newYearId]);
+
+            if ($sourceYear) {
+                $copied = [];
+
+                // 1. Copy Classes
+                $classes = $db->select("SELECT * FROM classes WHERE tenant_id = ? AND (academic_year_id = ? OR academic_year_id IS NULL)", [$tenantId, (int)$sourceYear['id']]);
+                foreach ($classes as $cls) {
+                    $db->insert('classes', [
+                        'tenant_id' => $tenantId,
+                        'academic_year_id' => $newYearId,
+                        'main_group_id' => $cls['main_group_id'] ?? null,
+                        'name' => $cls['name'],
+                        'section' => $cls['section'] ?? '',
+                        'class_teacher_id' => null,
+                    ]);
+                }
+                $copied[] = count($classes) . ' classes';
+
+                // 2. Copy Shift Template (staff settings)
+                $shift = $db->selectOne("SELECT * FROM shift_templates WHERE tenant_id = ? AND academic_year_id = ? ORDER BY id DESC LIMIT 1", [$tenantId, (int)$sourceYear['id']]);
+                if (!$shift) $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
+                if ($shift) {
+                    $shiftData = $shift;
+                    unset($shiftData['id']);
+                    $shiftData['tenant_id'] = $tenantId;
+                    $shiftData['academic_year_id'] = $newYearId;
+                    $shiftData['name'] = $shiftData['name'] ?? 'Default Shift';
+                    $db->insert('shift_templates', $shiftData);
+                    $copied[] = 'shift template';
+                }
+
+                // 3. Copy Curriculum Templates + Sections + Subjects
+                $templates = $db->select("SELECT * FROM curriculum_templates WHERE academic_year_id = ? AND tenant_id = ?", [(int)$sourceYear['id'], $tenantId]);
+                foreach ($templates as $tpl) {
+                    $newTplId = $db->insert('curriculum_templates', [
+                        'tenant_id' => $tenantId,
+                        'academic_year_id' => $newYearId,
+                        'main_group_id' => $tpl['main_group_id'],
+                        'name' => $tpl['name'],
+                        'version' => 1,
+                        'description' => $tpl['description'],
+                        'is_active' => $tpl['is_active']
+                    ]);
+                    $sections = $db->select("SELECT * FROM curriculum_sections WHERE curriculum_template_id = ?", [$tpl['id']]);
+                    foreach ($sections as $sec) {
+                        $newSecId = $db->insert('curriculum_sections', [
+                            'curriculum_template_id' => $newTplId,
+                            'section_name' => $sec['section_name'],
+                            'sort_order' => $sec['sort_order']
+                        ]);
+                        $subjects = $db->select("SELECT * FROM curriculum_subjects WHERE curriculum_section_id = ?", [$sec['id']]);
+                        foreach ($subjects as $sub) {
+                            $db->insert('curriculum_subjects', [
+                                'curriculum_section_id' => $newSecId,
+                                'subject_id' => $sub['subject_id'],
+                                'is_required' => $sub['is_required'],
+                                'default_grade' => $sub['default_grade'],
+                                'visible' => $sub['visible'],
+                                'sequence' => $sub['sequence'],
+                                'assessment_type' => $sub['assessment_type']
+                            ]);
+                        }
+                    }
+                }
+                $copied[] = count($templates) . ' curriculum templates';
+
+                // 4. Copy Fee Structures
+                $fees = $db->select("SELECT * FROM fee_structures WHERE academic_year_id = ?", [(int)$sourceYear['id']]);
+                foreach ($fees as $fee) {
+                    $feeData = $fee;
+                    unset($feeData['id']);
+                    $feeData['academic_year_id'] = $newYearId;
+                    $feeData['version'] = 1;
+                    $db->insert('fee_structures', $feeData);
+                }
+                $copied[] = count($fees) . ' fee structures';
+
+                Session::flash('success', "Academic Year '{$yearName}' created. Copied: " . implode(', ', $copied) . ".");
+            } else {
+                Session::flash('success', "Academic Year '{$yearName}' created successfully.");
+            }
         } catch (\Throwable $e) {
-            Session::flash('error', 'Academic year already exists.');
+            Session::flash('error', 'Academic year already exists or error: ' . $e->getMessage());
         }
 
         return $this->redirect('/academics/settings?tab=' . $tab);
@@ -143,6 +288,17 @@ class AcademicSettingsController extends Controller
         return $this->redirect('/academics/settings?tab=' . $tab);
     }
 
+    public function deleteYear(string $id): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        $tab = $this->request->input('tab', 'years');
+
+        $db->query("DELETE FROM academic_years WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
+        Session::flash('success', "Academic Year deleted successfully.");
+
+        return $this->redirect('/academics/settings?tab=' . $tab);
+    }
     public function copyPreviousYear(string $id): string
     {
         $db = $this->db();
@@ -270,6 +426,7 @@ class AcademicSettingsController extends Controller
         $age_range = trim($this->request->input('age_range', ''));
         $color = $this->request->input('color', '#6366f1');
         $icon = $this->request->input('icon', '🎓');
+        $addNext = !empty($_POST['_add_next']);
 
         if (empty($name)) {
             Session::flash('error', 'Main Group Name is required.');
@@ -287,6 +444,9 @@ class AcademicSettingsController extends Controller
         ]);
 
         Session::flash('success', "Main Group '{$name}' created successfully.");
+        if ($addNext) {
+            return $this->redirect('/academics/main-groups?add_next=1');
+        }
         return $this->redirect('/academics/main-groups');
     }
 
@@ -324,7 +484,8 @@ class AcademicSettingsController extends Controller
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
         $subjects = $db->select("SELECT * FROM subjects WHERE tenant_id = ? ORDER BY name ASC", [$tenantId]);
-        return $this->view('academics/subject_master', compact('subjects'));
+        $subjectTypes = $db->select("SELECT * FROM subject_types WHERE tenant_id = ? AND is_active = 1 ORDER BY sort_order ASC", [$tenantId]);
+        return $this->view('academics/subject_master', compact('subjects', 'subjectTypes'));
     }
 
     public function storeSubject(): string
@@ -334,6 +495,7 @@ class AcademicSettingsController extends Controller
         $name = trim($this->request->input('name', ''));
         $code = trim($this->request->input('code', ''));
         $category = $this->request->input('category', 'Academic');
+        $addNext = !empty($_POST['_add_next']);
 
         if (empty($name) || empty($code)) {
             Session::flash('error', 'Subject Name and Code are required.');
@@ -350,6 +512,9 @@ class AcademicSettingsController extends Controller
         ]);
 
         Session::flash('success', "Subject '{$name}' added to Master successfully.");
+        if ($addNext) {
+            return $this->redirect('/academics/subject-master?add_next=1');
+        }
         return $this->redirect('/academics/subject-master');
     }
 

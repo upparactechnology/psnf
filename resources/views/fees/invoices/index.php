@@ -13,10 +13,12 @@ ob_start();
             <p class="text-sm text-slate-500 mt-1 font-medium">Manage all student fee invoices across the institution</p>
         </div>
         <div class="flex items-center gap-3">
+            <?php if (has_permission('create_all_invoices')): ?>
             <a href="<?= url('fees/invoices/create') ?>" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 Create Ad-hoc Invoice
             </a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -98,11 +100,15 @@ ob_start();
                         <td class="px-6 py-4 text-right space-x-2">
                             <a href="<?= url("fees/invoices/{$inv['id']}") ?>" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 font-bold text-xs">View</a>
                             <?php if ($inv['status'] === 'unpaid' && $inv['paid_amount'] == 0): ?>
+                                <?php if (has_permission('edit_all_invoices')): ?>
                                 <a href="<?= url("fees/invoices/{$inv['id']}/edit") ?>" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 font-bold text-xs">Edit</a>
+                                <?php endif; ?>
+                                <?php if (has_permission('delete_all_invoices')): ?>
                                 <form action="<?= url("fees/invoices/{$inv['id']}/delete") ?>" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this invoice? This will rollback ledger entries.');">
                                     <?= \Core\View::csrf() ?>
                                     <button type="submit" class="text-rose-600 hover:text-rose-900 font-bold text-xs">Delete</button>
                                 </form>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                     </tr>

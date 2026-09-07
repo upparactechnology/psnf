@@ -98,6 +98,13 @@ class AuthMiddleware
         $user = Session::get('user');
         Database::setTenantScope($user['tenant_id'], $user['school_id'], $user['branch_id']);
 
+        // Refresh user roles & permissions from DB so changes take effect without re-login
+        $freshUser = \App\Models\User::withRoles((int) $user['id']);
+        if ($freshUser) {
+            $freshUser['id'] = $user['id']; // preserve session key
+            Session::set('user', $freshUser);
+        }
+
         return null;
     }
 }

@@ -5,7 +5,77 @@ $breadcrumbs = [];
 ob_start();
 ?>
 
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ birthdayModal: false }" x-init="setTimeout(() => { if (window.upcomingBirthdays && window.upcomingBirthdays.length > 0) birthdayModal = true; }, 1200)">
+
+    <!-- Birthday Popup Modal -->
+    <?php if (!empty($upcomingBirthdays)): ?>
+    <script>
+        window.upcomingBirthdays = <?= json_encode(array_map(function($b) {
+            $name = $b['type'] === 'student' ? ($b['first_name'] . ' ' . $b['last_name']) : $b['name'];
+            $dob = $b['dob'];
+            $age = $dob ? date('Y') - date('Y', strtotime($dob)) : null;
+            $bdayThisYear = date('Y') . date('-m-d', strtotime($dob));
+            if (strtotime($bdayThisYear) < strtotime('today')) {
+                $age = $age + 1;
+                $bdayThisYear = date('Y', strtotime('+1 year')) . date('-m-d', strtotime($dob));
+            }
+            $daysUntil = (int) ((strtotime($bdayThisYear) - strtotime('today')) / 86400);
+            return ['name' => $name, 'dob' => $dob, 'age' => $age, 'days_until' => $daysUntil, 'type' => $b['type']];
+        }, $upcomingBirthdays)) ?>;
+    </script>
+
+    <div x-show="birthdayModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center p-4" style="display: none;">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="birthdayModal = false"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div class="bg-gradient-to-r from-pink-500 to-rose-500 p-5 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">🎂</span>
+                        <div>
+                            <h3 class="text-lg font-bold">Upcoming Birthdays</h3>
+                            <p class="text-pink-100 text-xs">Next 2 days</p>
+                        </div>
+                    </div>
+                    <button @click="birthdayModal = false" class="text-white/80 hover:text-white text-xl">&times;</button>
+                </div>
+            </div>
+            <div class="p-4 max-h-80 overflow-y-auto space-y-3">
+                <?php foreach ($upcomingBirthdays as $b):
+                    $name = $b['type'] === 'student' ? ($b['first_name'] . ' ' . $b['last_name']) : $b['name'];
+                    $dob = $b['dob'];
+                    $age = $dob ? date('Y') - date('Y', strtotime($dob)) : null;
+                    $bdayThisYear = date('Y') . date('-m-d', strtotime($dob));
+                    if (strtotime($bdayThisYear) < strtotime('today')) {
+                        $age = $age + 1;
+                        $bdayThisYear = date('Y', strtotime('+1 year')) . date('-m-d', strtotime($dob));
+                    }
+                    $daysUntil = (int) ((strtotime($bdayThisYear) - strtotime('today')) / 86400);
+                    $label = $daysUntil === 0 ? '🎂 Today!' : ($daysUntil === 1 ? 'Tomorrow' : "In {$daysUntil} days");
+                    $labelColor = $daysUntil === 0 ? 'text-pink-600 dark:text-pink-400' : 'text-slate-500 dark:text-slate-400';
+                ?>
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-400 text-white flex items-center justify-center text-sm font-bold">
+                            <?= strtoupper(substr($name, 0, 1)) ?>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white"><?= e($name) ?></p>
+                            <p class="text-[11px] text-slate-400"><?= $b['type'] === 'student' ? 'Student' : 'Staff' ?></p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-bold <?= $labelColor ?>"><?= $label ?></p>
+                        <p class="text-[10px] text-slate-400"><?= date('d M', strtotime($dob)) ?><?= $age ? " ({$age} yrs)" : '' ?></p>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="p-3 border-t border-slate-100 dark:border-slate-800 text-center">
+                <button @click="birthdayModal = false" class="px-4 py-2 rounded-xl bg-pink-500 text-white text-xs font-semibold hover:bg-pink-600 transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Header Panel -->
     <div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -21,6 +91,7 @@ ob_start();
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 
         <!-- Academics -->
+        <?php if (has_permission('view_students_list') || has_permission('view_classes') || has_permission('view_teachers') || has_permission('view_acad_attendance')): ?>
         <a href="<?= url('academic') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-indigo-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -32,8 +103,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- Staff Management -->
+        <?php if (has_permission('view_staff_overview') || has_permission('view_staff_directory')): ?>
         <a href="<?= url('staff') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-blue-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -45,8 +118,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- Transport -->
+        <?php if (has_permission('view_transport_overview') || has_permission('view_transport_drivers')): ?>
         <a href="<?= url('transport') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-yellow-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -58,8 +133,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- Finance -->
+        <?php if (has_permission('view_fees_dashboard') || has_permission('view_all_invoices')): ?>
         <a href="<?= url('fees') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-amber-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -71,8 +148,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- Payroll Management -->
+        <?php if (has_permission('view_payroll_runs') || has_permission('view_payroll_attendance')): ?>
         <a href="<?= url('payroll/runs') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-rose-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -84,8 +163,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- Documents Workspace -->
+        <?php if (has_permission('view_documents_overview') || has_permission('view_student_documents')): ?>
         <a href="<?= url('documents') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-emerald-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -97,8 +178,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- Certificate Generator -->
+        <?php if (has_permission('view_certificates')): ?>
         <a href="<?= url('certificate_generator/') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-purple-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -110,8 +193,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- Global Reports & Analytics -->
+        <?php if (has_permission('view_reports_overview') || has_permission('view_student_reports')): ?>
         <a href="<?= url('reports') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-indigo-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -123,8 +208,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- System Settings -->
+        <?php if (has_permission('view_general_settings') || has_permission('view_system_config')): ?>
         <a href="<?= url('settings') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-slate-500/10 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -136,9 +223,11 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- File Manager -->
-        <a href="<?= url('file_manager/public/admin/dashboard') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-cyan-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
+        <?php if (has_permission('view_file_manager')): ?>
+        <a href="<?= url('file_manager/public/') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-cyan-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
@@ -149,8 +238,10 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
 
         <!-- Learning Games -->
+        <?php if (has_permission('view_students_list')): ?>
         <a href="<?= url('games') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-pink-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-pink-500/10 text-pink-600 dark:bg-pink-500/20 dark:text-pink-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
@@ -162,6 +253,22 @@ ob_start();
                 </div>
             </div>
         </a>
+        <?php endif; ?>
+
+        <!-- Parent Portal -->
+        <?php if (has_role('super_admin') || has_role('school_admin')): ?>
+        <a href="<?= url('parent-login') ?>" target="_blank" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-teal-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-teal-500/10 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">Parent Portal</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Parent login page — attendance, timetable, report cards & certificates</p>
+                </div>
+            </div>
+        </a>
+        <?php endif; ?>
 
     </div>
 

@@ -5,7 +5,77 @@ $breadcrumbs = [['label' => 'Teacher Dashboard']];
 ob_start();
 ?>
 
-<div class="max-w-6xl mx-auto space-y-8">
+<div class="max-w-6xl mx-auto space-y-8" x-data="{ birthdayModal: false }" x-init="setTimeout(() => { if (window.upcomingBirthdays && window.upcomingBirthdays.length > 0) birthdayModal = true; }, 1200)">
+
+    <!-- Birthday Popup Modal -->
+    <?php if (!empty($upcomingBirthdays)): ?>
+    <script>
+        window.upcomingBirthdays = <?= json_encode(array_map(function($b) {
+            $name = $b['type'] === 'student' ? ($b['first_name'] . ' ' . $b['last_name']) : $b['name'];
+            $dob = $b['dob'];
+            $age = $dob ? date('Y') - date('Y', strtotime($dob)) : null;
+            $bdayThisYear = date('Y') . date('-m-d', strtotime($dob));
+            if (strtotime($bdayThisYear) < strtotime('today')) {
+                $age = $age + 1;
+                $bdayThisYear = date('Y', strtotime('+1 year')) . date('-m-d', strtotime($dob));
+            }
+            $daysUntil = (int) ((strtotime($bdayThisYear) - strtotime('today')) / 86400);
+            return ['name' => $name, 'dob' => $dob, 'age' => $age, 'days_until' => $daysUntil, 'type' => $b['type']];
+        }, $upcomingBirthdays)) ?>;
+    </script>
+
+    <div x-show="birthdayModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center p-4" style="display: none;">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="birthdayModal = false"></div>
+        <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div class="bg-gradient-to-r from-pink-500 to-rose-500 p-5 text-white">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">🎂</span>
+                        <div>
+                            <h3 class="text-lg font-bold">Upcoming Birthdays</h3>
+                            <p class="text-pink-100 text-xs">Next 2 days</p>
+                        </div>
+                    </div>
+                    <button @click="birthdayModal = false" class="text-white/80 hover:text-white text-xl">&times;</button>
+                </div>
+            </div>
+            <div class="p-4 max-h-80 overflow-y-auto space-y-3">
+                <?php foreach ($upcomingBirthdays as $b):
+                    $name = $b['type'] === 'student' ? ($b['first_name'] . ' ' . $b['last_name']) : $b['name'];
+                    $dob = $b['dob'];
+                    $age = $dob ? date('Y') - date('Y', strtotime($dob)) : null;
+                    $bdayThisYear = date('Y') . date('-m-d', strtotime($dob));
+                    if (strtotime($bdayThisYear) < strtotime('today')) {
+                        $age = $age + 1;
+                        $bdayThisYear = date('Y', strtotime('+1 year')) . date('-m-d', strtotime($dob));
+                    }
+                    $daysUntil = (int) ((strtotime($bdayThisYear) - strtotime('today')) / 86400);
+                    $label = $daysUntil === 0 ? '🎂 Today!' : ($daysUntil === 1 ? 'Tomorrow' : "In {$daysUntil} days");
+                    $labelColor = $daysUntil === 0 ? 'text-pink-600 dark:text-pink-400' : 'text-slate-500 dark:text-slate-400';
+                ?>
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-400 text-white flex items-center justify-center text-sm font-bold">
+                            <?= strtoupper(substr($name, 0, 1)) ?>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white"><?= e($name) ?></p>
+                            <p class="text-[11px] text-slate-400"><?= $b['type'] === 'student' ? 'Student' : 'Staff' ?></p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-bold <?= $labelColor ?>"><?= $label ?></p>
+                        <p class="text-[10px] text-slate-400"><?= date('d M', strtotime($dob)) ?><?= $age ? " ({$age} yrs)" : '' ?></p>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="p-3 border-t border-slate-100 dark:border-slate-800 text-center">
+                <button @click="birthdayModal = false" class="px-4 py-2 rounded-xl bg-pink-500 text-white text-xs font-semibold hover:bg-pink-600 transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Header section -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl border border-slate-200 dark:border-slate-800/50 bg-white dark:bg-slate-900/30 backdrop-blur">
@@ -38,6 +108,35 @@ ob_start();
             </div>
         </div>
         <?php endif; ?>
+    <?php endif; ?>
+
+    <!-- Shared Timetable Notifications -->
+    <?php if (!empty($sharedTimetables)): ?>
+    <div class="p-5 rounded-2xl border border-emerald-700/30 bg-emerald-950/20 backdrop-blur shadow-sm">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-900/30 flex items-center justify-center flex-shrink-0 border border-emerald-700/30">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-emerald-400">Timetable Shared with You</p>
+                <p class="text-xs text-emerald-400/70">Admin has shared timetable updates</p>
+            </div>
+        </div>
+        <div class="space-y-2">
+            <?php foreach ($sharedTimetables as $st): ?>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-900/20 border border-emerald-800/20">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-emerald-300"><?= e($st['day_of_week']) ?></span>
+                    <span class="text-xs text-emerald-400/70">•</span>
+                    <span class="text-xs text-emerald-400"><?= e($st['subject'] ?? $st['group_name'] ?? '') ?></span>
+                    <span class="text-xs text-emerald-400/70">•</span>
+                    <span class="text-xs text-emerald-400"><?= e($st['start_time'] ?? '') ?> - <?= e($st['end_time'] ?? '') ?></span>
+                </div>
+                <span class="text-[10px] text-emerald-500/60 font-mono"><?= date('d M', strtotime($st['shared_at'])) ?></span>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
     <?php endif; ?>
 
     <!-- Odoo style App Launcher Grid -->

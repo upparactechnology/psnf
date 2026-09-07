@@ -8,7 +8,10 @@ class AddFieldsConfigToReportCardSettings
 
     public function up(): void
     {
-        $this->db->query("ALTER TABLE `report_card_settings` ADD COLUMN `fields_config` JSON DEFAULT NULL AFTER `trustees_config`");
+        $cols = $this->db->select("SHOW COLUMNS FROM `report_card_settings` LIKE 'fields_config'");
+        if (empty($cols)) {
+            $this->db->query("ALTER TABLE `report_card_settings` ADD COLUMN `fields_config` JSON DEFAULT NULL AFTER `trustees_config`");
+        }
     }
 
     public function down(): void

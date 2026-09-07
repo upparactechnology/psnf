@@ -296,6 +296,56 @@ function require_roles(array $roles): void
     }
 }
 
+function has_permission(string $slug): bool
+{
+    $user = current_user();
+    if ($user === null) return false;
+    if (($user['role'] ?? '') === 'super_admin') return true;
+
+    $pdo = $GLOBALS['app_pdo'] ?? null;
+    if (!$pdo) return false;
+
+    $userId = (int) ($user['id'] ?? 0);
+    if ($userId <= 0) return false;
+
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT 1 FROM role_permissions rp
+             JOIN permissions p ON p.id = rp.permission_id
+             JOIN user_roles ur ON ur.role_id = rp.role_id
+             WHERE ur.user_id = ? AND p.slug = ?
+             LIMIT 1"
+        );
+        $stmt->execute([$userId, $slug]);
+        return (bool) $stmt->fetch();
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+function require_permission(string $slug): void
+{
+    require_login();
+    if (!has_permission($slug)) {
+        http_response_code(403);
+        include APP_ROOT . '/app/views/403.php';
+        exit;
+    }
+}
+
+function require_any_permission(array $slugs): void
+{
+    require_login();
+    $user = current_user();
+    if ($user && ($user['role'] ?? '') === 'super_admin') return;
+    foreach ($slugs as $slug) {
+        if (has_permission($slug)) return;
+    }
+    http_response_code(403);
+    include APP_ROOT . '/app/views/403.php';
+    exit;
+}
+
 function user_has_conference_access(int $conferenceId): bool
 {
     $user = current_user();

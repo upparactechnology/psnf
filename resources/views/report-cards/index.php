@@ -134,7 +134,7 @@ $db = \Core\Application::$app->db;
 
                                 <!-- Semester 2 Action -->
                                 <div class="relative" x-data="{ open: false }">
-                                    <button @click="open = !open" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-50 dark:bg-brand-600/10 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 hover:bg-brand-100 dark:hover:bg-brand-600/20 transition-all shadow-2xs">
+                                    <button @click="open = !open" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700/80 transition-all shadow-2xs">
                                         Sem 2 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
                                     <div x-show="open" @click.outside="open = false" x-cloak class="absolute right-0 mt-1 w-40 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl z-50 overflow-hidden text-left p-1 space-y-0.5">

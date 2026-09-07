@@ -62,6 +62,7 @@ class ClassesController extends Controller
         $groupId = (int)$this->request->input('main_group_id');
         $curriculumTemplateId = $this->request->input('curriculum_template_id') ? (int)$this->request->input('curriculum_template_id') : null;
         $teacherId = (int)$this->request->input('class_teacher_id');
+        $addNext = !empty($_POST['_add_next']);
 
         if (empty($className)) {
             Session::flash('error', 'Class name is required.');
@@ -90,6 +91,9 @@ class ClassesController extends Controller
         ]);
 
         Session::flash('success', "Class '{$className}' created successfully.");
+        if ($addNext) {
+            return $this->redirect('/academics/classes?add_next=1');
+        }
         return $this->redirect('/academics/classes');
     }
 

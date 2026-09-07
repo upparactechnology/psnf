@@ -33,9 +33,11 @@ ob_start();
                 <p class="text-slate-400">Class Teacher</p>
                 <p class="font-black text-slate-850 dark:text-white text-sm"><?= e($class['teacher_name'] ?: 'Not Assigned') ?></p>
             </div>
+            <?php if (has_permission('edit_classes')): ?>
             <button @click="showEditModal = true" class="px-3.5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-sm transition-all">
                 Edit Class
             </button>
+            <?php endif; ?>
         </div>
     </div>
 

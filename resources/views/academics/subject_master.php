@@ -3,9 +3,11 @@ $layout    = 'app';
 $pageTitle = 'Subject Master Settings';
 $breadcrumbs = [];
 ob_start();
+
+$categories = array_column($subjectTypes ?? [], 'name');
 ?>
 
-<div class="max-w-6xl mx-auto space-y-6 py-2" x-data="{ createModal: false, editModal: false, activeSubject: {} }">
+<div class="max-w-6xl mx-auto space-y-6 py-2" x-data="{ createModal: <?= isset($_GET['add_next']) ? 'true' : 'false' ?>, editModal: false, activeSubject: {}, addNext: false }">
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -58,6 +60,7 @@ ob_start();
             
             <form action="<?= url('academics/subject-master') ?>" method="POST" class="space-y-4 text-xs">
                 <?= \Core\View::csrf() ?>
+                <input type="hidden" name="_add_next" :value="addNext ? '1' : '0'">
                 <div class="space-y-1">
                     <label class="block font-bold text-slate-700 dark:text-slate-300">Subject Name</label>
                     <input type="text" name="name" placeholder="e.g. Money Skills" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
@@ -68,17 +71,13 @@ ob_start();
                 </div>
                 <div class="space-y-1">
                     <label class="block font-bold text-slate-700 dark:text-slate-300">Category</label>
-                    <select name="category" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                        <option value="Academic">Academic</option>
-                        <option value="Life Skills">Life Skills</option>
-                        <option value="Co-Curricular">Co-Curricular</option>
-                        <option value="Vocational">Vocational</option>
-                    </select>
+                    <input type="text" name="category" list="subject_categories_list" placeholder="e.g. Academic, Therapy, Life Skills" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                 </div>
 
                 <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                     <button type="button" @click="createModal = false" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500">Save</button>
+                    <button type="submit" @click="addNext = false" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold">Save & Close</button>
+                    <button type="submit" @click="addNext = true" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500">Save & Add Next</button>
                 </div>
             </form>
         </div>
@@ -101,12 +100,7 @@ ob_start();
                 </div>
                 <div class="space-y-1">
                     <label class="block font-bold text-slate-700 dark:text-slate-300">Category</label>
-                    <select name="category" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-                        <option value="Academic" :selected="activeSubject.category === 'Academic'">Academic</option>
-                        <option value="Life Skills" :selected="activeSubject.category === 'Life Skills'">Life Skills</option>
-                        <option value="Co-Curricular" :selected="activeSubject.category === 'Co-Curricular'">Co-Curricular</option>
-                        <option value="Vocational" :selected="activeSubject.category === 'Vocational'">Vocational</option>
-                    </select>
+                    <input type="text" name="category" :value="activeSubject.category" list="subject_categories_list" required class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
                 </div>
 
                 <div class="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
@@ -116,6 +110,12 @@ ob_start();
             </form>
         </div>
     </div>
+
+    <datalist id="subject_categories_list">
+        <?php foreach ($categories as $cat): ?>
+            <option value="<?= e($cat) ?>"></option>
+        <?php endforeach; ?>
+    </datalist>
 
 </div>
 

@@ -28,8 +28,6 @@ $router->get('/api/v1/parent/students/{id}/fees',           [App\Controllers\Par
 $router->post('/api/v1/parent/students/{id}/fees/{invoice_id}/pay', [App\Controllers\ParentPortalController::class, 'apiPayFee'],   ['auth', 'role:parent']);
 $router->post('/api/v1/parent/students/{id}/emergency',     [App\Controllers\ParentPortalController::class, 'apiUpdateEmergency'],  ['auth', 'role:parent']);
 $router->get('/api/v1/parent/announcements',              [App\Controllers\ParentPortalController::class, 'apiAnnouncements'],    ['auth', 'role:parent']);
-$router->get('/api/v1/parent/messages',                   [App\Controllers\ParentPortalController::class, 'apiMessages'],         ['auth', 'role:parent']);
-$router->post('/api/v1/parent/messages',                  [App\Controllers\ParentPortalController::class, 'apiSendMessage'],      ['auth', 'role:parent']);
 
 // ─── Staff Portal API ────────────────────────────────────────────────────────
 $router->get('/api/v1/staff/attendance/today',  [App\Controllers\StaffAppController::class, 'getTodayAttendance'], ['auth']);

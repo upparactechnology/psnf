@@ -38,14 +38,24 @@ ob_start();
     }
 }">
     <!-- Header -->
-    <div class="flex justify-between items-center">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Late Fee Policies</h1>
-            <p class="text-sm text-slate-500">Configure automated penalties for overdue invoices.</p>
+            <p class="text-sm text-slate-500">Configure automated penalties for overdue invoices per academic year.</p>
         </div>
-        <button @click="openCreate()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium">
-            Add Policy
-        </button>
+        <div class="flex items-center gap-3">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Academic Year:</label>
+            <select onchange="window.location.href='<?= url('fees/late-fee-policies?year_id=') ?>' + this.value" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                <?php foreach ($years as $y): ?>
+                    <option value="<?= $y['id'] ?>" <?= (int)$y['id'] === (int)$selectedYearId ? 'selected' : '' ?>><?= e($y['year_name']) ?> <?= $y['status'] === 'current' ? '(Current)' : '' ?></option>
+                <?php endforeach; ?>
+            </select>
+            <?php if (has_permission('create_late_fee_policies')): ?>
+            <button @click="openCreate()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">
+                + Add Policy
+            </button>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Table -->
@@ -58,11 +68,15 @@ ob_start();
                     <th class="px-6 py-4">Amount</th>
                     <th class="px-6 py-4">Grace Period</th>
                     <th class="px-6 py-4">Max Cap</th>
-                    <th class="px-6 py-4">Status</th>
                     <th class="px-6 py-4 text-right">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                <?php if (empty($policies)): ?>
+                <tr>
+                    <td colspan="6" class="px-6 py-8 text-center text-slate-400 text-xs">No late fee policies for this year. Click "+ Add Policy" to create one.</td>
+                </tr>
+                <?php endif; ?>
                 <?php foreach ($policies as $pol): ?>
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td class="px-6 py-4 font-medium"><?= e($pol['name']) ?></td>
@@ -70,15 +84,16 @@ ob_start();
                     <td class="px-6 py-4"><?= $pol['rule_type'] === 'percentage' ? e($pol['value']) . '%' : '₹' . e($pol['value']) ?></td>
                     <td class="px-6 py-4"><?= e($pol['grace_days']) ?> Days</td>
                     <td class="px-6 py-4"><?= (float)$pol['max_cap'] > 0 ? '₹' . e($pol['max_cap']) : 'No Limit' ?></td>
-                    <td class="px-6 py-4">
-                        <span class="text-emerald-600">Active</span>
-                    </td>
                     <td class="px-6 py-4 text-right space-x-3">
-                        <button @click='openEdit(<?= json_encode($pol) ?>)' class="text-indigo-600">Edit</button>
-                        <form action="<?= url("fees/late-fee-policies/{$pol['id']}/delete") ?>" method="POST" class="inline-block" onsubmit="return confirm('Delete policy?');">
+                        <?php if (has_permission('edit_late_fee_policies')): ?>
+                        <button @click='openEdit(<?= json_encode($pol) ?>)' class="text-indigo-600 hover:text-indigo-500 font-semibold text-xs">Edit</button>
+                        <?php endif; ?>
+                        <?php if (has_permission('delete_late_fee_policies')): ?>
+                        <form action="<?= url("fees/late-fee-policies/{$pol['id']}/delete?year_id=" . $selectedYearId) ?>" method="POST" class="inline-block" onsubmit="return confirm('Delete policy?');">
                             <?= \Core\View::csrf() ?>
-                            <button type="submit" class="text-red-600">Delete</button>
+                            <button type="submit" class="text-red-600 hover:text-red-500 font-semibold text-xs">Delete</button>
                         </form>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -91,6 +106,7 @@ ob_start();
         <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md" @click.away="modalOpen = false">
             <form :action="editMode ? '<?= url('fees/late-fee-policies/') ?>' + policyId : '<?= url('fees/late-fee-policies') ?>'" method="POST">
                 <?= \Core\View::csrf() ?>
+                <input type="hidden" name="academic_year_id" value="<?= (int)$selectedYearId ?>">
                 <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
                     <h3 class="text-lg font-semibold" x-text="editMode ? 'Edit Policy' : 'New Policy'"></h3>
                 </div>
@@ -123,16 +139,10 @@ ob_start();
                             <input type="number" step="0.01" name="max_amount" x-model="formData.max_amount" class="w-full border rounded-xl px-3 py-2 dark:bg-slate-800 dark:border-slate-700">
                         </div>
                     </div>
-                    <div>
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="is_active" value="1" x-model="formData.is_active" class="rounded text-indigo-600">
-                            <span>Policy is Active</span>
-                        </label>
-                    </div>
                 </div>
-                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-right space-x-2">
-                    <button type="button" @click="modalOpen = false" class="px-4 py-2 font-medium text-slate-600">Cancel</button>
-                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-medium">Save</button>
+                <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
+                    <button type="button" @click="modalOpen = false" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all">Save Policy</button>
                 </div>
             </form>
         </div>
@@ -141,4 +151,4 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-
+?>

@@ -898,7 +898,7 @@ function speakPromise(text) {
   });
 }
 
-function playFeedback(kind) {
+function playFeedback(kind, onComplete) {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   const now = audioContext.currentTime;
 
@@ -920,22 +920,12 @@ function playFeedback(kind) {
       osc.stop(now + index * 0.08 + 0.4);
     });
 
-    // Play Applause Audio File for max 3 seconds with a smooth fade-out
-    const applause = new Audio("vvqne-applause-383901.mp3");
-    applause.volume = 1.0;
-    applause.play().then(() => {
-      setTimeout(() => {
-        let fadeInterval = setInterval(() => {
-          if (applause.volume > 0.1) {
-            applause.volume -= 0.1;
-          } else {
-            clearInterval(fadeInterval);
-            applause.pause();
-            applause.currentTime = 0;
-          }
-        }, 50);
-      }, 2500);
-    }).catch(err => console.error("Error playing applause sound:", err));
+    // Play our new global success overlay with audio and video
+    if (window.playSuccessOverlay) {
+      window.playSuccessOverlay(onComplete);
+    } else if (onComplete) {
+      onComplete();
+    }
   } else {
     // Failure Buzzer: Descending triangle wave with slide
     const osc = audioContext.createOscillator();
@@ -964,9 +954,9 @@ function flashFeedback(kind) {
   window.setTimeout(() => el.appShell.classList.remove(className), 520);
 }
 
-function showSuccessFeedback(message, voiceText, speakFlag = true) {
+function showSuccessFeedback(message, voiceText, speakFlag = true, onComplete) {
   flashFeedback("success");
-  playFeedback("success");
+  playFeedback("success", onComplete);
   showToast(message, "success");
   if (speakFlag) speak(`Hurray! ${voiceText || message}`);
 }
@@ -1304,11 +1294,12 @@ function completeRelationshipIfReady() {
   );
   if (!allCorrect) return;
 
-  rewardSuccess("Great job! All correct.", "Great job! All correct.");
-  handleModeCompletion("relationship", () => {
-    resetModeState("relationship", false);
-    renderMode();
-    startTimer();
+  rewardSuccess("Great job! All correct.", "Great job! All correct.", true, () => {
+    handleModeCompletion("relationship", () => {
+      resetModeState("relationship", false);
+      renderMode();
+      startTimer();
+    });
   });
 }
 
@@ -1349,23 +1340,25 @@ async function submitSituationAnswer(answer) {
       `Correct. ${situation.explanation}`,
       `Correct. ${situation.explanation}`,
       false,
-    );
-    // speak the explanation and wait for it to finish before advancing
-    await speakPromise(situation.explanation);
-    state.situations.index += 1;
-    state.situations.selectedAnswer = null;
-    state.situations.locked = false;
-    if (state.situations.index >= state.situations.questions.length) {
-      handleModeCompletion("situations", () => {
-        state.situations.questions = shuffle(SAFETY_SITUATIONS);
-        state.situations.index = 0;
+      async () => {
+        // speak the explanation and wait for it to finish before advancing
+        await speakPromise(situation.explanation);
+        state.situations.index += 1;
+        state.situations.selectedAnswer = null;
+        state.situations.locked = false;
+        if (state.situations.index >= state.situations.questions.length) {
+          handleModeCompletion("situations", () => {
+            state.situations.questions = shuffle(SAFETY_SITUATIONS);
+            state.situations.index = 0;
+            renderMode();
+            startTimer();
+          });
+          return;
+        }
         renderMode();
         startTimer();
-      });
-      return;
-    }
-    renderMode();
-    startTimer();
+      }
+    );
   } else {
     triggerError(`Try again. ${situation.hint}`, "Try again.");
     const card = document.querySelector(".situation-card");
@@ -1484,15 +1477,20 @@ function handleSafePeopleSelect(personId) {
     const safeTotal = SAFE_PEOPLE_POOL.filter((item) => item.safe).length;
     if (state.safePeople.selectedIds.length >= safeTotal) {
       state.safePeople.locked = true;
-      showToast("Great job! You chose all safe people.", "success");
-      speak("Great job. You chose all safe people.");
-      handleModeCompletion("safePeople", () => {
-        state.safePeople.selectedIds = [];
-        state.safePeople.locked = false;
-        state.safePeople.cards = shuffle(SAFE_PEOPLE_POOL);
-        renderMode();
-        startTimer();
-      });
+      rewardSuccess(
+        "Great job! You chose all safe people.",
+        "Great job! You chose all safe people.",
+        true,
+        () => {
+          handleModeCompletion("safePeople", () => {
+            state.safePeople.selectedIds = [];
+            state.safePeople.locked = false;
+            state.safePeople.cards = shuffle(SAFE_PEOPLE_POOL);
+            renderMode();
+            startTimer();
+          });
+        }
+      );
     }
   } else {
     triggerError(`${person.name} is not a safe person.`, "Try again.");
@@ -1534,13 +1532,13 @@ function bindRelationshipDropZones() {
 }
 
 // REWARDS
-function rewardSuccess(message, voiceText, speakFlag = true) {
+function rewardSuccess(message, voiceText, speakFlag = true, onComplete) {
   state.stars += STARS_PER_CORRECT;
   state.xp += XP_PER_CORRECT;
   state.level += 1;
   updateStats();
   fireConfetti();
-  showSuccessFeedback(message, voiceText, speakFlag);
+  showSuccessFeedback(message, voiceText, speakFlag, onComplete);
 }
 
 function triggerError(message, voiceText) {

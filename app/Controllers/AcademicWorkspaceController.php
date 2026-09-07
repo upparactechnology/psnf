@@ -24,7 +24,7 @@ class AcademicWorkspaceController extends Controller
         $years = $db->select("SELECT * FROM academic_years WHERE tenant_id = ? ORDER BY year_name DESC", [$tenantId]);
         
         // Active Year Selection
-        $selectedYearId = $this->request->get('academic_year_id');
+        $selectedYearId = (int) $this->request->get('academic_year_id');
         if (!$selectedYearId) {
             foreach ($years as $y) {
                 if ($y['status'] === 'current') {

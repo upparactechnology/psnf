@@ -28,7 +28,7 @@ $formatBytes = static function (int $bytes): string {
 $trend = $trend ?? [];
 $quota = $quota ?? [];
 $gettingStarted = $gettingStarted ?? [];
-$quotaActionUrl = user_role() === 'super_admin' ? url('settings') : url('downloads');
+$quotaActionUrl = url('settings');
 
 $certificatePercent = (float) ($quota['certificate_percent'] ?? 0.0);
 $storagePercent = (float) ($quota['storage_percent'] ?? 0.0);

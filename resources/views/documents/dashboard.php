@@ -29,15 +29,16 @@ ob_start();
     </div>
 
     <!-- KPI Grid -->
+    <?php $maxCount = max($totalDocuments, 1); ?>
     <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
         <!-- 1. Total Documents -->
         <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-sm">
             <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Total Documents</span>
             <div class="flex items-baseline gap-1 mt-2">
-                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($totalDocuments ?? 8254) ?></span>
+                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($totalDocuments) ?></span>
             </div>
             <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
-                <div class="h-full bg-indigo-600 rounded-full" style="width: 75%"></div>
+                <div class="h-full bg-indigo-600 rounded-full" style="width: 100%"></div>
             </div>
         </div>
 
@@ -45,10 +46,10 @@ ob_start();
         <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-sm">
             <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Student Docs</span>
             <div class="flex items-baseline gap-1 mt-2">
-                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($studentDocsCount ?? 4212) ?></span>
+                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($studentDocsCount) ?></span>
             </div>
             <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
-                <div class="h-full bg-blue-500 rounded-full" style="width: 60%"></div>
+                <div class="h-full bg-blue-500 rounded-full" style="width: <?= round(($studentDocsCount / $maxCount) * 100) ?>%"></div>
             </div>
         </div>
 
@@ -56,10 +57,10 @@ ob_start();
         <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-sm">
             <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Certificates</span>
             <div class="flex items-baseline gap-1 mt-2">
-                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($generatedCertsCount ?? 1384) ?></span>
+                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($generatedCertsCount) ?></span>
             </div>
             <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
-                <div class="h-full bg-purple-500 rounded-full" style="width: 45%"></div>
+                <div class="h-full bg-purple-500 rounded-full" style="width: <?= round(($generatedCertsCount / $maxCount) * 100) ?>%"></div>
             </div>
         </div>
 
@@ -67,10 +68,10 @@ ob_start();
         <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-sm">
             <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Student IDs</span>
             <div class="flex items-baseline gap-1 mt-2">
-                <span class="text-2xl font-extrabold text-slate-900 dark:text-white">542</span>
+                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($studentIdsCount) ?></span>
             </div>
             <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
-                <div class="h-full bg-cyan-500 rounded-full" style="width: 50%"></div>
+                <div class="h-full bg-cyan-500 rounded-full" style="width: <?= round(($studentIdsCount / $maxCount) * 100) ?>%"></div>
             </div>
         </div>
 
@@ -78,10 +79,10 @@ ob_start();
         <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-sm">
             <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Fee Receipts</span>
             <div class="flex items-baseline gap-1 mt-2">
-                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($receiptsCount ?? 2121) ?></span>
+                <span class="text-2xl font-extrabold text-slate-900 dark:text-white"><?= number_format($receiptsCount) ?></span>
             </div>
             <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
-                <div class="h-full bg-teal-500 rounded-full" style="width: 80%"></div>
+                <div class="h-full bg-teal-500 rounded-full" style="width: <?= round(($receiptsCount / $maxCount) * 100) ?>%"></div>
             </div>
         </div>
 
@@ -89,10 +90,10 @@ ob_start();
         <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-sm relative overflow-hidden">
             <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider block">Pending Review</span>
             <div class="flex items-baseline gap-1 mt-2">
-                <span class="text-2xl font-extrabold text-amber-500"><?= number_format($pendingVerification ?? 18) ?></span>
+                <span class="text-2xl font-extrabold text-amber-500"><?= number_format($pendingVerification) ?></span>
             </div>
             <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full mt-3 overflow-hidden">
-                <div class="h-full bg-amber-500 rounded-full" style="width: 30%"></div>
+                <div class="h-full bg-amber-500 rounded-full" style="width: <?= $maxCount > 0 ? round(($pendingVerification / $maxCount) * 100) : 0 ?>%"></div>
             </div>
         </div>
     </div>
@@ -133,12 +134,11 @@ ob_start();
                         <span class="text-lg bg-slate-50 dark:bg-slate-850 p-2.5 rounded-xl block"><?= $act['icon'] ?></span>
                         <div>
                             <p class="text-sm font-semibold text-slate-800 dark:text-white"><?= e($act['title']) ?></p>
-                            <p class="text-[10px] text-slate-400">Published successfully</p>
+                            <p class="text-[10px] text-slate-400"><?= e($act['time']) ?></p>
                         </div>
                     </div>
                     <div class="text-right">
                         <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold"><?= $act['status'] ?></span>
-                        <p class="text-3xs text-slate-450 mt-1"><?= $act['time'] ?></p>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -149,35 +149,49 @@ ob_start();
         <div class="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-3">
                 <h3 class="font-bold text-slate-900 dark:text-white text-base">Expiry Tracking</h3>
-                <span class="px-2 py-0.5 rounded text-3xs font-extrabold bg-red-500/10 text-red-500 uppercase">Alerts</span>
+                <?php
+                    $expiredCount = count(array_filter($expiryAlerts, fn($a) => $a['type'] === 'expired'));
+                ?>
+                <?php if ($expiredCount > 0): ?>
+                    <span class="px-2 py-0.5 rounded text-3xs font-extrabold bg-red-500/10 text-red-500 uppercase"><?= $expiredCount ?> Expired</span>
+                <?php else: ?>
+                    <span class="px-2 py-0.5 rounded text-3xs font-extrabold bg-emerald-500/10 text-emerald-500 uppercase">All Clear</span>
+                <?php endif; ?>
             </div>
             <div class="space-y-3">
-                <div class="p-3 rounded-xl border border-amber-200/50 dark:border-amber-900/20 bg-amber-500/5 flex items-start gap-3">
-                    <span class="text-lg">🪪</span>
-                    <div>
-                        <h4 class="text-xs font-bold text-amber-600 dark:text-amber-500">Driver License Expiry</h4>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">License #DL-9238 expires in 15 days.</p>
-                        <a href="<?= url('documents/driver-documents') ?>" class="text-[10px] text-indigo-500 font-bold hover:underline mt-1 block">Renew Record</a>
+                <?php foreach ($expiryAlerts as $alert): ?>
+                    <?php if ($alert['type'] === 'expired'): ?>
+                    <div class="p-3 rounded-xl border border-red-200/50 dark:border-red-900/20 bg-red-500/5 flex items-start gap-3">
+                        <span class="text-lg">⚠️</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-red-500"><?= e($alert['title']) ?></h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5"><?= e($alert['detail']) ?></p>
+                            <?php if ($alert['link_text']): ?>
+                            <a href="<?= url($alert['link']) ?>" class="text-[10px] text-indigo-500 font-bold hover:underline mt-1 block"><?= e($alert['link_text']) ?></a>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
-
-                <div class="p-3 rounded-xl border border-red-200/50 dark:border-red-900/20 bg-red-500/5 flex items-start gap-3">
-                    <span class="text-lg">🏥</span>
-                    <div>
-                        <h4 class="text-xs font-bold text-red-500">Medical Certificate Expired</h4>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Staff ID #12 medical clearances has expired.</p>
-                        <a href="<?= url('documents/staff-documents') ?>" class="text-[10px] text-indigo-500 font-bold hover:underline mt-1 block">Request Upload</a>
+                    <?php elseif ($alert['type'] === 'expiring'): ?>
+                    <div class="p-3 rounded-xl border border-amber-200/50 dark:border-amber-900/20 bg-amber-500/5 flex items-start gap-3">
+                        <span class="text-lg">🔔</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-amber-600 dark:text-amber-500"><?= e($alert['title']) ?></h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5"><?= e($alert['detail']) ?></p>
+                            <?php if ($alert['link_text']): ?>
+                            <a href="<?= url($alert['link']) ?>" class="text-[10px] text-indigo-500 font-bold hover:underline mt-1 block"><?= e($alert['link_text']) ?></a>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
-
-                <div class="p-3 rounded-xl border border-blue-200/50 dark:border-blue-900/20 bg-blue-500/5 flex items-start gap-3">
-                    <span class="text-lg">🛡️</span>
-                    <div>
-                        <h4 class="text-xs font-bold text-blue-500">Vehicle Insurance Expiring</h4>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Bus MH-12-AB-5678 covers up to Aug 15.</p>
-                        <a href="<?= url('documents/driver-documents') ?>" class="text-[10px] text-indigo-500 font-bold hover:underline mt-1 block">Update Policy</a>
+                    <?php else: ?>
+                    <div class="p-3 rounded-xl border border-emerald-200/50 dark:border-emerald-900/20 bg-emerald-500/5 flex items-start gap-3">
+                        <span class="text-lg">✅</span>
+                        <div>
+                            <h4 class="text-xs font-bold text-emerald-600 dark:text-emerald-500"><?= e($alert['title']) ?></h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5"><?= e($alert['detail']) ?></p>
+                        </div>
                     </div>
-                </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>

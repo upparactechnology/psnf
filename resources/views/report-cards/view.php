@@ -26,7 +26,13 @@ $fontFamilyMap = [
 ];
 $fontFamily = $fontFamilyMap[$pdfFont] ?? "'Inter', sans-serif";
 
-$scores = json_decode($reportCard['academic_profile'] ?? '{}', true) ?: [];
+$academicProfile = $reportCard['academic_profile'] ?? '{}';
+$scores = is_array($academicProfile) ? $academicProfile : (json_decode($academicProfile, true) ?: []);
+
+$activeExams = \Core\Application::$app->db->select(
+    "SELECT name, max_marks FROM exams WHERE tenant_id = ? AND semester = ? ORDER BY id ASC",
+    [$student['tenant_id'], $semester]
+);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -678,6 +684,9 @@ $scores = json_decode($reportCard['academic_profile'] ?? '{}', true) ?: [];
 
         <!-- ================= DYNAMIC CURRICULUM SECTIONS PAGES ================= -->
         <?php foreach ($curriculumTree as $sec): ?>
+            <?php 
+                $isMarksBased = (!empty($sec['subjects']) && $sec['subjects'][0]['assessment_type'] === 'Marks');
+            ?>
             <div class="page">
                 <div class="double-border">
                     <div class="page-header">
@@ -692,31 +701,74 @@ $scores = json_decode($reportCard['academic_profile'] ?? '{}', true) ?: [];
 
                     <h2 class="section-title"><?= e($sec['section_name']) ?></h2>
 
-                    <table class="table-profile">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left; width: 65%;">Subject / Parameter</th>
-                                <th style="width: 35%; text-align: center;">Evaluation Outcome</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($sec['subjects'] as $sub): ?>
-                                <?php 
-                                    $val = $scores[$sub['subject_id']] ?? '—';
-                                    if ($sub['assessment_type'] === 'Rating') {
-                                        $ratingMap = ['A' => 'Excellent (A)', 'B' => 'Good (B)', 'C' => 'Needs Improvement (C)', 'R' => 'Refused (R)', 'N/A' => 'N/A'];
-                                        $val = $ratingMap[$val] ?? $val;
-                                    }
-                                ?>
+                    <?php if ($isMarksBased): ?>
+                        <table class="table-profile">
+                            <thead>
                                 <tr>
-                                    <td class="param-label"><?= e($sub['subject_name']) ?></td>
-                                    <td class="rating-val" style="color: <?= $primaryColor ?>; background-color: #fcfdfd;">
-                                        <?= e($val) ?>
-                                    </td>
+                                    <th style="text-align: left; width: 35%;">Subject</th>
+                                    <?php foreach ($activeExams as $exam): ?>
+                                        <th style="text-align: center; font-size: 9px;"><?= e($exam['name']) ?><br><span style="color: #64748b; font-size: 8px;">Max: <?= number_format((float)$exam['max_marks'], 0) ?></span></th>
+                                    <?php endforeach; ?>
+                                    <th style="text-align: center; font-size: 9px;">Total<br><span style="color: #64748b; font-size: 8px;">Max: <?= number_format(array_sum(array_column($activeExams, 'max_marks')), 0) ?></span></th>
+                                    <th style="text-align: center; font-size: 9px;">Percentage</th>
+                                    <th style="text-align: center; font-size: 9px;">Grade</th>
                                 </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($sec['subjects'] as $sub): ?>
+                                    <?php 
+                                        $val = $scores[$sub['subject_id']] ?? [];
+                                        if (!is_array($val)) {
+                                            $val = ['marks' => [], 'total' => 0, 'pct' => 0, 'grade' => '—'];
+                                        }
+                                    ?>
+                                    <tr>
+                                        <td class="param-label"><?= e($sub['subject_name']) ?></td>
+                                        <?php foreach ($activeExams as $exam): ?>
+                                            <td class="rating-val" style="font-family: monospace; font-size: 10px;">
+                                                <?= isset($val['marks'][$exam['name']]) ? number_format((float)$val['marks'][$exam['name']], 1) : '—' ?>
+                                            </td>
+                                        <?php endforeach; ?>
+                                        <td class="rating-val" style="color: <?= $primaryColor ?>; font-family: monospace; font-size: 10px; font-weight: bold; background-color: #fcfdfd;">
+                                            <?= isset($val['total']) ? number_format((float)$val['total'], 1) : '—' ?>
+                                        </td>
+                                        <td class="rating-val" style="font-family: monospace; font-size: 10px;">
+                                            <?= isset($val['pct']) ? number_format((float)$val['pct'], 2) . '%' : '—' ?>
+                                        </td>
+                                        <td class="rating-val" style="font-weight: bold; background-color: #fcfdfd;">
+                                            <?= e($val['grade'] ?? '—') ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <table class="table-profile">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left; width: 65%;">Subject / Parameter</th>
+                                    <th style="width: 35%; text-align: center;">Evaluation Outcome</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($sec['subjects'] as $sub): ?>
+                                    <?php 
+                                        $val = $scores[$sub['subject_id']] ?? '—';
+                                        if ($sub['assessment_type'] === 'Rating') {
+                                            $ratingMap = ['A' => 'Excellent (A)', 'B' => 'Good (B)', 'C' => 'Needs Improvement (C)', 'R' => 'Refused (R)', 'N/A' => 'N/A'];
+                                            $val = $ratingMap[$val] ?? $val;
+                                        }
+                                    ?>
+                                    <tr>
+                                        <td class="param-label"><?= e($sub['subject_name']) ?></td>
+                                        <td class="rating-val" style="color: <?= $primaryColor ?>; background-color: #fcfdfd;">
+                                            <?= e($val) ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endforeach; ?>

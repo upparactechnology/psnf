@@ -193,8 +193,8 @@
     const targetGender = settings.gender || 'female';
 
     // 1. Filter Indian English voices first
-    const inVoices = voices.filter(v => 
-      v.lang.toLowerCase().replace('_', '-').startsWith("en-in") || 
+    const inVoices = voices.filter(v =>
+      v.lang.toLowerCase().replace('_', '-').startsWith("en-in") ||
       v.name.toLowerCase().includes("india")
     );
 
@@ -483,6 +483,159 @@
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
+    }
+  }
+
+  // --- SUCCESS OVERLAY MANAGER ---
+  let successAudio = null;
+  let successOverlay = null;
+  let onCompleteCallback = null;
+  let autoDismissTimer = null;
+
+  window.playSuccessOverlay = function (onComplete) {
+    onCompleteCallback = onComplete;
+
+    // Lazily create overlay HTML structure (with SVG hands and confetti container)
+    if (!successOverlay) {
+      successOverlay = document.createElement('div');
+      successOverlay.id = 'successOverlay';
+      successOverlay.className = 'success-overlay';
+      successOverlay.innerHTML = `
+        <div class="confetti-container"></div>
+        <div class="success-content">
+          <div class="success-card bottom-left-card">
+            <img class="success-gif" src="https://cdnl.iconscout.com/lottie/premium/thumb/applause-animation-gif-download-4894080.gif" alt="Clapping Hands Left" />
+            <div class="sparkle sparkle-1">✨</div>
+            <div class="sparkle sparkle-2">🌟</div>
+            <div class="sparkle sparkle-3">✨</div>
+          </div>
+          <div class="success-card bottom-right-card">
+            <img class="success-gif" src="https://cdnl.iconscout.com/lottie/premium/thumb/applause-animation-gif-download-4894080.gif" alt="Clapping Hands Right" />
+            <div class="sparkle sparkle-1">✨</div>
+            <div class="sparkle sparkle-2">🌟</div>
+            <div class="sparkle sparkle-3">✨</div>
+          </div>
+          <h2 class="success-text">Great Job!</h2>
+        </div>
+      `;
+      document.body.appendChild(successOverlay);
+
+      // Dismiss overlay on click/tap
+      successOverlay.addEventListener('click', dismissSuccessOverlay);
+    }
+
+    if (!successAudio) {
+      successAudio = new Audio('azareel_james-weee-337908.mp3');
+    }
+
+    // Reset audio state
+    successAudio.currentTime = 0;
+    successAudio.volume = 1.0;
+
+    // Generate falling confetti particles dynamically
+    createConfettiRain();
+
+    // Show overlay
+    successOverlay.classList.add('active');
+
+    // Play audio
+    const playAudioPromise = successAudio.play();
+    if (playAudioPromise !== undefined) {
+      playAudioPromise.catch(err => {
+        console.error("Success audio playback failed or requires user interaction first:", err);
+      });
+    }
+
+    // Auto-dismiss overlay after 3.5 seconds
+    if (autoDismissTimer) {
+      clearTimeout(autoDismissTimer);
+    }
+    autoDismissTimer = setTimeout(() => {
+      dismissSuccessOverlay();
+    }, 3500);
+  };
+
+  function createConfettiRain() {
+    const container = successOverlay.querySelector('.confetti-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const colors = ['#6a4df5', '#4cc955', '#2f8fff', '#ffaa2b', '#ef476f'];
+    const animations = ['fallDownStraight', 'fallDownDriftLeft', 'fallDownDriftRight'];
+
+    for (let i = 0; i < 140; i++) {
+      const bit = document.createElement('div');
+      bit.className = 'confetti-bit';
+      bit.style.left = Math.random() * 100 + 'vw';
+      bit.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      
+      const w = 10 + Math.random() * 12;
+      const h = 25 + Math.random() * 30;
+      bit.style.width = w + 'px';
+      bit.style.height = h + 'px';
+      bit.style.animationDelay = (Math.random() * 4) + 's';
+      bit.style.animationDuration = (2.2 + Math.random() * 2) + 's';
+
+      const initRot = Math.random() * 360;
+      
+      // Random unstructured shapes
+      const shapeType = Math.floor(Math.random() * 5);
+      if (shapeType === 0) {
+        bit.style.borderRadius = '4px';
+        bit.style.transform = `rotate(${initRot}deg)`;
+      } else if (shapeType === 1) {
+        bit.style.borderRadius = '50%';
+        bit.style.transform = `rotate(${initRot}deg)`;
+      } else if (shapeType === 2) {
+        bit.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+        bit.style.transform = `rotate(${initRot}deg)`;
+      } else if (shapeType === 3) {
+        bit.style.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+        bit.style.transform = `rotate(${initRot}deg)`;
+      } else {
+        bit.style.borderRadius = '2px';
+        const skew = 15 + Math.random() * 15;
+        bit.style.transform = `rotate(${initRot}deg) skewX(${skew}deg)`;
+      }
+
+      // Assign random falling keyframes
+      const randomAnim = animations[Math.floor(Math.random() * animations.length)];
+      bit.style.animationName = randomAnim;
+      bit.style.animationTimingFunction = 'linear';
+      bit.style.animationIterationCount = 'infinite';
+
+      container.appendChild(bit);
+    }
+  }
+
+  function dismissSuccessOverlay() {
+    if (autoDismissTimer) {
+      clearTimeout(autoDismissTimer);
+      autoDismissTimer = null;
+    }
+    if (successOverlay) {
+      successOverlay.classList.remove('active');
+      // Clear confetti bits after overlay closes to free memory
+      const container = successOverlay.querySelector('.confetti-container');
+      if (container) container.innerHTML = '';
+    }
+    if (successAudio) {
+      // Fade out audio smoothly to avoid click sounds
+      let fadeInterval = setInterval(() => {
+        if (successAudio.volume > 0.1) {
+          successAudio.volume -= 0.1;
+        } else {
+          clearInterval(fadeInterval);
+          successAudio.pause();
+        }
+      }, 50);
+    }
+
+    // Call the game level completion callback
+    if (typeof onCompleteCallback === 'function') {
+      const cb = onCompleteCallback;
+      onCompleteCallback = null; // Prevent double calls
+      cb();
     }
   }
 

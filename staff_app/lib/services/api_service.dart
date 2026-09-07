@@ -13,7 +13,7 @@ class ApiService {
     }
     try {
       if (Platform.isAndroid) {
-        return 'http://192.168.29.240/psnf/public';
+        return 'http://192.168.10.237/psnf/public/';
       }
     } catch (e) {
       // Platform check not supported

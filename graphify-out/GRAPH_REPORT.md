@@ -1,16 +1,16 @@
-# Graph Report - psnf  (2026-08-15)
+# Graph Report - psnf  (2026-08-21)
 
 ## Corpus Check
-- 1882 files · ~3,345,696 words
+- 1895 files · ~3,533,953 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 18610 nodes · 39193 edges · 1176 communities (946 shown, 230 thin omitted)
-- Extraction: 81% EXTRACTED · 19% INFERRED · 0% AMBIGUOUS · INFERRED: 7268 edges (avg confidence: 0.78)
+- 18697 nodes · 39351 edges · 1200 communities (950 shown, 250 thin omitted)
+- Extraction: 81% EXTRACTED · 19% INFERRED · 0% AMBIGUOUS · INFERRED: 7323 edges (avg confidence: 0.78)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `38352828`
+- Built from commit: `78e05b7f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -18,23 +18,23 @@
 - tailwindcss.js
 - index-DNJjout8.js
 - StringHelper.php
-- SimpleXMLElement
-- Reader/Xlsx/Chart.php
+- Go
+- t
 - Worksheet
 - Spreadsheet
-- push
+- lib/helpers.php
 - .strtolower
 - PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled
-- StringHelper
+- .implode
 - V
-- CPdf
-- PHPMailer
+- replace
+- preg_match
 - DateTime
 - Cpdf
-- OLE
+- has
 - FilesystemException
-- preg_match
-- .log
+- Color
+- remove
 - SpContainer
 - Html
 - .substr
@@ -45,23 +45,24 @@
 - 8.2/image.php
 - 8.4/image.php
 - Controller
-- SafeExceptionInterface
-- IOFactory
+- ErrorException
+- Table
 - Xlsx
 - files
 - Oci8Exception
 - Dompdf
 - field-editor.js
 - .trim
+- add
 - Worksheet
-- rt
+- decl
 - PsException
-- User
+- rt
 - Chart
-- ExcelError
+- StringHelper
 - AbstractFrameReflower
 - OutputFormat
-- Model
+- push
 - CPDF
 - PDFLib
 - Style
@@ -69,30 +70,29 @@
 - XMLWriter
 - ImapException
 - SocketsException
-- replace
+- Chart
 - Axis
 - Sabberworm\CSS\ShortClassNameProvider
 - DatetimeException
 - AutoFilter
-- add
+- 8.1/filesystem.php
 - CubridException
 - FtpException
 - Block
 - Column
-- has
+- CurrencyBase
 - CellAddress
-- Helpers
+- RuleSet
 - Font
 - json_encode
 - .count
-- RateLimiter
+- User
 - Csv
 - 8.2/openssl.php
 - BaseDrawing
 - CurlException
 - OpensslException
 - MemoryDrawing
-- decl
 - ParserState
 - SodiumException
 - 8.4/openssl.php
@@ -100,7 +100,7 @@
 - Request
 - Table
 - Html
-- Table
+- app.js
 - Ssh2Exception
 - 8.2/imap.php
 - Options
@@ -108,17 +108,17 @@
 - NetworkException
 - ZipStreamTest
 - PHPStan\Analyser\Scope
-- Cache.php
+- Cache
 - Scanner
 - MiscException
 - PosixException
 - Properties
-- Svg/Document.php
+- WizardInterface
 - Layout
 - Ods
-- Selector
+- Settings
 - safe-vs-unsafe.js
-- Router
+- Regex
 - FontMetrics
 - Complex
 - SMTP
@@ -128,7 +128,7 @@
 - InfoException
 - MbstringException
 - Changelog
-- 8.1/filesystem.php
+- ul
 - ContentPart
 - shopping-store.js
 - PHPUnit\Framework\TestCase
@@ -138,20 +138,20 @@
 - staff_app/lib/services/api_service.dart
 - Protection
 - PackField
-- Document
+- StyleBase
 - Cell
 - DataSeriesValues
-- StyleBase
-- .implode
+- XmlScanner
+- Biff8
 - ZipStream-PHP
 - matrix/composer.json
-- Functions
 - Declaration
 - PspellException
 - 8.4/imap.php
 - JpGraphRendererBase
 - Settings
 - DataValidation
+- Parser
 - Font
 - Alignment
 - PageSetup
@@ -163,10 +163,10 @@
 - UodbcException
 - 8.4/uodbc.php
 - 8.5/uodbc.php
-- DirectoryEntry
-- WizardAbstract
+- SimpleXMLElement
+- split
 - Database
-- special_cases.php
+- SafeExceptionInterface
 - .floor
 - dompdf/composer.json
 - Cellmap
@@ -174,11 +174,10 @@
 - IbmDb2Exception
 - Styles
 - PHP CSS Parser
-- clone
-- ListBullet
+- DateTimeWizard
 - home_screen.dart
 - pcre/composer.json
-- CurrencyBase
+- NumberBase
 - File
 - 8.1/ldap.php
 - 8.2/ldap.php
@@ -187,25 +186,25 @@
 - DateTimeInterface
 - SurfacePDFLib
 - Tokenizer
-- Style
+- ColumnRange
 - Security
 - PcntlException
 - 8.6/ldap.php
 - money-counting.js
 - XlsBase
-- RuleSet
+- Views
 - BaseReader
 - SemException
-- sync
-- AbstractTag
+- Slk
+- Csv
 - Cells
-- StaffAppController
+- WizardAbstract
 - OutputFormatter
 - ../services/api_service.dart
 - Comment
-- Color
+- Legend
 - HeaderFooter
-- preg_match_all
+- SplException
 - Database
 - CSSString
 - attendance.py
@@ -220,13 +219,13 @@
 - safety-signs.js
 - SessionException
 - AttributeTranslator
-- TrueType/File.php
+- CurriculumManagerController
 - PlotArea
-- Title
-- Sort
+- .application
+- ExcelError
 - NumberFormat
-- .strlen
-- Csv
+- preg_replace
+- DirectoryEntry
 - ZlibException
 - StreamException
 - 8.4/zlib.php
@@ -238,39 +237,39 @@
 - 8.5/zlib.php
 - 8.6/zlib.php
 - DateTimeImmutable
-- core/helpers.php
+- yx
 - CompoundSelector
 - driver_app/linux/my_application.cc
 - Page
 - Matrix
-- t
-- Styles
+- TextGrid
+- $a
 - KeyFrame
 - XdiffException
 - PSNF Attendance System: Comprehensive Guide
 - staff_app/linux/my_application.cc
-- SheetViews
-- ul
+- ColumnAndRowAttributes
+- State
 - OutputRules
 - PageMargins
-- lib/helpers.php
-- k1
+- CPdf
+- Style
 - 8.1/stream.php
-- json_decode
+- ReportCardController
 - ZipStreamTest.php
 - dashboard_screen.dart
 - Outline
 - ResourceStream
 - EndlessCycleStream
-- Column
 - RulesInterface.php
+- DOMTreeBuilder
 - GnupgException
 - OutcontrolException
 - SqlsrvException
 - notifications_screen.dart
-- CertificateController
-- CashFlowValidations
-- Migration
+- Style
+- face_service.py
+- stdClass
 - Functions
 - Operator
 - ArrayArgumentHelper
@@ -281,24 +280,24 @@
 - scripts
 - scripts-descriptions
 - ApacheException
-- ConditionalStyles
+- Router
 - CSSList
 - student.dart
 - ClassLoader
 - require
-- 8.4/ftp.php
-- face_service.py
+- Escher
+- StructuredReference
 - Theme
 - DataSeries
-- yx
+- SheetViews
 - LdapException
 - speed_monitor_screen.dart
 - ../theme/colors.dart
 - drop_route_screen.dart
-- DOMTreeBuilder
+- src/Dompdf.php
 - php-font-lib/composer.json
 - PHPMailer – A full-featured email creation and transfer class for PHP
-- CellMatcher
+- Trends
 - IReader.php
 - Fill
 - Controller
@@ -307,11 +306,11 @@
 - FlutterWindow
 - driver_app/windows/runner/win32_window.cpp
 - 3. Core Modules & Technical Requirements
-- Table
+- constructor
 - php-svg-lib/composer.json
 - exclude
 - File
-- ColumnAndRowAttributes
+- ColumnIterator
 - simple-cache/composer.json
 - php-css-parser/composer.json
 - FlutterWindow
@@ -319,69 +318,70 @@
 - sos_screen.dart
 - Detailed Modules & Pages Architecture
 - scripts
-- ConditionalIconSet
+- CellMatcher
 - SheetView
-- ValueList
+- Value
 - Color
 - ExecException
 - ReadlineException
 - students_screen.dart
-- InstalledVersions
+- stringify
 - StatefulWidget
 - Iterator
 - ChartColor
 - 8.2/stream.php
-- Properties
-- .strToUpper
+- ConditionalIconSet
+- FormulaToken
 - Hyperlink
 - Workbook
 - XmlException
 - sentence-builder.js
+- Logger
 - Chart
-- Go
-- Image
-- PayrollController
-- RowIterator
-- 8.4/xml.php
+- .strlen
+- n5
+- Workbook
+- mm
 - StaffController
-- app.js
+- ExamsController
 - package:flutter/material.dart
-- DefinedName
-- Path
+- Elements
+- Table
 - FaultInjectionResource
 - Exception
 - LU
 - PDO
-- Elements
-- TableStyle
+- RateLimiter
+- Drawing
 - guardian_directory_screen.dart
 - navigation_container.dart
 - class_attendance_screen.dart
-- n5
+- Validator
 - dompdf/README.md
-- RowDimension
+- ArrayArgumentProcessor
 - require-dev
 - IgnoredErrors
-- Column
+- RowCellIterator
+- Metadata
 - Protection
 - ConditionalDataBarExtension
-- ColumnDimension
+- sort
 - RrdException
-- 8.4/sodium.php
-- ConditionalFormatValueObject
+- InvalidRegexPatternRule.php
+- end
 - FaceDetector
 - colors.dart
 - driver_app/macos/Flutter/GeneratedPluginRegistrant.swift
-- CellValue
-- SplException
+- Matrix
+- ColumnDimension
 - zipstream-php/composer.json
 - HTML5
 - POP3
 - check
-- Rule
+- .log
 - base64_decode
-- Win32Window
-- TextValue
+- DocumentsController
+- StringTable
 - .setPassword
 - Coordinate
 - Pdf
@@ -393,8 +393,8 @@
 - DirException
 - wWinMain
 - MessageHandler
-- SheetViewOptions
-- AdminController
+- Content
+- AddYearAndGroupToExams
 - HTML5-PHP
 - suggest
 - require-dev
@@ -406,40 +406,43 @@
 - Setting
 - wWinMain
 - MessageHandler
+- TextValue
 - FaceMatcher
-- File
-- Validator
+- AdminController
+- RichDataDrawing
 - splash_screen.dart
-- StyleMerger
-- _t
+- GettextException
+- NamedExpressions
 - driver_app/web/manifest.json
 - staff_app/lib/screens/login_screen.dart
 - Web-Based Certificate Generation System (Core PHP + MySQL)
-- ConditionalStyles.php
-- GettextException
+- MD5
+- Selector
 - Text
-- State
+- ConditionalDataBar
 - File
 - Pane
-- IWriter.php
+- TrueType/File.php
+- AddSubjectIdsToExams
 - ComException
 - InotifyException
 - staff_app/web/manifest.json
 - Web-Based Face Recognition Attendance System — Python FastAPI Backend
 - Collection
-- Biff8
+- FrameTree
 - driver_app/ios/RunnerTests/RunnerTests.swift
 - FlutterAppDelegate
-- autoload-dev
+- CellValue
 - phpspreadsheet/composer.json
 - PolynomialBestFit
-- Delimiter
-- Value
-- 1.6.0 - 2019-01-02
+- IWriter.php
+- 1.9.0 - 2019-08-17
+- OLE
+- CharacterReference
 - CacheInterface.php
 - AutoFilter
 - Bzip2Exception
-- MD5
+- Resource
 - MailparseException
 - AttendanceService
 - RgbTint
@@ -449,14 +452,13 @@
 - keywords
 - Handler
 - Tcpdf
-- Win32Window
+- CreateExamsTable
 - attendance_service.py
 - RpminfoException
 - StringsException
 - safe/README.md
 - Router
 - PSNF Secure Digital Resource Management System
-- get_history
 - PSNF Dashboard Workflow & Access Control Specifications
 - matrix/README.md
 - TreeBuildingRules
@@ -464,19 +466,19 @@
 - 2024-09-29 - 3.3.0 (no 3.0.\*, 3.1.\*, 3.2.\*)
 - 2025-02-08 - 4.0.0
 - PhpSpreadsheet
-- Supervisor
+- get_history
 - PowerBestFit
 - self
-- CssLength
-- Shape
-- src/Dompdf.php
+- auth_id
+- preg_match_all
+- BIFFwriter
 - notification.dart
 - OnCreate
 - Style
 - QR.php
 - OAuth
-- jw
-- OutlineSimple
+- .strToUpper
+- Helpers
 - The Parser Model
 - scripts
 - 1.16.0 - 2020-12-31
@@ -486,16 +488,16 @@
 - 2.0.0 - 2024-01-04
 - TBD - 5.7.0
 - config
-- CharacterReference
+- Rels
 - LinearBestFit
-- Sh
-- LzfException
-- OpcacheException
+- ConvertUOM
+- 1.0.0 - 2017-12-25
+- 1.3.0 - 2018-06-10
 - x.y.z
 - check:static
 - OnCreate
 - e
-- UopzException
+- FileinfoException
 - CreateRateLimitsTable
 - CreatePlansTable
 - CreateTenantsTable
@@ -557,7 +559,7 @@
 - 2026-01-10 - 5.4.0
 - suggest
 - NotificationService
-- DocumentsController
+- Blanks
 - 9.0.0: New features, deprecation removals and bug fixes
 - autoload
 - scripts
@@ -574,17 +576,17 @@
 - dompdf/AUTHORS.md
 - Migration_20260815_PayrollAttendanceImprovements
 - PHP Font Lib
-- ITextElement.php
+- DefinedNames
 - php-svg-lib/AUTHORS.md
-- FunchandException
+- Header
 - require
 - 1.0.0-beta2 - 2017-11-26
 - psr-4
-- SharedFormula
-- RolesPermissionsSeeder
+- Errors
+- Xml
 - Dompdf
 - .save
-- .findFile
+- SsdeepException
 - 8.7.0: Add support for PHP 8.4
 - 8.8.0: Bug fixes and deprecations
 - 8.9.0: New features, bug fixes and deprecations
@@ -594,25 +596,25 @@
 - Position.php
 - Positionable.php
 - require-dev
-- VarException
+- Win32Window
 - Settings
 - CreateFaceAttendanceTables
-- sy
+- FilterException
+- Xls/Color.php
 - DownloadService.php
-- Migration_20260728_TransportWorkspaceSchema
+- LzfException
 - require
 - test
 - Tempfile.php
 - config
-- 1.0.0 - 2017-12-25
+- PayrollController
 - 1.10.0 - 2019-11-18
 - 1.14.1 - 2020-07-19
 - 1.5.1 - 2018-11-20
-- 1.8.0 - 2019-07-01
-- 1.9.0 - 2019-08-17
-- require
+- Win32Window
+- jo
 - 2025-03-02 - 4.1.0
-- Migration_20260802_AcademicRestructureSchema
+- WizardInterface.php
 - 2025-05-25 - 4.3.0
 - 2025-06-22 - 4.4.0
 - 2025-08-10 - 5.0.0
@@ -631,9 +633,9 @@
 - MainActivity
 - driver_app
 - Translations_12bc7575.md
-- ComposerAutoloaderInit2185d2f99bcd56787481d9357a5972d3
-- ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
-- keywords
+- websocket_server.php
+- OutlineSimple
+- AutoFilters
 - OutlineComponent
 - Header
 - process
@@ -641,10 +643,9 @@
 - autoload-dev
 - Exception
 - AddCertificateTypeToStudentDocuments
-- RichDataDrawing
-- .__construct
+- Duplicates
 - MakeMatrix
-- 1.5.0 - 2018-10-21
+- Expression
 - BIFF5
 - BuiltIn
 - Border
@@ -662,15 +663,13 @@
 - architecture.md
 - design.md
 - driver_app/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md
-- 2026-02-28 - 5.5.0
+- aa
 - pcre/README.md
 - 2025-01-11 - 3.8.0
-- websocket_server.php
-- CsvNoEscape
-- DataValidationHelper
-- 1.12.0 - 2020-04-27
-- 1.14.0 - 2020-06-29
-- 1.2.0 - 2018-03-04
+- LateFeePolicyController
+- TimetablesController
+- AddMissingShiftTemplateColumns
+- AddCurriculumTemplateIdToClasses
 - OpenType/File.php
 - OpenType/TableDirectoryEntry.php
 - WOFF/Header.php
@@ -707,20 +706,44 @@
 - .createFromPhpError
 - staff_app/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md
 - techspec.md
-- 1.3.0 - 2018-06-10
-- 2024-12-26 - 3.7.0
-- .createFromPhpError
-- .createFromPhpError
-- Size
+- Offset
+- CalcRuleValueList
+- ActivityLog
+- ErrorfuncException
+- MysqliException
+- Util.php
+- ITextElement.php
+- UopzException
 - @psnf
-- .application
-- NumberBase
-- Xls/Color.php
+- AddStampImageToReportCardSettings
+- CreateSubjectTypesTable
+- NamedFormula
+- JavascriptEmbedder
+- Accounting
+- 1.12.0 - 2020-04-27
+- 1.6.0 - 2019-01-02
+- 2026-02-28 - 5.5.0
+- 1.14.0 - 2020-06-29
+- autoload-dev
+- 1.8.0 - 2019-07-01
+- 2024-12-26 - 3.7.0
+- Number
+- ContentTypes
+- require
+- Percentage
+- ConditionalHelper
+- Sh
+- AddMainGroupIdToTimetables
 - Color
 - DateTime
 - Position?
 - String?
-- JavascriptEmbedder
+- UnexpectedNullMatchException
+- .__construct
+- 2025-04-16 - 4.2.0
+- keywords
+- 1.2.0 - 2018-03-04
+- 1.5.0 - 2018-10-21
 - oci_free_descriptor
 - oci_free_descriptor
 - .createFromPhpError
@@ -736,7 +759,7 @@
 7. `StringHelper` - 222 edges
 8. `OpensslException` - 201 edges
 9. `Style` - 188 edges
-10. `preg_match()` - 184 edges
+10. `preg_match()` - 185 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `base64url_decode()` --calls--> `base64_decode()`  [INFERRED]
@@ -753,67 +776,79 @@
 ## Import Cycles
 - None detected.
 
-## Communities (1176 total, 230 thin omitted)
+## Communities (1200 total, 250 thin omitted)
 
 ### Community 0 - "tailwindcss.js"
 Cohesion: 0.02
-Nodes (104): aa(), ac(), Ae(), Ak(), applyVariantOffset(), async(), Ba(), bd() (+96 more)
+Nodes (99): aa(), ac(), Ae(), Ak(), async(), Ba(), bd(), bk() (+91 more)
 
 ### Community 1 - "index-DNJjout8.js"
 Cohesion: 0.01
-Nodes (212): $2(), [$3,O3,_3,j3], $4, $5, a4, Ad, aj, ak (+204 more)
+Nodes (187): [$3,O3,_3,j3], $4, $5, a4, a5(), Ad, aj, ak (+179 more)
 
 ### Community 2 - "StringHelper.php"
 Cohesion: 0.02
-Nodes (33): DateTimeZone, Dimension, DOMAttr, DOMNode, DOMText, Exception, ITextElement, PhpOffice\PhpSpreadsheet\Cell\AddressRange (+25 more)
+Nodes (34): DateTimeZone, Dimension, DOMAttr, DOMNode, DOMText, Exception, IReadFilter, PhpOffice\PhpSpreadsheet\Cell\AddressRange (+26 more)
 
-### Community 3 - "SimpleXMLElement"
-Cohesion: 0.10
-Nodes (7): DataValidations, PageSetup, Worksheet, TableReader, WorkbookView, Style, SimpleXMLElement
+### Community 3 - "Go"
+Cohesion: 0.04
+Nodes (60): A1(), aS(), b3, b4, Bl(), C1(), CC(), clear() (+52 more)
+
+### Community 4 - "t"
+Cohesion: 0.04
+Nodes (62): ba(), bf(), br(), c2(), constructor(), cR(), Dy(), ea() (+54 more)
 
 ### Community 5 - "Worksheet"
 Cohesion: 0.02
-Nodes (9): ArrayObject, CellsFactory, Xls, end(), Validations, AddressRange, self, static (+1 more)
+Nodes (10): ArrayObject, CellsFactory, Xls, MergedCellStyle, Worksheet, Validations, AddressRange, self (+2 more)
 
 ### Community 6 - "Spreadsheet"
 Cohesion: 0.02
-Nodes (12): JsonSerializable, NamedFormula, self, static, Slk, self, Spreadsheet, AutoFilters (+4 more)
+Nodes (14): DOMElement, JsonSerializable, PhpOffice\PhpSpreadsheet\Cell\IValueBinder, PageSetup, self, AutoFilter, BaseLoader, DefinedNames (+6 more)
 
-### Community 7 - "push"
-Cohesion: 0.05
-Nodes (70): after(), append(), B(), BC(), before(), beforeAfter(), block(), body() (+62 more)
+### Community 7 - "lib/helpers.php"
+Cohesion: 0.11
+Nodes (26): available_font_choices(), builtin_font_choices(), conference_scope_sql(), csrf_input(), csrf_token(), current_user(), db(), default_email_templates() (+18 more)
 
 ### Community 9 - "PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled"
 Cohesion: 0.01
-Nodes (50): PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled, Date, Days, YearFrac, BesselJ, BesselY, Compare, Complex (+42 more)
+Nodes (53): PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled, DCountA, DMin, DStDev, DStDevP, DVarP, Days, BesselJ (+45 more)
 
-### Community 10 - "StringHelper"
-Cohesion: 0.03
-Nodes (10): BinaryComparison, ErrorValue, CaseConvert, Concatenate, Format, Helpers, Replace, Search (+2 more)
+### Community 10 - ".implode"
+Cohesion: 0.05
+Nodes (15): Announcement, Attendance, CommunicationMessage, ExamResult, FeePayment, Homework, StudentMedical, Tenant (+7 more)
 
 ### Community 11 - "V"
 Cohesion: 0.05
-Nodes (83): Je(), aa(), ao(), Ap(), ax(), Bm(), br(), Cd() (+75 more)
+Nodes (87): Je(), $0(), ao(), Ap(), ax(), Cd(), cf(), Cn() (+79 more)
+
+### Community 12 - "replace"
+Cohesion: 0.05
+Nodes (54): addToError(), ao(), cy(), $d(), Dl(), dy(), error(), fromOffset() (+46 more)
+
+### Community 13 - "preg_match"
+Cohesion: 0.03
+Nodes (6): EncodingMap, OAuthTokenProvider, PHPMailer, NumberFormat, FractionFormatter, preg_match()
 
 ### Community 14 - "DateTime"
 Cohesion: 0.03
-Nodes (14): DateInterval, DateTime, Current, DateParts, DateValue, Days360, Difference, Helpers (+6 more)
+Nodes (17): DateInterval, DateTime, Current, Date, DateParts, DateValue, Days360, Difference (+9 more)
 
-### Community 16 - "OLE"
-Cohesion: 0.06
-Nodes (5): ChainedBlockStream, OLE, File, PPS, Xls
+### Community 16 - "has"
+Cohesion: 0.07
+Nodes (52): _2(), b2(), before(), ca(), Cl(), cs(), DC(), delete() (+44 more)
 
 ### Community 17 - "FilesystemException"
 Cohesion: 0.08
 Nodes (50): chgrp(), chmod(), chown(), copy(), disk_free_space(), disk_total_space(), fclose(), fdatasync() (+42 more)
 
-### Community 18 - "preg_match"
-Cohesion: 0.04
-Nodes (14): Operand, EncodingMap, FormattedNumber, StructuredReference, Formula, Trim, BIFF8, NumberFormat (+6 more)
+### Community 18 - "Color"
+Cohesion: 0.06
+Nodes (8): Color, self, static, ConditionalColorScale, self, Worksheet, ConditionalFormatValueObject, self
 
-### Community 19 - ".log"
-Cohesion: 0.02
-Nodes (23): DStDev, DStDevP, DVar, DVarP, BesselI, BesselK, Sqrt, Beta (+15 more)
+### Community 19 - "remove"
+Cohesion: 0.07
+Nodes (48): _a(), applyParallelOffset(), B(), Cc(), check(), dr(), Gl(), group() (+40 more)
 
 ### Community 20 - "SpContainer"
 Cohesion: 0.04
@@ -824,8 +859,8 @@ Cohesion: 0.04
 Nodes (8): Html, Alignment, Border, Fill, Font, self, static, Settings
 
 ### Community 22 - ".substr"
-Cohesion: 0.04
-Nodes (9): Biff5, ConditionalFormatting, Escher, LoadSpreadsheet, self, Worksheet, RC4, FillPattern (+1 more)
+Cohesion: 0.06
+Nodes (4): LoadSpreadsheet, self, Worksheet, Xls
 
 ### Community 23 - "AbstractFrameDecorator"
 Cohesion: 0.04
@@ -836,8 +871,8 @@ Cohesion: 0.06
 Nodes (90): getimagesize(), image_type_to_extension(), imageaffine(), imageaffinematrixconcat(), imageaffinematrixget(), imagealphablending(), imageantialias(), imagearc() (+82 more)
 
 ### Community 25 - "Frame"
-Cohesion: 0.04
-Nodes (12): Frame, FrameListIterator, DOMNode, Style, Inline, TableRowGroup, Block, Image (+4 more)
+Cohesion: 0.05
+Nodes (10): Frame, DOMNode, Style, TableRowGroup, Block, Image, Inline, TableRow (+2 more)
 
 ### Community 26 - "PgsqlException"
 Cohesion: 0.06
@@ -852,20 +887,20 @@ Cohesion: 0.04
 Nodes (89): getimagesize(), image_type_to_extension(), imageaffine(), imageaffinematrixconcat(), imageaffinematrixget(), imagealphablending(), imageantialias(), imagearc() (+81 more)
 
 ### Community 29 - "Controller"
-Cohesion: 0.02
-Nodes (21): AcademicWorkspaceController, AdmissionsController, AttendanceController, AuthController, BatchFeeGeneratorController, DashboardController, EnrollmentAdminController, ExamsController (+13 more)
+Cohesion: 0.03
+Nodes (18): AcademicWorkspaceController, AnnouncementController, AttendanceController, BatchFeeGeneratorController, DashboardController, EnrollmentAdminController, FaceRecognitionController, PromotionController (+10 more)
 
-### Community 30 - "SafeExceptionInterface"
+### Community 30 - "ErrorException"
+Cohesion: 0.05
+Nodes (23): ErrorException, unixtojd(), class_alias(), gmp_random_seed(), libxml_set_external_entity_loader(), opcache_compile_file(), opcache_get_status(), solr_get_version() (+15 more)
+
+### Community 31 - "Table"
 Cohesion: 0.04
-Nodes (36): ErrorException, unixtojd(), class_alias(), error_log(), filter_input_array(), filter_var_array(), gmp_random_seed(), libxml_set_external_entity_loader() (+28 more)
-
-### Community 31 - "IOFactory"
-Cohesion: 0.10
-Nodes (7): PhpOffice\PhpSpreadsheet\Reader\IReader, PhpOffice\PhpSpreadsheet\Writer\IWriter, ImportService, IOFactory, IReader, IWriter, fgetcsv()
+Nodes (7): Column, self, self, Worksheet, Table, self, TableStyle
 
 ### Community 32 - "Xlsx"
-Cohesion: 0.04
-Nodes (15): HashTable, IComparable, Comments, ContentTypes, DocProps, FeaturePropertyBag, self, static (+7 more)
+Cohesion: 0.05
+Nodes (12): HashTable, IComparable, Comments, DocProps, self, static, RelsRibbon, RelsVBA (+4 more)
 
 ### Community 33 - "files"
 Cohesion: 0.02
@@ -885,55 +920,59 @@ Nodes (72): applyCanvasZoom(), applyEditorSnapshot(), applyInlineTagToActiveTarg
 
 ### Community 37 - ".trim"
 Cohesion: 0.07
-Nodes (11): e(), load_custom_fonts(), load_email_templates(), normalize_email_template(), setting(), slugify(), CertificateGenerator, EmailService (+3 more)
+Nodes (11): load_custom_fonts(), load_email_templates(), normalize_email_template(), setting(), slugify(), CertificateGenerator, EmailService, Color (+3 more)
+
+### Community 38 - "add"
+Cohesion: 0.07
+Nodes (48): add(), already(), arbitraryProperty(), as(), au(), Bh(), checkForWarning(), cleanFromUnprefixed() (+40 more)
 
 ### Community 39 - "Worksheet"
 Cohesion: 0.05
 Nodes (3): ErrorCode, Conditional, Worksheet
 
-### Community 40 - "rt"
-Cohesion: 0.05
-Nodes (66): $0(), af(), ag(), aw(), bI(), Bt(), bx(), Ca() (+58 more)
+### Community 40 - "decl"
+Cohesion: 0.07
+Nodes (41): An(), atrule(), beforeAfter(), calcBefore(), cleanBrackets(), comment(), decl(), Eh() (+33 more)
 
 ### Community 41 - "PsException"
 Cohesion: 0.06
 Nodes (67): ps_add_launchlink(), ps_add_locallink(), ps_add_note(), ps_add_pdflink(), ps_add_weblink(), ps_arc(), ps_arcn(), ps_begin_page() (+59 more)
 
-### Community 42 - "User"
-Cohesion: 0.04
-Nodes (7): RoleController, StaffWorkspaceController, UserController, Permission, Role, User, EmployeeSyncService
+### Community 42 - "rt"
+Cohesion: 0.09
+Nodes (39): af(), ag(), aw(), bI(), Bt(), bx(), Ca(), Ci() (+31 more)
 
 ### Community 43 - "Chart"
-Cohesion: 0.05
-Nodes (4): Chart, self, static, __construct()
+Cohesion: 0.04
+Nodes (7): Chart, self, static, __construct(), self, static, Title
 
-### Community 44 - "ExcelError"
+### Community 44 - "StringHelper"
 Cohesion: 0.02
-Nodes (26): ComplexFunctions, ComplexOperations, ConvertBase, ConvertDecimal, ConvertHex, ConvertOctal, NonPeriodic, Coupons (+18 more)
+Nodes (26): BinaryComparison, DMax, ErrorValue, Value, Conditional, Maximum, MaxMinBase, CaseConvert (+18 more)
 
 ### Community 45 - "AbstractFrameReflower"
-Cohesion: 0.05
-Nodes (9): Exception, ImageException, AbstractFrameReflower, Block, NullFrameReflower, Table, TableCell, TableRow (+1 more)
+Cohesion: 0.04
+Nodes (11): Exception, ImageException, Inline, AbstractFrameReflower, Block, Inline, NullFrameReflower, Table (+3 more)
 
 ### Community 46 - "OutputFormat"
 Cohesion: 0.05
 Nodes (3): OutputFormat, self, render()
 
-### Community 47 - "Model"
-Cohesion: 0.04
-Nodes (27): GuardianController, MedicalController, StudentController, Announcement, Attendance, CommunicationMessage, EmergencyContact, ExamResult (+19 more)
+### Community 47 - "push"
+Cohesion: 0.10
+Nodes (36): after(), append(), BC(), c2(), clone(), cloneAfter(), cloneDiv(), Co() (+28 more)
 
 ### Community 50 - "Style"
 Cohesion: 0.06
 Nodes (6): Border, Fill, Font, self, Worksheet, Style
 
 ### Community 51 - "Session"
-Cohesion: 0.04
-Nodes (11): AcademicSettingsController, AnnouncementController, ClassesController, CurriculumManagerController, FeeCategoryController, FeeInvoiceController, FeeStructureController, LateFeePolicyController (+3 more)
+Cohesion: 0.05
+Nodes (8): AcademicSettingsController, ClassesController, FeeCategoryController, FeeInvoiceController, FeeStructureController, ParentPortalLoginController, Session, View
 
 ### Community 52 - "XMLWriter"
-Cohesion: 0.04
-Nodes (17): PhpspreadsheetWorksheet, XMLWriter, Comment, AutoFilter, ActualWorksheet, Column, Rule, Chart (+9 more)
+Cohesion: 0.08
+Nodes (5): PhpspreadsheetWorksheet, XMLWriter, Comment, Conditional, Worksheet
 
 ### Community 53 - "ImapException"
 Cohesion: 0.08
@@ -941,71 +980,75 @@ Nodes (62): imap_8bit(), imap_append(), imap_base64(), imap_binary(), imap_body(
 
 ### Community 54 - "SocketsException"
 Cohesion: 0.08
-Nodes (59): AddressInfo, Socket, socket_accept(), socket_addrinfo_bind(), socket_addrinfo_connect(), socket_addrinfo_lookup(), socket_bind(), socket_connect() (+51 more)
+Nodes (61): AddressInfo, Socket, socket_accept(), socket_addrinfo_bind(), socket_addrinfo_connect(), socket_addrinfo_lookup(), socket_bind(), socket_connect() (+53 more)
 
-### Community 55 - "replace"
-Cohesion: 0.05
-Nodes (58): addToError(), ao(), contain3d(), cy(), $d(), Dl(), dy(), _emitEvictions() (+50 more)
+### Community 55 - "Chart"
+Cohesion: 0.21
+Nodes (3): Chart, Font, Properties
 
 ### Community 56 - "Axis"
-Cohesion: 0.04
-Nodes (7): Axis, self, AxisText, self, GridLines, Legend, self
+Cohesion: 0.08
+Nodes (3): Axis, self, GridLines
 
 ### Community 57 - "Sabberworm\CSS\ShortClassNameProvider"
-Cohesion: 0.07
-Nodes (15): Comment, SourceException, UnexpectedEOFException, UnexpectedTokenException, Charset, CSSNamespace, Rule, Sabberworm\CSS\Comment\CommentContainer (+7 more)
+Cohesion: 0.06
+Nodes (17): AtRule, Comment, SourceException, UnexpectedEOFException, UnexpectedTokenException, Charset, CSSNamespace, Import (+9 more)
 
 ### Community 58 - "DatetimeException"
 Cohesion: 0.06
 Nodes (48): date(), date_parse(), date_parse_from_format(), date_sun_info(), date_sunrise(), date_sunset(), gmmktime(), gmstrftime() (+40 more)
 
 ### Community 59 - "AutoFilter"
-Cohesion: 0.06
-Nodes (4): AutoFilter, self, static, Worksheet
+Cohesion: 0.05
+Nodes (5): AutoFilter, self, static, Worksheet, Column
 
-### Community 60 - "add"
-Cohesion: 0.06
-Nodes (59): _2(), add(), already(), au(), checkForWarning(), cleanFromUnprefixed(), cleanOtherPrefixes(), clear() (+51 more)
+### Community 60 - "8.1/filesystem.php"
+Cohesion: 0.04
+Nodes (49): chgrp(), chmod(), chown(), copy(), disk_free_space(), disk_total_space(), fclose(), fdatasync() (+41 more)
 
 ### Community 61 - "CubridException"
 Cohesion: 0.07
 Nodes (56): cubrid_bind(), cubrid_col_size(), cubrid_column_names(), cubrid_column_types(), cubrid_commit(), cubrid_connect(), cubrid_connect_with_url(), cubrid_current_oid() (+48 more)
 
 ### Community 62 - "FtpException"
-Cohesion: 0.17
-Nodes (28): ftp_alloc(), ftp_append(), ftp_cdup(), ftp_chdir(), ftp_chmod(), ftp_close(), ftp_connect(), ftp_delete() (+20 more)
+Cohesion: 0.09
+Nodes (57): ftp_alloc(), ftp_append(), ftp_cdup(), ftp_chdir(), ftp_chmod(), ftp_close(), ftp_connect(), ftp_delete() (+49 more)
 
 ### Community 63 - "Block"
-Cohesion: 0.05
-Nodes (6): TableFrameDecorator, Block, self, TableCell, Inline, LineBox
+Cohesion: 0.04
+Nodes (7): TableFrameDecorator, Block, self, ListBullet, TableCell, ListBullet, LineBox
 
 ### Community 64 - "Column"
-Cohesion: 0.15
-Nodes (3): Column, Rule, static
+Cohesion: 0.08
+Nodes (8): Column, Rule, static, static, Rule, AutoFilter, Column, Rule
 
-### Community 65 - "has"
-Cohesion: 0.06
-Nodes (53): arbitraryProperty(), b2(), Bh(), ca(), Cl(), cr(), create(), cs() (+45 more)
+### Community 65 - "CurrencyBase"
+Cohesion: 0.20
+Nodes (4): Currency, CurrencyNegative, CurrencyBase, CurrencyNegative
 
 ### Community 66 - "CellAddress"
-Cohesion: 0.04
-Nodes (11): AddressRange, CellAddress, self, CellRange, ColumnRange, self, self, RowRange (+3 more)
+Cohesion: 0.06
+Nodes (8): AddressRange, CellAddress, self, CellRange, self, RowRange, AutoFit, PageBreak
 
-### Community 67 - "Helpers"
-Cohesion: 0.04
-Nodes (5): Stylesheet, Text, Helpers, Cache, ListBullet
+### Community 67 - "RuleSet"
+Cohesion: 0.07
+Nodes (5): DeclarationList, LegacyDeclarationListMethods, KeyframeSelector, DeclarationBlock, RuleSet
 
 ### Community 68 - "Font"
 Cohesion: 0.10
-Nodes (6): CellFont, static, Font, Color, self, static
+Nodes (5): CellFont, Font, Color, self, static
 
 ### Community 69 - "json_encode"
-Cohesion: 0.08
-Nodes (8): TransportController, AuthMiddleware, TransportRoute, auth_id(), Downloader, json_encode(), JsonException, self
+Cohesion: 0.10
+Nodes (5): TransportController, AuthMiddleware, TransportRoute, Downloader, json_encode()
 
-### Community 71 - "RateLimiter"
-Cohesion: 0.09
-Nodes (6): RateLimitMiddleware, AuthService, base64url_decode(), base64url_encode(), JWT, RateLimiter
+### Community 71 - "User"
+Cohesion: 0.06
+Nodes (5): RoleController, UserController, Permission, Role, User
+
+### Community 72 - "Csv"
+Cohesion: 0.07
+Nodes (4): Csv, self, CsvNoEscape, self
 
 ### Community 73 - "8.2/openssl.php"
 Cohesion: 0.04
@@ -1023,17 +1066,9 @@ Nodes (53): openssl_cipher_iv_length(), openssl_cms_decrypt(), openssl_cms_encry
 Cohesion: 0.14
 Nodes (4): GdImage, MemoryDrawing, self, static
 
-### Community 78 - "decl"
-Cohesion: 0.06
-Nodes (52): An(), atrule(), check(), comment(), constructor(), createTokenizer(), decl(), emptyRule() (+44 more)
-
-### Community 79 - "ParserState"
-Cohesion: 0.07
-Nodes (6): Anchor, ParserState, CalcFunction, CSSFunction, LineName, Value
-
 ### Community 80 - "SodiumException"
-Cohesion: 0.12
-Nodes (30): sodium_crypto_aead_aes256gcm_decrypt(), sodium_crypto_aead_chacha20poly1305_decrypt(), sodium_crypto_aead_chacha20poly1305_encrypt(), sodium_crypto_aead_chacha20poly1305_ietf_decrypt(), sodium_crypto_aead_chacha20poly1305_ietf_encrypt(), sodium_crypto_aead_xchacha20poly1305_ietf_decrypt(), sodium_crypto_aead_xchacha20poly1305_ietf_encrypt(), sodium_crypto_auth_verify() (+22 more)
+Cohesion: 0.07
+Nodes (47): sodium_crypto_aead_aes256gcm_decrypt(), sodium_crypto_aead_chacha20poly1305_decrypt(), sodium_crypto_aead_chacha20poly1305_encrypt(), sodium_crypto_aead_chacha20poly1305_ietf_decrypt(), sodium_crypto_aead_chacha20poly1305_ietf_encrypt(), sodium_crypto_aead_xchacha20poly1305_ietf_decrypt(), sodium_crypto_aead_xchacha20poly1305_ietf_encrypt(), sodium_crypto_auth_verify() (+39 more)
 
 ### Community 81 - "8.4/openssl.php"
 Cohesion: 0.04
@@ -1044,20 +1079,20 @@ Cohesion: 0.04
 Nodes (51): openssl_cipher_iv_length(), openssl_cipher_key_length(), openssl_cms_decrypt(), openssl_cms_encrypt(), openssl_cms_read(), openssl_cms_sign(), openssl_cms_verify(), openssl_csr_export() (+43 more)
 
 ### Community 83 - "Request"
-Cohesion: 0.08
-Nodes (5): PermissionMiddleware, RoleMiddleware, SessionTimeoutMiddleware, TenantMiddleware, Request
+Cohesion: 0.07
+Nodes (6): GuestMiddleware, PermissionMiddleware, RoleMiddleware, SessionTimeoutMiddleware, TenantMiddleware, Request
 
 ### Community 84 - "Table"
 Cohesion: 0.05
 Nodes (13): Table, cmap, cvt, fpgm, head, hhea, hmtx, kern (+5 more)
 
 ### Community 85 - "Html"
-Cohesion: 0.05
-Nodes (10): DOMElement, Html, self, static, Worksheet, AutoFilter, BaseLoader, DefinedNames (+2 more)
+Cohesion: 0.08
+Nodes (4): Html, self, static, Worksheet
 
-### Community 86 - "Table"
-Cohesion: 0.10
-Nodes (3): self, Worksheet, Table
+### Community 86 - "app.js"
+Cohesion: 0.14
+Nodes (11): bootDashboard(), cssVar(), makeChart(), setCookie(), setTheme(), toast(), toggleTheme(), update() (+3 more)
 
 ### Community 87 - "Ssh2Exception"
 Cohesion: 0.07
@@ -1068,8 +1103,8 @@ Cohesion: 0.07
 Nodes (50): imap_8bit(), imap_append(), imap_base64(), imap_binary(), imap_body(), imap_bodystruct(), imap_check(), imap_clearflag_full() (+42 more)
 
 ### Community 90 - "Xlsx"
-Cohesion: 0.07
-Nodes (8): Hyperlinks, Drawing, SimpleXMLElement, Worksheet, ZipArchive, Xlsx, simplexml_load_string(), ZipArchive
+Cohesion: 0.06
+Nodes (9): DataValidations, Hyperlinks, Drawing, SimpleXMLElement, Worksheet, ZipArchive, Xlsx, simplexml_load_string() (+1 more)
 
 ### Community 91 - "NetworkException"
 Cohesion: 0.07
@@ -1080,12 +1115,12 @@ Cohesion: 0.06
 Nodes (6): Assertions, CompressionMethod, ZipStreamTest, Tempfile, Util, ZipStream\CompressionMethod
 
 ### Community 93 - "PHPStan\Analyser\Scope"
-Cohesion: 0.09
-Nodes (23): PhpParser\Node, PhpParser\Node\Arg, PhpParser\Node\Expr\StaticCall, PHPStan\Analyser\Scope, PHPStan\Analyser\SpecifiedTypes, PHPStan\Analyser\TypeSpecifier, PHPStan\Analyser\TypeSpecifierAwareExtension, PHPStan\Analyser\TypeSpecifierContext (+15 more)
-
-### Community 94 - "Cache.php"
 Cohesion: 0.12
-Nodes (3): Dompdf\Canvas, FontNotFoundException, Font
+Nodes (18): PhpParser\Node\Arg, PhpParser\Node\Expr\StaticCall, PHPStan\Analyser\Scope, PHPStan\Analyser\SpecifiedTypes, PHPStan\Analyser\TypeSpecifier, PHPStan\Analyser\TypeSpecifierAwareExtension, PHPStan\Analyser\TypeSpecifierContext, PHPStan\Reflection\MethodReflection (+10 more)
+
+### Community 94 - "Cache"
+Cohesion: 0.05
+Nodes (7): Dompdf\Canvas, Image, ListBulletImage, Image, Cache, FontNotFoundException, Font
 
 ### Community 95 - "Scanner"
 Cohesion: 0.05
@@ -1103,41 +1138,41 @@ Nodes (45): posix_access(), posix_getgrgid(), posix_getgrnam(), posix_getgroups(
 Cohesion: 0.05
 Nodes (6): self, Properties, DocumentProperties, Properties, DocumentProperties, Properties
 
-### Community 99 - "Svg/Document.php"
-Cohesion: 0.08
-Nodes (6): Anchor, ClipPath, Group, StyleTag, Symbol, UseTag
+### Community 99 - "WizardInterface"
+Cohesion: 0.25
+Nodes (4): DateValue, Conditional, self, WizardInterface
 
 ### Community 100 - "Layout"
 Cohesion: 0.06
 Nodes (3): Layout, self, static
 
 ### Community 101 - "Ods"
-Cohesion: 0.08
-Nodes (9): Content, Meta, MetaInf, Mimetype, Ods, static, Styles, Thumbnails (+1 more)
+Cohesion: 0.10
+Nodes (8): Meta, MetaInf, Mimetype, Ods, static, Styles, Thumbnails, WriterPart
 
-### Community 102 - "Selector"
-Cohesion: 0.06
-Nodes (10): CSSBlockList, Document, Parser, Document, Settings, KeyframeSelector, self, Selector (+2 more)
+### Community 102 - "Settings"
+Cohesion: 0.08
+Nodes (7): CSSBlockList, Document, Parser, Document, Settings, self, Settings
 
 ### Community 103 - "safe-vs-unsafe.js"
 Cohesion: 0.13
 Nodes (46): assignRelationshipCard(), bindEvents(), bindRelationshipCardEvents(), bindRelationshipDropZones(), completeRelationshipIfReady(), currentRelationshipCardsLeft(), currentSafePeopleCount(), currentSituation() (+38 more)
 
-### Community 104 - "Router"
-Cohesion: 0.17
-Nodes (4): self, Response, self, Router
+### Community 104 - "Regex"
+Cohesion: 0.06
+Nodes (8): MatchAllResult, MatchAllStrictGroupsResult, MatchAllWithOffsetsResult, MatchResult, MatchStrictGroupsResult, MatchWithOffsetsResult, Regex, ReplaceResult
 
 ### Community 106 - "Complex"
 Cohesion: 0.07
 Nodes (5): Complex, Functions, Complex, Operations, Complex
 
 ### Community 109 - "Calculation"
-Cohesion: 0.03
-Nodes (12): Calculation, self, Worksheet, CalculationParserOnly, self, BranchPruner, CyclicReferenceStack, Logger (+4 more)
+Cohesion: 0.02
+Nodes (13): PhpOffice\PhpSpreadsheet\Style\ConditionalFormatting\Wizard\WizardInterface, Calculation, self, Worksheet, DatabaseAbstract, DGet, DProduct, BranchPruner (+5 more)
 
 ### Community 110 - "Conditional"
-Cohesion: 0.06
-Nodes (11): Conditional, self, static, DateValue, Conditional, self, fromConditional(), getConditional() (+3 more)
+Cohesion: 0.10
+Nodes (3): Conditional, self, static
 
 ### Community 111 - "InfoException"
 Cohesion: 0.08
@@ -1149,11 +1184,11 @@ Nodes (41): mb_chr(), mb_convert_encoding(), mb_convert_variables(), mb_detect_o
 
 ### Community 113 - "Changelog"
 Cohesion: 0.04
-Nodes (48): 1.10.1 - 2019-12-02, 1.11.0 - 2020-03-02, 1.13.0 - 2020-05-31, 1.1.0 - 2018-01-28, 1.2.1 - 2018-04-10, 1.3.1 - 2018-06-12, 1.4.0 - 2018-08-06, 1.4.1 - 2018-09-30 (+40 more)
+Nodes (44): 1.10.1 - 2019-12-02, 1.11.0 - 2020-03-02, 1.13.0 - 2020-05-31, 1.1.0 - 2018-01-28, 1.2.1 - 2018-04-10, 1.3.1 - 2018-06-12, 1.4.0 - 2018-08-06, 1.4.1 - 2018-09-30 (+36 more)
 
-### Community 114 - "8.1/filesystem.php"
-Cohesion: 0.04
-Nodes (49): chgrp(), chmod(), chown(), copy(), disk_free_space(), disk_total_space(), fclose(), fdatasync() (+41 more)
+### Community 114 - "ul"
+Cohesion: 0.07
+Nodes (34): br(), comma(), cx(), dx(), ec(), F_(), Fh(), fS() (+26 more)
 
 ### Community 115 - "ContentPart"
 Cohesion: 0.07
@@ -1164,12 +1199,12 @@ Cohesion: 0.12
 Nodes (42): addToCart(), advanceLevel(), bindControls(), bindPaymentDropZone(), cartTotal(), clearTimer(), currentTask(), el (+34 more)
 
 ### Community 117 - "PHPUnit\Framework\TestCase"
-Cohesion: 0.06
+Cohesion: 0.07
 Nodes (15): PHPUnit\Framework\TestCase, CentralDirectoryFileHeader, CompressionMethod, LocalFileHeader, CompressionMethod, Time, CentralDirectoryFileHeaderTest, DataDescriptorTest (+7 more)
 
 ### Community 119 - "n"
-Cohesion: 0.03
-Nodes (145): c(), E(), a2(), a3, accessor(), AE(), b(), b1() (+137 more)
+Cohesion: 0.04
+Nodes (118): c(), E(), a2(), a3, accessor(), AE(), b(), b1() (+110 more)
 
 ### Community 120 - "EioException"
 Cohesion: 0.09
@@ -1180,24 +1215,28 @@ Cohesion: 0.05
 Nodes (40): dart:convert, dart:io, ApiService, assignedRoute, changePassword, completeTrip, driverName, driverPhone (+32 more)
 
 ### Community 123 - "PackField"
-Cohesion: 0.08
-Nodes (10): EndOfCentralDirectory, PackField, DataDescriptor, EndOfCentralDirectory, EndOfCentralDirectoryLocator, ExtendedInformationExtraField, ExtendedInformationExtraField, PackFieldTest (+2 more)
+Cohesion: 0.06
+Nodes (12): Psr\Http\Message\StreamInterface, DataDescriptor, EndOfCentralDirectory, PackField, DataDescriptor, EndOfCentralDirectory, EndOfCentralDirectoryLocator, ExtendedInformationExtraField (+4 more)
+
+### Community 124 - "StyleBase"
+Cohesion: 0.10
+Nodes (6): Alignment, Border, Fill, Font, NumberFormat, StyleBase
 
 ### Community 125 - "Cell"
 Cohesion: 0.04
-Nodes (17): IValueBinder, Info, Hyperlink, Offset, Worksheet, Subtotal, AdvancedValueBinder, Cell (+9 more)
+Nodes (17): IValueBinder, CalculationParserOnly, self, Info, ExcelArrayPseudoFunctions, Hyperlink, Subtotal, AdvancedValueBinder (+9 more)
 
 ### Community 126 - "DataSeriesValues"
 Cohesion: 0.07
 Nodes (3): DataSeriesValues, self, static
 
-### Community 127 - "StyleBase"
-Cohesion: 0.10
-Nodes (6): Alignment, Border, Fill, Font, NumberFormat, StyleBase
+### Community 127 - "XmlScanner"
+Cohesion: 0.09
+Nodes (5): IReader, self, XmlScanner, DocumentProperties, Properties
 
-### Community 128 - ".implode"
-Cohesion: 0.04
-Nodes (14): AdobeFontMetrics, cmdExists(), dumpZipContents(), getRecursiveFileList(), getTmpDir(), validateAndExtractZip(), zipArchiveOpenErrorCodeName(), CalculationLocale (+6 more)
+### Community 128 - "Biff8"
+Cohesion: 0.07
+Nodes (6): Biff5, Biff8, ConditionalFormatting, DataValidationHelper, ErrorCode, FillPattern
 
 ### Community 129 - "ZipStream-PHP"
 Cohesion: 0.05
@@ -1206,10 +1245,6 @@ Nodes (37): 1. Correction, 2. Warning, 3. Temporary Ban, 4. Permanent Ban, Attri
 ### Community 130 - "matrix/composer.json"
 Cohesion: 0.05
 Nodes (39): dealerdirect/phpcodesniffer-composer-installer, authors, autoload, autoload-dev, psr-4, psr-4, config, allow-plugins (+31 more)
-
-### Community 131 - "Functions"
-Cohesion: 0.02
-Nodes (30): DatabaseAbstract, DAverage, DCount, DCountA, DGet, DMax, DMin, DProduct (+22 more)
 
 ### Community 132 - "Declaration"
 Cohesion: 0.06
@@ -1232,8 +1267,8 @@ Cohesion: 0.07
 Nodes (6): PhpOffice\PhpSpreadsheet\Chart\Renderer\IRenderer, Psr\SimpleCache\CacheInterface, SimpleCache1, SimpleCache3, CacheInterface, Settings
 
 ### Community 137 - "DataValidation"
-Cohesion: 0.06
-Nodes (5): Header, DataValidation, self, static, CellDataValidation
+Cohesion: 0.07
+Nodes (4): DataValidation, self, static, CellDataValidation
 
 ### Community 139 - "Font"
 Cohesion: 0.06
@@ -1244,12 +1279,16 @@ Cohesion: 0.13
 Nodes (6): CellAlignment, Alignment, self, static, CellAlignment, Alignment
 
 ### Community 142 - "Preg"
-Cohesion: 0.03
-Nodes (14): MatchAllResult, MatchAllStrictGroupsResult, MatchAllWithOffsetsResult, MatchResult, MatchStrictGroupsResult, MatchWithOffsetsResult, Preg, Regex (+6 more)
+Cohesion: 0.06
+Nodes (3): PcreException, Preg, FunctionPrefix
+
+### Community 144 - "AbstractRenderer"
+Cohesion: 0.09
+Nodes (3): AbstractRenderer, ListBullet, Renderer
 
 ### Community 145 - "Border"
-Cohesion: 0.12
-Nodes (7): Border, Color, self, static, Borders, self, static
+Cohesion: 0.09
+Nodes (9): Border, Color, self, static, Borders, self, static, Border (+1 more)
 
 ### Community 146 - "MysqlException"
 Cohesion: 0.10
@@ -1267,25 +1306,25 @@ Nodes (33): odbc_autocommit(), odbc_columnprivileges(), odbc_columns(), odbc_com
 Cohesion: 0.10
 Nodes (33): odbc_autocommit(), odbc_columnprivileges(), odbc_columns(), odbc_commit(), odbc_connect(), odbc_cursor(), odbc_data_source(), odbc_exec() (+25 more)
 
-### Community 150 - "DirectoryEntry"
-Cohesion: 0.09
-Nodes (4): DirectoryEntry, TableDirectoryEntry, File, TableDirectoryEntry
+### Community 150 - "SimpleXMLElement"
+Cohesion: 0.07
+Nodes (9): Properties, Styles, PageSetup, Worksheet, SheetViewOptions, TableReader, WorkbookView, Style (+1 more)
 
-### Community 151 - "WizardAbstract"
-Cohesion: 0.06
-Nodes (14): Blanks, Conditional, self, Duplicates, Conditional, self, Errors, Conditional (+6 more)
+### Community 151 - "split"
+Cohesion: 0.08
+Nodes (38): ax(), Bf(), clear(), ea(), en(), every(), ex(), Ff() (+30 more)
 
 ### Community 152 - "Database"
-Cohesion: 0.08
-Nodes (5): Application, Database, PDO, config(), PDOStatement
+Cohesion: 0.07
+Nodes (8): Application, Database, PDO, config(), base64url_decode(), base64url_encode(), JWT, PDOStatement
 
-### Community 153 - "special_cases.php"
-Cohesion: 0.08
-Nodes (23): hash_hkdf(), hash_update_file(), HashContext, hash_update_file(), HashContext, HashException, self, self (+15 more)
+### Community 153 - "SafeExceptionInterface"
+Cohesion: 0.06
+Nodes (28): register_tick_function(), hash_hkdf(), hash_update_file(), HashContext, xmlrpc_set_type(), hash_update_file(), HashContext, FunchandException (+20 more)
 
 ### Community 154 - ".floor"
-Cohesion: 0.05
-Nodes (7): Time, BitWise, Floor, Lcm, Permutations, IntOrFloat, Root
+Cohesion: 0.06
+Nodes (6): StaffAppController, BitWise, Floor, Lcm, Delimiter, Root
 
 ### Community 155 - "dompdf/composer.json"
 Cohesion: 0.06
@@ -1303,13 +1342,9 @@ Nodes (6): Border, Fill, Font, NumberFormat, Styles, Theme
 Cohesion: 0.06
 Nodes (33): API and deprecation policy, Charset, Class diagram, Contributing, Contributors/Thanks to, Convenience methods, CSSList, Disable multibyte functions (+25 more)
 
-### Community 161 - "clone"
+### Community 162 - "DateTimeWizard"
 Cohesion: 0.08
-Nodes (46): _a(), applyParallelOffset(), as(), Bf(), clone(), cloneAfter(), da(), dr() (+38 more)
-
-### Community 162 - "ListBullet"
-Cohesion: 0.11
-Nodes (3): ListBullet, ListBulletImage, ListBullet
+Nodes (5): Date, DateTime, DateTimeWizard, Duration, Time
 
 ### Community 163 - "home_screen.dart"
 Cohesion: 0.12
@@ -1318,10 +1353,6 @@ Nodes (17): guardian_directory_screen.dart, _actionLoading, _attendanceData, bui
 ### Community 164 - "pcre/composer.json"
 Cohesion: 0.06
 Nodes (32): authors, autoload, autoload-dev, psr-4, psr-4, dev-main, conflict, phpstan/phpstan (+24 more)
-
-### Community 165 - "CurrencyBase"
-Cohesion: 0.13
-Nodes (6): Accounting, CurrencyNegative, Currency, CurrencyNegative, CurrencyBase, CurrencyNegative
 
 ### Community 167 - "8.1/ldap.php"
 Cohesion: 0.13
@@ -1340,20 +1371,16 @@ Cohesion: 0.13
 Nodes (32): ldap_8859_to_t61(), ldap_add(), ldap_bind(), ldap_compare(), ldap_count_entries(), ldap_delete(), ldap_exop(), ldap_exop_passwd() (+24 more)
 
 ### Community 171 - "DateTimeInterface"
-Cohesion: 0.13
-Nodes (9): DateTimeInterface, DosTimeOverflowException, DateTimeInterface, CompressionMethod, OperationMode, ZipStream, ZipStream0, ZipStream2 (+1 more)
-
-### Community 174 - "Style"
-Cohesion: 0.11
-Nodes (5): DefaultStyle, Style, setStyle(), Image, LinearGradient
+Cohesion: 0.12
+Nodes (10): Closure, DateTimeInterface, DosTimeOverflowException, DateTimeInterface, CompressionMethod, OperationMode, ZipStream, ZipStream0 (+2 more)
 
 ### Community 175 - "Security"
 Cohesion: 0.09
 Nodes (3): self, static, Security
 
 ### Community 176 - "PcntlException"
-Cohesion: 0.12
-Nodes (26): pcntl_getpriority(), pcntl_setpriority(), pcntl_signal(), pcntl_signal_dispatch(), pcntl_sigprocmask(), pcntl_sigtimedwait(), pcntl_sigwaitinfo(), pcntl_getcpuaffinity() (+18 more)
+Cohesion: 0.11
+Nodes (27): pcntl_getpriority(), pcntl_setpriority(), pcntl_signal(), pcntl_signal_dispatch(), pcntl_sigprocmask(), pcntl_sigtimedwait(), pcntl_sigwaitinfo(), pcntl_getcpuaffinity() (+19 more)
 
 ### Community 177 - "8.6/ldap.php"
 Cohesion: 0.14
@@ -1363,29 +1390,21 @@ Nodes (30): ldap_add(), ldap_bind(), ldap_compare(), ldap_count_entries(), ldap_
 Cohesion: 0.17
 Nodes (30): bindControls(), bindDropZone(), buildHintText(), checkAnswer(), clearTimer(), currentTarget(), el, fireConfetti() (+22 more)
 
-### Community 179 - "XlsBase"
-Cohesion: 0.05
-Nodes (11): CharacterConvert, XlsBase, CodePage, iconv(), iconv_get_encoding(), iconv_mime_decode(), iconv_mime_encode(), iconv_set_encoding() (+3 more)
-
-### Community 180 - "RuleSet"
-Cohesion: 0.09
-Nodes (4): DeclarationList, LegacyDeclarationListMethods, DeclarationBlock, RuleSet
+### Community 180 - "Views"
+Cohesion: 0.10
+Nodes (19): Automated/Syntax Tests, Controllers, Database Schema Changes, Manual Verification, [MODIFY] [bulk_entry.php](file:///c:/xampp/htdocs/psnf/resources/views/exams/bulk_entry.php), [MODIFY] [edit.php](file:///c:/xampp/htdocs/psnf/resources/views/report-cards/edit.php), [MODIFY] [ExamsController.php](file:///c:/xampp/htdocs/psnf/app/Controllers/ExamsController.php), [MODIFY] [ReportCardController.php](file:///c:/xampp/htdocs/psnf/app/Controllers/ReportCardController.php) (+11 more)
 
 ### Community 181 - "BaseReader"
-Cohesion: 0.05
-Nodes (10): Closure, IReader, PhpOffice\PhpSpreadsheet\Cell\IValueBinder, BaseReader, IReadFilter, static, IReader, self (+2 more)
+Cohesion: 0.10
+Nodes (4): IReader, BaseReader, IReadFilter, static
 
 ### Community 182 - "SemException"
 Cohesion: 0.18
 Nodes (21): msg_get_queue(), msg_queue_exists(), msg_receive(), msg_remove_queue(), msg_send(), msg_set_queue(), msg_stat_queue(), sem_acquire() (+13 more)
 
-### Community 183 - "sync"
-Cohesion: 0.21
-Nodes (17): dp(), getAsyncError(), getIterator(), getProxyProcessor(), handleError(), messages(), pp(), prepareVisitors() (+9 more)
-
-### Community 184 - "AbstractTag"
-Cohesion: 0.12
-Nodes (3): AbstractTag, RadialGradient, Stop
+### Community 184 - "Csv"
+Cohesion: 0.07
+Nodes (5): IWriter, BaseWriter, self, Csv, self
 
 ### Community 185 - "Cells"
 Cohesion: 0.08
@@ -1400,28 +1419,24 @@ Cohesion: 0.07
 Nodes (27): change_password_screen.dart, dashboard_screen.dart, build, ChangePasswordScreen, _ChangePasswordScreenState, _confirmPasswordController, createState, _handleChangePassword (+19 more)
 
 ### Community 189 - "Comment"
-Cohesion: 0.06
-Nodes (6): IComparable, Comment, Drawing, self, Drawing, static
+Cohesion: 0.10
+Nodes (4): IComparable, Comment, Drawing, self
 
-### Community 190 - "Color"
+### Community 190 - "Legend"
 Cohesion: 0.09
-Nodes (6): Color, self, static, ConditionalColorScale, self, Worksheet
+Nodes (4): AxisText, self, Legend, self
 
-### Community 191 - "HeaderFooter"
-Cohesion: 0.08
-Nodes (3): HeaderFooter, static, HeaderFooterDrawing
-
-### Community 192 - "preg_match_all"
-Cohesion: 0.06
-Nodes (11): PcreException, PcreException, UnexpectedNullMatchException, AddressHelper, DataValidations, preg_grep(), preg_match_all(), preg_replace_callback() (+3 more)
+### Community 192 - "SplException"
+Cohesion: 0.17
+Nodes (8): ComposerAutoloaderInit2185d2f99bcd56787481d9357a5972d3, class_implements(), class_parents(), class_uses(), spl_autoload_register(), spl_autoload_unregister(), self, SplException
 
 ### Community 193 - "Database"
 Cohesion: 0.11
 Nodes (3): Database, Folder, User
 
 ### Community 194 - "CSSString"
-Cohesion: 0.09
-Nodes (5): AtRule, Import, CSSString, PrimitiveValue, URL
+Cohesion: 0.13
+Nodes (3): CSSString, PrimitiveValue, URL
 
 ### Community 195 - "attendance.py"
 Cohesion: 0.17
@@ -1452,7 +1467,7 @@ Cohesion: 0.19
 Nodes (27): autoCheck(), bindEvents(), checkSelection(), clearTimer(), currentRound(), el, fireConfetti(), flashFeedback() (+19 more)
 
 ### Community 205 - "SessionException"
-Cohesion: 0.13
+Cohesion: 0.14
 Nodes (19): session_abort(), session_cache_expire(), session_cache_limiter(), session_create_id(), session_decode(), session_destroy(), session_encode(), session_gc() (+11 more)
 
 ### Community 206 - "AttributeTranslator"
@@ -1463,25 +1478,25 @@ Nodes (3): AttributeTranslator, DOMElement, DOMNode
 Cohesion: 0.09
 Nodes (3): self, static, PlotArea
 
-### Community 209 - "Title"
-Cohesion: 0.11
-Nodes (3): self, static, Title
+### Community 209 - ".application"
+Cohesion: 0.50
+Nodes (3): Any, Bool, UIApplication
 
-### Community 210 - "Sort"
-Cohesion: 0.03
-Nodes (12): Filter, Helpers, Worksheet, HLookup, Hstack, Lookup, LookupRefValidations, Matrix (+4 more)
+### Community 210 - "ExcelError"
+Cohesion: 0.01
+Nodes (53): DAverage, DCount, DSum, Complex, ComplexFunctions, ComplexOperations, ConvertBase, ConvertDecimal (+45 more)
 
 ### Community 211 - "NumberFormat"
 Cohesion: 0.14
 Nodes (3): NumberFormat, self, static
 
-### Community 212 - ".strlen"
+### Community 212 - "preg_replace"
 Cohesion: 0.05
-Nodes (10): self, ConvertBinary, Thai, TextGridRightAlign, TextGrid, ListFunctions, OLERead, NumberFormatter (+2 more)
+Nodes (11): SubjectTypesController, Text, FormattedNumber, Helpers, Worksheet, Trim, BIFF8, BaseFormatter (+3 more)
 
-### Community 213 - "Csv"
-Cohesion: 0.07
-Nodes (5): IWriter, BaseWriter, self, Csv, self
+### Community 213 - "DirectoryEntry"
+Cohesion: 0.09
+Nodes (4): DirectoryEntry, TableDirectoryEntry, File, TableDirectoryEntry
 
 ### Community 214 - "ZlibException"
 Cohesion: 0.15
@@ -1500,8 +1515,8 @@ Cohesion: 0.14
 Nodes (18): FaceDetectionResult, ndarray, Pipeline: 1. Blur quality check (Laplacian variance) 2. Brightness quality…, detect_frame(), DetectFrameRequest, BaseModel, Real-time face detection endpoint for frontend feedback. Returns blur, bounding…, base64_to_cv2() (+10 more)
 
 ### Community 219 - "Shadow"
-Cohesion: 0.10
-Nodes (4): PhpOffice\PhpSpreadsheet\IComparable, Color, static, Shadow
+Cohesion: 0.07
+Nodes (6): PhpOffice\PhpSpreadsheet\IComparable, self, Supervisor, Color, static, Shadow
 
 ### Community 221 - "ArrayException"
 Cohesion: 0.10
@@ -1516,12 +1531,12 @@ Cohesion: 0.09
 Nodes (24): deflate_add(), deflate_init(), gzclose(), gzcompress(), gzdecode(), gzdeflate(), gzencode(), gzfile() (+16 more)
 
 ### Community 224 - "DateTimeImmutable"
-Cohesion: 0.12
+Cohesion: 0.13
 Nodes (5): DateTimeImmutable, DateInterval, DateTimeInterface, DateTimeZone, self
 
-### Community 225 - "core/helpers.php"
+### Community 225 - "yx"
 Cohesion: 0.09
-Nodes (10): GuestMiddleware, asset(), auth(), dashboard_url(), get_dynamic_base_url(), has_permission(), has_role(), session() (+2 more)
+Nodes (26): Am(), bS(), By(), c0(), fR, Gn(), gx(), hb (+18 more)
 
 ### Community 226 - "CompoundSelector"
 Cohesion: 0.10
@@ -1531,9 +1546,9 @@ Nodes (6): Component, Combinator, self, CompoundSelector, self, SpecificityCalcu
 Cohesion: 0.10
 Nodes (20): FlPluginRegistry, fl_register_plugins(), main(), GApplication, gboolean, gchar, GObject, GtkApplication (+12 more)
 
-### Community 230 - "t"
-Cohesion: 0.06
-Nodes (41): a5(), ba(), c2(), c5(), constructor(), cR(), Dy(), EC() (+33 more)
+### Community 231 - "$a"
+Cohesion: 0.09
+Nodes (23): $a(), bC(), bg(), Dh(), du(), eR, Fh(), gv() (+15 more)
 
 ### Community 232 - "KeyFrame"
 Cohesion: 0.09
@@ -1551,33 +1566,29 @@ Nodes (17): 1. Core Architecture & AI Face Recognition (Kiosk), 2. Staff & Emplo
 Cohesion: 0.10
 Nodes (20): FlPluginRegistry, fl_register_plugins(), main(), GApplication, gboolean, gchar, GObject, GtkApplication (+12 more)
 
-### Community 237 - "ul"
-Cohesion: 0.07
-Nodes (38): br(), comma(), cx(), dm(), dx(), ec(), eE(), F_() (+30 more)
+### Community 236 - "ColumnAndRowAttributes"
+Cohesion: 0.24
+Nodes (3): PhpOffice\PhpSpreadsheet\Reader\IReadFilter, BaseParserClass, ColumnAndRowAttributes
+
+### Community 237 - "State"
+Cohesion: 0.18
+Nodes (12): _LoginScreenState, build, _buildContactTile, _buildTipCard, createState, SafetyCenterScreen, _SafetyCenterScreenState, _shareLocation (+4 more)
 
 ### Community 238 - "OutputRules"
 Cohesion: 0.16
 Nodes (4): OutputRules, DOMAttr, DOMNode, RulesInterface
 
-### Community 239 - "PageMargins"
-Cohesion: 0.08
-Nodes (4): PageSetup, self, PageMargins, static
-
-### Community 240 - "lib/helpers.php"
-Cohesion: 0.10
-Nodes (27): available_font_choices(), builtin_font_choices(), conference_scope_sql(), csrf_input(), csrf_token(), current_user(), db(), default_email_templates() (+19 more)
-
-### Community 241 - "k1"
-Cohesion: 0.16
-Nodes (14): Au(), k1(), KS(), lr(), ls(), ma(), Mh(), qT() (+6 more)
+### Community 241 - "Style"
+Cohesion: 0.20
+Nodes (3): Border, Fill, Style
 
 ### Community 242 - "8.1/stream.php"
 Cohesion: 0.08
 Nodes (22): stream_context_set_params(), stream_copy_to_stream(), stream_filter_append(), stream_filter_prepend(), stream_filter_register(), stream_filter_remove(), stream_get_contents(), stream_get_line() (+14 more)
 
-### Community 243 - "json_decode"
-Cohesion: 0.13
-Nodes (9): ReceiptsController, ReportCardController, finfo, finfo_close(), finfo_open(), mime_content_type(), FileinfoException, self (+1 more)
+### Community 243 - "ReportCardController"
+Cohesion: 0.24
+Nodes (3): ReportCardController, static, mime_content_type()
 
 ### Community 244 - "ZipStreamTest.php"
 Cohesion: 0.10
@@ -1587,11 +1598,7 @@ Nodes (11): DeflateContext, PHPUnit\Framework\Attributes\Group, Exception, FileN
 Cohesion: 0.07
 Nodes (28): build, _buildCurrentTab, _buildHomeTab, _buildStatCard, _checkAndStartTracking, createState, _currentIndex, DashboardScreen (+20 more)
 
-### Community 246 - "Outline"
-Cohesion: 0.12
-Nodes (3): Outline, OutlineComposite, glyf
-
-### Community 250 - "RulesInterface.php"
+### Community 249 - "RulesInterface.php"
 Cohesion: 0.14
 Nodes (3): setTraverser(), RulesInterface, Traverser
 
@@ -1611,17 +1618,21 @@ Nodes (20): sqlsrv_begin_transaction(), sqlsrv_cancel(), sqlsrv_client_info(), s
 Cohesion: 0.17
 Nodes (12): _buildProfileTab, build, _buildNotificationTile, createState, _notifications, NotificationsScreen, _NotificationsScreenState, _selectedCategory (+4 more)
 
-### Community 256 - "CashFlowValidations"
-Cohesion: 0.08
-Nodes (7): CashFlowValidations, Cumulative, Interest, InterestAndPrincipal, Payments, Periodic, Single
+### Community 255 - "Style"
+Cohesion: 0.02
+Nodes (25): CustomClipper, ShieldClipper, CssLength, DefaultStyle, Style, setStyle(), AbstractTag, Anchor (+17 more)
+
+### Community 256 - "face_service.py"
+Cohesion: 0.22
+Nodes (11): Attendance, ERPUser, FaceEmbedding, Stores InsightFace 512-dim L2-normalized embeddings. Linked to `users` table…, Face attendance records — linked to `users` table via user_id., Maps to the ERP's main `users` table (staff/teachers from /staff/users). This…, set_face_service(), FaceService (+3 more)
 
 ### Community 259 - "Operator"
 Cohesion: 0.17
 Nodes (6): Addition, DirectSum, Division, Multiplication, Operator, Subtraction
 
-### Community 260 - "ArrayArgumentHelper"
-Cohesion: 0.08
-Nodes (6): evaluateArrayArguments(), evaluateArrayArgumentsIgnore(), evaluateArrayArgumentsSubset(), evaluateArrayArgumentsSubsetFrom(), ArrayArgumentHelper, ArrayArgumentProcessor
+### Community 262 - "Xf"
+Cohesion: 0.10
+Nodes (3): CellBorder, Border, Xf
 
 ### Community 263 - "trip_logs_screen.dart"
 Cohesion: 0.15
@@ -1643,29 +1654,29 @@ Nodes (22): scripts-descriptions, check, check:composer:normalize, check:dynamic
 Cohesion: 0.15
 Nodes (15): apache_get_version(), apache_getenv(), apache_lookup_uri(), apache_request_headers(), apache_response_headers(), apache_setenv(), getallheaders(), virtual() (+7 more)
 
+### Community 268 - "Router"
+Cohesion: 0.17
+Nodes (4): self, Response, self, Router
+
 ### Community 270 - "student.dart"
 Cohesion: 0.10
 Nodes (20): double?, actionTime, address, className, distanceKm, firstName, fullName, id (+12 more)
+
+### Community 271 - "ClassLoader"
+Cohesion: 0.05
+Nodes (5): Composer\Semver\VersionParser, ComposerStaticInit2185d2f99bcd56787481d9357a5972d3, ClassLoader, InstalledVersions, apcu_fetch()
 
 ### Community 272 - "require"
 Cohesion: 0.10
 Nodes (21): require, composer/pcre, ext-ctype, ext-dom, ext-fileinfo, ext-filter, ext-gd, ext-iconv (+13 more)
 
-### Community 273 - "8.4/ftp.php"
-Cohesion: 0.14
-Nodes (27): ftp_alloc(), ftp_append(), ftp_cdup(), ftp_chdir(), ftp_chmod(), ftp_close(), ftp_connect(), ftp_delete() (+19 more)
-
-### Community 274 - "face_service.py"
-Cohesion: 0.22
-Nodes (11): Attendance, ERPUser, FaceEmbedding, Stores InsightFace 512-dim L2-normalized embeddings. Linked to `users` table…, Face attendance records — linked to `users` table via user_id., Maps to the ERP's main `users` table (staff/teachers from /staff/users). This…, set_face_service(), FaceService (+3 more)
+### Community 274 - "StructuredReference"
+Cohesion: 0.16
+Nodes (3): Operand, self, StructuredReference
 
 ### Community 276 - "DataSeries"
 Cohesion: 0.09
 Nodes (3): DataSeries, self, static
-
-### Community 277 - "yx"
-Cohesion: 0.10
-Nodes (25): Am(), bS(), By(), c0(), fR, Gn(), gx(), hb (+17 more)
 
 ### Community 278 - "LdapException"
 Cohesion: 0.10
@@ -1696,11 +1707,11 @@ Cohesion: 0.14
 Nodes (12): getReadFilter(), load(), IReadFilter, self, setAllowExternalImages(), setCreateBlankSheetIfNoneRead(), setIncludeCharts(), setLoadAllSheets() (+4 more)
 
 ### Community 287 - "Fill"
-Cohesion: 0.15
-Nodes (8): Fill, Color, self, static, CellBorder, Border, CellFill, Fill
+Cohesion: 0.21
+Nodes (6): Fill, Color, self, static, CellFill, Fill
 
 ### Community 288 - "Controller"
-Cohesion: 0.15
+Cohesion: 0.13
 Nodes (3): AdminAuthController, StaffAuthController, Controller
 
 ### Community 289 - "attendance_screen.dart"
@@ -1723,9 +1734,9 @@ Nodes (15): Point, Size, wchar_t, wstring, Scale(), Create, Destroy, SetQuitOnCl
 Cohesion: 0.11
 Nodes (18): 1. Executive Summary & Objectives, 2. Business Goals, 3.10 Educational Games Integration, 3.1 Authentication & Role-Based Access Control (RBAC), 3.2 Students & Individualized Education Programs (IEPs), 3.3 Parent Portal & Communications, 3.4 Attendance Management, 3.5 Timetables & Examinations (+10 more)
 
-### Community 294 - "Table"
-Cohesion: 0.13
-Nodes (5): Table, TableCell, Table, TableCell, Table
+### Community 294 - "constructor"
+Cohesion: 0.11
+Nodes (22): constructor(), createTokenizer(), _emitEvictions(), _entriesAscending(), isStretch(), mapResolve(), _moveToRecent(), old() (+14 more)
 
 ### Community 295 - "php-svg-lib/composer.json"
 Cohesion: 0.11
@@ -1736,8 +1747,8 @@ Cohesion: 0.11
 Nodes (19): exclude, /composer.lock, /docs, /.gitattributes, /.github, /.gitignore, /guides, /.phive (+11 more)
 
 ### Community 297 - "File"
-Cohesion: 0.19
-Nodes (6): DataDescriptor, File, CompressionMethod, OperationMode, self, Version
+Cohesion: 0.25
+Nodes (5): File, CompressionMethod, OperationMode, self, Version
 
 ### Community 299 - "simple-cache/composer.json"
 Cohesion: 0.11
@@ -1767,13 +1778,9 @@ Nodes (17): 1. Administration & Governance Module, 2. Academic & IEP Management 
 Cohesion: 0.12
 Nodes (18): scripts, coverage:report, docs:generate, format, install:tools, test:formatted, test:lint, test:unit (+10 more)
 
-### Community 306 - "ConditionalIconSet"
-Cohesion: 0.19
-Nodes (3): IconSetValues, ConditionalIconSet, self
-
-### Community 308 - "ValueList"
-Cohesion: 0.11
-Nodes (3): CalcRuleValueList, RuleValueList, ValueList
+### Community 308 - "Value"
+Cohesion: 0.07
+Nodes (5): CalcFunction, CSSFunction, LineName, Value, ValueList
 
 ### Community 310 - "ExecException"
 Cohesion: 0.19
@@ -1787,73 +1794,65 @@ Nodes (11): readline_add_history(), readline_callback_handler_install(), readlin
 Cohesion: 0.12
 Nodes (17): _allStudents, _applyFilters, _classFilters, createState, dispose, _filteredStudents, initState, _isLoading (+9 more)
 
+### Community 313 - "stringify"
+Cohesion: 0.16
+Nodes (21): content(), css(), dp(), getAsyncError(), getIterator(), getProxyProcessor(), handleError(), map() (+13 more)
+
 ### Community 314 - "StatefulWidget"
 Cohesion: 0.20
 Nodes (10): AppSettingsScreen, _AppSettingsScreenState, build, createState, _criticalAlerts, _selectedLanguage, _sound, _vibration (+2 more)
-
-### Community 315 - "Iterator"
-Cohesion: 0.06
-Nodes (7): DOMDocument, IteratorAggregate, FrameTree, FrameTreeIterator, PageSettings, Worksheet, Iterator
 
 ### Community 317 - "8.2/stream.php"
 Cohesion: 0.08
 Nodes (24): stream_context_set_params(), stream_copy_to_stream(), stream_filter_append(), stream_filter_prepend(), stream_filter_register(), stream_filter_remove(), stream_get_contents(), stream_get_line() (+16 more)
 
-### Community 320 - ".strToUpper"
-Cohesion: 0.05
-Nodes (6): SubjectsController, CalculationBase, FormulaParser, FormulaToken, FunctionArray, Arabic
+### Community 319 - "ConditionalIconSet"
+Cohesion: 0.17
+Nodes (3): IconSetValues, ConditionalIconSet, self
 
 ### Community 321 - "Hyperlink"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (3): Hyperlink, self, static
 
 ### Community 323 - "XmlException"
-Cohesion: 0.27
-Nodes (14): XMLParser, xml_parser_free(), xml_set_character_data_handler(), xml_set_default_handler(), xml_set_element_handler(), xml_set_end_namespace_decl_handler(), xml_set_external_entity_ref_handler(), xml_set_notation_decl_handler() (+6 more)
+Cohesion: 0.14
+Nodes (27): XMLParser, xml_parser_free(), xml_set_character_data_handler(), xml_set_default_handler(), xml_set_element_handler(), xml_set_end_namespace_decl_handler(), xml_set_external_entity_ref_handler(), xml_set_notation_decl_handler() (+19 more)
 
 ### Community 324 - "sentence-builder.js"
 Cohesion: 0.30
 Nodes (16): bindEvents(), bindStarterDragEvents(), buildSentenceText(), categories, el, flashFeedback(), handleDropItem(), init() (+8 more)
 
-### Community 325 - "Chart"
+### Community 326 - "Chart"
 Cohesion: 0.21
 Nodes (3): ChartProperties, Chart, Font
 
-### Community 326 - "Go"
+### Community 327 - ".strlen"
 Cohesion: 0.04
-Nodes (63): $a(), A1(), aS(), b3, bC(), bg(), Bl(), C1() (+55 more)
+Nodes (9): ConvertBinary, ConvertOctal, Thai, ListFunctions, RC4, ChainedBlockStream, OLERead, NumberFormatter (+1 more)
 
-### Community 329 - "RowIterator"
-Cohesion: 0.11
-Nodes (3): Row, static, RowIterator
+### Community 328 - "n5"
+Cohesion: 0.15
+Nodes (18): e5(), Ev(), j5(), lo(), n5(), PC(), q5(), Qd() (+10 more)
 
-### Community 330 - "8.4/xml.php"
-Cohesion: 0.26
-Nodes (13): XMLParser, xml_parser_free(), xml_parser_set_option(), xml_set_character_data_handler(), xml_set_default_handler(), xml_set_element_handler(), xml_set_end_namespace_decl_handler(), xml_set_external_entity_ref_handler() (+5 more)
-
-### Community 332 - "app.js"
+### Community 330 - "mm"
 Cohesion: 0.16
-Nodes (9): bootDashboard(), cssVar(), makeChart(), setCookie(), setTheme(), toast(), toggleTheme(), update() (+1 more)
+Nodes (17): Au(), cv(), f3, KS(), La(), ls(), Mh(), mm() (+9 more)
 
 ### Community 333 - "package:flutter/material.dart"
 Cohesion: 0.10
 Nodes (19): build, main, themeNotifier, main, package:driver_app/main.dart, package:flutter/material.dart, package:flutter/services.dart, package:flutter_test/flutter_test.dart (+11 more)
 
-### Community 334 - "DefinedName"
-Cohesion: 0.09
-Nodes (5): DefinedName, self, NamedExpressions, DefinedNames, ActualWorksheet
-
-### Community 335 - "Path"
-Cohesion: 0.31
-Nodes (4): CustomClipper, ShieldClipper, Path, Svg\Surface\SurfaceInterface
+### Community 335 - "Table"
+Cohesion: 0.13
+Nodes (5): Table, TableCell, Table, TableCell, Table
 
 ### Community 337 - "Exception"
 Cohesion: 0.17
 Nodes (3): Decomposition, Div0Exception, Exception
 
 ### Community 339 - "PDO"
-Cohesion: 0.07
-Nodes (7): AddRollNumberToStudents, AddBusTransportToAttendance, CreateDriverTripTables, PDO, CsvService, PdfService, PDO
+Cohesion: 0.04
+Nodes (14): AddRollNumberToStudents, AddBusTransportToAttendance, CreateDriverTripTables, PDO, PhpOffice\PhpSpreadsheet\Reader\IReader, PhpOffice\PhpSpreadsheet\Writer\IWriter, CsvService, ImportService (+6 more)
 
 ### Community 342 - "guardian_directory_screen.dart"
 Cohesion: 0.14
@@ -1867,21 +1866,21 @@ Nodes (13): attendance_screen.dart, class_attendance_screen.dart, home_screen.da
 Cohesion: 0.14
 Nodes (14): DropdownMenuItem, Map, _attendanceList, build, ClassAttendanceScreen, _ClassAttendanceScreenState, _classes, createState (+6 more)
 
-### Community 345 - "n5"
-Cohesion: 0.14
-Nodes (19): e5(), Ev(), j5(), Ln(), lo(), n5(), PC(), q5() (+11 more)
-
 ### Community 346 - "dompdf/README.md"
 Cohesion: 0.14
 Nodes (13): About Fonts & Character Encoding, Download and install, Easy Installation, Features, Framework Integration, Install with composer, Install with git, Limitations (Known Issues) (+5 more)
 
-### Community 347 - "RowDimension"
-Cohesion: 0.14
-Nodes (3): self, static, RowDimension
+### Community 347 - "ArrayArgumentProcessor"
+Cohesion: 0.17
+Nodes (5): evaluateArrayArguments(), evaluateArrayArgumentsIgnore(), evaluateArrayArgumentsSubset(), evaluateArrayArgumentsSubsetFrom(), ArrayArgumentProcessor
 
 ### Community 348 - "require-dev"
 Cohesion: 0.14
 Nodes (14): require-dev, dealerdirect/phpcodesniffer-composer-installer, dompdf/dompdf, ext-intl, friendsofphp/php-cs-fixer, mitoteam/jpgraph, mpdf/mpdf, phpcompatibility/php-compatibility (+6 more)
+
+### Community 350 - "RowCellIterator"
+Cohesion: 0.08
+Nodes (5): Row, static, RowCellIterator, static, RowIterator
 
 ### Community 352 - "Protection"
 Cohesion: 0.27
@@ -1891,21 +1890,17 @@ Nodes (3): self, static, Protection
 Cohesion: 0.07
 Nodes (4): ConditionalDataBarExtension, self, ConditionalFormattingRuleExtension, self
 
-### Community 354 - "ColumnDimension"
-Cohesion: 0.08
-Nodes (4): ColumnDimension, self, static, Dimension
+### Community 354 - "sort"
+Cohesion: 0.15
+Nodes (15): applyVariantOffset(), compare(), Lh(), otherPrefixes(), parentPrefix(), prefixes(), qh(), QS() (+7 more)
 
 ### Community 355 - "RrdException"
 Cohesion: 0.24
 Nodes (11): rrd_create(), rrd_first(), rrd_graph(), rrd_info(), rrd_lastupdate(), rrd_restore(), rrd_tune(), rrd_update() (+3 more)
 
-### Community 356 - "8.4/sodium.php"
-Cohesion: 0.11
-Nodes (16): sodium_crypto_aead_aegis128l_decrypt(), sodium_crypto_aead_aegis256_decrypt(), sodium_crypto_aead_aes256gcm_decrypt(), sodium_crypto_aead_chacha20poly1305_decrypt(), sodium_crypto_aead_chacha20poly1305_encrypt(), sodium_crypto_aead_chacha20poly1305_ietf_decrypt(), sodium_crypto_aead_chacha20poly1305_ietf_encrypt(), sodium_crypto_aead_xchacha20poly1305_ietf_decrypt() (+8 more)
-
-### Community 357 - "ConditionalFormatValueObject"
-Cohesion: 0.09
-Nodes (4): ConditionalDataBar, self, ConditionalFormatValueObject, self
+### Community 356 - "InvalidRegexPatternRule.php"
+Cohesion: 0.24
+Nodes (5): PhpParser\Node, PHPStan\Rules\Rule, InvalidRegexPatternRule, StaticCall, UnsafeStrictGroupsCallRule
 
 ### Community 358 - "FaceDetector"
 Cohesion: 0.17
@@ -1919,13 +1914,13 @@ Nodes (12): Color get, AppColors, shade350, shade400, shade450, shade500, shade7
 Cohesion: 0.17
 Nodes (9): RegisterGeneratedPlugins(), FlutterPluginRegistry, Foundation, geolocator_apple, package_info_plus, path_provider_foundation, shared_preferences_foundation, RegisterGeneratedPlugins() (+1 more)
 
-### Community 361 - "CellValue"
-Cohesion: 0.27
-Nodes (3): CellValue, Conditional, self
+### Community 361 - "Matrix"
+Cohesion: 0.05
+Nodes (8): Filter, HLookup, Hstack, Lookup, Matrix, RowColumnInformation, Unique, Vstack
 
-### Community 362 - "SplException"
-Cohesion: 0.23
-Nodes (7): class_implements(), class_parents(), class_uses(), spl_autoload_register(), spl_autoload_unregister(), self, SplException
+### Community 362 - "ColumnDimension"
+Cohesion: 0.05
+Nodes (7): ColumnDimension, self, static, Dimension, self, static, RowDimension
 
 ### Community 363 - "zipstream-php/composer.json"
 Cohesion: 0.15
@@ -1935,21 +1930,17 @@ Nodes (12): archive, authors, autoload, psr-4, description, license, name, ZipSt
 Cohesion: 0.19
 Nodes (13): scripts, check, fix, style, versions, php bin/check-phpdoc-types.php, php-cs-fixer fix, php-cs-fixer fix --ansi --dry-run --diff (+5 more)
 
+### Community 367 - ".log"
+Cohesion: 0.02
+Nodes (21): DVar, BesselI, BesselK, Sqrt, Beta, ChiSquared, DistributionValidations, Fisher (+13 more)
+
 ### Community 368 - "base64_decode"
-Cohesion: 0.08
-Nodes (10): PublicEnrollmentController, processUpload(), DSNConfigurator, Service, base64_decode(), get_headers(), get_meta_tags(), parse_url() (+2 more)
-
-### Community 369 - "Win32Window"
-Cohesion: 0.29
-Nodes (7): HWND, Win32Window, child_content_, OnCreate, OnDestroy, quit_on_close_, window_handle_
-
-### Community 370 - "TextValue"
-Cohesion: 0.27
-Nodes (3): Conditional, self, TextValue
+Cohesion: 0.05
+Nodes (10): PublicEnrollmentController, processUpload(), DSNConfigurator, File, base64_decode(), get_headers(), get_meta_tags(), parse_url() (+2 more)
 
 ### Community 372 - "Coordinate"
-Cohesion: 0.03
-Nodes (12): Coordinate, CellReferenceHelper, Worksheet, self, Worksheet, ReferenceHelper, ColumnCellIterator, static (+4 more)
+Cohesion: 0.05
+Nodes (9): Coordinate, CellReferenceHelper, Worksheet, self, Worksheet, ReferenceHelper, ColumnCellIterator, static (+1 more)
 
 ### Community 374 - "2. Salary Deductions & Rules"
 Cohesion: 0.12
@@ -1978,10 +1969,6 @@ Nodes (9): _In_, _In_opt_, wWinMain(), string, vector, wchar_t, CreateAndAttachC
 ### Community 381 - "MessageHandler"
 Cohesion: 0.27
 Nodes (12): HWND, LPARAM, LRESULT, UINT, Win32Window, WPARAM, EnableFullDpiSupportIfAvailable(), GetHandle (+4 more)
-
-### Community 383 - "AdminController"
-Cohesion: 0.08
-Nodes (4): AdminController, Auth, Audit, Resource
 
 ### Community 384 - "HTML5-PHP"
 Cohesion: 0.17
@@ -2023,21 +2010,25 @@ Nodes (9): _In_, _In_opt_, wWinMain(), string, vector, wchar_t, CreateAndAttachC
 Cohesion: 0.27
 Nodes (12): HWND, LPARAM, LRESULT, UINT, Win32Window, WPARAM, EnableFullDpiSupportIfAvailable(), GetHandle (+4 more)
 
+### Community 395 - "TextValue"
+Cohesion: 0.27
+Nodes (3): Conditional, self, TextValue
+
 ### Community 396 - "FaceMatcher"
 Cohesion: 0.22
 Nodes (6): FaceMatcher, ndarray, Populates or updates in-memory embedding cache., Appends a new embedding vector to the in-memory cache for an employee., Removes employee from cache upon deletion., Calculates cosine similarity against all cached embeddings. Returns…
+
+### Community 397 - "AdminController"
+Cohesion: 0.11
+Nodes (3): AdminController, Auth, Audit
 
 ### Community 399 - "splash_screen.dart"
 Cohesion: 0.20
 Nodes (10): dart:async, build, _checkAuthAndNavigate, createState, getClip, initState, shouldReclip, SplashScreen (+2 more)
 
-### Community 400 - "StyleMerger"
-Cohesion: 0.20
-Nodes (3): MergedCellStyle, Border, StyleMerger
-
-### Community 401 - "_t"
-Cohesion: 0.19
-Nodes (13): ax(), ea(), lx(), negative(), qe(), sx(), _t(), ta() (+5 more)
+### Community 400 - "GettextException"
+Cohesion: 0.32
+Nodes (4): bindtextdomain(), bindtextdomain(), GettextException, self
 
 ### Community 402 - "driver_app/web/manifest.json"
 Cohesion: 0.18
@@ -2051,21 +2042,13 @@ Nodes (10): FormState, build, createState, _emailController, _formKey, _handleLo
 Cohesion: 0.18
 Nodes (10): CSV Format, Default Login, Features, Main Routing Pages, Notes, Required Folder Structure, Setup on XAMPP, SMTP / PHPMailer (+2 more)
 
-### Community 405 - "ConditionalStyles.php"
-Cohesion: 0.29
-Nodes (3): PhpOffice\PhpSpreadsheet\Style\ConditionalFormatting\IconSetValues, PageSettings, stdClass
+### Community 405 - "MD5"
+Cohesion: 0.06
+Nodes (7): ITextElement, MD5, static, Run, self, TextElement, ProtectedRange
 
-### Community 406 - "GettextException"
-Cohesion: 0.32
-Nodes (4): bindtextdomain(), bindtextdomain(), GettextException, self
-
-### Community 408 - "State"
-Cohesion: 0.18
-Nodes (12): _LoginScreenState, build, _buildContactTile, _buildTipCard, createState, SafetyCenterScreen, _SafetyCenterScreenState, _shareLocation (+4 more)
-
-### Community 412 - "IWriter.php"
-Cohesion: 0.22
-Nodes (5): __construct(), self, setIncludeCharts(), setPreCalculateFormulas(), setUseDiskCaching()
+### Community 408 - "ConditionalDataBar"
+Cohesion: 0.10
+Nodes (5): PhpOffice\PhpSpreadsheet\Style\ConditionalFormatting\IconSetValues, ConditionalStyles, Conditional, ConditionalDataBar, self
 
 ### Community 414 - "ComException"
 Cohesion: 0.29
@@ -2083,6 +2066,10 @@ Nodes (10): background_color, description, display, icons, name, orientation, pr
 Cohesion: 0.20
 Nodes (9): 1. Install Dependencies, 2. Run Database Migration, 3. Start FastAPI Service, ⚙️ Configuration (`backend/config.py` / `.env`), 🚀 How to Run Backend locally, 🛡️ Production Deployment (2 vCPU / 8GB VPS), 📌 System Features, Web-Based Face Recognition Attendance System — Python FastAPI Backend (+1 more)
 
+### Community 419 - "FrameTree"
+Cohesion: 0.08
+Nodes (6): DOMDocument, IteratorAggregate, FrameTree, FrameTreeIterator, PageSettings, Worksheet
+
 ### Community 420 - "driver_app/ios/RunnerTests/RunnerTests.swift"
 Cohesion: 0.29
 Nodes (5): Flutter, AppDelegate, RunnerTests, UIKit, XCTest
@@ -2091,17 +2078,25 @@ Nodes (5): Flutter, AppDelegate, RunnerTests, UIKit, XCTest
 Cohesion: 0.20
 Nodes (8): AppDelegate, AppDelegate, Bool, NSApplication, FlutterAppDelegate, AppDelegate, Bool, NSApplication
 
-### Community 422 - "autoload-dev"
-Cohesion: 0.67
-Nodes (3): autoload-dev, psr-4, ZipStream\\Test\\
+### Community 422 - "CellValue"
+Cohesion: 0.27
+Nodes (3): CellValue, Conditional, self
 
 ### Community 424 - "phpspreadsheet/composer.json"
 Cohesion: 0.20
 Nodes (9): authors, autoload, psr-4, description, homepage, license, name, PhpOffice\\PhpSpreadsheet\\ (+1 more)
 
-### Community 429 - "1.6.0 - 2019-01-02"
+### Community 426 - "IWriter.php"
+Cohesion: 0.22
+Nodes (5): __construct(), self, setIncludeCharts(), setPreCalculateFormulas(), setUseDiskCaching()
+
+### Community 427 - "1.9.0 - 2019-08-17"
 Cohesion: 0.50
-Nodes (4): 1.6.0 - 2019-01-02, Added, Changed, Fixed
+Nodes (4): 1.9.0 - 2019-08-17, Added, Changed, Fixed
+
+### Community 428 - "OLE"
+Cohesion: 0.07
+Nodes (4): OLE, File, PPS, Xls
 
 ### Community 430 - "CacheInterface.php"
 Cohesion: 0.22
@@ -2110,10 +2105,6 @@ Nodes (3): DateInterval, set(), setMultiple()
 ### Community 432 - "Bzip2Exception"
 Cohesion: 0.31
 Nodes (7): bzclose(), bzflush(), bzopen(), bzread(), bzwrite(), Bzip2Exception, self
-
-### Community 433 - "MD5"
-Cohesion: 0.08
-Nodes (6): FeeController, FeeInvoice, stream_csv_download(), MD5, ProtectedRange, fputcsv()
 
 ### Community 434 - "MailparseException"
 Cohesion: 0.31
@@ -2135,10 +2126,6 @@ Nodes (8): authors, description, funding, license, minimum-stability, name, pref
 Cohesion: 0.22
 Nodes (9): keywords, Excel, gnumeric, ods, OpenXML, PHP, spreadsheet, xls (+1 more)
 
-### Community 443 - "Win32Window"
-Cohesion: 0.29
-Nodes (7): HWND, Win32Window, child_content_, OnCreate, OnDestroy, quit_on_close_, window_handle_
-
 ### Community 444 - "attendance_service.py"
 Cohesion: 0.50
 Nodes (3): ndarray, Validates anti-spoofing / liveness criteria: - Minimum face bounding box…, verify_face_liveness()
@@ -2158,10 +2145,6 @@ Nodes (8): Automated refactoring, Contributing, Installation, Learn more, Perfor
 ### Community 449 - "PSNF Secure Digital Resource Management System"
 Cohesion: 0.22
 Nodes (8): Default Credentials, Important Notes, Main Routes, Next Enhancements, PSNF Secure Digital Resource Management System, Quick Start (XAMPP), Security Features Included, Stack
-
-### Community 450 - "get_history"
-Cohesion: 0.40
-Nodes (5): get_history(), list_registered_employees(), get, GET /api/attendance/history — recent check-in logs., GET /api/employees/list Returns ERP users who have at least one face embedding…
 
 ### Community 451 - "PSNF Dashboard Workflow & Access Control Specifications"
 Cohesion: 0.22
@@ -2187,9 +2170,17 @@ Nodes (8): 2025-02-08 - 4.0.0, Added, BREAKING CHANGES, Changed, Deprecated, Fix
 Cohesion: 0.25
 Nodes (7): Documentation, Installation, License, Patreon, PHP Version Support, PHPExcel vs PhpSpreadsheet ?, PhpSpreadsheet
 
-### Community 463 - "Shape"
+### Community 459 - "get_history"
+Cohesion: 0.40
+Nodes (5): get_history(), list_registered_employees(), get, GET /api/attendance/history — recent check-in logs., GET /api/employees/list Returns ERP users who have at least one face embedding…
+
+### Community 462 - "auth_id"
+Cohesion: 0.04
+Nodes (23): AdmissionsController, GuardianController, MedicalController, StudentController, EmergencyContact, Guardian, Student, StudentDocument (+15 more)
+
+### Community 463 - "preg_match_all"
 Cohesion: 0.07
-Nodes (8): Circle, Ellipse, Line, Polygon, Polyline, Rect, Shape, Text
+Nodes (10): Polygon, Polyline, AddressHelper, DataValidations, preg_grep(), preg_match_all(), preg_replace_callback(), preg_replace_callback_array() (+2 more)
 
 ### Community 465 - "notification.dart"
 Cohesion: 0.29
@@ -2203,9 +2194,9 @@ Nodes (5): PluginRegistry, RegisterPlugins(), OnCreate, GetClientArea, SetChildC
 Cohesion: 0.06
 Nodes (6): CellStyleAssessor, self, static, Style, self, TableDxfsStyle
 
-### Community 470 - "jw"
-Cohesion: 0.22
-Nodes (4): cw(), Ew(), jw(), ww()
+### Community 470 - ".strToUpper"
+Cohesion: 0.03
+Nodes (9): StaffWorkspaceController, SubjectsController, EmployeeSyncService, is_post_request(), normalize_hex_color(), CalculationBase, CalculationLocale, FunctionArray (+1 more)
 
 ### Community 472 - "The Parser Model"
 Cohesion: 0.29
@@ -2243,17 +2234,13 @@ Nodes (7): Added, Changed, Deprecated, Fixed, Moved, Removed, TBD - 5.7.0
 Cohesion: 0.29
 Nodes (7): dealerdirect/phpcodesniffer-composer-installer, config, allow-plugins, platform, process-timeout, sort-packages, php
 
-### Community 483 - "Sh"
-Cohesion: 0.70
-Nodes (5): Ah(), g_(), jo(), Sh(), y_()
+### Community 484 - "1.0.0 - 2017-12-25"
+Cohesion: 0.50
+Nodes (4): 1.0.0 - 2017-12-25, Added, BREAKING CHANGE, Fixed
 
-### Community 484 - "LzfException"
-Cohesion: 0.38
-Nodes (4): lzf_compress(), lzf_decompress(), LzfException, self
-
-### Community 485 - "OpcacheException"
-Cohesion: 0.38
-Nodes (4): opcache_compile_file(), opcache_get_status(), OpcacheException, self
+### Community 485 - "1.3.0 - 2018-06-10"
+Cohesion: 0.67
+Nodes (3): 1.3.0 - 2018-06-10, Added, Fixed
 
 ### Community 486 - "x.y.z"
 Cohesion: 0.29
@@ -2268,12 +2255,12 @@ Cohesion: 0.33
 Nodes (5): PluginRegistry, RegisterPlugins(), OnCreate, GetClientArea, SetChildContent
 
 ### Community 489 - "e"
-Cohesion: 0.04
-Nodes (62): closeVoiceSettingsModal(), initIndexedDB(), initVoiceSettings(), openVoiceSettingsModal(), saveVoiceSettings(), saveVoiceSettingsToDB(), ab(), bd() (+54 more)
+Cohesion: 0.05
+Nodes (54): closeVoiceSettingsModal(), initIndexedDB(), initVoiceSettings(), openVoiceSettingsModal(), saveVoiceSettings(), saveVoiceSettingsToDB(), ab(), c4() (+46 more)
 
-### Community 490 - "UopzException"
-Cohesion: 0.38
-Nodes (4): uopz_extend(), uopz_implement(), self, UopzException
+### Community 490 - "FileinfoException"
+Cohesion: 0.36
+Nodes (5): finfo, finfo_close(), finfo_open(), FileinfoException, self
 
 ### Community 522 - "driver_app/macos/RunnerTests/RunnerTests.swift"
 Cohesion: 0.33
@@ -2387,6 +2374,10 @@ Nodes (6): 2026-01-10 - 5.4.0, Added, Changed, Deprecated, Fixed, Moved
 Cohesion: 0.33
 Nodes (6): suggest, dompdf/dompdf, ext-intl, mitoteam/jpgraph, mpdf/mpdf, tecnickcom/tcpdf
 
+### Community 552 - "Blanks"
+Cohesion: 0.27
+Nodes (3): Blanks, Conditional, self
+
 ### Community 553 - "9.0.0: New features, deprecation removals and bug fixes"
 Cohesion: 0.33
 Nodes (6): 9.0.0: New features, deprecation removals and bug fixes, Added, Changed, Documentation, Fixed, Removed
@@ -2447,17 +2438,9 @@ Nodes (4): Alumni, Contributors, Current Team, Thanks
 Cohesion: 0.40
 Nodes (4): Base font information, Create a font subset, Font Metrics Generation, PHP Font Lib
 
-### Community 569 - "ITextElement.php"
-Cohesion: 0.33
-Nodes (3): getFont(), self, setText()
-
 ### Community 570 - "php-svg-lib/AUTHORS.md"
 Cohesion: 0.40
 Nodes (4): Alumni, Contributors, Current Team, Thanks
-
-### Community 571 - "FunchandException"
-Cohesion: 0.40
-Nodes (3): register_tick_function(), FunchandException, self
 
 ### Community 572 - "require"
 Cohesion: 0.40
@@ -2470,6 +2453,14 @@ Nodes (5): 1.0.0-beta2 - 2017-11-26, Added, BREAKING CHANGE, Changed, Fixed
 ### Community 574 - "psr-4"
 Cohesion: 0.40
 Nodes (5): autoload-dev, psr-4, PhpOffice\\PhpSpreadsheetBenchmarks\\, PhpOffice\\PhpSpreadsheetInfra\\, PhpOffice\\PhpSpreadsheetTests\\
+
+### Community 575 - "Errors"
+Cohesion: 0.27
+Nodes (3): Errors, Conditional, self
+
+### Community 579 - "SsdeepException"
+Cohesion: 0.36
+Nodes (5): ssdeep_fuzzy_compare(), ssdeep_fuzzy_hash(), ssdeep_fuzzy_hash_filename(), self, SsdeepException
 
 ### Community 580 - "8.7.0: Add support for PHP 8.4"
 Cohesion: 0.40
@@ -2499,9 +2490,17 @@ Nodes (5): fix:php, @fix:composer:normalize, @fix:php:cs-fixer, @fix:php:rector,
 Cohesion: 0.40
 Nodes (5): require-dev, php-parallel-lint/php-parallel-lint, phpstan/phpstan, phpunit/phpunit, squizlabs/php_codesniffer
 
-### Community 589 - "VarException"
-Cohesion: 0.40
-Nodes (3): settype(), self, VarException
+### Community 589 - "Win32Window"
+Cohesion: 0.29
+Nodes (7): HWND, Win32Window, child_content_, OnCreate, OnDestroy, quit_on_close_, window_handle_
+
+### Community 592 - "FilterException"
+Cohesion: 0.38
+Nodes (4): filter_input_array(), filter_var_array(), FilterException, self
+
+### Community 595 - "LzfException"
+Cohesion: 0.38
+Nodes (4): lzf_compress(), lzf_decompress(), LzfException, self
 
 ### Community 596 - "require"
 Cohesion: 0.50
@@ -2515,10 +2514,6 @@ Nodes (4): test, @test:formatted, @test:lint, @test:unit
 Cohesion: 0.50
 Nodes (4): dealerdirect/phpcodesniffer-composer-installer, config, allow-plugins, lock
 
-### Community 600 - "1.0.0 - 2017-12-25"
-Cohesion: 0.50
-Nodes (4): 1.0.0 - 2017-12-25, Added, BREAKING CHANGE, Fixed
-
 ### Community 601 - "1.10.0 - 2019-11-18"
 Cohesion: 0.50
 Nodes (4): 1.10.0 - 2019-11-18, Added, Changed, Fixed
@@ -2531,21 +2526,21 @@ Nodes (4): 1.14.1 - 2020-07-19, Added, Changed, Fixed
 Cohesion: 0.50
 Nodes (4): 1.5.1 - 2018-11-20, Added, Fixed, Security
 
-### Community 604 - "1.8.0 - 2019-07-01"
-Cohesion: 0.50
-Nodes (4): 1.8.0 - 2019-07-01, Added, Fixed, Security Fix (CVE-2019-12331)
+### Community 604 - "Win32Window"
+Cohesion: 0.29
+Nodes (7): HWND, Win32Window, child_content_, OnCreate, OnDestroy, quit_on_close_, window_handle_
 
-### Community 605 - "1.9.0 - 2019-08-17"
-Cohesion: 0.50
-Nodes (4): 1.9.0 - 2019-08-17, Added, Changed, Fixed
-
-### Community 606 - "require"
-Cohesion: 0.50
-Nodes (4): require, ext-iconv, php, thecodingmachine/safe
+### Community 606 - "jo"
+Cohesion: 0.05
+Nodes (42): $2(), bw(), cw(), Df(), dm(), dn(), e2(), Ew() (+34 more)
 
 ### Community 607 - "2025-03-02 - 4.1.0"
 Cohesion: 0.50
 Nodes (4): 2025-03-02 - 4.1.0, Added, Changed, Fixed
+
+### Community 608 - "WizardInterface.php"
+Cohesion: 0.20
+Nodes (5): fromConditional(), getConditional(), getStyle(), self, setStyle()
 
 ### Community 609 - "2025-05-25 - 4.3.0"
 Cohesion: 0.50
@@ -2591,10 +2586,6 @@ Nodes (3): Any, Bool, UIApplication
 Cohesion: 0.67
 Nodes (3): Optional JWT token validator dependency for secure routes., verify_jwt_token(), HTTPAuthorizationCredentials
 
-### Community 636 - "keywords"
-Cohesion: 0.67
-Nodes (3): keywords, stream, zip
-
 ### Community 643 - "autoload"
 Cohesion: 0.67
 Nodes (3): autoload, psr-4, PHPMailer\\PHPMailer\\
@@ -2603,9 +2594,13 @@ Nodes (3): autoload, psr-4, PHPMailer\\PHPMailer\\
 Cohesion: 0.67
 Nodes (3): autoload-dev, psr-4, PHPMailer\\Test\\
 
-### Community 656 - "1.5.0 - 2018-10-21"
-Cohesion: 0.67
-Nodes (3): 1.5.0 - 2018-10-21, Added, Fixed
+### Community 648 - "Duplicates"
+Cohesion: 0.28
+Nodes (3): Duplicates, Conditional, self
+
+### Community 656 - "Expression"
+Cohesion: 0.33
+Nodes (3): Expression, Conditional, self
 
 ### Community 660 - "8.5.0"
 Cohesion: 0.67
@@ -2631,64 +2626,104 @@ Nodes (3): 9.4.0: Deprecations and bugfixes, Deprecated, Fixed
 Cohesion: 0.67
 Nodes (3): check, @check:dynamic, @check:static
 
-### Community 676 - "2026-02-28 - 5.5.0"
-Cohesion: 0.50
-Nodes (4): 2026-02-28 - 5.5.0, Added, Deprecated, Fixed
-
 ### Community 681 - "2025-01-11 - 3.8.0"
 Cohesion: 0.67
 Nodes (3): 2025-01-11 - 3.8.0, Added, Fixed
 
-### Community 685 - "1.12.0 - 2020-04-27"
+### Community 738 - "ActivityLog"
+Cohesion: 0.07
+Nodes (10): AuthController, CertificateController, FeeController, ActivityLog, Certificate, FeeInvoice, AuthService, dashboard_url() (+2 more)
+
+### Community 739 - "ErrorfuncException"
+Cohesion: 0.32
+Nodes (4): error_log(), error_log(), ErrorfuncException, self
+
+### Community 744 - "MysqliException"
+Cohesion: 0.29
+Nodes (3): mysqli_get_client_stats(), MysqliException, self
+
+### Community 746 - "Util.php"
+Cohesion: 0.48
+Nodes (6): cmdExists(), dumpZipContents(), getRecursiveFileList(), getTmpDir(), validateAndExtractZip(), zipArchiveOpenErrorCodeName()
+
+### Community 747 - "ITextElement.php"
+Cohesion: 0.33
+Nodes (3): getFont(), self, setText()
+
+### Community 748 - "UopzException"
+Cohesion: 0.38
+Nodes (4): uopz_extend(), uopz_implement(), self, UopzException
+
+### Community 759 - "1.12.0 - 2020-04-27"
 Cohesion: 0.67
 Nodes (3): 1.12.0 - 2020-04-27, Added, Fixed
 
-### Community 686 - "1.14.0 - 2020-06-29"
+### Community 766 - "1.6.0 - 2019-01-02"
+Cohesion: 0.50
+Nodes (4): 1.6.0 - 2019-01-02, Added, Changed, Fixed
+
+### Community 767 - "2026-02-28 - 5.5.0"
+Cohesion: 0.50
+Nodes (4): 2026-02-28 - 5.5.0, Added, Deprecated, Fixed
+
+### Community 768 - "1.14.0 - 2020-06-29"
 Cohesion: 0.67
 Nodes (3): 1.14.0 - 2020-06-29, Added, Fixed
 
-### Community 687 - "1.2.0 - 2018-03-04"
+### Community 769 - "autoload-dev"
 Cohesion: 0.67
-Nodes (3): 1.2.0 - 2018-03-04, Added, Fixed
+Nodes (3): autoload-dev, psr-4, ZipStream\\Test\\
 
-### Community 733 - "1.3.0 - 2018-06-10"
-Cohesion: 0.67
-Nodes (3): 1.3.0 - 2018-06-10, Added, Fixed
+### Community 770 - "1.8.0 - 2019-07-01"
+Cohesion: 0.50
+Nodes (4): 1.8.0 - 2019-07-01, Added, Fixed, Security Fix (CVE-2019-12331)
 
-### Community 734 - "2024-12-26 - 3.7.0"
+### Community 771 - "2024-12-26 - 3.7.0"
 Cohesion: 0.67
 Nodes (3): 2024-12-26 - 3.7.0, Deprecated, Fixed
 
-### Community 744 - "Size"
-Cohesion: 0.16
-Nodes (3): IReadFilter, Size, DefaultReadFilter
-
-### Community 751 - ".application"
+### Community 774 - "require"
 Cohesion: 0.50
-Nodes (3): Any, Bool, UIApplication
+Nodes (4): require, ext-iconv, php, thecodingmachine/safe
 
-### Community 772 - "NumberBase"
-Cohesion: 0.11
-Nodes (4): Number, NumberBase, Percentage, Scientific
+### Community 779 - "Sh"
+Cohesion: 0.70
+Nodes (5): Ah(), g_(), jo(), Sh(), y_()
+
+### Community 1136 - "2025-04-16 - 4.2.0"
+Cohesion: 0.50
+Nodes (4): 2025-04-16 - 4.2.0, Added, Changed, Fixed
+
+### Community 1137 - "keywords"
+Cohesion: 0.67
+Nodes (3): keywords, stream, zip
+
+### Community 1178 - "1.2.0 - 2018-03-04"
+Cohesion: 0.67
+Nodes (3): 1.2.0 - 2018-03-04, Added, Fixed
+
+### Community 1180 - "1.5.0 - 2018-10-21"
+Cohesion: 0.67
+Nodes (3): 1.5.0 - 2018-10-21, Added, Fixed
 
 ### Community 1214 - "2025-11-24 - 5.3.0"
 Cohesion: 0.50
 Nodes (4): 2025-11-24 - 5.3.0, Added, Deprecated, Fixed
 
 ## Knowledge Gaps
-- **1570 isolated node(s):** `themeNotifier`, `main`, `build`, `NotificationType`, `NotificationItem` (+1565 more)
+- **1582 isolated node(s):** `themeNotifier`, `main`, `build`, `NotificationType`, `NotificationItem` (+1577 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **230 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **250 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `PcreException` connect `preg_match_all` to `StringHelper.php`, `.trim`, `preg_match`, `special_cases.php`, `SafeExceptionInterface`?**
-  _High betweenness centrality (0.101) - this node is a cross-community bridge._
-- **Why does `preg_match()` connect `preg_match` to `.implode`, `Migration`, `StringHelper.php`, `Functions`, `SimpleXMLElement`, `Declaration`, `Spreadsheet`, `.strtolower`, `PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled`, `.encryptInit`, `Font`, `CPdf`, `PHPMailer`, `Validator`, `StringHelper`, `CSSList`, `Setting`, `.log`, `.substr`, `Dompdf`, `.trim`, `Table`, `CurrencyBase`, `Delimiter`, `Value`, `Tokenizer`, `ExcelError`, `XMLWriter`, `BaseReader`, `Iterator`, `ChartColor`, `AutoFilter`, `Color`, `Comment`, `preg_match_all`, `.strToUpper`, `CSSString`, `Helpers`, `Html`, `Csv`, `StaffController`, `AttributeTranslator`, `Path`, `DefinedName`, `Title`, `ParserState`, `PDO`, `.strlen`, `Html`, `Style`, `CompoundSelector`, `Selector`, `Size`, `FontMetrics`, `Complex`, `SMTP`, `CellValue`, `Calculation`, `base64_decode`, `lib/helpers.php`, `TextValue`, `Coordinate`, `ResourceStream`, `Cell`, `DataSeriesValues`?**
-  _High betweenness centrality (0.078) - this node is a cross-community bridge._
-- **Why does `Worksheet` connect `Worksheet` to `StringHelper.php`, `SimpleXMLElement`, `Reader/Xlsx/Chart.php`, `Spreadsheet`, `DataValidation`, `StringHelper`, `Font`, `ConditionalStyles`, `PageSetup`, `Preg`, `StyleMerger`, `Border`, `preg_match`, `.log`, `DataSeries`, `ConditionalStyles.php`, `.substr`, `Html`, `Pane`, `CellMatcher`, `Xlsx`, `ColumnAndRowAttributes`, `Chart`, `ExcelError`, `AutoFilter`, `Style`, `SheetView`, `XMLWriter`, `Cells`, `Iterator`, `AutoFilter`, `Comment`, `Color`, `HeaderFooter`, `Hyperlink`, `CellAddress`, `RowIterator`, `BaseDrawing`, `Supervisor`, `DefinedName`, `PlotArea`, `Sort`, `Style`, `Html`, `Table`, `Xlsx`, `Shadow`, `RowDimension`, `Column`, `ColumnDimension`, `Ods`, `SheetViews`, `Calculation`, `Conditional`, `PageMargins`, `Coordinate`, `Column`, `Protection`, `Cell`, `SheetViewOptions`?**
-  _High betweenness centrality (0.053) - this node is a cross-community bridge._
+- **Why does `PcreException` connect `preg_match_all` to `StringHelper.php`, `.trim`, `preg_match`, `preg_replace`, `SafeExceptionInterface`?**
+  _High betweenness centrality (0.080) - this node is a cross-community bridge._
+- **Why does `preg_match()` connect `preg_match` to `StringHelper.php`, `Declaration`, `.strtolower`, `PhpOffice\PhpSpreadsheet\Calculation\ArrayEnabled`, `.implode`, `Font`, `Router`, `TextValue`, `Preg`, `Cpdf`, `CSSList`, `Setting`, `StructuredReference`, `Color`, `.substr`, `Selector`, `File`, `.floor`, `Controller`, `Table`, `Dompdf`, `FrameTree`, `.trim`, `CellValue`, `NumberBase`, `Chart`, `StringHelper`, `Tokenizer`, `XMLWriter`, `Value`, `Slk`, `AutoFilter`, `ChartColor`, `FormulaToken`, `Xml`, `CurrencyBase`, `CSSString`, `Html`, `.strlen`, `Csv`, `StaffController`, `AttributeTranslator`, `Table`, `preg_match_all`, `ParserState`, `ExcelError`, `PDO`, `preg_replace`, `Html`, `.strToUpper`, `Helpers`, `Style`, `Validator`, `Xlsx`, `Offset`, `Size`, `CompoundSelector`, `FontMetrics`, `Util.php`, `Complex`, `SMTP`, `Calculation`, `.log`, `base64_decode`, `CPdf`, `ReportCardController`, `Coordinate`, `ResourceStream`, `websocket_server.php`, `XmlScanner`, `Cell`, `DataSeriesValues`, `Style`?**
+  _High betweenness centrality (0.067) - this node is a cross-community bridge._
+- **Why does `Spreadsheet` connect `Spreadsheet` to `stdClass`, `StringHelper.php`, `Worksheet`, `ContentTypes`, `.strtolower`, `Parser`, `Preg`, `RichDataDrawing`, `NamedExpressions`, `Theme`, `Html`, `SimpleXMLElement`, `.substr`, `IReader.php`, `Table`, `Xlsx`, `FrameTree`, `IWriter.php`, `Chart`, `OLE`, `Security`, `BaseReader`, `Slk`, `Csv`, `DefinedNames`, `Tcpdf`, `Iterator`, `Xml`, `Workbook`, `Csv`, `Workbook`, `preg_match_all`, `PDO`, `Style`, `Html`, `Drawing`, `Xlsx`, `Shadow`, `Gnumeric`, `Rels`, `Properties`, `Ods`, `Calculation`, `.log`, `Style`, `Coordinate`, `Pdf`, `AutoFilters`, `Cell`, `Content`?**
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
 - **Are the 335 inferred relationships involving `ExcelError` (e.g. with `.calculateCellValue()` and `._calculateFormulaValue()`) actually correct?**
   _`ExcelError` has 335 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 242 inferred relationships involving `Coordinate` (e.g. with `.evaluateDefinedName()` and `.extractCellRange()`) actually correct?**
@@ -2696,4 +2731,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 260 inferred relationships involving `ImageException` (e.g. with `getimagesize()` and `image_type_to_extension()`) actually correct?**
   _`ImageException` has 260 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `themeNotifier`, `main`, `build` to the rest of the system?**
-  _1570 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1582 weakly-connected nodes found - possible documentation gaps or missing edges._

@@ -31,12 +31,6 @@ if ($selectedConferenceId > 0) {
     $certificateTypes = $certificateTypesStmt->fetchAll();
 }
 
-$contactName = trim((string) ($_POST['contact_name'] ?? ''));
-$contactEmail = trim((string) ($_POST['contact_email'] ?? ''));
-$contactMobileNumber = trim((string) ($_POST['mobile_number'] ?? ''));
-$contactCategory = trim((string) ($_POST['contact_category'] ?? ''));
-$contactMessage = trim((string) ($_POST['contact_message'] ?? ''));
-
 $extractNameList = null;
 $extractNameList = static function ($value) use (&$extractNameList): array {
     if (is_array($value)) {
@@ -294,109 +288,6 @@ if (is_post_request()) {
             }
         }
     }
-
-    if ($action === 'contact_submit') {
-        if ($contactName === '' || $contactEmail === '' || $contactMobileNumber === '' || $contactCategory === '' || $contactMessage === '') {
-            $pageAlerts[] = ['type' => 'error', 'message' => 'Please fill Name, Email, Mobile Number, Category, and Message in the contact form.'];
-        } elseif (!filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
-            $pageAlerts[] = ['type' => 'error', 'message' => 'Please enter a valid email address.'];
-        } elseif (preg_match('/^[0-9+\-\s()]{7,20}$/', $contactMobileNumber) !== 1) {
-            $pageAlerts[] = ['type' => 'error', 'message' => 'Please enter a valid mobile number.'];
-        } else {
-            try {
-                $insert = db()->prepare(
-                    'INSERT INTO contact_messages (conference_id, contact_name, contact_email, mobile_number, category, message_text, created_at)
-                     VALUES (:conference_id, :contact_name, :contact_email, :mobile_number, :category, :message_text, NOW())'
-                );
-                $insert->execute([
-                    'conference_id' => $selectedConferenceId > 0 ? $selectedConferenceId : null,
-                    'contact_name' => $contactName,
-                    'contact_email' => $contactEmail,
-                    'mobile_number' => $contactMobileNumber,
-                    'category' => $contactCategory,
-                    'message_text' => $contactMessage,
-                ]);
-
-                $pageAlerts[] = ['type' => 'success', 'message' => 'Thank you. Your message has been submitted.'];
-                // Preserve submitted values for email sending
-                $submittedName = $contactName;
-                $submittedEmail = $contactEmail;
-                $submittedMobile = $contactMobileNumber;
-                $submittedCategory = $contactCategory;
-                $submittedMessage = $contactMessage;
-                $contactName = '';
-                $contactEmail = '';
-                $contactMobileNumber = '';
-                $contactCategory = '';
-                $contactMessage = '';
-                // Send notification email to site owner via PHPMailer (EmailService)
-                try {
-                    $to = 'upparactechnology@gmail.com';
-                    $subject = 'Contact form: ' . ($submittedName !== '' ? $submittedName : 'No name provided');
-                    $bodyLines = [];
-                    $bodyLines[] = 'Name: ' . $submittedName;
-                    $bodyLines[] = 'Email: ' . $submittedEmail;
-                    $bodyLines[] = 'Mobile: ' . $submittedMobile;
-                    $bodyLines[] = 'Category: ' . $submittedCategory;
-                    $bodyLines[] = '';
-                    $bodyLines[] = 'Message:';
-                    $bodyLines[] = $submittedMessage;
-                    $body = implode("\r\n", $bodyLines);
-
-                    $emailService = new \App\Services\EmailService(db());
-                    $mailer = $emailService->createMailer();
-
-                    // Prepare mail
-                    $mailer->clearAddresses();
-                    $mailer->clearAttachments();
-                    $mailer->addAddress($to);
-                    $mailer->Subject = $subject;
-                    $mailer->isHTML(false);
-                    $mailer->Body = $body;
-
-                    // Set Reply-To to the user who submitted the form
-                    if ($submittedEmail !== '') {
-                        try {
-                            $mailer->addReplyTo($submittedEmail, $submittedName ?: '');
-                        } catch (\Throwable $ignored) {
-                        }
-                    }
-
-                    $sentOk = false;
-                    try {
-                        $mailer->send();
-                        $sentOk = true;
-                    } catch (\Throwable $e) {
-                        $sentOk = false;
-                        $err = $e->getMessage();
-                    }
-
-                    $logDir = APP_ROOT . '/storage';
-                    if (!is_dir($logDir)) {
-                        @mkdir($logDir, 0777, true);
-                    }
-                    $logFile = $logDir . '/contact_email.log';
-                    $entry = [
-                        'at' => date('Y-m-d H:i:s'),
-                        'to' => $to,
-                        'from' => $mailer->From ?? setting('smtp_from_email', ''),
-                        'contact_email' => $submittedEmail,
-                        'sent' => $sentOk,
-                        'error' => $sentOk ? null : ($err ?? 'unknown'),
-                    ];
-                    @file_put_contents($logFile, json_encode($entry, JSON_UNESCAPED_SLASHES) . PHP_EOL, FILE_APPEND | LOCK_EX);
-                } catch (\Throwable $e) {
-                    $logDir = APP_ROOT . '/storage';
-                    if (!is_dir($logDir)) {
-                        @mkdir($logDir, 0777, true);
-                    }
-                    @file_put_contents($logDir . '/contact_email_error.log', '[' . date('Y-m-d H:i:s') . '] ' . $e->getMessage() . PHP_EOL, FILE_APPEND | LOCK_EX);
-                }
-            } catch (\Throwable $e) {
-                $pageAlerts[] = ['type' => 'error', 'message' => 'Unable to submit message right now. Please try again.'];
-            }
-        }
-    }
 }
 
 render_view('download_certificate.php', [
@@ -405,9 +296,4 @@ render_view('download_certificate.php', [
     'conference_id' => $selectedConferenceId,
     'certificateTypes' => $certificateTypes,
     'pageAlerts' => $pageAlerts,
-    'contactName' => $contactName,
-    'contactEmail' => $contactEmail,
-    'contactMobileNumber' => $contactMobileNumber,
-    'contactCategory' => $contactCategory,
-    'contactMessage' => $contactMessage,
 ]);

@@ -1,11 +1,9 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from recognition.detector import FaceDetector
+from recognition.model_manager import model_manager
 from utils.image_utils import base64_to_cv2
 import cv2
-
-# We will import detector from app directly inside the route to avoid circular imports, 
-# or we can rely on a global. Let's just do it cleanly.
 
 router = APIRouter()
 
@@ -16,7 +14,8 @@ class DetectFrameRequest(BaseModel):
 def detect_frame(req: DetectFrameRequest):
     """
     Real-time face detection endpoint for frontend feedback.
-    Returns blur, bounding box, pitch, and yaw.
+    Uses Haar cascade when InsightFace model not loaded (lightweight).
+    Uses InsightFace when model is loaded (accurate with pitch/yaw).
     """
     from app import detector
     try:
@@ -28,7 +27,12 @@ def detect_frame(req: DetectFrameRequest):
             scale = 640 / max(h, w)
             img_bgr = cv2.resize(img_bgr, (int(w * scale), int(h * scale)))
 
-        det_res = detector.validate_and_detect(img_bgr)
+        # Tier 1: Use Haar cascade if InsightFace model not loaded (saves RAM)
+        # Tier 2: Use InsightFace if model is already loaded (accurate pitch/yaw)
+        if model_manager.is_loaded():
+            det_res = detector.validate_and_detect(img_bgr)
+        else:
+            det_res = detector.detect_any_face(img_bgr)
 
         return {
             "success": True,

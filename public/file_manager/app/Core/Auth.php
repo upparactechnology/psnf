@@ -4,8 +4,12 @@ namespace App\Core;
 class Auth {
   public static function guardAdmin(): void {
     if (empty($_SESSION['admin_id'])) {
+      // If ERP-bridged staff user, redirect to staff portal
+      if (!empty($_SESSION['staff_id']) && !empty($_SESSION['erp_bridged'])) {
+        header('Location: /staff/dashboard');
+        exit;
+      }
       // Redirect to PSNF ERP login instead of local login
-      // (auto-login bridge in index.php should have populated admin_id from ERP session)
       header('Location: /psnf/public/login?redirect=file_manager');
       exit;
     }

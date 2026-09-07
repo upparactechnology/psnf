@@ -15,6 +15,17 @@
                 Request Leave
             </button>
             <form method="GET" class="flex gap-2">
+            <!-- Academic Year Selector -->
+            <?php if (!empty($academic_years)): ?>
+            <select name="academic_year_id" onchange="this.form.submit()"
+                    class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-300 text-xs rounded-xl px-3.5 py-2 focus:outline-none focus:border-brand-500">
+                <?php foreach ($academic_years as $ay): ?>
+                    <option value="<?= e((string)$ay['id']) ?>" <?= (int)$ay['id'] === $selected_year_id ? 'selected' : '' ?>>
+                        <?= e($ay['year_name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <?php endif; ?>
             <!-- Month Selector -->
             <select name="month" onchange="this.form.submit()"
                     class="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-850 dark:text-slate-300 text-xs rounded-xl px-3.5 py-2 focus:outline-none focus:border-brand-500">

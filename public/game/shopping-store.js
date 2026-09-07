@@ -467,10 +467,14 @@ function validatePayment() {
 
   renderStats();
   fireConfetti();
-  showSuccessFeedback(`Payment successful. +${STARS_PER_LEVEL} Stars, +${XP_PER_LEVEL} XP`, "Payment successful");
+  showSuccessFeedback(
+    `Payment successful. +${STARS_PER_LEVEL} Stars, +${XP_PER_LEVEL} XP`, 
+    "Payment successful",
+    () => {
+      advanceLevel();
+    }
+  );
   renderReceiptFromCart(required, paid);
-
-  advanceLevel();
 }
 
 // DRAG DROP
@@ -558,7 +562,7 @@ function speak(text) {
   window.speechSynthesis.speak(utterance);
 }
 
-function playFeedback(kind) {
+function playFeedback(kind, onComplete) {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   const now = audioContext.currentTime;
 
@@ -580,22 +584,12 @@ function playFeedback(kind) {
       osc.stop(now + index * 0.08 + 0.4);
     });
 
-    // Play Applause Audio File for max 3 seconds with a smooth fade-out
-    const applause = new Audio("vvqne-applause-383901.mp3");
-    applause.volume = 1.0;
-    applause.play().then(() => {
-      setTimeout(() => {
-        let fadeInterval = setInterval(() => {
-          if (applause.volume > 0.1) {
-            applause.volume -= 0.1;
-          } else {
-            clearInterval(fadeInterval);
-            applause.pause();
-            applause.currentTime = 0;
-          }
-        }, 50);
-      }, 2500);
-    }).catch(err => console.error("Error playing applause sound:", err));
+    // Play our new global success overlay with audio and video
+    if (window.playSuccessOverlay) {
+      window.playSuccessOverlay(onComplete);
+    } else if (onComplete) {
+      onComplete();
+    }
   } else {
     // Failure Buzzer: Descending triangle wave with slide
     const osc = audioContext.createOscillator();
@@ -624,9 +618,9 @@ function flashFeedback(kind) {
   window.setTimeout(() => el.appShell.classList.remove(className), 520);
 }
 
-function showSuccessFeedback(message, voiceText) {
+function showSuccessFeedback(message, voiceText, onComplete) {
   flashFeedback("success");
-  playFeedback("success");
+  playFeedback("success", onComplete);
   showToast(message, "success");
   speak(`Hurray! ${voiceText || message}`);
 }

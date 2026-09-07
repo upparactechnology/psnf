@@ -78,10 +78,8 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
             return;
         }
 
-        // Find attendance matching teacher, time and date
         const slotStart = this.detailsSlot.start_time.substring(0, 5);
         
-        // Match specific slot log
         const match = this.lectureLogs.find(log => {
             return log.teacher_name === this.detailsSlot.teacher_name &&
                    log.attendance_date === this.detailsDate &&
@@ -90,7 +88,6 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
 
         this.detailsAttendance = match || null;
 
-        // All attendance logs for this teacher on this date
         this.teacherAllAttendance = this.lectureLogs.filter(log => {
             return log.teacher_name === this.detailsSlot.teacher_name &&
                    log.attendance_date === this.detailsDate;
@@ -102,19 +99,26 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur">
         <div>
             <h2 class="text-xl font-bold text-white">Class Timetables</h2>
-            <p class="text-sm text-slate-500 mt-0.5">Manage weekly lecture and therapy schedules by class</p>
+            <p class="text-sm text-slate-500 mt-0.5">Manage weekly lecture schedules by main group</p>
         </div>
         <div class="flex items-center gap-2">
-            <form action="<?= url('academics/timetable/clear') ?>" method="POST" onsubmit="return confirm('Are you sure you want to completely clear the timetable for this class and section?')" class="inline">
+            <form action="<?= url('academics/timetable/clear') ?>" method="POST" onsubmit="return confirm('Are you sure you want to completely clear the timetable for this group?')" class="inline">
                 <?= \Core\View::csrf() ?>
-                <input type="hidden" name="class" value="<?= e($selectedClass) ?>">
-                <input type="hidden" name="section" value="<?= e($selectedSection) ?>">
+                <input type="hidden" name="main_group_id" value="<?= e($selectedGroupId) ?>">
                 <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-red-400 border border-red-900/30 hover:bg-red-950/20 transition-all">
-                    🗑️ Clear Timetable
+                    Clear Timetable
+                </button>
+            </form>
+            <form action="<?= url('academics/timetable/share') ?>" method="POST" onsubmit="return confirm('Share this timetable with teachers? They will see it on their dashboard.')" class="inline">
+                <?= \Core\View::csrf() ?>
+                <input type="hidden" name="main_group_id" value="<?= e($selectedGroupId) ?>">
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-emerald-400 border border-emerald-900/30 hover:bg-emerald-950/20 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                    Share with Teachers
                 </button>
             </form>
             <button @click="showBulkModal = true" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 border border-slate-800 hover:bg-slate-850 transition-all">
-                ⚙️ Bulk Generator
+                Bulk Generator
             </button>
             <button @click="showAddModal = true" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white transition-all shadow-lg hover:opacity-90 bg-gradient-to-r from-indigo-500 to-purple-600">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -127,22 +131,12 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
     <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <form method="GET" action="<?= url('academics/timetable') ?>" class="flex flex-wrap items-end gap-3 text-xs">
             <div class="space-y-1">
-                <label class="block text-[10px] font-medium text-slate-400 uppercase tracking-wider">Class & Section</label>
-                <select name="class_section" required onchange="
-                    const val = this.value.split('|');
-                    document.getElementById('class_input').value = val[0] || '';
-                    document.getElementById('section_input').value = val[1] || '';
-                " class="bg-slate-950 border border-slate-800 text-slate-300 rounded-xl py-2 px-4 text-xs focus:outline-none focus:border-brand-500">
-                    <?php foreach ($classes as $c): ?>
-                        <?php 
-                            $optionVal = $c['class'] . '|' . $c['section'];
-                            $selected = ($selectedClass === $c['class'] && $selectedSection === $c['section']) ? 'selected' : '';
-                        ?>
-                        <option value="<?= $optionVal ?>" <?= $selected ?>><?= e($c['class']) ?> - <?= e($c['section'] ?: 'Default') ?></option>
+                <label class="block text-[10px] font-medium text-slate-400 uppercase tracking-wider">Main Group</label>
+                <select name="main_group_id" required class="bg-slate-950 border border-slate-800 text-slate-300 rounded-xl py-2 px-4 text-xs focus:outline-none focus:border-brand-500">
+                    <?php foreach ($mainGroups as $g): ?>
+                        <option value="<?= $g['id'] ?>" <?= $selectedGroupId == $g['id'] ? 'selected' : '' ?>><?= e($g['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <input type="hidden" name="class" id="class_input" value="<?= e($selectedClass) ?>">
-                <input type="hidden" name="section" id="section_input" value="<?= e($selectedSection) ?>">
             </div>
             <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-800 hover:bg-slate-750 border border-slate-700/50 shadow-md">
                 Load Timetable
@@ -191,8 +185,7 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                         </button>
                         <form action="<?= url('academics/timetable/' . $p['id'] . '/delete') ?>" method="POST" onsubmit="return confirm('Delete this schedule slot?')" class="inline">
                             <?= \Core\View::csrf() ?>
-                            <input type="hidden" name="class" value="<?= e($selectedClass) ?>">
-                            <input type="hidden" name="section" value="<?= e($selectedSection) ?>">
+                            <input type="hidden" name="main_group_id" value="<?= e($selectedGroupId) ?>">
                             <button type="submit" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-slate-855 text-red-400 hover:bg-slate-800 border border-red-500/10">
                                 Delete
                             </button>
@@ -251,17 +244,14 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
         </div>
 
         <div class="grid grid-cols-7 gap-2 bg-slate-900/20 p-6 rounded-2xl border border-slate-800/60">
-            <!-- Headers -->
             <?php foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $sh): ?>
                 <div class="text-center font-bold text-slate-500 text-[10px] uppercase py-1 border-b border-slate-850"><?= $sh ?></div>
             <?php endforeach; ?>
 
-            <!-- Dummy/Actual grid mapping for reference month -->
             <?php
             $firstDayOfMonth = date('w', strtotime(date('Y-m-01')));
             $daysInMonth = date('t');
             
-            // Dummy prefix items
             for ($i = 0; $i < $firstDayOfMonth; $i++) {
                 echo '<div class="min-h-[70px] p-2 bg-transparent opacity-10"></div>';
             }
@@ -270,7 +260,6 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                 $dateStr = date('Y-m-') . sprintf('%02d', $dayNum);
                 $dayName = date('l', strtotime($dateStr));
                 
-                // Get slots for this day name
                 $daySlots = $timetableByDay[$dayName] ?? [];
                 $hasSlots = !empty($daySlots) && $dayName !== 'Sunday';
                 ?>
@@ -306,7 +295,6 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                 </div>
 
                 <div class="p-6 space-y-5 text-xs">
-                    <!-- General Slot Info -->
                     <div class="grid grid-cols-2 gap-4 bg-slate-950 p-4 rounded-xl border border-slate-850">
                         <div>
                             <span class="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Subject / Activity</span>
@@ -328,16 +316,14 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                         </div>
                     </div>
 
-                    <!-- Teacher Live Attendance Checker -->
                     <div class="space-y-3">
-                        <h4 class="font-bold text-slate-300 text-xs border-b border-slate-800 pb-1.5">🎓 Teacher Attendance Verification</h4>
+                        <h4 class="font-bold text-slate-300 text-xs border-b border-slate-800 pb-1.5">Teacher Attendance Verification</h4>
                         
                         <div class="flex items-center gap-3">
                             <span class="text-slate-450 font-semibold">Select Check-in Date:</span>
                             <input type="date" x-model="detailsDate" @change="checkAttendance()" class="bg-slate-950 border border-slate-800 text-slate-300 rounded-xl px-3 py-1 font-mono text-xs">
                         </div>
 
-                        <!-- Match Status -->
                         <div class="p-4 rounded-xl border border-slate-850 bg-slate-950/50 space-y-2">
                             <template x-if="detailsAttendance">
                                 <div class="flex items-center justify-between">
@@ -352,12 +338,11 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                             </template>
 
                             <template x-if="!detailsAttendance">
-                                <p class="text-red-500 font-bold italic py-1"><i class="fa-solid fa-circle-xmark me-1"></i>Teacher Absent / Not Checked-In for this lecture slot on selected date.</p>
+                                <p class="text-red-500 font-bold italic py-1">Teacher Absent / Not Checked-In for this lecture slot on selected date.</p>
                             </template>
                         </div>
                     </div>
 
-                    <!-- List all attendance for teacher -->
                     <div class="space-y-2">
                         <h4 class="font-bold text-slate-300 text-xs">Teacher's All Lectures Checked-In Today</h4>
                         <div class="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
@@ -399,12 +384,10 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
 
                 <form method="POST" action="<?= url('academics/timetable/bulk-generate') ?>" class="p-6 space-y-4 text-xs">
                     <?= \Core\View::csrf() ?>
-                    <input type="hidden" name="class" value="<?= e($selectedClass) ?>">
-                    <input type="hidden" name="section" value="<?= e($selectedSection) ?>">
+                    <input type="hidden" name="main_group_id" value="<?= e($selectedGroupId) ?>">
 
-                    <p class="text-slate-400">Generate a timetable slot across multiple weekdays for <b class="text-white"><?= e($selectedClass) ?> - <?= e($selectedSection ?: 'Default') ?></b>.</p>
+                    <p class="text-slate-400">Generate a timetable slot across multiple weekdays for <b class="text-white"><?= e($selectedGroup) ?></b>.</p>
 
-                    <!-- Days -->
                     <div class="space-y-1.5">
                         <label class="block text-slate-400 font-medium">Select Weekdays <span class="text-red-400">*</span></label>
                         <div class="grid grid-cols-2 gap-2 bg-slate-950 p-3 rounded-xl border border-slate-850">
@@ -417,7 +400,6 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                         </div>
                     </div>
 
-                    <!-- Subject Dropdown -->
                     <div class="space-y-1.5">
                         <label class="block text-slate-400 font-medium">Subject / Activity Name <span class="text-red-400">*</span></label>
                         <select name="subject" required class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 focus:outline-none focus:border-indigo-500">
@@ -428,7 +410,6 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                         </select>
                     </div>
 
-                    <!-- Teacher Dropdown -->
                     <div class="space-y-1.5">
                         <label class="block text-slate-400 font-medium">Assign Teacher <span class="text-red-400">*</span></label>
                         <select name="teacher_name" required class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 focus:outline-none focus:border-indigo-500">
@@ -439,7 +420,6 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                         </select>
                     </div>
 
-                    <!-- Timings -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-1.5">
                             <label class="block text-slate-400 font-medium">Start Time <span class="text-red-400">*</span></label>
@@ -450,17 +430,6 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
                             <label class="block text-slate-400 font-medium">End Time <span class="text-red-400">*</span></label>
                             <input type="time" name="end_time" value="10:00" required class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 focus:outline-none focus:border-indigo-500">
                         </div>
-                    </div>
-
-                    <!-- Room -->
-                    <div class="space-y-1.5">
-                        <label class="block text-slate-400 font-medium">Class Room</label>
-                        <select name="room" class="w-full bg-slate-950 border border-slate-800 text-slate-350 rounded-xl py-2 px-3 focus:outline-none focus:border-indigo-500">
-                            <?php foreach ($classes as $c): ?>
-                                <?php $roomVal = $c['class'] . ($c['section'] ? ' - ' . $c['section'] : ''); ?>
-                                <option value="<?= e($roomVal) ?>" <?= $selectedClass === $c['class'] ? 'selected' : '' ?>><?= e($roomVal) ?></option>
-                            <?php endforeach; ?>
-                        </select>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
@@ -489,8 +458,7 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
 
                 <form method="POST" action="<?= url('academics/timetable/store') ?>" class="p-6 space-y-4 text-xs">
                     <?= \Core\View::csrf() ?>
-                    <input type="hidden" name="class" value="<?= e($selectedClass) ?>">
-                    <input type="hidden" name="section" value="<?= e($selectedSection) ?>">
+                    <input type="hidden" name="main_group_id" value="<?= e($selectedGroupId) ?>">
 
                     <div class="space-y-1.5">
                         <label class="block text-slate-400 font-medium">Day of Week <span class="text-red-400">*</span></label>
@@ -554,8 +522,7 @@ window.timetableLectureLogs = <?= $lectureLogsJson ?>;
 
                 <form method="POST" :action="'<?= url('academics/timetable') ?>/' + editId + '/update'" class="p-6 space-y-4 text-xs">
                     <?= \Core\View::csrf() ?>
-                    <input type="hidden" name="class" value="<?= e($selectedClass) ?>">
-                    <input type="hidden" name="section" value="<?= e($selectedSection) ?>">
+                    <input type="hidden" name="main_group_id" value="<?= e($selectedGroupId) ?>">
 
                     <div class="space-y-1.5">
                         <label class="block text-slate-400 font-medium">Day of Week <span class="text-red-400">*</span></label>

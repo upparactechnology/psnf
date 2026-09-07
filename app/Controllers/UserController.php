@@ -10,12 +10,6 @@ use App\Services\EmployeeSyncService;
 
 class UserController extends Controller
 {
-    protected array $availableApps = [
-        'driver_app'        => 'Driver App',
-        'staff_dashboard'   => 'Staff Dashboard',
-        'teacher_app'       => 'Staff and Teacher App',
-        'parents_dashboard' => 'Parents Dashboard',
-    ];
 
     public function index(): string
     {
@@ -98,22 +92,21 @@ class UserController extends Controller
         $roles    = array_filter($roles, function($role) {
             return in_array($role['slug'], ['super_admin', 'teacher', 'staff', 'driver', 'parent']);
         });
+        $roles    = array_values($roles);
         $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $branches = \Core\Application::$app->db->select("SELECT id, name FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
-        $apps     = $this->availableApps;
         $departments = \Core\Application::$app->db->select("SELECT * FROM departments WHERE is_active = 1");
         $designations = \Core\Application::$app->db->select("SELECT * FROM designations WHERE is_active = 1");
 
-        return $this->view('users/create', compact('roles', 'schools', 'branches', 'apps', 'departments', 'designations'));
+        return $this->view('users/create', compact('roles', 'schools', 'branches', 'departments', 'designations'));
     }
 
     public function store(): string
     {
         $data  = $this->request->getBody();
         $roles = $data['roles'] ?? [];
-        $assignedApps = $data['apps'] ?? [];
         $redirectTo = $this->request->input('redirect_to', '/users');
-        unset($data['roles'], $data['apps'], $data['_csrf'], $data['redirect_to']);
+        unset($data['roles'], $data['_csrf'], $data['redirect_to']);
 
         $rules = [
             'first_name'=> 'required|min:2',
@@ -126,7 +119,7 @@ class UserController extends Controller
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
             \Core\Session::flash('errors', $validator->errors());
-            \Core\Session::flash('old', array_merge($data, ['apps' => $assignedApps, 'roles' => $roles]));
+            \Core\Session::flash('old', array_merge($data, ['roles' => $roles]));
             return $this->redirect('/users/create?redirect_to=' . urlencode($redirectTo));
         }
 
@@ -171,11 +164,6 @@ class UserController extends Controller
             }
         }
 
-        $db = \Core\Application::$app->db;
-        foreach ($assignedApps as $app) {
-            $db->insert('user_apps', ['user_id' => $userId, 'app_name' => $app]);
-        }
-
         \App\Models\ActivityLog::log('user_created', auth_id(), ['user_id' => $userId]);
         $this->flash('success', 'User created successfully.');
         return $this->redirect($redirectTo);
@@ -188,41 +176,62 @@ class UserController extends Controller
         $roles    = array_filter($roles, function($role) {
             return in_array($role['slug'], ['super_admin', 'teacher', 'staff', 'driver', 'parent']);
         });
+        $roles    = array_values($roles);
         $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
         $branches = \Core\Application::$app->db->select("SELECT id, name FROM branches WHERE tenant_id = ? AND deleted_at IS NULL", [\Core\Database::getTenantId()]);
-        $apps     = $this->availableApps;
+        $departments = \Core\Application::$app->db->select("SELECT * FROM departments WHERE is_active = 1");
+        $designations = \Core\Application::$app->db->select("SELECT * FROM designations WHERE is_active = 1");
 
         $db = \Core\Application::$app->db;
-        $userApps = $db->select("SELECT app_name FROM user_apps WHERE user_id = ?", [$user['id']]);
-        $user['assigned_apps'] = array_column($userApps, 'app_name');
 
-        return $this->view('users/edit', compact('user', 'roles', 'schools', 'branches', 'apps'));
+        // Fetch linked employee record for salary/department/designation/shift data
+        $emp = $db->selectOne("SELECT * FROM employees WHERE user_id = ? OR email = ? LIMIT 1", [$user['id'], $user['email']]);
+        $user['employee'] = $emp ?: null;
+
+        return $this->view('users/edit', compact('user', 'roles', 'schools', 'branches', 'departments', 'designations'));
     }
 
     public function update(string $id): string
     {
         $data  = $this->request->getBody();
         $roles = $data['roles'] ?? [];
-        $assignedApps = $data['apps'] ?? [];
         $redirectTo = $this->request->input('redirect_to', '/users');
-        unset($data['roles'], $data['apps'], $data['_csrf'], $data['_method'], $data['password'], $data['password_confirmation'], $data['redirect_to']);
+        unset($data['roles'], $data['_csrf'], $data['_method'], $data['password'], $data['password_confirmation'], $data['redirect_to']);
 
         $lectureTime = !empty($data['lecture_time']) ? $data['lecture_time'] : null;
         $gracePeriod = isset($data['grace_period']) && $data['grace_period'] !== '' ? (int) $data['grace_period'] : 5;
 
+        $salaryBasic = isset($data['salary_basic']) && $data['salary_basic'] !== '' ? (float) $data['salary_basic'] : null;
+        $deptId = !empty($data['department_id']) ? (int) $data['department_id'] : null;
+        $desigId = !empty($data['designation_id']) ? (int) $data['designation_id'] : null;
+        $minClockIn = !empty($data['min_clock_in']) ? $data['min_clock_in'] : null;
+        $maxClockOut = !empty($data['max_clock_out']) ? $data['max_clock_out'] : null;
+
         $data['lecture_time'] = $lectureTime;
         $data['grace_period'] = $gracePeriod;
         $data['updated_by']   = auth_id();
+
+        // Build full name from first_name/last_name if provided
+        if (!empty($data['first_name'])) {
+            $data['name'] = trim($data['first_name'] . ' ' . ($data['last_name'] ?? ''));
+        }
+        unset($data['salary_basic'], $data['department_id'], $data['designation_id'], $data['min_clock_in'], $data['max_clock_out'], $data['first_name'], $data['last_name']);
 
         User::update((int) $id, $data);
         User::syncRoles((int) $id, array_map('intval', $roles));
 
         EmployeeSyncService::syncUserToEmployee((int) $id);
 
+        // Update employee record with salary/department/designation/shift data
         $db = \Core\Application::$app->db;
-        $db->query("DELETE FROM user_apps WHERE user_id = ?", [$id]);
-        foreach ($assignedApps as $app) {
-            $db->insert('user_apps', ['user_id' => (int) $id, 'app_name' => $app]);
+        $empUpdate = [];
+        if ($salaryBasic !== null) $empUpdate['salary_basic'] = $salaryBasic;
+        if ($deptId) $empUpdate['department_id'] = $deptId;
+        if ($desigId) $empUpdate['designation_id'] = $desigId;
+        if ($minClockIn) $empUpdate['min_clock_in'] = $minClockIn;
+        if ($maxClockOut) $empUpdate['max_clock_out'] = $maxClockOut;
+        if (!empty($empUpdate)) {
+            $db->update('employees', $empUpdate, 'user_id = ?', [(int) $id]);
         }
 
         \App\Models\ActivityLog::log('user_updated', auth_id(), ['user_id' => $id]);

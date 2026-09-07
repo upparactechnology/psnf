@@ -64,8 +64,8 @@ class ParentPortalLoginController extends Controller
 
         ActivityLog::log('user_login', (int)$user['id'], ['ip' => $_SERVER['REMOTE_ADDR'] ?? null]);
 
-        // Check if this is the first login by verifying if password is the phone number
-        if ($data['phone'] === $data['password']) {
+        // Check if this user still needs to set up their password
+        if ((int)($user['first_login'] ?? 1) === 1) {
             Session::flash('info', 'For security reasons, please set a new password for your account.');
             return $this->redirect('/parent/change-password');
         }
@@ -105,6 +105,7 @@ class ParentPortalLoginController extends Controller
         $db->update('users', [
             'name' => $data['name'],
             'password' => password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]),
+            'first_login' => 0,
             'updated_at' => now()
         ], "id = ?", [$userId]);
         

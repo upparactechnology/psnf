@@ -12,6 +12,7 @@ $games = [
         'color'       => 'amber',
         'url'         => url('game/money-counting.html'),
         'tag'         => 'Math / Life Skills',
+        'permission'  => 'view_game_money_counting',
     ],
     [
         'title'       => 'Safe vs Unsafe',
@@ -20,6 +21,7 @@ $games = [
         'color'       => 'red',
         'url'         => url('game/safe-vs-unsafe.html'),
         'tag'         => 'Safety Skills',
+        'permission'  => 'view_game_safe_vs_unsafe',
     ],
     [
         'title'       => 'Safety Signs',
@@ -28,6 +30,7 @@ $games = [
         'color'       => 'orange',
         'url'         => url('game/safety-signs.html'),
         'tag'         => 'Safety Awareness',
+        'permission'  => 'view_game_safety_signs',
     ],
     [
         'title'       => 'Sentence Builder',
@@ -36,6 +39,7 @@ $games = [
         'color'       => 'blue',
         'url'         => url('game/sentence-builder.html'),
         'tag'         => 'Language Arts',
+        'permission'  => 'view_game_sentence_builder',
     ],
     [
         'title'       => 'Shopping Store',
@@ -44,6 +48,7 @@ $games = [
         'color'       => 'emerald',
         'url'         => url('game/shopping-store.html'),
         'tag'         => 'Life Skills / Math',
+        'permission'  => 'view_game_shopping_store',
     ],
 ];
 
@@ -71,6 +76,7 @@ $colorMap = [
     <!-- Games Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php foreach ($games as $game): 
+            if (!has_permission($game['permission'])) continue;
             $colors = $colorMap[$game['color']] ?? $colorMap['pink'];
             $parts  = explode(' ', $colors);
             $iconBg = $parts[0] ?? 'bg-pink-500/10';

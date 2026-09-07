@@ -8,13 +8,11 @@ class Migration
 {
     private Database $db;
     private string $migrationsPath;
-    private string $seedsPath;
 
     public function __construct()
     {
         $this->db             = \Core\Application::$app->db;
         $this->migrationsPath = ROOT_PATH . '/database/migrations';
-        $this->seedsPath      = ROOT_PATH . '/database/seeds';
         $this->createMigrationsTable();
     }
 
@@ -49,13 +47,22 @@ class Migration
             require_once $file;
             $class = $this->getClassFromFile($file);
 
-            if (!class_exists($class)) {
+            if (!class_exists($class) && !class_exists('Database\\Migrations\\' . $class)) {
                 echo "\033[31m✘  Class not found: $class\033[0m\n";
                 continue;
             }
 
-            $migration = new $class($this->db);
-            $migration->up();
+            // Support both namespaced and non-namespaced classes
+            $fqcn = class_exists($class) ? $class : 'Database\\Migrations\\' . $class;
+
+            // Namespaced classes expect PDO, non-namespaced expect Core\Database
+            if (strpos($fqcn, 'Database\\Migrations\\') === 0) {
+                $migration = new $fqcn();
+                $migration->up(Database::getInstance());
+            } else {
+                $migration = new $fqcn($this->db);
+                $migration->up();
+            }
 
             $this->db->insert('migrations', ['migration' => $name, 'batch' => $batch]);
             echo "\033[32m✔  Migrated: $name\033[0m\n";
@@ -64,20 +71,6 @@ class Migration
 
         if ($count === 0) {
             echo "\033[36mℹ  Nothing to migrate.\033[0m\n";
-        }
-    }
-
-    public function seed(): void
-    {
-        $files = glob($this->seedsPath . '/*.php') ?: [];
-        foreach ($files as $file) {
-            require_once $file;
-            $class = $this->getClassFromFile($file);
-            if (class_exists($class)) {
-                $seeder = new $class($this->db);
-                $seeder->run();
-                echo "\033[32m✔  Seeded: " . basename($file, '.php') . "\033[0m\n";
-            }
         }
     }
 
