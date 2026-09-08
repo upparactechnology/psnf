@@ -494,10 +494,7 @@ if ($user) {
             <!-- DYNAMIC CLIENT-SIDE SIDEBAR MODULE SECTIONS (ZERO PAGE RELOAD) -->
             <div x-data="{
                 currentModule() {
-                    const basePath = (() => {
-                        const scrDir = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\') ?>';
-                        return scrDir;
-                    })();
+                    const basePath = '<?= rtrim(get_dynamic_base_url(), '/') ?>'.replace(/^https?:\/\/[^\/]+/, '') || '';
                     const path = (window.location.pathname.replace(basePath, '') || '/').replace(/\/$/, '') || '/';
                     if (path === '/dashboard' || path === '/games' || path === '/') return 'launcher';
                     if (path.startsWith('/settings')) return 'settings';
