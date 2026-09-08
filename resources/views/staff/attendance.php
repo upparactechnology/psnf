@@ -17,6 +17,7 @@ ob_start();
             <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
                 <a href="<?= url('staff/attendance') ?>" class="px-4 py-2 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow shadow-slate-200/50 dark:shadow-none">Daily List</a>
                 <a href="<?= url('staff/attendance?view=calendar') ?>" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Monthly Calendar</a>
+                <a href="<?= url('staff/attendance/lectures') ?>" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Lecture Check-ins</a>
             </div>
             <a href="<?= url('attendance/face-kiosk') ?>" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-sm">+ Clock In / Out Entry</a>
         </div>

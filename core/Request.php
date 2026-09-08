@@ -29,14 +29,9 @@ class Request
             $path = substr($path, 0, $pos);
         }
 
-        // Strip base directory (auto-detect from REQUEST_URI/SCRIPT_NAME)
-        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+        // Strip base directory (always use SCRIPT_NAME directory where index.php lives)
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
-        $requestDir = '/' . trim(dirname($requestUri), '/\\');
-        $scriptDir  = '/' . trim(dirname($scriptName), '/\\');
-        $base = (strlen($requestDir) >= strlen($scriptDir)) ? $requestDir : $scriptDir;
-        $base = preg_replace('#/(attendance)(/.*)?$#i', '', $base);
-        $base = rtrim($base, '/\\');
+        $base = rtrim(dirname($scriptName), '/\\');
         if ($base !== '' && $base !== '/' && str_starts_with($path, $base)) {
             $path = substr($path, strlen($base));
         }

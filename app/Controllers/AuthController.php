@@ -69,6 +69,55 @@ class AuthController extends Controller
             ]);
         }
 
+        // Auto-record teacher lecture attendance on login
+        $loginUser = $result['user'];
+        $loginRoles = $loginUser['role_names'] ?? $loginUser['roles'] ?? [];
+        $loginRoleArr = is_array($loginRoles) ? $loginRoles : (array) $loginRoles;
+        if (in_array('teacher', $loginRoleArr, true) || in_array('Teacher', $loginRoleArr, true)) {
+            $db = \Core\Application::$app->db;
+            $today = date('Y-m-d');
+            $todayDayOfWeek = date('l');
+            $userId = (int) $loginUser['id'];
+
+            $existing = $db->selectOne(
+                "SELECT id FROM teacher_attendance WHERE user_id = ? AND attendance_date = ?",
+                [$userId, $today]
+            );
+
+            if (!$existing) {
+                $firstLecture = $db->selectOne(
+                    "SELECT start_time FROM timetables WHERE teacher_name = ? AND day_of_week = ? ORDER BY start_time ASC LIMIT 1",
+                    [$loginUser['name'], $todayDayOfWeek]
+                );
+                $lectureTime = $firstLecture['start_time'] ?? ($loginUser['lecture_time'] ?? null);
+
+                if ($lectureTime) {
+                    $shiftPolicy = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
+                    $grace = (int) ($shiftPolicy['lec_grace_minutes'] ?? ($loginUser['grace_period'] ?? 5));
+                    $lectureTimestamp = strtotime($today . ' ' . $lectureTime);
+                    $cutoffTimestamp = $lectureTimestamp + ($grace * 60);
+                    $status = (time() <= $cutoffTimestamp) ? 'on_time' : 'late';
+
+                    $db->insert('teacher_attendance', [
+                        'tenant_id'       => $loginUser['tenant_id'],
+                        'school_id'       => $loginUser['school_id'],
+                        'branch_id'       => $loginUser['branch_id'],
+                        'user_id'         => $userId,
+                        'attendance_date' => $today,
+                        'opened_at'       => date('Y-m-d H:i:s'),
+                        'status'          => $status,
+                        'lecture_time'    => $lectureTime,
+                        'grace_period'    => $grace,
+                    ]);
+
+                    ActivityLog::log('teacher_attendance_checkin', $userId, [
+                        'status'    => $status,
+                        'opened_at' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            }
+        }
+
         return $this->redirect(dashboard_url());
     }
 

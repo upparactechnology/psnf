@@ -834,3 +834,5 @@
 #2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
 #3 C:\xampp\htdocs\psnf\public\index.php(25): Core\Application->__construct()
 #4 {main}
+[08-Sep-2026 13:57:27 Asia/Kolkata] PHP Warning:  Undefined variable $subjectId in C:\xampp\htdocs\psnf\app\Controllers\TimetablesController.php on line 117
+[08-Sep-2026 14:04:18 Asia/Kolkata] PHP Warning:  Undefined variable $subjectId in C:\xampp\htdocs\psnf\app\Controllers\TimetablesController.php on line 117

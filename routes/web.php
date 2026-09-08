@@ -55,6 +55,7 @@ $router->post('/staff/designations',    [App\Controllers\StaffWorkspaceControlle
 $router->post('/staff/designations/{id}/update', [App\Controllers\StaffWorkspaceController::class, 'updateDesignation'], ['auth', 'permission:edit_designations']);
 $router->post('/staff/designations/{id}/delete', [App\Controllers\StaffWorkspaceController::class, 'deleteDesignation'], ['auth', 'permission:delete_designations']);
 $router->get('/staff/attendance',       [App\Controllers\StaffWorkspaceController::class, 'attendance'],  ['auth', 'permission:view_staff_attendance']);
+$router->get('/staff/attendance/lectures', [App\Controllers\StaffWorkspaceController::class, 'lectureAttendance'], ['auth', 'permission:view_staff_attendance']);
 $router->post('/staff/attendance',      [App\Controllers\StaffWorkspaceController::class, 'storeAttendance'],['auth', 'permission:create_staff_attendance']);
 $router->get('/staff/leaves',           [App\Controllers\StaffWorkspaceController::class, 'leaves'],      ['auth', 'permission:view_leave_management']);
 $router->post('/staff/leaves',          [App\Controllers\StaffWorkspaceController::class, 'storeLeave'], ['auth', 'permission:create_leave_management']);

@@ -850,6 +850,248 @@ class StaffWorkspaceController extends Controller
         return $this->redirect('/staff/attendance?date=' . $date);
     }
 
+    public function lectureAttendance(): string
+    {
+        $db = Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+
+        $filterTeacher  = (int) $this->request->get('teacher_id', 0);
+        $filterGroup    = (int) $this->request->get('main_group_id', 0);
+        $filterStatus   = $this->request->get('status', '');
+        $filterMonth    = $this->request->get('month', '');
+        $filterWeek     = $this->request->get('week', '');
+        $academicYearId = (int) $this->request->get('academic_year_id', 0);
+        $dateFrom       = $this->request->get('date_from', '');
+        $dateTo         = $this->request->get('date_to', '');
+        $date           = $this->request->get('date', date('Y-m-d'));
+        $viewMode       = $this->request->get('view', 'table');
+
+        $academicYears = $db->select(
+            "SELECT id, year_name, start_date, end_date, status 
+             FROM academic_years WHERE tenant_id = ? ORDER BY id DESC",
+            [$tenantId]
+        );
+
+        $currentYear = null;
+        foreach ($academicYears as $ay) {
+            if ($ay['status'] === 'current') {
+                $currentYear = $ay;
+                break;
+            }
+        }
+
+        if (!$academicYearId && $currentYear) {
+            $academicYearId = (int) $currentYear['id'];
+        }
+
+        $selectedAcademicYear = null;
+        foreach ($academicYears as $ay) {
+            if ((int)$ay['id'] === $academicYearId) {
+                $selectedAcademicYear = $ay;
+                break;
+            }
+        }
+
+        if (!$dateFrom && !$dateTo && !$filterMonth && !$filterWeek) {
+            if ($selectedAcademicYear && $selectedAcademicYear['start_date'] !== '0000-00-00') {
+                $dateFrom = $selectedAcademicYear['start_date'];
+                $dateTo   = $selectedAcademicYear['end_date'];
+            } else {
+                $dateFrom = $date;
+                $dateTo   = $date;
+            }
+        }
+
+        if ($filterMonth) {
+            $dateFrom = $filterMonth . '-01';
+            $dateTo   = date('Y-m-t', strtotime($dateFrom));
+        }
+
+        if ($filterWeek) {
+            $weekStart = date('Y-m-d', strtotime($filterWeek . ' monday'));
+            $weekEnd   = date('Y-m-d', strtotime($filterWeek . ' sunday'));
+            if (!$dateFrom || $dateFrom === $date) {
+                $dateFrom = $weekStart;
+                $dateTo   = $weekEnd;
+            }
+        }
+
+        $where   = ["ta.tenant_id = ?"];
+        $params  = [$tenantId];
+
+        if ($dateFrom && $dateTo) {
+            $where[]  = "ta.attendance_date BETWEEN ? AND ?";
+            $params[] = $dateFrom;
+            $params[] = $dateTo;
+        } elseif ($date) {
+            $where[]  = "ta.attendance_date = ?";
+            $params[] = $date;
+        }
+
+        if ($filterTeacher) {
+            $where[]  = "ta.user_id = ?";
+            $params[] = $filterTeacher;
+        }
+
+        if ($filterStatus) {
+            $where[]  = "ta.status = ?";
+            $params[] = $filterStatus;
+        }
+
+        $whereSql = implode(' AND ', $where);
+
+        $logs = $db->select("
+            SELECT 
+                ta.*,
+                u.name as teacher_name,
+                u.email as teacher_email,
+                u.phone as teacher_phone,
+                t.subject as timetable_subject,
+                t.class as timetable_class,
+                t.room as timetable_room,
+                t.day_of_week as timetable_day,
+                t.start_time as timetable_start,
+                t.end_time as timetable_end,
+                mg.name as main_group_name,
+                mg.color as main_group_color
+            FROM teacher_attendance ta
+            JOIN users u ON ta.user_id = u.id
+            LEFT JOIN timetables t ON t.teacher_name = u.name 
+                AND t.day_of_week = DAYNAME(ta.attendance_date)
+                AND TIME(t.start_time) = ta.lecture_time
+                AND t.tenant_id = ta.tenant_id
+            LEFT JOIN main_groups mg ON t.main_group_id = mg.id
+            WHERE {$whereSql}
+            ORDER BY ta.attendance_date DESC, ta.opened_at ASC
+        ", $params);
+
+        if ($filterGroup) {
+            $logs = array_filter($logs, fn($l) => (int)($l['main_group_id'] ?? 0) === $filterGroup);
+            $logs = array_values($logs);
+        }
+
+        $teachers = $db->select("
+            SELECT u.id, u.name 
+            FROM users u 
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN roles r ON ur.role_id = r.id
+            WHERE r.slug = 'teacher' AND u.tenant_id = ? AND u.deleted_at IS NULL
+            ORDER BY u.name ASC
+        ", [$tenantId]);
+
+        $mainGroups = $db->select("
+            SELECT id, name, color FROM main_groups WHERE tenant_id = ? AND is_active = 1 ORDER BY name ASC
+        ", [$tenantId]);
+
+        $totalLogs   = count($logs);
+        $onTimeLogs  = count(array_filter($logs, fn($l) => $l['status'] === 'on_time'));
+        $lateLogs    = count(array_filter($logs, fn($l) => $l['status'] === 'late'));
+
+        $teacherStats = [];
+        foreach ($logs as $l) {
+            $tid = (int) $l['user_id'];
+            if (!isset($teacherStats[$tid])) {
+                $teacherStats[$tid] = [
+                    'name'     => $l['teacher_name'],
+                    'total'    => 0,
+                    'on_time'  => 0,
+                    'late'     => 0,
+                    'subjects' => [],
+                    'classes'  => [],
+                ];
+            }
+            $teacherStats[$tid]['total']++;
+            if ($l['status'] === 'on_time') {
+                $teacherStats[$tid]['on_time']++;
+            } else {
+                $teacherStats[$tid]['late']++;
+            }
+            $subj = $l['timetable_subject'] ?? 'N/A';
+            if (!in_array($subj, $teacherStats[$tid]['subjects'])) {
+                $teacherStats[$tid]['subjects'][] = $subj;
+            }
+            $cls = $l['timetable_class'] ?? $l['main_group_name'] ?? 'N/A';
+            if (!in_array($cls, $teacherStats[$tid]['classes'])) {
+                $teacherStats[$tid]['classes'][] = $cls;
+            }
+        }
+        uasort($teacherStats, fn($a, $b) => $b['total'] <=> $a['total']);
+
+        $groupStats = [];
+        foreach ($logs as $l) {
+            $gname = $l['main_group_name'] ?? 'Ungrouped';
+            if (!isset($groupStats[$gname])) {
+                $groupStats[$gname] = [
+                    'name'     => $gname,
+                    'color'    => $l['main_group_color'] ?? '#6366f1',
+                    'total'    => 0,
+                    'on_time'  => 0,
+                    'late'     => 0,
+                ];
+            }
+            $groupStats[$gname]['total']++;
+            if ($l['status'] === 'on_time') {
+                $groupStats[$gname]['on_time']++;
+            } else {
+                $groupStats[$gname]['late']++;
+            }
+        }
+        uasort($groupStats, fn($a, $b) => $b['total'] <=> $a['total']);
+
+        $dailyStats = [];
+        foreach ($logs as $l) {
+            $d = $l['attendance_date'];
+            if (!isset($dailyStats[$d])) {
+                $dailyStats[$d] = ['date' => $d, 'total' => 0, 'on_time' => 0, 'late' => 0];
+            }
+            $dailyStats[$d]['total']++;
+            if ($l['status'] === 'on_time') {
+                $dailyStats[$d]['on_time']++;
+            } else {
+                $dailyStats[$d]['late']++;
+            }
+        }
+        krsort($dailyStats);
+
+        $subjectsList = [];
+        foreach ($logs as $l) {
+            $s = $l['timetable_subject'] ?? null;
+            if ($s && !isset($subjectsList[$s])) {
+                $subjectsList[$s] = ['name' => $s, 'total' => 0];
+            }
+            if ($s) {
+                $subjectsList[$s]['total']++;
+            }
+        }
+        uasort($subjectsList, fn($a, $b) => $b['total'] <=> $a['total']);
+
+        $onTimePercent = $totalLogs > 0 ? round(($onTimeLogs / $totalLogs) * 100, 1) : 0;
+        $latePercent   = $totalLogs > 0 ? round(($lateLogs / $totalLogs) * 100, 1) : 0;
+
+        $dateRangeLabel = '';
+        if ($filterMonth) {
+            $dateRangeLabel = date('F Y', strtotime($filterMonth . '-01'));
+        } elseif ($filterWeek) {
+            $dateRangeLabel = 'Week of ' . date('M d', strtotime($filterWeek . ' monday')) . ' - ' . date('M d, Y', strtotime($filterWeek . ' sunday'));
+        } elseif ($dateFrom && $dateTo && $dateFrom === $dateTo) {
+            $dateRangeLabel = date('M d, Y', strtotime($dateFrom));
+        } elseif ($dateFrom && $dateTo) {
+            $dateRangeLabel = date('M d', strtotime($dateFrom)) . ' - ' . date('M d, Y', strtotime($dateTo));
+        } elseif ($filterYear) {
+            $dateRangeLabel = 'Year ' . $filterYear;
+        } else {
+            $dateRangeLabel = date('M d, Y', strtotime($date));
+        }
+
+        return $this->view('staff/lecture_attendance', compact(
+            'logs', 'date', 'teachers', 'mainGroups', 'academicYears', 'academicYearId',
+            'totalLogs', 'onTimeLogs', 'lateLogs', 'onTimePercent', 'latePercent',
+            'teacherStats', 'groupStats', 'dailyStats', 'subjectsList',
+            'filterTeacher', 'filterGroup', 'filterStatus', 'filterMonth', 'filterWeek',
+            'dateFrom', 'dateTo', 'viewMode', 'dateRangeLabel'
+        ));
+    }
+
     public function leaves(): string
     {
         $db = Application::$app->db;

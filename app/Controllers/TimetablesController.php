@@ -72,22 +72,22 @@ class TimetablesController extends Controller
         $db = $this->db();
         $groupId     = (int)$this->request->input('main_group_id');
         $dayOfWeek   = $this->request->input('day_of_week', '');
-        $subjectId   = (int)$this->request->input('subject_id');
-        $teacherId   = (int)$this->request->input('teacher_id');
+        $subjectName = trim($this->request->input('subject', ''));
+        $teacherName = trim($this->request->input('teacher_name', ''));
         $startTime   = $this->request->input('start_time', '');
         $endTime     = $this->request->input('end_time', '');
 
-        if (!$groupId || !$dayOfWeek || !$subjectId || !$startTime || !$endTime) {
+        if (!$groupId || !$dayOfWeek || !$subjectName || !$startTime || !$endTime) {
             $this->flash('error', 'All required fields must be completed.');
             return $this->redirect('/academics/timetable');
         }
 
         $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$groupId]);
-        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE id = ?", [$subjectId]);
-        $teacherRow = $db->selectOne("SELECT * FROM users WHERE id = ?", [$teacherId]);
+        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE name = ?", [$subjectName]);
+        $teacherRow = $teacherName ? $db->selectOne("SELECT * FROM users WHERE name = ?", [$teacherName]) : null;
 
-        if (!$groupRow || !$subjectRow) {
-            $this->flash('error', 'Invalid Group or Subject selected.');
+        if (!$groupRow) {
+            $this->flash('error', 'Invalid Group selected.');
             return $this->redirect('/academics/timetable');
         }
 
@@ -101,12 +101,12 @@ class TimetablesController extends Controller
                 'school_id'      => $schoolId,
                 'branch_id'      => $branchId,
                 'main_group_id'  => $groupId,
-                'subject_id'     => $subjectId,
-                'teacher_id'     => $teacherId ?: null,
+                'subject_id'     => $subjectRow['id'] ?? null,
+                'teacher_id'     => $teacherRow['id'] ?? null,
                 'class'          => $groupRow['name'],
                 'day_of_week'    => $dayOfWeek,
-                'subject'        => $subjectRow['name'],
-                'teacher_name'   => $teacherRow['name'] ?? '',
+                'subject'        => $subjectName,
+                'teacher_name'   => $teacherName,
                 'room'           => $groupRow['name'],
                 'start_time'     => $startTime . (strlen($startTime) == 5 ? ':00' : ''),
                 'end_time'       => $endTime . (strlen($endTime) == 5 ? ':00' : ''),
@@ -131,22 +131,22 @@ class TimetablesController extends Controller
         $db = $this->db();
         $groupId     = (int)$this->request->input('main_group_id');
         $dayOfWeek   = $this->request->input('day_of_week', '');
-        $subjectId   = (int)$this->request->input('subject_id');
-        $teacherId   = (int)$this->request->input('teacher_id');
+        $subjectName = trim($this->request->input('subject', ''));
+        $teacherName = trim($this->request->input('teacher_name', ''));
         $startTime   = $this->request->input('start_time', '');
         $endTime     = $this->request->input('end_time', '');
 
-        if (!$groupId || !$dayOfWeek || !$subjectId || !$startTime || !$endTime) {
+        if (!$groupId || !$dayOfWeek || !$subjectName || !$startTime || !$endTime) {
             $this->flash('error', 'All required fields must be completed.');
             return $this->redirect('/academics/timetable');
         }
 
         $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$groupId]);
-        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE id = ?", [$subjectId]);
-        $teacherRow = $db->selectOne("SELECT * FROM users WHERE id = ?", [$teacherId]);
+        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE name = ?", [$subjectName]);
+        $teacherRow = $teacherName ? $db->selectOne("SELECT * FROM users WHERE name = ?", [$teacherName]) : null;
 
-        if (!$groupRow || !$subjectRow) {
-            $this->flash('error', 'Invalid Group or Subject selected.');
+        if (!$groupRow) {
+            $this->flash('error', 'Invalid Group selected.');
             return $this->redirect('/academics/timetable');
         }
 
@@ -158,8 +158,8 @@ class TimetablesController extends Controller
                     start_time = ?, end_time = ?
                 WHERE id = ? AND tenant_id = ?
             ", [
-                $groupId, $subjectId, $teacherId ?: null, $dayOfWeek,
-                $groupRow['name'], $subjectRow['name'], $teacherRow['name'] ?? '', $groupRow['name'],
+                $groupId, $subjectRow['id'] ?? null, $teacherRow['id'] ?? null, $dayOfWeek,
+                $groupRow['name'], $subjectName, $teacherName, $groupRow['name'],
                 $startTime, $endTime, (int)$id, \Core\Database::getTenantId()
             ]);
 

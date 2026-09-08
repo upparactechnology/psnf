@@ -495,9 +495,8 @@ if ($user) {
             <div x-data="{
                 currentModule() {
                     const basePath = (() => {
-                        const reqDir = '<?= rtrim(dirname($_SERVER['REQUEST_URI'] ?? '/'), '/\\') ?>';
                         const scrDir = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\') ?>';
-                        return reqDir.length >= scrDir.length ? reqDir : scrDir;
+                        return scrDir;
                     })();
                     const path = (window.location.pathname.replace(basePath, '') || '/').replace(/\/$/, '') || '/';
                     if (path === '/dashboard' || path === '/games' || path === '/') return 'launcher';
@@ -614,6 +613,7 @@ if ($user) {
                     <?php if (can('view_staff_attendance') || can('view_face_kiosk') || can('view_face_register') || can('view_leave_management')): ?>
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase px-3" x-show="sidebarOpen">Operations</div>
                     <?php if (can('view_staff_attendance')): ?><?php navLink('/staff/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?><?php endif; ?>
+                    <?php if (can('view_staff_attendance')): ?><?php navLink('/staff/attendance/lectures', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', 'Lecture Check-ins', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_face_kiosk')): ?><?php navLink('/attendance/face-kiosk', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>', 'Face Kiosk', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_face_register')): ?><?php navLink('/attendance/face-register', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>', 'Face Register', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_leave_management')): ?><?php navLink('/staff/leaves', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>', 'Leave Management', $currentPath, $sidebarOpen); ?><?php endif; ?>

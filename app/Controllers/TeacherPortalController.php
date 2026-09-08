@@ -35,60 +35,12 @@ class TeacherPortalController extends Controller
 
         $teacherAttendance = null;
         $today = date('Y-m-d');
-        $todayDayOfWeek = date('l');
 
-        // Check if attendance exists
+        // Read-only: attendance is now recorded on login in AuthController
         $teacherAttendance = $db->selectOne(
             "SELECT * FROM teacher_attendance WHERE user_id = ? AND attendance_date = ?",
             [$user['id'], $today]
         );
-
-        // Fetch teacher's first timetabled lecture of the day
-        $firstLecture = $db->selectOne(
-            "SELECT start_time FROM timetables WHERE teacher_name = ? AND day_of_week = ? ORDER BY start_time ASC LIMIT 1",
-            [$user['name'], $todayDayOfWeek]
-        );
-
-        $lectureTime = $firstLecture['start_time'] ?? ($user['lecture_time'] ?? null);
-
-        if ($lectureTime) {
-            if (!$teacherAttendance) {
-                $openedAt = date('Y-m-d H:i:s');
-                
-                // Fetch dynamic lecture grace minutes
-                $shiftPolicy = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
-                $grace = (int) ($shiftPolicy['lec_grace_minutes'] ?? ($user['grace_period'] ?? 5));
-
-                // Compute cutoff time
-                $lectureTimestamp = strtotime($today . ' ' . $lectureTime);
-                $cutoffTimestamp = $lectureTimestamp + ($grace * 60);
-                $currentTimestamp = time();
-
-                $status = ($currentTimestamp <= $cutoffTimestamp) ? 'on_time' : 'late';
-
-                $db->insert('teacher_attendance', [
-                    'tenant_id'       => $user['tenant_id'],
-                    'school_id'       => $user['school_id'],
-                    'branch_id'       => $user['branch_id'],
-                    'user_id'         => $user['id'],
-                    'attendance_date' => $today,
-                    'opened_at'       => $openedAt,
-                    'status'          => $status,
-                    'lecture_time'    => $lectureTime,
-                    'grace_period'    => $grace
-                ]);
-
-                $teacherAttendance = $db->selectOne(
-                    "SELECT * FROM teacher_attendance WHERE user_id = ? AND attendance_date = ?",
-                    [$user['id'], $today]
-                );
-
-                ActivityLog::log('teacher_attendance_checkin', $user['id'], [
-                    'status'    => $status,
-                    'opened_at' => $openedAt
-                ]);
-            }
-        }
 
         // Determine assigned apps
         $assignedApps = [];

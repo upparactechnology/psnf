@@ -24,44 +24,6 @@ class DashboardController extends Controller
         $user = User::find($sessionUser['id']);
         $tenantId = $user['tenant_id'];
 
-        // Teacher attendance auto check-in
-        if (has_role('teacher')) {
-            $today = date('Y-m-d');
-            $todayDayOfWeek = date('l');
-            $teacherAttendance = $db->selectOne(
-                "SELECT * FROM teacher_attendance WHERE user_id = ? AND attendance_date = ?",
-                [$user['id'], $today]
-            );
-            $firstLecture = $db->selectOne(
-                "SELECT start_time FROM timetables WHERE teacher_name = ? AND day_of_week = ? ORDER BY start_time ASC LIMIT 1",
-                [$user['name'], $todayDayOfWeek]
-            );
-            $lectureTime = $firstLecture['start_time'] ?? ($user['lecture_time'] ?? null);
-            if ($lectureTime && !$teacherAttendance) {
-                $openedAt = date('Y-m-d H:i:s');
-                $shiftPolicy = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
-                $grace = (int) ($shiftPolicy['lec_grace_minutes'] ?? ($user['grace_period'] ?? 5));
-                $lectureTimestamp = strtotime($today . ' ' . $lectureTime);
-                $cutoffTimestamp = $lectureTimestamp + ($grace * 60);
-                $status = (time() <= $cutoffTimestamp) ? 'on_time' : 'late';
-                $db->insert('teacher_attendance', [
-                    'tenant_id'       => $user['tenant_id'],
-                    'school_id'       => $user['school_id'],
-                    'branch_id'       => $user['branch_id'],
-                    'user_id'         => $user['id'],
-                    'attendance_date' => $today,
-                    'opened_at'       => $openedAt,
-                    'status'          => $status,
-                    'lecture_time'    => $lectureTime,
-                    'grace_period'    => $grace
-                ]);
-                \App\Models\ActivityLog::log('teacher_attendance_checkin', $user['id'], [
-                    'status'    => $status,
-                    'opened_at' => $openedAt
-                ]);
-            }
-        }
-
         // Determine assigned apps - teachers and admins get full access
         $assignedApps = [
             'academic', 'academic_summary', 'hr', 'access_control', 'finance', 
