@@ -96,6 +96,7 @@ if (!function_exists('flash')) {
     }
 }
 
+
 if (!function_exists('get_dynamic_base_url')) {
     function get_dynamic_base_url(): string
     {
