@@ -39,6 +39,15 @@ class Request
         $path = '/' . ltrim($path, '/');
         $path = rtrim($path, '/') ?: '/';
 
+        // When Apache serves a directory index (e.g. /erpv2/public/), it internally
+        // redirects to index.php, making REQUEST_URI = /erpv2/public/index.php.
+        // After stripping the base, we get /index.php — treat that as root '/'.
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $scriptFile = basename($scriptName);
+        if ($scriptFile && $path === '/' . $scriptFile) {
+            $path = '/';
+        }
+
         return $path;
     }
 
