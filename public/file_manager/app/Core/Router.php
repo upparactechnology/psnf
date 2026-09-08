@@ -45,24 +45,11 @@ class Router {
 
   private function resolveBaseUrl(array $app): string {
     $base = (string)($app['base_url'] ?? '');
-    if ($base !== '' && $base !== 'auto') {
-      return str_replace(' ', '%20', $base);
+    if ($base === '' || $base === 'auto') {
+      $script = (string)($_SERVER['SCRIPT_NAME'] ?? '');
+      $base = rtrim(str_replace('\\', '/', dirname($script)), '/');
+      if ($base === '/') $base = '';
     }
-
-    $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-    if (($qPos = strpos($requestUri, '?')) !== false) {
-      $requestUri = substr($requestUri, 0, $qPos);
-    }
-    $requestUri = '/' . ltrim($requestUri, '/');
-
-    if (preg_match('#^(.*?/file_manager/public)(?:/|$)#i', $requestUri, $m)) {
-      return $m[1];
-    }
-
-    $script = (string)($_SERVER['SCRIPT_NAME'] ?? '');
-    $base = rtrim(str_replace('\\', '/', dirname($script)), '/');
-    if ($base === '/') $base = '';
-
     return str_replace(' ', '%20', $base);
   }
 
