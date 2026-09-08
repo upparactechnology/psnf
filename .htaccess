@@ -2,26 +2,14 @@ Options -Indexes -MultiViews
 
 RewriteEngine On
 
-# ── Block access to hidden files (dotfiles) — must come first ────────────────
+# Block dotfiles
 RewriteRule (^\.|/\.) - [F,L]
 
-# ── File Manager (special entry point) ──────────────────────────────────────
-RewriteRule ^(erp/)?file_manager/public/?$ public/file_manager/public/index.php [L,QSA]
+# File Manager
+RewriteRule ^file_manager/public/?$ public/file_manager/public/index.php [L,QSA]
 
-# ── Static assets: /erp/assets/... → public/assets/... ──────────────────────
-# Works when .htaccess is at project root (local dev)
-RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
-RewriteRule ^erp/(.+)$ public/$1 [L,QSA]
-
-# ── Static assets: serve from public/ when .htaccess is inside erp/ ──────────
-# When server DocumentRoot is public_html/ and .htaccess sits in public_html/erp/,
-# per-directory context strips the erp/ prefix. Use [END] (Apache 2.4+) to
-# prevent the double-rewrite loop that [L] causes in per-directory context.
-RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
-RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} !-d
-RewriteCond %{DOCUMENT_ROOT}/erp/public/$1 -f
-RewriteRule ^(.+\.[a-zA-Z0-9]+)$ public/$1 [END]
-
-# ── Route everything else through front controller ───────────────────────────
+# Route everything else to front controller
+# In per-directory context (live server), erp/ prefix is already stripped
+# At project root (local dev), full URL is matched
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ public/index.php [L,QSA]
