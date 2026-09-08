@@ -35,42 +35,54 @@ class Request
             $path = substr($path, strlen($base));
         }
 
-        return '/' . ltrim($path, '/');
+        // Normalize: ensure leading slash, strip trailing slashes
+        $path = '/' . ltrim($path, '/');
+        $path = rtrim($path, '/') ?: '/';
+
+        return $path;
     }
 
     public function detectBasePath(): string
     {
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+        if (($qPos = strpos($requestUri, '?')) !== false) {
+            $requestUri = substr($requestUri, 0, $qPos);
+        }
+        $requestUri = rtrim($requestUri, '/');
+
         // 1. Use SCRIPT_NAME directory (most common on standard Apache/Nginx)
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
         $dir = rtrim(dirname($scriptName), '/\\');
 
-        if ($dir !== '' && $dir !== '/') {
+        // Only use SCRIPT_NAME dir if it's actually a prefix of REQUEST_URI
+        if ($dir !== '' && $dir !== '/' && str_starts_with($requestUri, $dir)) {
             return $dir;
         }
 
-        // 2. On some servers (CGI/FPM/proxy), SCRIPT_NAME is just "/index.php"
-        //    but REQUEST_URI still has the full subdirectory path.
-        //    Detect by looking for "public/" in REQUEST_URI.
-        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+        // 2. On some servers (CGI/FPM/proxy), SCRIPT_NAME may not include
+        //    the full subdirectory prefix. Detect by looking for "public/" in REQUEST_URI.
         if (($pos = strpos($requestUri, '/public/')) !== false) {
             return substr($requestUri, 0, $pos + 8); // +8 for '/public/'
         }
         if (str_ends_with($requestUri, '/public')) {
-            return substr($requestUri, 0, -1); // strip trailing slash kept by rtrim later
+            return substr($requestUri, 0, -7); // strip '/public'
         }
 
-        // 3. Fallback: use SCRIPT_FILENAME to find base
+        // 3. Fallback: use SCRIPT_FILENAME minus DOCUMENT_ROOT
         $scriptFilename = $_SERVER['SCRIPT_FILENAME'] ?? '';
         $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
         if ($docRoot && $scriptFilename && str_starts_with($scriptFilename, $docRoot)) {
             $relative = dirname(substr($scriptFilename, strlen($docRoot)));
             $relative = rtrim($relative, '/\\');
             if ($relative !== '' && $relative !== '/') {
-                return $relative;
+                // Verify this is a prefix of REQUEST_URI
+                if (str_starts_with($requestUri, $relative)) {
+                    return $relative;
+                }
             }
         }
 
-        return $dir;
+        return $dir !== '/' ? $dir : '';
     }
 
     public function getBody(): array
