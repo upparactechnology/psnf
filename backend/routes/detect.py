@@ -3,9 +3,37 @@ from pydantic import BaseModel
 from recognition.detector import FaceDetector
 from recognition.model_manager import model_manager
 from utils.image_utils import base64_to_cv2
+from utils.logger import logger
 import cv2
 
 router = APIRouter()
+
+
+@router.post("/model/load")
+def load_model():
+    """Force-load InsightFace model into RAM (for registration pages)."""
+    try:
+        if model_manager.is_loaded():
+            model_manager.get_model()
+            return {"success": True, "message": "Model already loaded"}
+        model_manager.get_model()
+        logger.info("Model force-loaded via /api/model/load")
+        return {"success": True, "message": "Model loaded"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@router.post("/model/unload")
+def unload_model():
+    """Unload InsightFace model from RAM to free memory."""
+    try:
+        if not model_manager.is_loaded():
+            return {"success": True, "message": "Model not loaded"}
+        model_manager.unload(reason="manual unload from registration UI")
+        return {"success": True, "message": "Model unloaded"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
 
 class DetectFrameRequest(BaseModel):
     image_base64: str

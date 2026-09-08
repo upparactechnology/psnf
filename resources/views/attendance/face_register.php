@@ -546,19 +546,27 @@ async function initCam() {
         capCvs.width = ovl.width;  capCvs.height = ovl.height;
     }
 
-window.beginScan = function() {
+window.beginScan = async function() {
     if (!selUserId) return;
     document.getElementById('step1Card').classList.add('hidden');
     document.getElementById('step2Card').classList.remove('hidden');
     buildAngleDots(); updateAngleUI(0);
-    
+
+    // Force-load InsightFace model for pitch/yaw detection
+    document.getElementById('scanStatusLabel').textContent = 'Loading face model...';
+    try {
+        const modelRes = await fetch('<?= url('attendance/api.php?endpoint=/api/model/load') ?>', {method:'POST'});
+        const modelData = await modelRes.json();
+        if (!modelData.success) { console.warn('Model load failed:', modelData.message); }
+    } catch(e) { console.warn('Model load error:', e); }
+
     // Initialize camera only on user click to comply with mobile browser rules
     if (!camStream) {
         initCam();
     } else {
         vid.play().catch(e => console.log("Force play error: ", e));
     }
-    
+
     startAngle(0);
 };
 
@@ -841,6 +849,9 @@ async function submitAllAngles() {
             statusEl.className = 'freg-status-bar done';
             statusEl.textContent = '✅ Registration complete!';
 
+            // Unload model to free RAM
+            try { await fetch('<?= url('attendance/api.php?endpoint=/api/model/unload') ?>', {method:'POST'}); } catch(e) {}
+
             const userName = data.data?.employee_name || data.data?.name || 'User';
             const count    = data.data?.embeddings_registered || capturedImgs.length;
             const msg = document.getElementById('fregSuccessMsg');
@@ -863,6 +874,10 @@ window.resetReg = function() {
     stopCamera();
     curAngle = 0; capturedImgs = []; faceFrames = 0; phase = 'idle'; submitting = false;
     selUserId = null;
+
+    // Unload model to free RAM
+    try { fetch('<?= url('attendance/api.php?endpoint=/api/model/unload') ?>', {method:'POST'}); } catch(e) {}
+
     document.getElementById('selectedUserPreview').classList.add('hidden');
     document.getElementById('startScanBtn').disabled = true;
     document.getElementById('userSearch').value = '';
