@@ -267,27 +267,6 @@ class AttendanceController extends Controller
                     $calData[$day]['status'] = $r['status'] ?? 'absent';
                 }
             }
-
-            // If specific student, get their check-in/out times from face recognition
-            if ($studentId) {
-                $faceRecords = $db->select(
-                    "SELECT DATE(check_in) as att_date, 
-                            MIN(TIME(check_in)) as check_in_time,
-                            MAX(CASE WHEN check_out IS NOT NULL THEN TIME(check_out) END) as check_out_time
-                     FROM attendance 
-                     WHERE user_id = ? AND DATE(check_in) >= ? AND DATE(check_in) <= ?
-                     GROUP BY DATE(check_in)",
-                    [$studentId, $monthStart, date('Y-m-t', strtotime($monthStart))]
-                );
-
-                foreach ($faceRecords as $fr) {
-                    $day = (int)date('d', strtotime($fr['att_date']));
-                    if (isset($calData[$day])) {
-                        $calData[$day]['in'] = $fr['check_in_time'] ? date('h:i A', strtotime($fr['check_in_time'])) : '';
-                        $calData[$day]['out'] = $fr['check_out_time'] ? date('h:i A', strtotime($fr['check_out_time'])) : '';
-                    }
-                }
-            }
         }
 
         return $this->view('attendance/student_calendar', compact(
