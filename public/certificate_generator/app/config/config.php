@@ -15,6 +15,8 @@ if ($basePath === '/' || $basePath === '\\' || $basePath === '.') {
     $basePath = '';
 }
 define('BASE_URL', ($https ? 'https' : 'http') . '://' . $host . $basePath);
+$erpBasePath = preg_replace('#/certificate_generator\s*$#', '', $basePath) ?? $basePath;
+define('ERP_BASE_URL', ($https ? 'https' : 'http') . '://' . $host . $erpBasePath);
 
 // Prefer a shipped/ uploaded TTF within the project if available to avoid
 // environment font path issues on some Windows/XAMPP setups.

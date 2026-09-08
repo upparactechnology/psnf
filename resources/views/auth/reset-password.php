@@ -16,11 +16,11 @@
         <input type="hidden" name="token" value="<?= e($token ?? '') ?>">
         <div class="space-y-1.5">
             <label class="block text-sm font-medium text-slate-300">New Password</label>
-            <input type="password" name="password" minlength="8" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all" placeholder="Minimum 8 characters" required>
+            <input type="password" name="password" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all" placeholder="Enter new password" required>
         </div>
         <div class="space-y-1.5">
             <label class="block text-sm font-medium text-slate-300">Confirm Password</label>
-            <input type="password" name="password_confirmation" minlength="8" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all" placeholder="Repeat password" required>
+            <input type="password" name="password_confirmation" class="w-full bg-slate-900/70 border border-slate-700/60 text-white placeholder-slate-500 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all" placeholder="Repeat password" required>
         </div>
         <button type="submit" :disabled="loading" class="w-full py-3 px-6 rounded-xl text-sm font-semibold text-white transition-all" style="background: linear-gradient(135deg, #6366f1, #a855f7);" :class="loading ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90'">
             <span x-text="loading ? 'Resetting...' : 'Reset Password'">Reset Password</span>

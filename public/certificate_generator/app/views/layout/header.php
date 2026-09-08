@@ -137,7 +137,7 @@ if ($userInitials === '') {
     <aside class="sidebar" id="appSidebar">
         <div class="sidebar-header">
             <div class="brand-block">
-                <a href="/psnf/public/dashboard" style="text-decoration:none; color:inherit; display:flex; items-center:center; gap:8px;" title="Back to Main ERP Launcher">
+                <a href="<?= ERP_BASE_URL ?>/dashboard" style="text-decoration:none; color:inherit; display:flex; items-center:center; gap:8px;" title="Back to Main ERP Launcher">
                     <span class="brand-logo" aria-hidden="true"></span>
                     <div class="brand-copy">
                         <h1>Certificates</h1>
@@ -174,7 +174,7 @@ if ($userInitials === '') {
                     <span class="nav-group-caret" aria-hidden="true"></span>
                 </div>
 
-                <a class="nav-link" href="/psnf/public/dashboard" style="color: #6366f1; font-weight: 700; border-bottom: 1px solid rgba(99,102,241,0.2); margin-bottom: 4px; padding-bottom: 8px;">
+                <a class="nav-link" href="<?= ERP_BASE_URL ?>/dashboard" style="color: #6366f1; font-weight: 700; border-bottom: 1px solid rgba(99,102,241,0.2); margin-bottom: 4px; padding-bottom: 8px;">
                     <span class="nav-icon" aria-hidden="true">←</span>
                     <span class="nav-link-title">Back to ERP</span>
                 </a>

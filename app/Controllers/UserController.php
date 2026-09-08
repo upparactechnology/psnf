@@ -111,7 +111,7 @@ class UserController extends Controller
         $rules = [
             'first_name'=> 'required|min:2',
             'email'     => 'required|email|unique:users,email',
-            'password'  => 'required|min:8|confirmed',
+            'password'  => 'required|confirmed',
             'school_id' => 'required',
             'branch_id' => 'required',
         ];

@@ -6,6 +6,7 @@ class Controller {
     extract($data);
     $app = require __DIR__ . '/../../config/app.php';
     $app['base_url'] = $this->resolveBaseUrl($app);
+    $app['erp_base_url'] = rtrim(preg_replace('#/file_manager/public$#', '', $app['base_url']), '/');
     require __DIR__ . '/../Views/' . $file . '.php';
   }
 

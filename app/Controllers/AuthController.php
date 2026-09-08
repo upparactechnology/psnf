@@ -147,8 +147,8 @@ class AuthController extends Controller
         $password = $body['password']             ?? '';
         $confirm  = $body['password_confirmation']?? '';
 
-        if (strlen($password) < 8) {
-            $this->flash('error', 'Password must be at least 8 characters.');
+        if (strlen($password) < 1) {
+            $this->flash('error', 'Password is required.');
             return $this->redirect("/reset-password?token=$token");
         }
 
