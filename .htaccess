@@ -2,5 +2,6 @@ Options -Indexes
 
 RewriteEngine On
 
+RewriteRule ^(.*)$ public/$1 [L]
 # Block access to hidden files (dotfiles)
 RewriteRule (^\.|/\.) - [F]

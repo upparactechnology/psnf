@@ -6,8 +6,8 @@ return [
     'name'        => 'PSNF ERP',
     'version'     => '1.0.0',
     'debug'       => true, // Set to false in production
-    'base_url'    => '',
-    'base_path'   => '',
+    'base_url'    => 'auto',
+    'base_path'   => 'erp',
     'timezone'    => 'Asia/Kolkata',
     'locale'      => 'en',
     'uploads_dir' => ROOT_PATH . '/storage/uploads',
