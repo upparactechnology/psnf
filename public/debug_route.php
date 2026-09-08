@@ -1,49 +1,61 @@
 <?php
-// Live diagnostic script
+declare(strict_types=1);
+
 header('Content-Type: text/plain');
 
-require dirname(__DIR__) . '/core/Application.php';
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
 
-echo "=== SERVER VARS ===\n";
-echo "REQUEST_URI:     " . ($_SERVER['REQUEST_URI'] ?? '') . "\n";
-echo "SCRIPT_NAME:     " . ($_SERVER['SCRIPT_NAME'] ?? '') . "\n";
-echo "SCRIPT_FILENAME: " . ($_SERVER['SCRIPT_FILENAME'] ?? '') . "\n";
-echo "DOCUMENT_ROOT:   " . ($_SERVER['DOCUMENT_ROOT'] ?? '') . "\n";
+define('ROOT_PATH', dirname(__DIR__));
+define('APP_PATH', ROOT_PATH . '/app');
+define('CORE_PATH', ROOT_PATH . '/core');
+define('CONFIG_PATH', ROOT_PATH . '/config');
+define('VIEWS_PATH', ROOT_PATH . '/resources/views');
+define('STORAGE_PATH', ROOT_PATH . '/storage');
+define('START_TIME', microtime(true));
 
-$app = new \Core\Application();
+require ROOT_PATH . '/core/Application.php';
 
-echo "\n=== DETECTION RESULT ===\n";
-echo "detectBasePath(): " . var_export($app->request->detectBasePath(), true) . "\n";
-echo "getPath():        " . var_export($app->request->getPath(), true) . "\n";
-echo "getMethod():      " . var_export($app->request->getMethod(), true) . "\n";
-echo "get_dynamic_base_url(): " . var_export(get_dynamic_base_url(), true) . "\n";
-echo "url('/login'):    " . var_export(url('/login'), true) . "\n";
+echo "=== SERVER VARIABLES ===\n";
+echo "REQUEST_URI:     " . ($_SERVER['REQUEST_URI'] ?? 'N/A') . "\n";
+echo "SCRIPT_NAME:     " . ($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "\n";
+echo "SCRIPT_FILENAME: " . ($_SERVER['SCRIPT_FILENAME'] ?? 'N/A') . "\n";
+echo "DOCUMENT_ROOT:   " . ($_SERVER['DOCUMENT_ROOT'] ?? 'N/A') . "\n";
+echo "HTTP_HOST:       " . ($_SERVER['HTTP_HOST'] ?? 'N/A') . "\n";
 
-echo "\n=== ALL REGISTERED ROUTES (first 10) ===\n";
-$ref = new ReflectionClass($app->router);
-$prop = $ref->getProperty('routes');
-$prop->setAccessible(true);
-$routes = $prop->getValue($app->router);
-foreach (array_slice($routes, 0, 15) as $r) {
-    echo $r['method'] . " " . $r['path'] . "\n";
-}
+try {
+    $app = new \Core\Application();
 
-echo "\n=== RESOLVE ATTEMPT ===\n";
-// Temporarily mock request path to test different URLs
-$testPaths = ['/', '/login', '/dashboard', '/students'];
-foreach ($testPaths as $tp) {
-    $matched = false;
-    foreach ($routes as $route) {
-        if ($route['method'] !== 'GET') continue;
-        $pattern = preg_replace('/\{([a-zA-Z_]+)\}/', '([^/]+)', $route['path']);
-        $pattern = '#^' . $pattern . '$#';
-        if (preg_match($pattern, $tp)) {
-            $matched = true;
-            echo "Path '$tp' => MATCHED route: " . $route['path'] . "\n";
-            break;
-        }
+    echo "\n=== PATH DETECTION ===\n";
+    echo "detectBasePath(): " . var_export($app->request->detectBasePath(), true) . "\n";
+    echo "getPath():        " . var_export($app->request->getPath(), true) . "\n";
+    echo "getMethod():      " . var_export($app->request->getMethod(), true) . "\n";
+    echo "get_dynamic_base_url(): " . var_export(get_dynamic_base_url(), true) . "\n";
+    echo "url('/login'):    " . var_export(url('/login'), true) . "\n";
+
+    echo "\n=== DATABASE CONNECTION ===\n";
+    try {
+        $db = $app->db->getPdo();
+        echo "Database connected successfully!\n";
+    } catch (\Throwable $e) {
+        echo "Database connection failed: " . $e->getMessage() . "\n";
     }
-    if (!$matched) {
-        echo "Path '$tp' => NOT MATCHED!\n";
-    }
+
+    echo "\n=== SIMULATE ROOT ROUTE ===\n";
+    $_SERVER['REQUEST_URI'] = '/erpv2/public/';
+    $req = new \Core\Request();
+    echo "When REQUEST_URI is '/erpv2/public/':\n";
+    echo "  detectBasePath() = " . var_export($req->detectBasePath(), true) . "\n";
+    echo "  getPath()        = " . var_export($req->getPath(), true) . "\n";
+
+    $_SERVER['REQUEST_URI'] = '/erpv2/public/login';
+    $req2 = new \Core\Request();
+    echo "When REQUEST_URI is '/erpv2/public/login':\n";
+    echo "  detectBasePath() = " . var_export($req2->detectBasePath(), true) . "\n";
+    echo "  getPath()        = " . var_export($req2->getPath(), true) . "\n";
+
+} catch (\Throwable $e) {
+    echo "\nFATAL EXCEPTION: " . $e->getMessage() . "\n";
+    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n";
+    echo $e->getTraceAsString() . "\n";
 }
