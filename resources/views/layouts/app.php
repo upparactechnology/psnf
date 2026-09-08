@@ -494,7 +494,11 @@ if ($user) {
             <!-- DYNAMIC CLIENT-SIDE SIDEBAR MODULE SECTIONS (ZERO PAGE RELOAD) -->
             <div x-data="{
                 currentModule() {
-                    const basePath = '<?= '/' . trim(config('app.base_path', 'psnf/public'), '/') ?>';
+                    const basePath = (() => {
+                        const reqDir = '<?= rtrim(dirname($_SERVER['REQUEST_URI'] ?? '/'), '/\\') ?>';
+                        const scrDir = '<?= rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\') ?>';
+                        return reqDir.length >= scrDir.length ? reqDir : scrDir;
+                    })();
                     const path = (window.location.pathname.replace(basePath, '') || '/').replace(/\/$/, '') || '/';
                     if (path === '/dashboard' || path === '/games' || path === '/') return 'launcher';
                     if (path.startsWith('/settings')) return 'settings';

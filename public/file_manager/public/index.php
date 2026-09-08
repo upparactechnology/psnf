@@ -24,7 +24,7 @@ session_start();
 
 if ($erpUser && !empty($erpUser['id'])) {
     $erpRoles = $erpUser['roles'] ?? [];
-    $staffRoles = ['teacher', 'staff', 'driver'];
+    $staffRoles = ['teacher', 'staff', 'driver', 'therapist'];
     $isStaff = !empty(array_intersect($erpRoles, $staffRoles));
 
     if ($isStaff) {
@@ -64,8 +64,14 @@ if ($erpUser && !empty($erpUser['id'])) {
                     $_SESSION['staff_name'] = (string) ($staffRow['name'] ?? $erpUser['name'] ?? 'Staff');
                 }
             } catch (\Throwable $e) {
-                // DB error — fall through
+                // DB error — use ERP user ID as staff_id fallback
+                $_SESSION['staff_id']   = (int) $erpUser['id'];
+                $_SESSION['staff_name'] = (string) ($erpUser['name'] ?? 'Staff');
             }
+        } elseif (empty($_SESSION['staff_id'])) {
+            // No email to lookup — use ERP user ID as staff_id fallback
+            $_SESSION['staff_id']   = (int) $erpUser['id'];
+            $_SESSION['staff_name'] = (string) ($erpUser['name'] ?? 'Staff');
         }
         $_SESSION['erp_bridged'] = true;
     } else {

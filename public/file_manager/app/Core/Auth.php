@@ -10,16 +10,23 @@ class Auth {
         exit;
       }
       // Redirect to PSNF ERP login instead of local login
-      header('Location: /psnf/public/login?redirect=file_manager');
+      $app = require __DIR__ . '/../../config/app.php';
+      $baseUrl = self::resolveBaseUrl($app);
+      header('Location: ' . rtrim($baseUrl, '/') . '/login?redirect=file_manager');
       exit;
     }
   }
 
   public static function guardStaff(): void {
     if (empty($_SESSION['staff_id'])) {
+      // If ERP-bridged admin user, redirect to admin portal
+      if (!empty($_SESSION['admin_id']) && !empty($_SESSION['erp_bridged'])) {
+        header('Location: /admin/dashboard');
+        exit;
+      }
       $app = require __DIR__ . '/../../config/app.php';
       $baseUrl = self::resolveBaseUrl($app);
-      header('Location: ' . rtrim($baseUrl, '/') . '/staff-login');
+      header('Location: ' . rtrim($baseUrl, '/') . '/login?redirect=file_manager');
       exit;
     }
   }

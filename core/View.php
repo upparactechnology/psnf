@@ -96,13 +96,13 @@ class View
 
     public static function asset(string $path): string
     {
-        $base = config('app.base_url', '');
+        $base = get_dynamic_base_url();
         return rtrim($base, '/') . '/assets/' . ltrim($path, '/');
     }
 
     public static function route(string $path): string
     {
-        $base = config('app.base_url', '');
+        $base = get_dynamic_base_url();
         return rtrim($base, '/') . '/' . ltrim($path, '/');
     }
 }

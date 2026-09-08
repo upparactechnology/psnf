@@ -29,9 +29,15 @@ class Request
             $path = substr($path, 0, $pos);
         }
 
-        // Strip base directory (for XAMPP sub-directory setup)
-        $base = '/' . trim(config('app.base_path', 'psnf/public'), '/');
-        if ($base !== '/' && str_starts_with($path, $base)) {
+        // Strip base directory (auto-detect from REQUEST_URI/SCRIPT_NAME)
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
+        $requestDir = '/' . trim(dirname($requestUri), '/\\');
+        $scriptDir  = '/' . trim(dirname($scriptName), '/\\');
+        $base = (strlen($requestDir) >= strlen($scriptDir)) ? $requestDir : $scriptDir;
+        $base = preg_replace('#/(attendance)(/.*)?$#i', '', $base);
+        $base = rtrim($base, '/\\');
+        if ($base !== '' && $base !== '/' && str_starts_with($path, $base)) {
             $path = substr($path, strlen($base));
         }
 

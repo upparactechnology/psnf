@@ -68,7 +68,7 @@ class StudentController extends Controller
         $tenantId = \Core\Database::getTenantId();
         $schools  = \Core\Application::$app->db->select("SELECT id, name FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [$tenantId]);
         $branches = \Core\Application::$app->db->select("SELECT id, name, school_id FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL", [$tenantId]);
-        $classes  = \Core\Application::$app->db->select("SELECT id, name, section FROM classes WHERE tenant_id = ? AND deleted_at IS NULL ORDER BY name ASC", [$tenantId]);
+        $classes  = \Core\Application::$app->db->select("SELECT id, name, section FROM classes WHERE tenant_id = ? ORDER BY name ASC", [$tenantId]);
         $academicYears = \Core\Application::$app->db->select("SELECT id, year_name FROM academic_years WHERE tenant_id = ? ORDER BY year_name DESC", [$tenantId]);
         return $this->view('students/create', compact('schools', 'branches', 'classes', 'academicYears'));
     }

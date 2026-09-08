@@ -107,16 +107,16 @@ if (!function_exists('get_dynamic_base_url')) {
         $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
         
         $configuredBase = config('app.base_url', '');
-        if (!empty($configuredBase)) {
+        if (!empty($configuredBase) && $configuredBase !== 'auto') {
             $parsed = parse_url($configuredBase);
             $path = $parsed['path'] ?? '';
             return $scheme . '://' . $host . rtrim($path, '/');
         }
 
+        // Always use SCRIPT_NAME directory (where index.php lives) as the base
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
         $dir = rtrim(dirname($scriptName), '/\\');
-        $dir = preg_replace('#/(attendance)(/.*)?$#i', '', $dir);
-        $dir = rtrim($dir, '/\\');
+        if ($dir === '/') $dir = '';
 
         return $scheme . '://' . $host . $dir;
     }

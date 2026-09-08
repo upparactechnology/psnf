@@ -414,7 +414,7 @@ ob_start();
 </div>
 
 <script>
-const csrfToken = '<?= \Core\View::csrf_token() ?>';
+const csrfToken = '<?= \Core\View::csrfToken() ?>';
 
 function studentDirectory() {
     return {
