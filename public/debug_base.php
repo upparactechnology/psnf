@@ -1,25 +1,52 @@
 <?php
-// Minimal debug - no framework needed
+declare(strict_types=1);
+
 header('Content-Type: text/plain');
 
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
+
+define('ROOT_PATH', dirname(__DIR__));
+define('APP_PATH', ROOT_PATH . '/app');
+define('CORE_PATH', ROOT_PATH . '/core');
+define('CONFIG_PATH', ROOT_PATH . '/config');
+define('VIEWS_PATH', ROOT_PATH . '/resources/views');
+define('STORAGE_PATH', ROOT_PATH . '/storage');
+
+require ROOT_PATH . '/core/Application.php';
+
 echo "=== SERVER VARIABLES ===\n";
-echo "REQUEST_URI     = " . ($_SERVER['REQUEST_URI'] ?? 'N/A') . "\n";
-echo "SCRIPT_NAME     = " . ($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "\n";
-echo "SCRIPT_FILENAME = " . ($_SERVER['SCRIPT_FILENAME'] ?? 'N/A') . "\n";
-echo "DOCUMENT_ROOT   = " . ($_SERVER['DOCUMENT_ROOT'] ?? 'N/A') . "\n";
-echo "HTTP_HOST       = " . ($_SERVER['HTTP_HOST'] ?? 'N/A') . "\n";
+echo "REQUEST_URI:     " . ($_SERVER['REQUEST_URI'] ?? 'N/A') . "\n";
+echo "SCRIPT_NAME:     " . ($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "\n";
+echo "SCRIPT_FILENAME: " . ($_SERVER['SCRIPT_FILENAME'] ?? 'N/A') . "\n";
+echo "DOCUMENT_ROOT:   " . ($_SERVER['DOCUMENT_ROOT'] ?? 'N/A') . "\n";
+echo "HTTP_HOST:       " . ($_SERVER['HTTP_HOST'] ?? 'N/A') . "\n";
 
-echo "\n=== TEST: Does .htaccess in public/ rewrite to index.php? ===\n";
-echo "If you see this, debug_base.php was served directly (NOT through index.php).\n";
-echo "This means the .htaccess is NOT catching real files - only non-existent paths.\n";
-echo "That is correct behavior.\n";
+try {
+    $app = new \Core\Application();
 
-echo "\n=== WHAT TO CHECK ===\n";
-echo "1. Visit psnf.upparac.com/erpv2/public/debug_base.php -> should show this output\n";
-echo "2. Visit psnf.upparac.com/erpv2/public/ -> should redirect to /login\n";
-echo "3. Visit psnf.upparac.com/erpv2/public/login -> should show login page\n";
-echo "\nIf #2 or #3 shows 404, the root .htaccess revert has NOT been deployed yet.\n";
-echo "Make sure .htaccess in the PROJECT ROOT (erpv2/.htaccess) only contains:\n";
-echo "  Options -Indexes\n";
-echo "  RewriteEngine On\n";
-echo "  RewriteRule (^\\.|/\\.) - [F]\n";
+    echo "\n=== PATH DETECTION ===\n";
+    echo "detectBasePath(): " . var_export($app->request->detectBasePath(), true) . "\n";
+    echo "getPath():        " . var_export($app->request->getPath(), true) . "\n";
+    echo "getMethod():      " . var_export($app->request->getMethod(), true) . "\n";
+    echo "get_dynamic_base_url(): " . var_export(get_dynamic_base_url(), true) . "\n";
+    echo "url('/login'):    " . var_export(url('/login'), true) . "\n";
+
+    echo "\n=== SIMULATE ROOT ROUTE ===\n";
+    $_SERVER['REQUEST_URI'] = '/erpv2/public/';
+    $req = new \Core\Request();
+    echo "When REQUEST_URI is '/erpv2/public/':\n";
+    echo "  detectBasePath() = " . var_export($req->detectBasePath(), true) . "\n";
+    echo "  getPath()        = " . var_export($req->getPath(), true) . "\n";
+
+    $_SERVER['REQUEST_URI'] = '/erpv2/public/login';
+    $req2 = new \Core\Request();
+    echo "When REQUEST_URI is '/erpv2/public/login':\n";
+    echo "  detectBasePath() = " . var_export($req2->detectBasePath(), true) . "\n";
+    echo "  getPath()        = " . var_export($req2->getPath(), true) . "\n";
+
+} catch (\Throwable $e) {
+    echo "\nFATAL EXCEPTION: " . $e->getMessage() . "\n";
+    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n";
+    echo $e->getTraceAsString() . "\n";
+}
