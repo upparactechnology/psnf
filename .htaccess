@@ -15,14 +15,14 @@ RewriteRule ^erp/(.+)$ public/$1 [L,QSA]
 
 # ── Static assets: serve from public/ when .htaccess is inside erp/ ──────────
 # When server DocumentRoot is public_html/ and .htaccess sits in public_html/erp/,
-# per-directory context strips the erp/ prefix. Only match file-extension paths
-# (js, css, png, etc.) so PHP routes like /login are never affected.
+# per-directory context strips the erp/ prefix. Use [END] (Apache 2.4+) to
+# prevent the double-rewrite loop that [L] causes in per-directory context.
 RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
 RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} !-d
 RewriteCond %{DOCUMENT_ROOT}/erp/public/$1 -f
-RewriteRule ^(.+\.[a-zA-Z0-9]+)$ public/$1 [L]
+RewriteRule ^(.+\.[a-zA-Z0-9]+)$ public/$1 [END]
 
 # ── Route everything else (including /erp and /erp/*) through front controller
+# Removed !-d so directory requests (e.g. /erp) reach PHP for redirect handling.
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [L,QSA]
