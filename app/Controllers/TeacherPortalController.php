@@ -178,4 +178,183 @@ class TeacherPortalController extends Controller
             'user', 'teacherAttendance', 'assignedApps', 'stats', 'teacherSchedule', 'announcements', 'upcomingBirthdays', 'sharedTimetables'
         ));
     }
+
+    public function markAttendance(): string
+    {
+        $sessionUser = $this->auth();
+        if (!$sessionUser) {
+            Application::$app->response->redirect('/login');
+            exit();
+        }
+
+        $db = $this->db();
+        $user = User::find($sessionUser['id']);
+        if (!$user) {
+            Application::$app->response->redirect('/login');
+            exit();
+        }
+
+        $selectedClass   = trim((string)$this->request->get('class', ''));
+        $selectedSection = trim((string)$this->request->get('section', ''));
+        $selectedDate    = trim((string)$this->request->get('date', date('Y-m-d')));
+
+        // Get classes assigned to this teacher (as class teacher)
+        $assignedClasses = $db->select(
+            "SELECT name as class, COALESCE(section, '') as section FROM classes WHERE class_teacher_id = ?",
+            [$user['id']]
+        );
+
+        // Auto-select first class if none selected
+        if (empty($selectedClass) && !empty($assignedClasses)) {
+            $selectedClass = $assignedClasses[0]['class'];
+            $selectedSection = $assignedClasses[0]['section'];
+        }
+
+        $students = [];
+        $attendanceMap = [];
+
+        if ($selectedClass) {
+            // Fetch enrolled students for selected class
+            $students = $db->select(
+                "SELECT * FROM students 
+                 WHERE tenant_id = ? AND class = ? AND COALESCE(section, '') = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
+                 ORDER BY first_name ASC",
+                [$user['tenant_id'], $selectedClass, $selectedSection]
+            );
+
+            if (empty($students)) {
+                $students = $db->select(
+                    "SELECT * FROM students 
+                     WHERE tenant_id = ? AND class = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
+                     ORDER BY first_name ASC",
+                    [$user['tenant_id'], $selectedClass]
+                );
+            }
+
+            if (!empty($students)) {
+                $studentIds = array_column($students, 'id');
+                $placeholders = implode(',', array_fill(0, count($studentIds), '?'));
+
+                $records = $db->select(
+                    "SELECT student_id, status, remarks FROM attendance 
+                     WHERE date = ? AND student_id IN ($placeholders)",
+                    array_merge([$selectedDate], $studentIds)
+                );
+
+                foreach ($records as $r) {
+                    $attendanceMap[$r['student_id']] = [
+                        'status'  => $r['status'],
+                        'remarks' => $r['remarks'],
+                    ];
+                }
+            }
+        }
+
+        return $this->view('teacher/mark_attendance', compact(
+            'user', 'assignedClasses', 'selectedClass', 'selectedSection', 'selectedDate', 'students', 'attendanceMap'
+        ));
+    }
+
+    public function saveTeacherAttendance(): string
+    {
+        $sessionUser = $this->auth();
+        if (!$sessionUser) {
+            Application::$app->response->redirect('/login');
+            exit();
+        }
+
+        $db = $this->db();
+        $user = User::find($sessionUser['id']);
+        if (!$user) {
+            Application::$app->response->redirect('/login');
+            exit();
+        }
+
+        $class   = $this->request->input('class', '');
+        $section = $this->request->input('section', '');
+        $date    = $this->request->input('date', date('Y-m-d'));
+        $attData = $this->request->input('attendance', []);
+        $remarks = $this->request->input('remarks', []);
+
+        if (!$date) {
+            $this->flash('error', 'Date is required to save attendance.');
+            return $this->redirect('/teacher/attendance');
+        }
+
+        // Verify teacher is assigned to this class
+        $isAssigned = $db->selectOne(
+            "SELECT 1 FROM classes WHERE class_teacher_id = ? AND name = ? AND COALESCE(section, '') = ?",
+            [$user['id'], $class, $section]
+        );
+
+        if (!$isAssigned) {
+            $this->flash('error', 'You are not assigned as the class teacher for this class.');
+            return $this->redirect('/teacher/attendance');
+        }
+
+        // Get students in this class/section
+        $students = $db->select(
+            "SELECT id, tenant_id, school_id, branch_id FROM students 
+             WHERE tenant_id = ? AND class = ? AND COALESCE(section, '') = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
+            [$user['tenant_id'], $class, $section]
+        );
+
+        if (empty($students)) {
+            $students = $db->select(
+                "SELECT id, tenant_id, school_id, branch_id FROM students 
+                 WHERE tenant_id = ? AND class = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
+                [$user['tenant_id'], $class]
+            );
+        }
+
+        if (empty($students)) {
+            $this->flash('error', 'No enrolled students found.');
+            return $this->redirect('/teacher/attendance?class=' . urlencode($class) . '&section=' . urlencode($section));
+        }
+
+        try {
+            foreach ($students as $student) {
+                $studentId = (int) $student['id'];
+                $status    = $attData[$studentId] ?? 'present';
+                $remark    = $remarks[$studentId] ?? '';
+
+                $exists = $db->selectOne(
+                    "SELECT id FROM attendance WHERE student_id = ? AND date = ?",
+                    [$studentId, $date]
+                );
+
+                if ($exists) {
+                    $db->update('attendance', [
+                        'status'     => $status,
+                        'remarks'    => $remark,
+                        'updated_at' => now(),
+                    ], 'id = ?', [$exists['id']]);
+                } else {
+                    $db->insert('attendance', [
+                        'tenant_id'  => $student['tenant_id'],
+                        'school_id'  => $student['school_id'],
+                        'branch_id'  => $student['branch_id'],
+                        'student_id' => $studentId,
+                        'date'       => $date,
+                        'status'     => $status,
+                        'remarks'    => $remark,
+                        'created_by' => $this->authId(),
+                        'created_at' => now(),
+                    ]);
+                }
+            }
+
+            ActivityLog::log('teacher_marked_attendance', $this->authId(), [
+                'class'   => $class,
+                'section' => $section,
+                'date'    => $date,
+            ]);
+
+            $this->flash('success', 'Attendance marked successfully.');
+        } catch (\Throwable $e) {
+            $this->flash('error', 'Failed to save attendance: ' . $e->getMessage());
+        }
+
+        return $this->redirect('/teacher/attendance?class=' . urlencode($class) . '&section=' . urlencode($section) . '&date=' . urlencode($date));
+    }
 }
