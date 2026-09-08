@@ -160,7 +160,7 @@ $trendClass = static function (float $value): string {
             </header>
             <p class="metric-label">Total Students</p>
             <h3><?= e(number_format((int) ($totalStudents ?? 0))) ?></h3>
-            <p class="metric-footnote"><a href="<?= ERP_BASE_URL ?>/academics/students" style="color:#10b981">View in ERP →</a></p>
+            <p class="metric-footnote"><a href="/psnf/public/academics/students" style="color:#10b981">View in ERP →</a></p>
         </article>
 
         <article class="dashboard-metric-card" style="border-color: rgba(245,158,11,0.3);">
@@ -170,7 +170,7 @@ $trendClass = static function (float $value): string {
             </header>
             <p class="metric-label">Fee Invoices</p>
             <h3><?= e(number_format((int) ($totalInvoices ?? 0))) ?></h3>
-            <p class="metric-footnote"><?= (int)($pendingInvoices ?? 0) ?> pending · <a href="<?= ERP_BASE_URL ?>/fees" style="color:#f59e0b">Open Finance →</a></p>
+            <p class="metric-footnote"><?= (int)($pendingInvoices ?? 0) ?> pending · <a href="/psnf/public/fees" style="color:#f59e0b">Open Finance →</a></p>
         </article>
 
         <article class="dashboard-metric-card" style="border-color: rgba(99,102,241,0.3);">
@@ -180,7 +180,7 @@ $trendClass = static function (float $value): string {
             </header>
             <p class="metric-label">Receipts</p>
             <h3><?= e(number_format((int) ($totalReceipts ?? 0))) ?></h3>
-            <p class="metric-footnote"><a href="<?= ERP_BASE_URL ?>/receipts" style="color:#6366f1">View Receipts →</a></p>
+            <p class="metric-footnote"><a href="/psnf/public/receipts" style="color:#6366f1">View Receipts →</a></p>
         </article>
     </section>
 
@@ -276,11 +276,11 @@ $trendClass = static function (float $value): string {
                     <h3 style="font-size: 13px;">ERP Quick Links</h3>
                 </div>
                 <ul style="list-style:none; padding:0; margin:0; space-y:8px; font-size:13px; display:flex; flex-direction:column; gap:8px;">
-                    <li><a href="<?= ERP_BASE_URL ?>/academics/students" style="color:#6366f1;">👨‍🎓 Students</a></li>
-                    <li><a href="<?= ERP_BASE_URL ?>/fees" style="color:#f59e0b;">💰 Fee Invoices</a></li>
-                    <li><a href="<?= ERP_BASE_URL ?>/receipts" style="color:#10b981;">🧾 Receipts</a></li>
-                    <li><a href="<?= ERP_BASE_URL ?>/certificates" style="color:#a855f7;">📜 ERP Certificates</a></li>
-                    <li><a href="<?= ERP_BASE_URL ?>/dashboard" style="color:#94a3b8;">← Back to ERP Dashboard</a></li>
+                    <li><a href="/psnf/public/academics/students" style="color:#6366f1;">👨‍🎓 Students</a></li>
+                    <li><a href="/psnf/public/fees" style="color:#f59e0b;">💰 Fee Invoices</a></li>
+                    <li><a href="/psnf/public/receipts" style="color:#10b981;">🧾 Receipts</a></li>
+                    <li><a href="/psnf/public/certificates" style="color:#a855f7;">📜 ERP Certificates</a></li>
+                    <li><a href="/psnf/public/dashboard" style="color:#94a3b8;">← Back to ERP Dashboard</a></li>
                 </ul>
             </article>
         </aside>
