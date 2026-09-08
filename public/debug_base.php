@@ -1,38 +1,53 @@
 <?php
-// Quick debug - visit psnf.upparac.com/erpv2/public/debug_base.php
-echo '<pre style="background:#1e1e2e;color:#cdd6f4;padding:20px;font-family:monospace;border-radius:8px;">';
-echo "<b style='color:#f38ba8'>SERVER VARIABLES:</b>\n\n";
-echo "REQUEST_URI    = " . ($_SERVER['REQUEST_URI'] ?? 'N/A') . "\n";
-echo "SCRIPT_NAME    = " . ($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "\n";
-echo "SCRIPT_FILENAME= " . ($_SERVER['SCRIPT_FILENAME'] ?? 'N/A') . "\n";
-echo "PHP_SELF       = " . ($_SERVER['PHP_SELF'] ?? 'N/A') . "\n";
-echo "DOCUMENT_ROOT  = " . ($_SERVER['DOCUMENT_ROOT'] ?? 'N/A') . "\n";
-echo "SERVER_NAME    = " . ($_SERVER['SERVER_NAME'] ?? 'N/A') . "\n";
-echo "HTTP_HOST      = " . ($_SERVER['HTTP_HOST'] ?? 'N/A') . "\n";
-echo "HTTPS          = " . ($_SERVER['HTTPS'] ?? 'N/A') . "\n";
-echo "SERVER_PORT    = " . ($_SERVER['SERVER_PORT'] ?? 'N/A') . "\n";
-echo "\n<b style='color:#a6e3a1'>DETECTED BASE PATH:</b>\n\n";
+// Quick debug - visit on live server to diagnose base path issues
+header('Content-Type: text/plain');
 
-require dirname(__DIR__) . '/core/helpers.php';
-require dirname(__DIR__) . '/core/Application.php';
+echo "=== SERVER VARIABLES ===\n";
+echo "REQUEST_URI     = " . ($_SERVER['REQUEST_URI'] ?? 'N/A') . "\n";
+echo "SCRIPT_NAME     = " . ($_SERVER['SCRIPT_NAME'] ?? 'N/A') . "\n";
+echo "SCRIPT_FILENAME = " . ($_SERVER['SCRIPT_FILENAME'] ?? 'N/A') . "\n";
+echo "PHP_SELF        = " . ($_SERVER['PHP_SELF'] ?? 'N/A') . "\n";
+echo "DOCUMENT_ROOT   = " . ($_SERVER['DOCUMENT_ROOT'] ?? 'N/A') . "\n";
+echo "HTTP_HOST       = " . ($_SERVER['HTTP_HOST'] ?? 'N/A') . "\n";
 
-CoreApplication::$app = new class {
-    public $request;
-    public $db;
-    public $router;
-    public $response;
-    public $session;
-};
+echo "\n=== BASE PATH DETECTION ===\n";
 
-CoreApplication::$app->request = new Core\Request();
-CoreApplication::$app->response = new Core\Response();
+// Replicate detectBasePath logic inline
+$requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+if (($qPos = strpos($requestUri, '?')) !== false) {
+    $requestUri = substr($requestUri, 0, $qPos);
+}
+$requestUri = rtrim($requestUri, '/');
 
-$detected = CoreApplication::$app->request->detectBasePath();
-$getPath  = CoreApplication::$app->request->getPath();
-$baseUrl  = get_dynamic_base_url();
+$scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
+$dir = rtrim(dirname($scriptName), '/\\');
 
-echo "detectBasePath() = " . var_export($detected, true) . "\n";
-echo "getPath()        = " . var_export($getPath, true) . "\n";
-echo "get_dynamic_base_url() = " . var_export($baseUrl, true) . "\n";
-echo "\n<b style='color:#89b4fa'>ROUTE / should match? getPath() === '/' ? " . ($getPath === '/' ? 'YES' : 'NO - this is the problem!') . "</b>\n";
-echo '</pre>';
+echo "1. dirname(SCRIPT_NAME) = '$dir'\n";
+echo "   is prefix of REQUEST_URI? " . (str_starts_with($requestUri, $dir) ? 'YES' : 'NO') . "\n";
+
+if ($dir !== '' && $dir !== '/' && str_starts_with($requestUri, $dir)) {
+    echo "   -> Using SCRIPT_NAME dir: '$dir'\n";
+    $basePath = $dir;
+} elseif (($pos = strpos($requestUri, '/public/')) !== false) {
+    $basePath = substr($requestUri, 0, $pos + 8);
+    echo "   -> Found /public/ in REQUEST_URI: '$basePath'\n";
+} else {
+    $basePath = $dir !== '/' ? $dir : '';
+    echo "   -> Fallback: '$basePath'\n";
+}
+
+echo "\nBase path = '$basePath'\n";
+
+// Simulate getPath()
+$path = $_SERVER['REQUEST_URI'] ?? '/';
+if (($pos = strpos($path, '?')) !== false) {
+    $path = substr($path, 0, $pos);
+}
+if ($basePath !== '' && $basePath !== '/' && str_starts_with($path, $basePath)) {
+    $path = substr($path, strlen($basePath));
+}
+$path = '/' . ltrim($path, '/');
+$path = rtrim($path, '/') ?: '/';
+
+echo "getPath() = '$path'\n";
+echo "Route '/' would match? " . ($path === '/' ? 'YES' : 'NO - THIS IS THE PROBLEM!') . "\n";
