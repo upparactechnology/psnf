@@ -114,13 +114,13 @@ if (!function_exists('get_dynamic_base_url')) {
         }
 
         // Use the same base path detection as Request::getPath()
-        $request = \Core\Application::$app->request ?? null;
+        $request = \Core\Application::$app->request ?? (class_exists('\\Core\\Request') ? new \Core\Request() : null);
         $dir = $request ? $request->detectBasePath() : '';
 
         if (empty($dir) || $dir === '/') {
             // Fallback: SCRIPT_NAME directory
             $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
-            $dir = rtrim(dirname($scriptName), '/\\');
+            $dir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
         }
 
         if ($dir === '/') $dir = '';
@@ -144,6 +144,10 @@ if (!function_exists('url')) {
             $cleanPath = substr($cleanPath, 7);
         }
         
+        if ($cleanPath === '') {
+            return $base;
+        }
+
         return $base . '/' . $cleanPath;
     }
 }
