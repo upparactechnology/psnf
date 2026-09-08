@@ -8,16 +8,19 @@ RewriteRule (^\.|/\.) - [F,L]
 # ── File Manager (special entry point) ──────────────────────────────────────
 RewriteRule ^(erp/)?file_manager/public/?$ public/file_manager/public/index.php [L,QSA]
 
-# ── Static assets: /erp/assets/... → public/assets/...
-# (Strip /erp/ prefix and serve directly from public/)
+# ── Static assets from public/ ──────────────────────────────────────────────
+
+# Case A: .htaccess at project root (local dev), path includes erp/ prefix
+# e.g., erp/js/tailwindcss.js → public/js/tailwindcss.js
 RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
-RewriteRule ^erp/(.+)$ public/$1 [L,QSA]
+RewriteRule ^erp/(.+)$ public/$1 [L]
 
-# ── Static assets without /erp/ prefix: /assets/... → public/assets/...
-RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
-RewriteRule ^(.+)$ public/$1 [L,QSA]
+# Case B: .htaccess inside erp/ subdirectory (live server), path is relative
+# e.g., js/tailwindcss.js → public/js/tailwindcss.js
+RewriteCond %{DOCUMENT_ROOT}/erp/public/$1 -f
+RewriteRule ^(.+)$ public/$1 [L]
 
-# ── Route everything else (including /erp and /erp/*) through front controller
+# ── Route everything else through front controller ──────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [L,QSA]
