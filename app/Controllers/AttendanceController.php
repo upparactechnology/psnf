@@ -22,6 +22,7 @@ class AttendanceController extends Controller
             return $this->calendar();
         }
 
+        
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
         $userId = $this->authId();
