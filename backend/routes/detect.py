@@ -36,14 +36,14 @@ def detect_frame(req: DetectFrameRequest):
 
         return {
             "success": True,
-            "is_valid": det_res.is_valid,
+            "is_valid": bool(det_res.is_valid),
             "error_message": det_res.error_message,
-            "bbox": det_res.bbox,
-            "pitch": det_res.pitch,
-            "yaw": det_res.yaw,
-            "blur_score": det_res.blur_score,
-            "img_width": img_bgr.shape[1],
-            "img_height": img_bgr.shape[0]
+            "bbox": [int(x) for x in det_res.bbox] if det_res.bbox else None,
+            "pitch": float(det_res.pitch) if det_res.pitch is not None else None,
+            "yaw": float(det_res.yaw) if det_res.yaw is not None else None,
+            "blur_score": float(det_res.blur_score) if det_res.blur_score is not None else None,
+            "img_width": int(img_bgr.shape[1]),
+            "img_height": int(img_bgr.shape[0])
         }
     except Exception as e:
         return {
