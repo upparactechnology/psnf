@@ -2,10 +2,23 @@ Options -Indexes
 
 RewriteEngine On
 
-# File Manager — serve its own index.php before rewriting to public/
+# ── File Manager (special entry point) ────────────────────────────────
 RewriteRule ^file_manager/public/?$ public/file_manager/public/index.php [L]
 RewriteRule ^erp/file_manager/public/?$ public/file_manager/public/index.php [L]
 
+# ── Static assets: /erp/X → public/X (strip /erp/ prefix) ────────────
+# %{REQUEST_URI:4} skips the "/erp" prefix (Apache 2.4.26+)
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI:4} -f
+RewriteRule ^erp/(.+)$ public/$1 [L]
+
+# ── Static assets: /X → public/X (direct, no prefix) ──────────────────
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
 RewriteRule ^(.*)$ public/$1 [L]
-# Block access to hidden files (dotfiles)
+
+# ── ERP front controller (all remaining routes) ───────────────────────
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ public/index.php [L]
+
+# ── Block access to hidden files (dotfiles) ───────────────────────────
 RewriteRule (^\.|/\.) - [F]
