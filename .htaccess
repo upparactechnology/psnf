@@ -1,7 +1,15 @@
-Options -Indexes
+Options -Indexes -MultiViews
 
-# Protect sensitive directories
 RewriteEngine On
 
-# Block access to hidden files
+# Block access to hidden files (dotfiles)
 RewriteRule (^\.|/\.) - [F]
+
+# Block access to sensitive directories
+RewriteRule ^(app|core|config|database|resources|storage|node_modules)/ - [F,L]
+
+# Forward all non-public, non-file, non-directory requests to public/index.php
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule .* public/index.php [L]

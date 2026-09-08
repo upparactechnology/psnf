@@ -29,14 +29,48 @@ class Request
             $path = substr($path, 0, $pos);
         }
 
-        // Strip base directory (always use SCRIPT_NAME directory where index.php lives)
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
-        $base = rtrim(dirname($scriptName), '/\\');
+        $base = $this->detectBasePath();
+
         if ($base !== '' && $base !== '/' && str_starts_with($path, $base)) {
             $path = substr($path, strlen($base));
         }
 
         return '/' . ltrim($path, '/');
+    }
+
+    public function detectBasePath(): string
+    {
+        // 1. Use SCRIPT_NAME directory (most common on standard Apache/Nginx)
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
+        $dir = rtrim(dirname($scriptName), '/\\');
+
+        if ($dir !== '' && $dir !== '/') {
+            return $dir;
+        }
+
+        // 2. On some servers (CGI/FPM/proxy), SCRIPT_NAME is just "/index.php"
+        //    but REQUEST_URI still has the full subdirectory path.
+        //    Detect by looking for "public/" in REQUEST_URI.
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+        if (($pos = strpos($requestUri, '/public/')) !== false) {
+            return substr($requestUri, 0, $pos + 8); // +8 for '/public/'
+        }
+        if (str_ends_with($requestUri, '/public')) {
+            return substr($requestUri, 0, -1); // strip trailing slash kept by rtrim later
+        }
+
+        // 3. Fallback: use SCRIPT_FILENAME to find base
+        $scriptFilename = $_SERVER['SCRIPT_FILENAME'] ?? '';
+        $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+        if ($docRoot && $scriptFilename && str_starts_with($scriptFilename, $docRoot)) {
+            $relative = dirname(substr($scriptFilename, strlen($docRoot)));
+            $relative = rtrim($relative, '/\\');
+            if ($relative !== '' && $relative !== '/') {
+                return $relative;
+            }
+        }
+
+        return $dir;
     }
 
     public function getBody(): array

@@ -113,9 +113,16 @@ if (!function_exists('get_dynamic_base_url')) {
             return $scheme . '://' . $host . rtrim($path, '/');
         }
 
-        // Always use SCRIPT_NAME directory (where index.php lives) as the base
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
-        $dir = rtrim(dirname($scriptName), '/\\');
+        // Use the same base path detection as Request::getPath()
+        $request = \Core\Application::$app->request ?? null;
+        $dir = $request ? $request->detectBasePath() : '';
+
+        if (empty($dir) || $dir === '/') {
+            // Fallback: SCRIPT_NAME directory
+            $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
+            $dir = rtrim(dirname($scriptName), '/\\');
+        }
+
         if ($dir === '/') $dir = '';
 
         return $scheme . '://' . $host . $dir;
