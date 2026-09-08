@@ -229,7 +229,7 @@ class AttendanceController extends Controller
 
         // Initialize all days
         for ($day = 1; $day <= $daysInMonth; $day++) {
-            $dateStr = $month . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
+            $dateStr = $month . '-' . str_pad((string)$day, 2, '0', STR_PAD_LEFT);
             $dayOfWeek = date('w', strtotime($dateStr));
             $dayName = $weekDays[$dayOfWeek];
 
