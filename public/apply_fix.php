@@ -339,8 +339,8 @@ $patched = preg_replace(
 );
 
 // Append new versions before the asset() function
-$patched = preg_replace(
-    '/if\s*\(!function_exists\(\'asset\'\)\)/s',
+$patched = str_replace(
+    "if (!function_exists('asset'))",
     $newGetDynamic . "\n\nif (!function_exists('asset'))",
     $patched,
     1
