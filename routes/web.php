@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, EnrollmentAdminController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController, SettingsController, ReportCardController, AnnouncementController};
+use App\Controllers\{AuthController, DashboardController, UserController, RoleController, StudentController, EnrollmentAdminController, ParentPortalController, FeeController, TransportController, CertificateController, TeacherPortalController, AdmissionsController, ClassesController, AttendanceController, TimetablesController, ExamsController, ReceiptsController, ScholarshipController, MedicalController, SettingsController, ReportCardController, AnnouncementController, ProfileController};
 
 // ─── Auth (Guest Only) ────────────────────────────────────────────────────────
 $router->get('/login',           [AuthController::class, 'showLogin'],          ['guest']);
@@ -38,6 +38,12 @@ $router->get('/', function () {
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 $router->get('/games',     [DashboardController::class, 'games'], ['auth']);
 $router->get('/teacher/dashboard', [TeacherPortalController::class, 'dashboard'], ['auth', 'role:teacher']);
+
+// ─── Profile ─────────────────────────────────────────────────────────────────
+$router->get('/profile', [ProfileController::class, 'index'], ['auth']);
+$router->post('/profile', [ProfileController::class, 'update'], ['auth']);
+$router->post('/profile/password', [ProfileController::class, 'changePassword'], ['auth']);
+$router->post('/profile/avatar', [ProfileController::class, 'uploadAvatar'], ['auth']);
 
 // ─── Staff Management Workspace (/staff/*) ──────────────────────────────────
 $router->get('/staff',                  [App\Controllers\StaffWorkspaceController::class, 'overview'],    ['auth', 'permission:view_staff_overview']);

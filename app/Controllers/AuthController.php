@@ -69,14 +69,13 @@ class AuthController extends Controller
             ]);
         }
 
-        // Auto-record teacher lecture attendance on login
+        // Auto-record teacher attendance on login (simple login/logout time tracking)
         $loginUser = $result['user'];
         $loginRoles = $loginUser['role_names'] ?? $loginUser['roles'] ?? [];
         $loginRoleArr = is_array($loginRoles) ? $loginRoles : (array) $loginRoles;
         if (in_array('teacher', $loginRoleArr, true) || in_array('Teacher', $loginRoleArr, true)) {
             $db = \Core\Application::$app->db;
             $today = date('Y-m-d');
-            $todayDayOfWeek = date('l');
             $userId = (int) $loginUser['id'];
 
             $existing = $db->selectOne(
@@ -85,36 +84,19 @@ class AuthController extends Controller
             );
 
             if (!$existing) {
-                $firstLecture = $db->selectOne(
-                    "SELECT start_time FROM timetables WHERE teacher_name = ? AND day_of_week = ? ORDER BY start_time ASC LIMIT 1",
-                    [$loginUser['name'], $todayDayOfWeek]
-                );
-                $lectureTime = $firstLecture['start_time'] ?? ($loginUser['lecture_time'] ?? null);
+                $db->insert('teacher_attendance', [
+                    'tenant_id'       => $loginUser['tenant_id'],
+                    'school_id'       => $loginUser['school_id'],
+                    'branch_id'       => $loginUser['branch_id'],
+                    'user_id'         => $userId,
+                    'attendance_date' => $today,
+                    'opened_at'       => date('Y-m-d H:i:s'),
+                    'status'          => 'on_time',
+                ]);
 
-                if ($lectureTime) {
-                    $shiftPolicy = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
-                    $grace = (int) ($shiftPolicy['lec_grace_minutes'] ?? ($loginUser['grace_period'] ?? 5));
-                    $lectureTimestamp = strtotime($today . ' ' . $lectureTime);
-                    $cutoffTimestamp = $lectureTimestamp + ($grace * 60);
-                    $status = (time() <= $cutoffTimestamp) ? 'on_time' : 'late';
-
-                    $db->insert('teacher_attendance', [
-                        'tenant_id'       => $loginUser['tenant_id'],
-                        'school_id'       => $loginUser['school_id'],
-                        'branch_id'       => $loginUser['branch_id'],
-                        'user_id'         => $userId,
-                        'attendance_date' => $today,
-                        'opened_at'       => date('Y-m-d H:i:s'),
-                        'status'          => $status,
-                        'lecture_time'    => $lectureTime,
-                        'grace_period'    => $grace,
-                    ]);
-
-                    ActivityLog::log('teacher_attendance_checkin', $userId, [
-                        'status'    => $status,
-                        'opened_at' => date('Y-m-d H:i:s'),
-                    ]);
-                }
+                ActivityLog::log('teacher_attendance_checkin', $userId, [
+                    'opened_at' => date('Y-m-d H:i:s'),
+                ]);
             }
         }
 
@@ -130,6 +112,30 @@ class AuthController extends Controller
             $roles = $userSession['roles'] ?? [];
             if ($role === 'parent' || in_array('parent', (array)$roles, true)) {
                 $isParent = true;
+            }
+
+            // Record teacher checkout time on logout
+            $roleNames = $userSession['role_names'] ?? $roles;
+            $roleArr = is_array($roleNames) ? $roleNames : (array) $roleNames;
+            if (in_array('teacher', $roleArr, true) || in_array('Teacher', $roleArr, true)) {
+                $db = \Core\Application::$app->db;
+                $today = date('Y-m-d');
+                $userId = (int) $userSession['id'];
+
+                $attendance = $db->selectOne(
+                    "SELECT id FROM teacher_attendance WHERE user_id = ? AND attendance_date = ?",
+                    [$userId, $today]
+                );
+
+                if ($attendance) {
+                    $db->update('teacher_attendance', [
+                        'checkout_at' => date('Y-m-d H:i:s'),
+                    ], 'id = ?', [$attendance['id']]);
+
+                    ActivityLog::log('teacher_attendance_checkout', $userId, [
+                        'checkout_at' => date('Y-m-d H:i:s'),
+                    ]);
+                }
             }
         }
 

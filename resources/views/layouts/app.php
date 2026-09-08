@@ -691,11 +691,17 @@ if ($user) {
         <!-- User Footer -->
         <div class="border-t border-slate-200 dark:border-slate-800/60 p-3">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
-                </div>
+                <a href="<?= url('profile') ?>" class="flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                        <?php if (!empty($user['avatar'])): ?>
+                            <img src="<?= url('uploads/avatars/' . $user['avatar']) ?>" class="w-full h-full object-cover" alt="Avatar">
+                        <?php else: ?>
+                            <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
+                        <?php endif; ?>
+                    </div>
+                </a>
                 <div x-show="sidebarOpen" class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-slate-800 dark:text-white truncate"><?= e($user['name'] ?? '') ?></p>
+                    <a href="<?= url('profile') ?>" class="text-sm font-medium text-slate-800 dark:text-white truncate hover:text-brand-400 dark:hover:text-brand-400 transition-colors"><?= e($user['name'] ?? '') ?></a>
                     <p class="text-xs text-slate-500 truncate"><?= e(implode(', ', array_slice($user['role_names'] ?? [], 0, 2))) ?></p>
                 </div>
                 <a x-show="sidebarOpen" href="<?= url('logout') ?>" class="text-slate-500 hover:text-red-400 transition-colors" title="Logout">
@@ -735,10 +741,12 @@ if ($user) {
                     <span class="live-header-clock font-mono">--:--:--</span>
                 </span>
                 <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                        <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
-                    </div>
-                    <span class="hidden sm:inline text-xs text-slate-600 dark:text-slate-300 font-medium"><?= e($user['name'] ?? '') ?></span>
+                    <a href="<?= url('profile') ?>" class="flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl px-2 py-1.5 transition-all" title="My Profile">
+                        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                            <?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?>
+                        </div>
+                        <span class="hidden sm:inline text-xs text-slate-600 dark:text-slate-300 font-medium"><?= e($user['name'] ?? '') ?></span>
+                    </a>
                     <a href="<?= url('logout') ?>" class="text-slate-500 hover:text-red-400 transition-colors ml-1" title="Logout">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                     </a>
