@@ -2,6 +2,10 @@ Options -Indexes
 
 RewriteEngine On
 
+# File Manager — serve its own index.php before rewriting to public/
+RewriteRule ^file_manager/public/?$ public/file_manager/public/index.php [L]
+RewriteRule ^erp/file_manager/public/?$ public/file_manager/public/index.php [L]
+
 RewriteRule ^(.*)$ public/$1 [L]
 # Block access to hidden files (dotfiles)
 RewriteRule (^\.|/\.) - [F]

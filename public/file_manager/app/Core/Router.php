@@ -27,6 +27,11 @@ class Router {
       $uriPath = $this->normalizePath($uriPath);
     }
 
+    if ($uriPath === '/index.php') {
+      header('Location: ' . $base, 301);
+      exit;
+    }
+
     $handler = $this->routes[$method][$uriPath] ?? null;
     if (!$handler) {
       http_response_code(404);

@@ -1,6 +1,6 @@
 import os
 import cv2
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -14,6 +14,8 @@ from recognition.detector import FaceDetector
 from recognition.embedding import EmbeddingExtractor
 from recognition.liveness import verify_face_liveness
 from recognition.matcher import matcher
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 
 class AttendanceService:
@@ -91,7 +93,7 @@ class AttendanceService:
                 "confidence": round(confidence, 4)
             }
 
-        now   = datetime.now()
+        now   = datetime.now(IST)
         today = now.date()
 
         # 6. Check if already checked in today
