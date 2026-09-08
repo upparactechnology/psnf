@@ -6,7 +6,7 @@ return [
     'name'        => 'PSNF ERP',
     'version'     => '1.0.0',
     'debug'       => true, // Set to false in production
-    'base_url'    => '/erp',
+    'base_url'    => '',
     'base_path'   => 'erp',
     'timezone'    => 'Asia/Kolkata',
     'locale'      => 'en',

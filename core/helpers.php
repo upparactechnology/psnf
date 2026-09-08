@@ -106,24 +106,30 @@ if (!function_exists('get_dynamic_base_url')) {
         
         $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
         
+        // If base_url is a full URL (e.g. 'https://example.com/erp'), extract path
         $configuredBase = config('app.base_url', '');
         if (!empty($configuredBase) && $configuredBase !== 'auto') {
             $parsed = parse_url($configuredBase);
-            $path = $parsed['path'] ?? '';
-            return $scheme . '://' . $host . rtrim($path, '/');
+            $path = rtrim($parsed['path'] ?? '', '/');
+            // Use the path component only (always honour the current scheme/host)
+            return $scheme . '://' . $host . $path;
         }
 
-        // Use the same base path detection as Request::getPath()
-        $request = \Core\Application::$app->request ?? (class_exists('\\Core\\Request') ? new \Core\Request() : null);
+        // If only base_path is set (e.g. 'erp'), build from that
+        $configuredPath = config('app.base_path', '');
+        if (!empty($configuredPath) && $configuredPath !== 'auto') {
+            return $scheme . '://' . $host . '/' . trim($configuredPath, '/');
+        }
+
+        // Auto-detect from the request
+        $request = \Core\Application::$app->request ?? null;
         $dir = $request ? $request->detectBasePath() : '';
 
         if (empty($dir) || $dir === '/') {
-            // Fallback: SCRIPT_NAME directory
             $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
-            $dir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+            $dir = '/' . trim(str_replace('\\', '/', dirname($scriptName)), '/');
+            if ($dir === '/') $dir = '';
         }
-
-        if ($dir === '/') $dir = '';
 
         return $scheme . '://' . $host . $dir;
     }

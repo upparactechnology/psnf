@@ -2,18 +2,17 @@ Options -MultiViews -Indexes
 
 RewriteEngine On
 
-# Handle Authorization Header
+# Block hidden files
+RewriteRule (^\.|/\.) - [F,L]
+
+# Handle Authorization Header (needed for API/Bearer tokens)
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Redirect Trailing Slashes If Not A Folder
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)/$ $1 [L,R=301]
-
 # File Manager — serve index.php directly for subdirectory
-RewriteRule ^file_manager/public/?$ file_manager/public/index.php [L]
+RewriteRule ^file_manager/public/?$ file_manager/public/index.php [L,QSA]
 
-# Send Requests To Front Controller
+# Send all non-file, non-directory requests to front controller
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.php [L]
+RewriteRule ^ index.php [L,QSA]

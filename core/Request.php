@@ -57,51 +57,42 @@ class Request
 
     public function detectBasePath(): string
     {
-        // 0. Explicit configuration in config/app.php
+        // Priority 1: Explicit base_path from config (e.g. 'erp' → '/erp')
         $configuredPath = config('app.base_path', '');
-        if (!empty($configuredPath)) {
+        if (!empty($configuredPath) && $configuredPath !== 'auto') {
             return '/' . trim($configuredPath, '/');
         }
+
+        // Priority 2: base_url path component (full URLs like 'https://host/erp')
         $configuredUrl = config('app.base_url', '');
         if (!empty($configuredUrl) && $configuredUrl !== 'auto') {
             $parsed = parse_url($configuredUrl);
-            if (!empty($parsed['path'])) {
+            if (!empty($parsed['path']) && $parsed['path'] !== '/') {
                 return '/' . trim($parsed['path'], '/');
             }
         }
 
-        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-        if (($qPos = strpos($requestUri, '?')) !== false) {
-            $requestUri = substr($requestUri, 0, $qPos);
+        // Priority 3: Compute from ROOT_PATH vs DOCUMENT_ROOT
+        if (defined('ROOT_PATH')) {
+            $docRoot = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
+            $rootPath = rtrim(str_replace('\\', '/', ROOT_PATH), '/');
+            if ($docRoot !== '' && str_starts_with($rootPath, $docRoot)) {
+                $rel = substr($rootPath, strlen($docRoot));
+                $rel = '/' . trim($rel, '/');
+                if ($rel !== '/' && $rel !== '') {
+                    return $rel;
+                }
+            }
         }
-        $requestUri = '/' . trim($requestUri, '/');
 
-        // 1. SCRIPT_NAME directory (e.g. /erpv2/public/index.php -> /erpv2/public)
+        // Priority 4: SCRIPT_NAME directory (e.g. /erp/public/index.php → /erp/public)
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
-        $dir = str_replace('\\', '/', dirname($scriptName));
-        $dir = '/' . trim($dir, '/');
+        $dir = '/' . trim(str_replace('\\', '/', dirname($scriptName)), '/');
         if ($dir === '/') $dir = '';
 
-        if ($dir !== '' && ($requestUri === $dir || str_starts_with($requestUri . '/', $dir . '/'))) {
-            return $dir;
-        }
-
-        // 2. Look for "/public" in REQUEST_URI
-        // e.g. /erpv2/public or /erpv2/public/login -> /erpv2/public
-        if (preg_match('#^(.*?/public)(?:/.*)?$#i', $requestUri, $matches)) {
-            return '/' . trim($matches[1], '/');
-        }
-
-        // 3. Fallback: SCRIPT_FILENAME relative to DOCUMENT_ROOT
-        $scriptFilename = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME'] ?? '');
-        $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
-        if ($docRoot !== '' && $scriptFilename !== '' && str_starts_with($scriptFilename, $docRoot)) {
-            $relative = dirname(substr($scriptFilename, strlen($docRoot)));
-            $relative = '/' . trim(str_replace('\\', '/', $relative), '/');
-            if ($relative === '/') $relative = '';
-            if ($relative !== '' && ($requestUri === $relative || str_starts_with($requestUri . '/', $relative . '/'))) {
-                return $relative;
-            }
+        // Strip '/public' suffix so /erp/public → /erp
+        if (str_ends_with($dir, '/public')) {
+            $dir = substr($dir, 0, -7);
         }
 
         return $dir;
