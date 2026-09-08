@@ -225,6 +225,12 @@ class EnrollmentAdminController extends Controller
         $enrollment = $db->selectOne("SELECT * FROM online_enrollments WHERE id = :id AND status = 'pending'", ['id' => $id]);
 
         if (!$enrollment) {
+            if ($this->request->isAjax()) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Enrollment record not found or already processed.']);
+                exit;
+            }
             \Core\Session::setFlash('errors', ['enrollment' => 'Enrollment record not found or already processed.']);
             $this->redirect('/academics/students');
             return;
@@ -234,6 +240,12 @@ class EnrollmentAdminController extends Controller
         $branchId = $_POST['branch_id'] ?? null;
 
         if (!$schoolId || !$branchId) {
+            if ($this->request->isAjax()) {
+                http_response_code(422);
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Please select School and Branch before enrolling.']);
+                exit;
+            }
             \Core\Session::setFlash('errors', ['school_id' => 'Please select School and Branch before enrolling.']);
             $this->redirect('/academics/students');
             return;
@@ -390,6 +402,14 @@ class EnrollmentAdminController extends Controller
         ]);
 
         \Core\Session::setFlash('success', 'Student enrolled successfully! Admission No: ' . $admissionNo);
+
+        if ($this->request->isAjax()) {
+            http_response_code(200);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'student_id' => $studentId, 'admission_no' => $admissionNo]);
+            exit;
+        }
+
         $this->redirect('/academics/students/' . $studentId);
     }
 

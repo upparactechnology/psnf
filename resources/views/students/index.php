@@ -74,14 +74,34 @@ ob_start();
                         <p class="text-sm text-slate-500">No pending applications</p>
                     </div>
                     <?php else: ?>
-                    <div class="space-y-3">
-                        <?php foreach ($pendingEnrollments as $enrollment): ?>
-                        <div @click="openDetail(<?= htmlspecialchars(json_encode($enrollment), ENT_QUOTES) ?>)" class="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all cursor-pointer group">
+                    <div class="space-y-3" id="pending-list">
+                        <?php foreach ($pendingEnrollments as $enrollment):
+                            $photoUrl = !empty($enrollment['student_photo']) ? url('online_enrollment/' . $enrollment['student_photo']) : '';
+                            $fatherPhotoUrl = !empty($enrollment['father_photo']) ? url('online_enrollment/' . $enrollment['father_photo']) : '';
+                            $motherPhotoUrl = !empty($enrollment['mother_photo']) ? url('online_enrollment/' . $enrollment['mother_photo']) : '';
+                            $studentDocUrl = !empty($enrollment['student_aadhar_doc']) ? url('online_enrollment/' . $enrollment['student_aadhar_doc']) : '';
+                            $fatherDocUrl = !empty($enrollment['father_aadhar_doc']) ? url('online_enrollment/' . $enrollment['father_aadhar_doc']) : '';
+                            $motherDocUrl = !empty($enrollment['mother_aadhar_doc']) ? url('online_enrollment/' . $enrollment['mother_aadhar_doc']) : '';
+                            $pickups = json_decode($enrollment['pickup_persons_json'] ?? '[]', true) ?: [];
+                            $pickupsWithUrls = array_map(function($p) {
+                                $p['photo_url'] = !empty($p['photo']) ? url('online_enrollment/' . $p['photo']) : '';
+                                return $p;
+                            }, $pickups);
+                            $enrollmentData = $enrollment;
+                            $enrollmentData['_photo_url'] = $photoUrl;
+                            $enrollmentData['_father_photo_url'] = $fatherPhotoUrl;
+                            $enrollmentData['_mother_photo_url'] = $motherPhotoUrl;
+                            $enrollmentData['_student_doc_url'] = $studentDocUrl;
+                            $enrollmentData['_father_doc_url'] = $fatherDocUrl;
+                            $enrollmentData['_mother_doc_url'] = $motherDocUrl;
+                            $enrollmentData['_pickups'] = $pickupsWithUrls;
+                        ?>
+                        <div id="enrollment-<?= $enrollment['id'] ?>" class="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all cursor-pointer group">
                             <div class="flex items-start justify-between gap-4">
-                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <div @click="openDetail(<?= htmlspecialchars(json_encode($enrollmentData), ENT_QUOTES) ?>)" class="flex items-center gap-3 min-w-0 flex-1">
                                     <div class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0 text-sm font-bold text-slate-600 dark:text-slate-300 overflow-hidden">
-                                        <?php if (!empty($enrollment['student_photo'])): ?>
-                                            <img src="<?= e('/erpv2/public/online_enrollment/' . $enrollment['student_photo']) ?>" alt="Photo" class="w-full h-full object-cover">
+                                        <?php if (!empty($photoUrl)): ?>
+                                            <img src="<?= e($photoUrl) ?>" alt="Photo" class="w-full h-full object-cover">
                                         <?php else: ?>
                                             👤
                                         <?php endif; ?>
@@ -103,16 +123,17 @@ ob_start();
                                 </div>
 
                                 <!-- Enroll Button + School/Branch Selection -->
-                                <div class="flex-shrink-0" x-data="{ open: false }" @click.stop>
-                                    <button @click="open = !open" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-2xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                        Enroll
+                                <div class="flex-shrink-0 relative" x-data="{ open: false, enrolling: false }" @click.stop>
+                                    <button @click="open = !open" :disabled="enrolling" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-2xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                                        <svg x-show="!enrolling" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        <svg x-show="enrolling" x-cloak class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                        <span x-text="enrolling ? 'Enrolling...' : 'Enroll'"></span>
                                     </button>
 
                                     <!-- School/Branch Dropdown -->
                                     <div x-show="open" @click.away="open = false" x-cloak x-transition class="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-10">
                                         <h5 class="text-xs font-bold text-slate-900 dark:text-white mb-3">Select School & Branch</h5>
-                                        <form method="POST" action="<?= url('students/enrollments/' . $enrollment['id'] . '/quick-enroll') ?>" class="space-y-3">
+                                        <form onsubmit="return quickEnroll(event, <?= $enrollment['id'] ?>, this)" class="space-y-3">
                                             <div>
                                                 <label class="block text-2xs font-semibold text-slate-600 dark:text-slate-400 mb-1">School *</label>
                                                 <select name="school_id" required class="w-full text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
@@ -132,7 +153,7 @@ ob_start();
                                                 </select>
                                             </div>
                                             <div class="flex items-center gap-2 pt-1">
-                                                <button type="submit" onclick="return confirm('Enroll this student into the system?')" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-2xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                                                <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-2xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                                     Confirm Enroll
                                                 </button>
@@ -167,10 +188,10 @@ ob_start();
                 <div class="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center overflow-hidden flex-shrink-0">
-                            <template x-if="selectedEnrollment?.student_photo">
-                                <img :src="'/erpv2/public/online_enrollment/' + selectedEnrollment?.student_photo" class="w-full h-full object-cover">
+                            <template x-if="selectedEnrollment?._photo_url">
+                                <img :src="selectedEnrollment?._photo_url" class="w-full h-full object-cover">
                             </template>
-                            <template x-if="!selectedEnrollment?.student_photo">
+                            <template x-if="!selectedEnrollment?._photo_url">
                                 <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400" x-text="(selectedEnrollment?.student_full_name || '?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase()"></span>
                             </template>
                         </div>
@@ -188,10 +209,10 @@ ob_start();
                     <!-- Student Photo & Basic Info -->
                     <div class="flex items-start gap-5">
                         <div class="w-28 h-32 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
-                            <template x-if="selectedEnrollment?.student_photo">
-                                <img :src="'/erpv2/public/online_enrollment/' + selectedEnrollment?.student_photo" class="w-full h-full object-cover">
+                            <template x-if="selectedEnrollment?._photo_url">
+                                <img :src="selectedEnrollment?._photo_url" class="w-full h-full object-cover">
                             </template>
-                            <template x-if="!selectedEnrollment?.student_photo">
+                            <template x-if="!selectedEnrollment?._photo_url">
                                 <span class="text-xs text-slate-400">No Photo</span>
                             </template>
                         </div>
@@ -205,11 +226,11 @@ ob_start();
                     </div>
 
                     <!-- Student Aadhar Doc -->
-                    <template x-if="selectedEnrollment?.student_aadhar_doc">
+                    <template x-if="selectedEnrollment?._student_doc_url">
                         <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3">
-                            <p class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">📄 Student Aadhar Document</p>
-                            <a :href="'/erpv2/public/online_enrollment/' + selectedEnrollment?.student_aadhar_doc" target="_blank" class="block">
-                                <img :src="'/erpv2/public/online_enrollment/' + selectedEnrollment?.student_aadhar_doc" class="max-h-40 rounded-lg object-contain border border-slate-200 dark:border-slate-700">
+                            <p class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Student Aadhar Document</p>
+                            <a :href="selectedEnrollment?._student_doc_url" target="_blank" class="block">
+                                <img :src="selectedEnrollment?._student_doc_url" class="max-h-40 rounded-lg object-contain border border-slate-200 dark:border-slate-700">
                             </a>
                         </div>
                     </template>
@@ -220,8 +241,8 @@ ob_start();
                         <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-2">
                             <div class="text-xs font-bold text-blue-600 dark:text-blue-400">Father</div>
                             <div class="flex gap-3">
-                                <template x-if="selectedEnrollment?.father_photo">
-                                    <img :src="'/erpv2/public/online_enrollment/' + selectedEnrollment?.father_photo" class="w-14 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0">
+                                <template x-if="selectedEnrollment?._father_photo_url">
+                                    <img :src="selectedEnrollment?._father_photo_url" class="w-14 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0">
                                 </template>
                                 <div class="text-xs space-y-0.5">
                                     <div class="font-bold text-slate-900 dark:text-white" x-text="selectedEnrollment?.father_name || '—'"></div>
@@ -229,16 +250,16 @@ ob_start();
                                     <div class="text-slate-500">🆔 <span x-text="selectedEnrollment?.father_aadhar || '—'"></span></div>
                                 </div>
                             </div>
-                            <template x-if="selectedEnrollment?.father_aadhar_doc">
-                                <a :href="'/erpv2/public/online_enrollment/' + selectedEnrollment?.father_aadhar_doc" target="_blank" class="inline-block text-2xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline mt-1">📄 View Aadhar Card</a>
+                            <template x-if="selectedEnrollment?._father_doc_url">
+                                <a :href="selectedEnrollment?._father_doc_url" target="_blank" class="inline-block text-2xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline mt-1">View Aadhar Card</a>
                             </template>
                         </div>
                         <!-- Mother -->
                         <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-2">
                             <div class="text-xs font-bold text-pink-600 dark:text-pink-400">Mother</div>
                             <div class="flex gap-3">
-                                <template x-if="selectedEnrollment?.mother_photo">
-                                    <img :src="'/erpv2/public/online_enrollment/' + selectedEnrollment?.mother_photo" class="w-14 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0">
+                                <template x-if="selectedEnrollment?._mother_photo_url">
+                                    <img :src="selectedEnrollment?._mother_photo_url" class="w-14 h-16 rounded-xl object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0">
                                 </template>
                                 <div class="text-xs space-y-0.5">
                                     <div class="font-bold text-slate-900 dark:text-white" x-text="selectedEnrollment?.mother_name || '—'"></div>
@@ -246,23 +267,23 @@ ob_start();
                                     <div class="text-slate-500">🆔 <span x-text="selectedEnrollment?.mother_aadhar || '—'"></span></div>
                                 </div>
                             </div>
-                            <template x-if="selectedEnrollment?.mother_aadhar_doc">
-                                <a :href="'/erpv2/public/online_enrollment/' + selectedEnrollment?.mother_aadhar_doc" target="_blank" class="inline-block text-2xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline mt-1">📄 View Aadhar Card</a>
+                            <template x-if="selectedEnrollment?._mother_doc_url">
+                                <a :href="selectedEnrollment?._mother_doc_url" target="_blank" class="inline-block text-2xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline mt-1">View Aadhar Card</a>
                             </template>
                         </div>
                     </div>
 
                     <!-- Pickup Persons -->
-                    <template x-if="selectedEnrollment?.pickup_persons_json">
+                    <template x-if="selectedEnrollment?._pickups?.length > 0">
                         <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
                             <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Authorized Pickup Persons</div>
-                            <template x-for="(person, idx) in JSON.parse(selectedEnrollment?.pickup_persons_json || '[]')" :key="idx">
+                            <template x-for="(person, idx) in selectedEnrollment?._pickups || []" :key="idx">
                                 <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                                     <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                        <template x-if="person.photo">
-                                            <img :src="'/erpv2/public/online_enrollment/' + person.photo" class="w-full h-full object-cover">
+                                        <template x-if="person.photo_url">
+                                            <img :src="person.photo_url" class="w-full h-full object-cover">
                                         </template>
-                                        <template x-if="!person.photo">
+                                        <template x-if="!person.photo_url">
                                             <span class="text-2xs font-bold text-slate-500" x-text="(person.name||'?').split(' ').map(w=>w[0]).join('').substring(0,2)"></span>
                                         </template>
                                     </div>
@@ -393,6 +414,8 @@ ob_start();
 </div>
 
 <script>
+const csrfToken = '<?= \Core\View::csrf_token() ?>';
+
 function studentDirectory() {
     return {
         viewMode: 'grid',
@@ -404,6 +427,51 @@ function studentDirectory() {
             this.showDetailModal = true;
         },
     }
+}
+
+async function quickEnroll(event, enrollmentId, form) {
+    event.preventDefault();
+    if (!confirm('Enroll this student into the system?')) return false;
+
+    const card = document.getElementById('enrollment-' + enrollmentId);
+    const btn = form.querySelector('button[type="submit"]');
+    const parentData = btn?.closest('[x-data]');
+    if (parentData && parentData.__x) {
+        parentData.__x.$data.enrolling = true;
+    }
+
+    const formData = new FormData(form);
+    formData.append('_csrf', csrfToken);
+
+    try {
+        const resp = await fetch('<?= url('students/enrollments/') ?>' + enrollmentId + '/quick-enroll', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (resp.ok) {
+            if (card) {
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(30px)';
+                setTimeout(() => card.remove(), 300);
+            }
+            const count = document.querySelectorAll('#pending-list > div').length - 1;
+            const badge = document.querySelector('.pending-count');
+            if (badge) badge.textContent = count > 0 ? count : '';
+        } else {
+            const text = await resp.text();
+            alert('Enrollment failed: ' + (text || resp.statusText));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    } finally {
+        if (parentData && parentData.__x) {
+            parentData.__x.$data.enrolling = false;
+        }
+    }
+    return false;
 }
 </script>
 
