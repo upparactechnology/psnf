@@ -10,9 +10,7 @@ class Auth {
         exit;
       }
       // Redirect to PSNF ERP login instead of local login
-      $app = require __DIR__ . '/../../../../config/app.php';
-      $baseUrl = self::resolveBaseUrl($app);
-      header('Location: ' . rtrim($baseUrl, '/') . '/login?redirect=file_manager');
+      header('Location: /psnf/public/login?redirect=file_manager');
       exit;
     }
   }

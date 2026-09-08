@@ -194,18 +194,18 @@ class EnrollmentAdminController extends Controller
 
         // 5. Attach Aadhar Documents to `student_documents`
         if (!empty($enrollment['father_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (tenant_id, student_id, document_type, document_name, file_path, uploaded_at) VALUES (:t, :s, 'Father Aadhar', 'Father Aadhar Card', :path, NOW())", [
-                't' => $tenantId, 's' => $studentId, 'path' => $enrollment['father_aadhar_doc']
+            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Father Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
+                's' => $studentId, 'name' => $enrollment['father_aadhar_doc'], 'user' => $user['id'] ?? null
             ]);
         }
         if (!empty($enrollment['mother_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (tenant_id, student_id, document_type, document_name, file_path, uploaded_at) VALUES (:t, :s, 'Mother Aadhar', 'Mother Aadhar Card', :path, NOW())", [
-                't' => $tenantId, 's' => $studentId, 'path' => $enrollment['mother_aadhar_doc']
+            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Mother Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
+                's' => $studentId, 'name' => $enrollment['mother_aadhar_doc'], 'user' => $user['id'] ?? null
             ]);
         }
         if (!empty($enrollment['student_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (tenant_id, student_id, document_type, document_name, file_path, uploaded_at) VALUES (:t, :s, 'Student Aadhar', 'Student Aadhar Card', :path, NOW())", [
-                't' => $tenantId, 's' => $studentId, 'path' => $enrollment['student_aadhar_doc']
+            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Student Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
+                's' => $studentId, 'name' => $enrollment['student_aadhar_doc'], 'user' => $user['id'] ?? null
             ]);
         }
 
@@ -368,18 +368,18 @@ class EnrollmentAdminController extends Controller
 
         // 5. Attach Aadhar Documents
         if (!empty($enrollment['father_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (tenant_id, student_id, document_type, document_name, file_path, uploaded_at) VALUES (:t, :s, 'Father Aadhar', 'Father Aadhar Card', :path, NOW())", [
-                't' => $tenantId, 's' => $studentId, 'path' => $enrollment['father_aadhar_doc']
+            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Father Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
+                's' => $studentId, 'name' => $enrollment['father_aadhar_doc'], 'user' => $user['id'] ?? null
             ]);
         }
         if (!empty($enrollment['mother_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (tenant_id, student_id, document_type, document_name, file_path, uploaded_at) VALUES (:t, :s, 'Mother Aadhar', 'Mother Aadhar Card', :path, NOW())", [
-                't' => $tenantId, 's' => $studentId, 'path' => $enrollment['mother_aadhar_doc']
+            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Mother Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
+                's' => $studentId, 'name' => $enrollment['mother_aadhar_doc'], 'user' => $user['id'] ?? null
             ]);
         }
         if (!empty($enrollment['student_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (tenant_id, student_id, document_type, document_name, file_path, uploaded_at) VALUES (:t, :s, 'Student Aadhar', 'Student Aadhar Card', :path, NOW())", [
-                't' => $tenantId, 's' => $studentId, 'path' => $enrollment['student_aadhar_doc']
+            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Student Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
+                's' => $studentId, 'name' => $enrollment['student_aadhar_doc'], 'user' => $user['id'] ?? null
             ]);
         }
 
