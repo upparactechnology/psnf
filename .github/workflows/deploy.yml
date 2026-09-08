@@ -16,33 +16,44 @@ jobs:
           fetch-depth: 2
 
       - name: Get Changed Files
-        id: changed-files
         run: |
-          git diff --name-only HEAD^ HEAD > changed_files.txt
-          cat changed_files.txt
+          git diff --name-only HEAD^ HEAD > all_changed_files.txt
 
-      - name: Setup SSH
+          grep -vE '^(driver_app/|staff_app/|online_enrollment/|backend/|core/|graphify-out/|\.agents/|\.github/)' \
+            all_changed_files.txt > changed_files.txt || true
+
+          echo "=============================="
+          echo "FILES TO DEPLOY"
+          echo "=============================="
+
+          cat changed_files.txt || true
+
+      - name: Setup SFTP
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
 
       - name: Upload Changed Files
         run: |
+          DEPLOY_PATH="/home/user/web/psnf.upparac.com/public_html/erpv2"
+
           while IFS= read -r file
           do
             if [ -f "$file" ]; then
 
               echo "Uploading: $file"
 
-              ssh -i ~/.ssh/id_rsa \
-                ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-                "mkdir -p /home/user/web/psnf.upparac.com/public_html/erpv2/$(dirname "$file")"
-
-              scp -i ~/.ssh/id_rsa \
-                "$file" \
-                ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/home/user/web/psnf.upparac.com/public_html/erpv2/"$file"
+              sftp \
+                -i ~/.ssh/id_ed25519 \
+                -o StrictHostKeyChecking=yes \
+                "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << EOF
+          put "$file" "$DEPLOY_PATH/$file"
+          bye
+          EOF
 
             fi
           done < changed_files.txt
