@@ -8,14 +8,9 @@ RewriteRule (^\.|/\.) - [F,L]
 # ── File Manager (special entry point) ──────────────────────────────────────
 RewriteRule ^(erp/)?file_manager/public/?$ public/file_manager/public/index.php [L,QSA]
 
-# ── Static assets: /erp/{css,js,images,...} → public/{css,js,images,...} ──────
-# Only rewrite when the target file actually exists in public/.
-# [END] stops processing so Apache serves the file directly (no double-rewrite).
-# The second condition handles nested deployments where .htaccess sits inside
-# a subdirectory (e.g. htdocs/psnf/.htaccess) and DOCUMENT_ROOT points to htdocs/.
-RewriteCond %{DOCUMENT_ROOT}/public/$1 -f [OR]
-RewriteCond %{DOCUMENT_ROOT}/psnf/public/$1 -f
-RewriteRule ^erp/(.+)$ public/$1 [END]
+# ── Static assets: /erp/assets/... → public/assets/... ──────────────────────
+RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+RewriteRule ^erp/(.+)$ public/$1 [L,QSA]
 
 # ── Route everything else through front controller ───────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
