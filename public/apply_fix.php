@@ -339,11 +339,12 @@ $patched = preg_replace(
 );
 
 // Append new versions before the asset() function
+$count = 0;
 $patched = str_replace(
     "if (!function_exists('asset'))",
     $newGetDynamic . "\n\nif (!function_exists('asset'))",
     $patched,
-    1
+    $count
 );
 
 $r = file_put_contents($helpersFile, $patched);
