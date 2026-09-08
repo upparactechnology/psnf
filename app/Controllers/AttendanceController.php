@@ -24,6 +24,9 @@ class AttendanceController extends Controller
 
         $db = $this->db();
         $tenantId = \Core\Database::getTenantId();
+        $userId = $this->authId();
+        $isTeacher = has_role('teacher');
+        $canEdit = has_role('super_admin') || has_role('school_admin') || $isTeacher;
 
         $selectedClass   = trim((string)$this->request->get('class', ''));
         $selectedSection = trim((string)$this->request->get('section', ''));
@@ -50,14 +53,24 @@ class AttendanceController extends Controller
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
 
-        // Fetch classes from classes table
-        $classes = $db->select(
-            "SELECT name as class, COALESCE(section, '') as section 
-             FROM classes 
-             WHERE tenant_id = ? 
-             ORDER BY name ASC, section ASC",
-            [$tenantId]
-        );
+        // Fetch classes - for teachers, only show assigned classes
+        if ($isTeacher) {
+            $classes = $db->select(
+                "SELECT name as class, COALESCE(section, '') as section 
+                 FROM classes 
+                 WHERE tenant_id = ? AND class_teacher_id = ?
+                 ORDER BY name ASC, section ASC",
+                [$tenantId, $userId]
+            );
+        } else {
+            $classes = $db->select(
+                "SELECT name as class, COALESCE(section, '') as section 
+                 FROM classes 
+                 WHERE tenant_id = ? 
+                 ORDER BY name ASC, section ASC",
+                [$tenantId]
+            );
+        }
 
         if (empty($classes)) {
             $classes = $db->select(
@@ -128,7 +141,7 @@ class AttendanceController extends Controller
         }
 
         return $this->view('attendance/index', compact(
-            'classes', 'selectedClass', 'selectedSection', 'selectedDate', 'students', 'attendanceMap', 'pendingLeaves'
+            'classes', 'selectedClass', 'selectedSection', 'selectedDate', 'students', 'attendanceMap', 'pendingLeaves', 'canEdit'
         ));
     }
 
@@ -307,10 +320,25 @@ class AttendanceController extends Controller
         $date    = $this->request->input('date', date('Y-m-d'));
         $attData = $this->request->input('attendance', []);
         $remarks = $this->request->input('remarks', []);
+        $userId = $this->authId();
+        $isTeacher = has_role('teacher');
 
         if (!$date) {
             $this->flash('error', 'Date is required to save attendance.');
             return $this->redirect('/attendance');
+        }
+
+        // Verify teacher is assigned to this class
+        if ($isTeacher) {
+            $isAssigned = $db->selectOne(
+                "SELECT 1 FROM classes WHERE class_teacher_id = ? AND name = ? AND COALESCE(section, '') = ?",
+                [$userId, $class, $section]
+            );
+
+            if (!$isAssigned) {
+                $this->flash('error', 'You are not assigned as the class teacher for this class.');
+                return $this->redirect('/academics/attendance');
+            }
         }
 
         $tenantId = \Core\Database::getTenantId();

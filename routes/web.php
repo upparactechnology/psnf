@@ -38,8 +38,6 @@ $router->get('/', function () {
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 $router->get('/games',     [DashboardController::class, 'games'], ['auth']);
 $router->get('/teacher/dashboard', [TeacherPortalController::class, 'dashboard'], ['auth', 'role:teacher']);
-$router->get('/teacher/attendance', [TeacherPortalController::class, 'markAttendance'], ['auth', 'role:teacher']);
-$router->post('/teacher/attendance/save', [TeacherPortalController::class, 'saveTeacherAttendance'], ['auth', 'role:teacher']);
 
 // ─── Staff Management Workspace (/staff/*) ──────────────────────────────────
 $router->get('/staff',                  [App\Controllers\StaffWorkspaceController::class, 'overview'],    ['auth', 'permission:view_staff_overview']);

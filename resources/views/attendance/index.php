@@ -179,9 +179,9 @@ ob_start();
                                     <?= e($s['admission_number']) ?>
                                 </td>
 
-                                                                <!-- Status Toggles -->
+                                                                 <!-- Status Toggles -->
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <?php if (has_role('super_admin')): ?>
+                                    <?php if ($canEdit): ?>
                                         <div class="inline-flex p-1 bg-slate-100 border border-slate-200 rounded-xl gap-1" x-data="{ status: '<?= $status ?>' }">
                                             <label class="relative cursor-pointer" @click="status = 'present'">
                                                 <input type="radio" name="attendance[<?= $s['id'] ?>]" value="present" x-model="status" class="sr-only">
@@ -211,9 +211,9 @@ ob_start();
                                     <?php endif; ?>
                                 </td>
 
-                                                                <!-- Remarks -->
+                                                                 <!-- Remarks -->
                                 <td class="px-6 py-4">
-                                    <?php if (has_role('super_admin')): ?>
+                                    <?php if ($canEdit): ?>
                                         <input type="text" name="remarks[<?= $s['id'] ?>]" value="<?= e($attRecord['remarks']) ?>"
                                                class="w-full bg-slate-900 border border-slate-800 text-slate-300 placeholder-slate-600 rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:border-brand-500 transition-all"
                                                placeholder="e.g. sick leave, late bus">
@@ -230,7 +230,7 @@ ob_start();
         </div>
 
         <?php if (!empty($students)): ?>
-        <?php if (has_role('super_admin')): ?>
+        <?php if ($canEdit): ?>
         <div class="flex justify-end pt-3">
             <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90 bg-gradient-to-r from-indigo-500 to-purple-600">
                 Save Daily Attendance
