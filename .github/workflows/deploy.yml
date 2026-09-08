@@ -39,7 +39,7 @@ jobs:
 
       - name: Upload Changed Files
         run: |
-          DEPLOY_PATH="/home/user/web/psnf.upparac.com/public_html/erpv2"
+          DEPLOY_PATH="/home/user/web/psnf.upparac.com/public_html/erp"
 
           while IFS= read -r file
           do
