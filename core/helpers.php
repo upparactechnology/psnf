@@ -104,22 +104,59 @@ if (!function_exists('get_dynamic_base_url')) {
         if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
             $scheme = 'https';
         }
-        
+
         $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
-        
+
         // If base_url is a full URL (e.g. 'https://example.com/erp'), extract path
         $configuredBase = config('app.base_url', '');
         if (!empty($configuredBase) && $configuredBase !== 'auto') {
             $parsed = parse_url($configuredBase);
             $path = rtrim($parsed['path'] ?? '', '/');
-            // Use the path component only (always honour the current scheme/host)
             return $scheme . '://' . $host . $path;
         }
 
-        // If only base_path is set (e.g. 'erp'), build from that
+        // If only base_path is set (e.g. 'erp'), build from that.
+        // Detect any project-directory prefix from REQUEST_URI so that
+        // nested deployments (e.g. /psnf/erp/dashboard) generate correct URLs.
         $configuredPath = config('app.base_path', '');
         if (!empty($configuredPath) && $configuredPath !== 'auto') {
-            return $scheme . '://' . $host . '/' . trim($configuredPath, '/');
+            $basePath = '/' . trim($configuredPath, '/');
+            $baseSeg  = $basePath . '/';
+
+            $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+            if (($pos = strpos($requestUri, '?')) !== false) {
+                $requestUri = substr($requestUri, 0, $pos);
+            }
+
+            // Standard: base path at start of URI
+            if (str_starts_with($requestUri, $baseSeg) || rtrim($requestUri, '/') === $basePath) {
+                return $scheme . '://' . $host . $basePath;
+            }
+
+            // Nested: base path embedded deeper (e.g. /psnf/erp/dashboard)
+            $pos = strpos($requestUri, $baseSeg);
+            if ($pos !== false && $pos > 0) {
+                $prefix = substr($requestUri, 0, $pos);
+                return $scheme . '://' . $host . rtrim($prefix, '/') . $basePath;
+            }
+
+            // Exact match at non-zero position (e.g. /psnf/erp)
+            $pos = strrpos($requestUri, $basePath);
+            if ($pos !== false && $pos > 0 && ($pos + strlen($basePath)) === strlen(rtrim($requestUri, '/'))) {
+                $prefix = substr($requestUri, 0, $pos);
+                return $scheme . '://' . $host . rtrim($prefix, '/') . $basePath;
+            }
+
+            // Fallback: accessed through /public/ directly (e.g. /psnf/public/login)
+            // Detect project prefix from the /public/ segment
+            $publicSeg = '/public/';
+            $ppos = strpos($requestUri, $publicSeg);
+            if ($ppos !== false && $ppos > 0) {
+                $prefix = substr($requestUri, 0, $ppos);
+                return $scheme . '://' . $host . rtrim($prefix, '/') . $basePath;
+            }
+
+            return $scheme . '://' . $host . $basePath;
         }
 
         // Auto-detect from the request

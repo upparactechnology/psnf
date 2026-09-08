@@ -32,12 +32,31 @@ class Request
         $base = $this->detectBasePath();
 
         if ($base !== '' && $base !== '/') {
+            // Standard: base path at start of URI (e.g. /erp/dashboard)
             if ($path === $base || $path === $base . '/') {
                 $path = '/';
             } elseif (str_starts_with($path, $base . '/')) {
                 $path = substr($path, strlen($base));
-            } elseif (str_starts_with($path, $base)) {
-                $path = substr($path, strlen($base));
+            } else {
+                // Base path not at start — handles nested deployments
+                // where REQUEST_URI includes a project directory prefix
+                // e.g. REQUEST_URI=/psnf/erp/dashboard, base=/erp
+                $baseSeg = $base . '/';
+                $pos = strpos($path, $baseSeg);
+                if ($pos !== false && $pos > 0) {
+                    $path = substr($path, $pos + strlen($base));
+                } elseif (rtrim($path, '/') === $base) {
+                    $path = '/';
+                } else {
+                    // Fallback: accessed through /public/ directly
+                    // e.g. REQUEST_URI=/psnf/public/login
+                    $publicSeg = '/public/';
+                    $ppos = strpos($path, $publicSeg);
+                    if ($ppos !== false) {
+                        $remainder = substr($path, $ppos + strlen($publicSeg) - 1);
+                        $path = $remainder !== false ? $remainder : '/';
+                    }
+                }
             }
         }
 

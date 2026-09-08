@@ -8,21 +8,15 @@ RewriteRule (^\.|/\.) - [F,L]
 # ── File Manager (special entry point) ──────────────────────────────────────
 RewriteRule ^(erp/)?file_manager/public/?$ public/file_manager/public/index.php [L,QSA]
 
-# ── Static assets: /erp/assets/... → public/assets/...
-# Works when .htaccess is at project root (local dev)
-RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
-RewriteRule ^erp/(.+)$ public/$1 [L,QSA]
+# ── Static assets: /erp/{css,js,images,...} → public/{css,js,images,...} ──────
+# Only rewrite when the target file actually exists in public/.
+# [END] stops processing so Apache serves the file directly (no double-rewrite).
+# The second condition handles nested deployments where .htaccess sits inside
+# a subdirectory (e.g. htdocs/psnf/.htaccess) and DOCUMENT_ROOT points to htdocs/.
+RewriteCond %{DOCUMENT_ROOT}/public/$1 -f [OR]
+RewriteCond %{DOCUMENT_ROOT}/psnf/public/$1 -f
+RewriteRule ^erp/(.+)$ public/$1 [END]
 
-# ── Static assets: serve from public/ when .htaccess is inside erp/ ──────────
-# When server DocumentRoot is public_html/ and .htaccess sits in public_html/erp/,
-# per-directory context strips the erp/ prefix. Use [END] (Apache 2.4+) to
-# prevent the double-rewrite loop that [L] causes in per-directory context.
-RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
-RewriteCond %{DOCUMENT_ROOT}/%{REQUEST_URI} !-d
-RewriteCond %{DOCUMENT_ROOT}/erp/public/$1 -f
-RewriteRule ^(.+\.[a-zA-Z0-9]+)$ public/$1 [END]
-
-# ── Route everything else (including /erp and /erp/*) through front controller
-# Removed !-d so directory requests (e.g. /erp) reach PHP for redirect handling.
+# ── Route everything else through front controller ───────────────────────────
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ public/index.php [L,QSA]
