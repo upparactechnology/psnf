@@ -7,6 +7,7 @@ ob_start();
 
 <div x-data="studentDirectory()" class="space-y-6 max-w-6xl mx-auto">
 
+
     <!-- Top Header & Quick Action Buttons -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
