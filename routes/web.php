@@ -389,8 +389,8 @@ $router->get('/student-attendance', [AttendanceController::class, 'index'], ['au
 $router->post('/student-attendance/save', [AttendanceController::class, 'save'], ['auth', 'permission:edit_acad_attendance']);
 $router->get('/attendance', [AttendanceController::class, 'index'], ['auth', 'permission:view_staff_attendance']);
 $router->post('/attendance/save', [AttendanceController::class, 'save'], ['auth', 'permission:edit_staff_attendance']);
-$router->get('/attendance/face-kiosk',    [App\Controllers\FaceRecognitionController::class, 'kioskView'], ['auth', 'permission:view_face_kiosk']);
-$router->post('/attendance/face-kiosk',   [App\Controllers\FaceRecognitionController::class, 'kioskView'], ['auth', 'permission:view_face_kiosk']);
+$router->get('/attendance/face-kiosk',    [App\Controllers\FaceRecognitionController::class, 'kioskView'], ['auth.kiosk']);
+$router->post('/attendance/face-kiosk',   [App\Controllers\FaceRecognitionController::class, 'kioskView'], ['auth.kiosk']);
 $router->get('/attendance/face-register', [App\Controllers\FaceRecognitionController::class, 'registerView'], ['auth', 'permission:view_face_register']);
 $router->post('/attendance/face-register',[App\Controllers\FaceRecognitionController::class, 'registerView'], ['auth', 'permission:view_face_register']);
 $router->get('/attendance/face-history',  [App\Controllers\FaceRecognitionController::class, 'historyView']);

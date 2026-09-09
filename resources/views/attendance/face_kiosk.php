@@ -108,20 +108,6 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
 @keyframes offlinePulse { 0%,100%{border-color:rgba(239,68,68,0.35)} 50%{border-color:rgba(239,68,68,0.75)} }
 </style>
 
-<?php if (!function_exists('auth') || !auth()): ?>
-<style>
-    /* Hide sidebar and top nav for guests in the app layout */
-    aside { display: none !important; }
-    header { display: none !important; }
-    .flex-1.flex.flex-col.min-w-0 { padding-top: 0 !important; }
-    main { padding: 1rem !important; }
-    
-    /* Make kiosk full screen for guests */
-    .flex.h-screen { align-items: center; justify-content: center; }
-    main > div { max-width: 1200px; margin: 0 auto; width: 100%; }
-</style>
-<?php endif; ?>
-
 <div class="space-y-5" id="kioskRoot">
 
     <!-- Header -->

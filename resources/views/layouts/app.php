@@ -330,6 +330,7 @@
 <?php
 $currentPath = \Core\Application::$app->request->getPath();
 $isDashboard = ($currentPath === '/dashboard' || $currentPath === '/' || $currentPath === '' || $currentPath === '/games');
+$isKiosk = ($currentPath === '/attendance/face-kiosk' && \Core\Session::get('kiosk_guest'));
 $user = auth();
 $db = \Core\Application::$app->db;
 $assignedApps = [];
@@ -372,7 +373,7 @@ if ($user) {
     <!-- Mobile Backdrop -->
     <div x-show="mobileNav" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[90] md:hidden" @click="mobileNav = false" x-transition.opacity x-cloak></div>
 
-    <?php if (!$isDashboard): ?>
+    <?php if (!$isDashboard && !$isKiosk): ?>
     <!-- Sidebar -->
     <aside class="flex-shrink-0 flex flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-slate-900 transition-all duration-300 fixed md:relative z-[100] h-full"
            :class="[
@@ -719,6 +720,7 @@ if ($user) {
     <div class="flex-1 flex flex-col overflow-hidden">
 
         <!-- Top Bar -->
+        <?php if (!$isKiosk): ?>
         <?php if ($isDashboard): ?>
         <header class="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-surface-900/50 backdrop-blur">
             <div class="flex items-center gap-3">
@@ -801,6 +803,7 @@ if ($user) {
             </div>
         </header>
         <?php endif; ?>
+        <?php endif; // !isKiosk ?>
 
         <!-- Page Content -->
         <main class="flex-1 overflow-y-auto p-6" id="main-content">

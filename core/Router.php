@@ -18,6 +18,7 @@ class Router
 
         $this->middlewareAliases = [
             'auth'        => \App\Middleware\AuthMiddleware::class,
+            'auth.kiosk'  => \App\Middleware\KioskAuthMiddleware::class,
             'guest'       => \App\Middleware\GuestMiddleware::class,
             'role'        => \App\Middleware\RoleMiddleware::class,
             'permission'  => \App\Middleware\PermissionMiddleware::class,
