@@ -68,6 +68,23 @@ class Router
         $method = $this->request->getMethod();
         $path   = $this->request->getPath();
 
+        if (isset($_GET['debug_route'])) {
+            echo '<pre>';
+            print_r([
+                'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? null,
+                'SCRIPT_NAME' => $_SERVER['SCRIPT_NAME'] ?? null,
+                'PHP_SELF' => $_SERVER['PHP_SELF'] ?? null,
+                'SCRIPT_FILENAME' => $_SERVER['SCRIPT_FILENAME'] ?? null,
+                'DOCUMENT_ROOT' => $_SERVER['DOCUMENT_ROOT'] ?? null,
+                'CONFIG_BASE_PATH' => config('app.base_path'),
+                'DETECTED_BASE_PATH' => $this->request->detectBasePath(),
+                'ROUTER_PATH' => $path,
+                'METHOD' => $method,
+            ]);
+            echo '</pre>';
+            exit;
+        }
+
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) continue;
 
