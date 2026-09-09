@@ -58,7 +58,7 @@ class AnnouncementController extends Controller
 
         if (empty($title) || empty($content)) {
             Session::flash('error', 'Title and content are required.');
-            Application::$app->response->redirect('/academics/announcements');
+            $this->redirect(url('academics/announcements'));
             return '';
         }
 
@@ -81,7 +81,7 @@ class AnnouncementController extends Controller
             Session::flash('error', 'Failed to send announcement: ' . $e->getMessage());
         }
 
-        Application::$app->response->redirect('/academics/announcements');
+        $this->redirect(url('academics/announcements'));
         return '';
     }
 
@@ -92,7 +92,7 @@ class AnnouncementController extends Controller
         $announcement = $this->db()->selectOne("SELECT id FROM announcements WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$announcement) {
             Session::flash('error', 'Announcement not found.');
-            Application::$app->response->redirect('/academics/announcements');
+            $this->redirect(url('academics/announcements'));
             return '';
         }
 
@@ -103,7 +103,7 @@ class AnnouncementController extends Controller
             Session::flash('error', 'Failed to delete announcement.');
         }
 
-        Application::$app->response->redirect('/academics/announcements');
+        $this->redirect(url('academics/announcements'));
         return '';
     }
 }

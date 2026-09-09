@@ -21,7 +21,7 @@ class ProfileController extends Controller
         $user = User::find($userId);
         if (!$user) {
             $this->flash('error', 'User not found.');
-            return $this->redirect('/dashboard');
+            return $this->redirect(url('dashboard'));
         }
 
         // Get user roles
@@ -40,7 +40,7 @@ class ProfileController extends Controller
         $user = User::find($userId);
         if (!$user) {
             $this->flash('error', 'User not found.');
-            return $this->redirect('/dashboard');
+            return $this->redirect(url('dashboard'));
         }
 
         $name  = trim((string)$this->request->input('name', ''));
@@ -52,12 +52,12 @@ class ProfileController extends Controller
 
         if (empty($name)) {
             $this->flash('error', 'Name is required.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         if (empty($email)) {
             $this->flash('error', 'Email is required.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         // Check if email is taken by another user
@@ -67,7 +67,7 @@ class ProfileController extends Controller
         );
         if ($existing) {
             $this->flash('error', 'Email address is already taken by another user.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         try {
@@ -100,7 +100,7 @@ class ProfileController extends Controller
             $this->flash('error', 'Failed to update profile: ' . $e->getMessage());
         }
 
-        return $this->redirect('/profile');
+        return $this->redirect(url('profile'));
     }
 
     public function changePassword(): string
@@ -109,7 +109,7 @@ class ProfileController extends Controller
         $user = User::find($userId);
         if (!$user) {
             $this->flash('error', 'User not found.');
-            return $this->redirect('/dashboard');
+            return $this->redirect(url('dashboard'));
         }
 
         $currentPassword = $this->request->input('current_password', '');
@@ -118,23 +118,23 @@ class ProfileController extends Controller
 
         if (empty($currentPassword)) {
             $this->flash('error', 'Current password is required.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         if (empty($newPassword)) {
             $this->flash('error', 'New password is required.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         if ($newPassword !== $confirmPassword) {
             $this->flash('error', 'New password and confirmation do not match.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         // Verify current password
         if (!password_verify($currentPassword, $user['password'])) {
             $this->flash('error', 'Current password is incorrect.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         try {
@@ -151,7 +151,7 @@ class ProfileController extends Controller
             $this->flash('error', 'Failed to change password: ' . $e->getMessage());
         }
 
-        return $this->redirect('/profile');
+        return $this->redirect(url('profile'));
     }
 
     public function uploadAvatar()
@@ -160,12 +160,12 @@ class ProfileController extends Controller
         $user = User::find($userId);
         if (!$user) {
             $this->flash('error', 'User not found.');
-            return $this->redirect('/dashboard');
+            return $this->redirect(url('dashboard'));
         }
 
         if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
             $this->flash('error', 'Please select an image to upload.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         $file = $_FILES['avatar'];
@@ -173,12 +173,12 @@ class ProfileController extends Controller
 
         if (!in_array($file['type'], $allowedTypes)) {
             $this->flash('error', 'Only JPG, PNG, GIF, and WebP images are allowed.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         if ($file['size'] > 2 * 1024 * 1024) {
             $this->flash('error', 'Image must be less than 2MB.');
-            return $this->redirect('/profile');
+            return $this->redirect(url('profile'));
         }
 
         try {
@@ -222,6 +222,6 @@ class ProfileController extends Controller
             $this->flash('error', 'Failed to upload image: ' . $e->getMessage());
         }
 
-        return $this->redirect('/profile');
+        return $this->redirect(url('profile'));
     }
 }

@@ -76,7 +76,7 @@ class FeeInvoiceController extends Controller
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
             Session::flash('old', $data);
-            return $this->redirect('/fees/invoices/create');
+            return $this->redirect(url('fees/invoices/create'));
         }
 
         $tenantId = \Core\Database::getTenantId();
@@ -127,7 +127,7 @@ class FeeInvoiceController extends Controller
         }
 
         Session::flash('success', "Invoice {$invoiceNumber} created successfully.");
-        return $this->redirect('/fees/invoices');
+        return $this->redirect(url('fees/invoices'));
     }
 
     public function show(string $id): string
@@ -146,7 +146,7 @@ class FeeInvoiceController extends Controller
 
         if (!$invoice) {
             Session::flash('error', 'Invoice not found.');
-            return $this->redirect('/fees/invoices');
+            return $this->redirect(url('fees/invoices'));
         }
 
         // Fetch payments for this invoice
@@ -172,12 +172,12 @@ class FeeInvoiceController extends Controller
 
         if (!$invoice) {
             Session::flash('error', 'Invoice not found.');
-            return $this->redirect('/fees/invoices');
+            return $this->redirect(url('fees/invoices'));
         }
 
         if ($invoice['status'] !== 'unpaid' || $invoice['paid_amount'] > 0) {
             Session::flash('error', 'Only unpaid invoices can be edited.');
-            return $this->redirect('/fees/invoices');
+            return $this->redirect(url('fees/invoices'));
         }
 
         return $this->view('fees/invoices/edit', compact('invoice'));
@@ -190,7 +190,7 @@ class FeeInvoiceController extends Controller
         $invoice = $this->db()->selectOne("SELECT * FROM fee_invoices WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (!$invoice || $invoice['status'] !== 'unpaid' || $invoice['paid_amount'] > 0) {
             Session::flash('error', 'Invalid invoice or invoice cannot be edited.');
-            return $this->redirect('/fees/invoices');
+            return $this->redirect(url('fees/invoices'));
         }
 
         $data = $this->request->getBody();
@@ -203,7 +203,7 @@ class FeeInvoiceController extends Controller
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
-            return $this->redirect("/fees/invoices/{$id}/edit");
+            return $this->redirect(url("fees/invoices/{$id}/edit"));
         }
 
         $newAmount = (float)$data['amount'];
@@ -239,7 +239,7 @@ class FeeInvoiceController extends Controller
         }
 
         Session::flash('success', "Invoice updated successfully.");
-        return $this->redirect('/fees/invoices');
+        return $this->redirect(url('fees/invoices'));
     }
 
     public function destroy(string $id): string
@@ -249,7 +249,7 @@ class FeeInvoiceController extends Controller
         $invoice = $this->db()->selectOne("SELECT * FROM fee_invoices WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (!$invoice || $invoice['status'] !== 'unpaid' || $invoice['paid_amount'] > 0) {
             Session::flash('error', 'Only unpaid invoices can be deleted.');
-            return $this->redirect('/fees/invoices');
+            return $this->redirect(url('fees/invoices'));
         }
 
         // Delete the invoice
@@ -271,6 +271,6 @@ class FeeInvoiceController extends Controller
         ]);
 
         Session::flash('success', "Invoice deleted successfully.");
-        return $this->redirect('/fees/invoices');
+        return $this->redirect(url('fees/invoices'));
     }
 }

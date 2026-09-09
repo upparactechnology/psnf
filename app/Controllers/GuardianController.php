@@ -78,7 +78,7 @@ class GuardianController extends Controller
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
             Session::flash('old', $data);
-            return $this->redirect('/academics/parents/create');
+            return $this->redirect(url('academics/parents/create'));
         }
 
         $studentIds = $data['students'] ?? [];
@@ -131,7 +131,7 @@ class GuardianController extends Controller
         }
 
         Session::flash('success', 'Parent added and linked successfully.');
-        return $this->redirect('/academics/parents');
+        return $this->redirect(url('academics/parents'));
     }
 
     public function edit(string $id): string
@@ -139,7 +139,7 @@ class GuardianController extends Controller
         $guardian = Guardian::find((int)$id);
         if (!$guardian || $guardian['tenant_id'] !== Database::getTenantId()) {
             Session::flash('error', 'Guardian not found.');
-            return $this->redirect('/academics/parents');
+            return $this->redirect(url('academics/parents'));
         }
 
         $db = \Core\Application::$app->db;
@@ -161,7 +161,7 @@ class GuardianController extends Controller
         $guardian = Guardian::find((int)$id);
         if (!$guardian || $guardian['tenant_id'] !== Database::getTenantId()) {
             Session::flash('error', 'Guardian not found.');
-            return $this->redirect('/academics/parents');
+            return $this->redirect(url('academics/parents'));
         }
 
         $data = $this->request->getBody();
@@ -174,7 +174,7 @@ class GuardianController extends Controller
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
-            return $this->redirect("/academics/parents/{$id}/edit");
+            return $this->redirect(url("academics/parents/{$id}/edit"));
         }
 
         $studentIds = $data['students'] ?? [];
@@ -227,7 +227,7 @@ class GuardianController extends Controller
         }
 
         Session::flash('success', 'Parent updated and linked successfully.');
-        return $this->redirect('/academics/parents');
+        return $this->redirect(url('academics/parents'));
     }
 
     public function destroy(string $id): string
@@ -237,6 +237,6 @@ class GuardianController extends Controller
             Guardian::delete((int)$id);
             Session::flash('success', 'Parent deleted.');
         }
-        return $this->redirect('/academics/parents');
+        return $this->redirect(url('academics/parents'));
     }
 }

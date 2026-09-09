@@ -31,7 +31,7 @@ class EnrollmentAdminController extends Controller
         $enrollment = $db->query("SELECT * FROM online_enrollments WHERE id = :id", ['id' => $id])[0] ?? null;
 
         if (!$enrollment) {
-            $this->redirect('/students/enrollments');
+            $this->redirect(url('students/enrollments'));
             return;
         }
 
@@ -52,7 +52,7 @@ class EnrollmentAdminController extends Controller
 
         if (!$enrollment) {
             \Core\Session::setFlash('errors', ['enrollment' => 'Enrollment record not found or already processed.']);
-            $this->redirect('/students/enrollments');
+            $this->redirect(url('students/enrollments'));
             return;
         }
 
@@ -61,7 +61,7 @@ class EnrollmentAdminController extends Controller
 
         if (!$schoolId || !$branchId) {
             \Core\Session::setFlash('errors', ['school_id' => 'Please select School and Branch before approving.']);
-            $this->redirect('/students/enrollments/' . $id);
+            $this->redirect(url('students/enrollments/' . $id));
             return;
         }
 
@@ -216,7 +216,7 @@ class EnrollmentAdminController extends Controller
         ]);
 
         \Core\Session::setFlash('success', 'Student online application approved and imported into system successfully!');
-        $this->redirect('/students/' . $studentId);
+        $this->redirect(url('students/' . $studentId));
     }
 
     public function quickEnroll(string $id): void
@@ -232,7 +232,7 @@ class EnrollmentAdminController extends Controller
                 exit;
             }
             \Core\Session::setFlash('errors', ['enrollment' => 'Enrollment record not found or already processed.']);
-            $this->redirect('/academics/students');
+            $this->redirect(url('academics/students'));
             return;
         }
 
@@ -247,7 +247,7 @@ class EnrollmentAdminController extends Controller
                 exit;
             }
             \Core\Session::setFlash('errors', ['school_id' => 'Please select School and Branch before enrolling.']);
-            $this->redirect('/academics/students');
+            $this->redirect(url('academics/students'));
             return;
         }
 
@@ -410,7 +410,7 @@ class EnrollmentAdminController extends Controller
             exit;
         }
 
-        $this->redirect('/academics/students/' . $studentId);
+        $this->redirect(url('academics/students/' . $studentId));
     }
 
     public function reject(string $id): void
@@ -426,6 +426,6 @@ class EnrollmentAdminController extends Controller
         ]);
 
         \Core\Session::setFlash('success', 'Application rejected.');
-        $this->redirect('/students/enrollments');
+        $this->redirect(url('students/enrollments'));
     }
 }

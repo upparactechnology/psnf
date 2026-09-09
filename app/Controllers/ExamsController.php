@@ -131,7 +131,7 @@ class ExamsController extends Controller
 
         if (!$name || !$semester) {
             $this->flash('error', 'Exam name and semester are required.');
-            return $this->redirect('/academics/exams');
+            return $this->redirect(url('academics/exams'));
         }
 
         $schoolId = 1;
@@ -207,7 +207,7 @@ class ExamsController extends Controller
         $exam = $db->selectOne("SELECT * FROM exams WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (!$exam) {
             $this->flash('error', 'Exam not found.');
-            return $this->redirect('/academics/exams');
+            return $this->redirect(url('academics/exams'));
         }
 
         $mainGroups = $db->select(
@@ -234,7 +234,7 @@ class ExamsController extends Controller
 
         if (!$name || !$semester) {
             $this->flash('error', 'Exam name and semester are required.');
-            return $this->redirect('/academics/exams');
+            return $this->redirect(url('academics/exams'));
         }
 
         $subjectIdsJson = !empty($subjectIds) ? json_encode(array_map('intval', $subjectIds)) : null;
@@ -776,7 +776,7 @@ class ExamsController extends Controller
 
         if (is_year_locked($academicYear)) {
             $this->flash('error', 'This academic year is locked. Marks entry is frozen.');
-            return $this->redirect("/academics/assessments?class=" . urlencode($class) . "&section=" . urlencode($section) . "&exam_name=" . urlencode($selectedExamName));
+            return $this->redirect(url("academics/assessments?class=" . urlencode($class) . "&section=" . urlencode($section) . "&exam_name=" . urlencode($selectedExamName)));
         }
 
         $semExams = $db->select(
@@ -953,6 +953,6 @@ class ExamsController extends Controller
         ]);
 
         $this->flash('success', "Successfully saved bulk evaluation marks and synchronized report cards.");
-        return $this->redirect("/academics/assessments?class=" . urlencode($class) . "&section=" . urlencode($section) . "&exam_name=" . urlencode($selectedExamName));
+        return $this->redirect(url("academics/assessments?class=" . urlencode($class) . "&section=" . urlencode($section) . "&exam_name=" . urlencode($selectedExamName)));
     }
 }

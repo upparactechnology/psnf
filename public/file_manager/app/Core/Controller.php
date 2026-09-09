@@ -35,7 +35,11 @@ class Controller {
     }
     $requestUri = '/' . ltrim($requestUri, '/');
 
+    // Handle both legacy /file_manager/public/ and new /file-manager/ URLs
     if (preg_match('#^(.*?/file_manager/public)(?:/|$)#i', $requestUri, $m)) {
+      return $m[1];
+    }
+    if (preg_match('#^(.*?/file-manager)(?:/|$)#i', $requestUri, $m)) {
       return $m[1];
     }
 

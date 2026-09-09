@@ -24,7 +24,7 @@ class ParentPortalController extends Controller
     {
         $userId = auth_id();
         if (!$userId) {
-            Application::$app->response->redirect('/login');
+            $this->redirect(url('login'));
             exit();
         }
 
@@ -175,7 +175,7 @@ class ParentPortalController extends Controller
             Session::flash('success', "Switched view to parent: " . $id);
         }
 
-        Application::$app->response->redirect('/parent/dashboard');
+        $this->redirect(url('parent/dashboard'));
         exit();
     }
 
@@ -444,7 +444,7 @@ class ParentPortalController extends Controller
 
         if (!$startTs || !$endTs || $startTs > $endTs) {
             \Core\Session::flash('error', 'Invalid date range.');
-            \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            $this->redirect(url("parent/students/{$id}/attendance"));
             return;
         }
 
@@ -454,7 +454,7 @@ class ParentPortalController extends Controller
         if ($diffDays >= 1) {
             if (!isset($_FILES['medical_certificate']) || $_FILES['medical_certificate']['error'] !== UPLOAD_ERR_OK) {
                 \Core\Session::flash('error', 'A supporting document is required for multi-day leaves.');
-                \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                $this->redirect(url("parent/students/{$id}/attendance"));
                 return;
             }
 
@@ -469,7 +469,7 @@ class ParentPortalController extends Controller
 
             if (!in_array($ext, $allowedExts)) {
                 \Core\Session::flash('error', 'Invalid file type. Only PDF and images are allowed.');
-                \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                $this->redirect(url("parent/students/{$id}/attendance"));
                 return;
             }
 
@@ -478,7 +478,7 @@ class ParentPortalController extends Controller
                 $medicalCertPath = $fileName;
             } else {
                 \Core\Session::flash('error', 'Failed to upload document.');
-                \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                $this->redirect(url("parent/students/{$id}/attendance"));
                 return;
             }
         }
@@ -498,7 +498,7 @@ class ParentPortalController extends Controller
         ]);
 
         \Core\Session::flash('success', 'Leave request submitted successfully.');
-        \Core\Application::$app->response->redirect("/parent/students/{$id}/attendance");
+        \Core\$this->redirect(url("parent/students/{$id}/attendance"));
     }
 
     public function submitTomorrowAttendance(string $id): void
@@ -515,7 +515,7 @@ class ParentPortalController extends Controller
         $timestamp = strtotime($date);
         if (!$timestamp) {
             Session::flash('error', 'Invalid date selected.');
-            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            $this->redirect(url("parent/students/{$id}/attendance"));
             exit();
         }
 
@@ -524,19 +524,19 @@ class ParentPortalController extends Controller
         // Check if date is in the past
         if ($dateStr < date('Y-m-d')) {
             Session::flash('error', 'You cannot declare attendance for past dates.');
-            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            $this->redirect(url("parent/students/{$id}/attendance"));
             exit();
         }
 
         if (empty($status) || !in_array($status, ['present', 'absent'])) {
             Session::flash('error', 'Please select either Present or Absent.');
-            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            $this->redirect(url("parent/students/{$id}/attendance"));
             exit();
         }
 
         if ($status === 'absent' && empty(trim($remarks))) {
             Session::flash('error', 'Please provide a reason for the absence.');
-            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            $this->redirect(url("parent/students/{$id}/attendance"));
             exit();
         }
 
@@ -555,14 +555,14 @@ class ParentPortalController extends Controller
         $deadlineTimestamp = strtotime(date('Y-m-d', $targetDateTimestamp) . ' -1 day 23:00:00');
         if (time() >= $deadlineTimestamp) {
             Session::flash('error', 'The deadline to declare or modify attendance for this date has passed (11:00 PM on the day prior).');
-            Application::$app->response->redirect("/parent/students/{$id}/attendance");
+            $this->redirect(url("parent/students/{$id}/attendance"));
             exit();
         }
 
         if ($exists) {
             if (empty($exists['created_by']) || (int)$exists['created_by'] !== auth_id()) {
                 Session::flash('error', 'This attendance record is managed by the school and cannot be modified.');
-                Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                $this->redirect(url("parent/students/{$id}/attendance"));
                 exit();
             }
         }
@@ -574,12 +574,12 @@ class ParentPortalController extends Controller
                 $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
                 if (!in_array($ext, ['pdf', 'png', 'jpg', 'jpeg'])) {
                     Session::flash('error', 'Medical certificate must be a PDF, PNG, JPG, or JPEG file.');
-                    Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                    $this->redirect(url("parent/students/{$id}/attendance"));
                     exit();
                 }
                 if ($file['size'] > 5 * 1024 * 1024) {
                     Session::flash('error', 'Medical certificate size must be less than 5MB.');
-                    Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                    $this->redirect(url("parent/students/{$id}/attendance"));
                     exit();
                 }
 
@@ -598,7 +598,7 @@ class ParentPortalController extends Controller
                         ? 'Please upload a medical certificate (required since the reason contains the word "medical").'
                         : 'Please upload a medical certificate for medical issues.';
                     Session::flash('error', $errorMsg);
-                    Application::$app->response->redirect("/parent/students/{$id}/attendance");
+                    $this->redirect(url("parent/students/{$id}/attendance"));
                     exit();
                 }
             }
@@ -643,7 +643,7 @@ class ParentPortalController extends Controller
         );
 
         Session::flash('success', "Attendance declaration for " . date('l, d M Y', strtotime($dateStr)) . " has been saved successfully.");
-        Application::$app->response->redirect("/parent/students/{$id}/attendance");
+        $this->redirect(url("parent/students/{$id}/attendance"));
         exit();
     }
 
@@ -1084,7 +1084,7 @@ class ParentPortalController extends Controller
                 return '<div class="text-red-400 font-medium">Invalid or already paid invoice.</div>';
             }
             Session::flash('error', 'Invalid or already paid invoice.');
-            Application::$app->response->redirect("/parent/students/{$student['id']}/fees");
+            $this->redirect(url("parent/students/{$student['id']}/fees"));
             exit();
         }
 
@@ -1148,7 +1148,7 @@ class ParentPortalController extends Controller
         }
 
         Session::flash('success', 'Fee paid successfully!');
-        Application::$app->response->redirect("/parent/students/{$student['id']}/fees");
+        $this->redirect(url("parent/students/{$student['id']}/fees"));
         exit();
     }
 
@@ -1165,7 +1165,7 @@ class ParentPortalController extends Controller
 
         if (!$name || !$relation || !$phone) {
             Session::flash('error', 'Name, Relationship, and Phone are required.');
-            Application::$app->response->redirect("/parent/students/{$student['id']}/attendance"); // Fallback redirect
+            $this->redirect(url("parent/students/{$student['id']}/attendance")); // Fallback redirect
             exit();
         }
 
@@ -1213,7 +1213,7 @@ class ParentPortalController extends Controller
         }
 
         Session::flash('success', 'Emergency contact updated successfully!');
-        Application::$app->response->redirect('/parent/dashboard');
+        $this->redirect(url('parent/dashboard'));
         exit();
     }
 
@@ -1493,7 +1493,7 @@ class ParentPortalController extends Controller
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
             Session::flash('old', $data);
-            Application::$app->response->redirect('/parent/students/add');
+            $this->redirect(url('parent/students/add'));
             exit();
         }
 
@@ -1564,12 +1564,12 @@ class ParentPortalController extends Controller
             });
 
             Session::flash('success', 'Student details added and linked successfully! Your application has been sent for admin review.');
-            Application::$app->response->redirect('/parent/dashboard');
+        $this->redirect(url('parent/dashboard'));
             exit();
         } catch (\Throwable $e) {
             Session::flash('error', 'Failed to save student details: ' . $e->getMessage());
             Session::flash('old', $data);
-            Application::$app->response->redirect('/parent/students/add');
+            $this->redirect(url('parent/students/add'));
             exit();
         }
     }

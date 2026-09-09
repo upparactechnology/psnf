@@ -318,9 +318,9 @@ if (!function_exists('dashboard_url')) {
     function dashboard_url(): string
     {
         if (has_role('parent')) {
-            return '/parent/dashboard';
+            return url('parent/dashboard');
         }
-        return '/dashboard';
+        return url('dashboard');
     }
 }
 

@@ -19,7 +19,7 @@ class TeacherPortalController extends Controller
     {
         $sessionUser = $this->auth();
         if (!$sessionUser) {
-            Application::$app->response->redirect('/login');
+            $this->redirect(url('login'));
             exit();
         }
 
@@ -28,7 +28,7 @@ class TeacherPortalController extends Controller
         // Load fresh user data to get updated settings
         $user = User::find($sessionUser['id']);
         if (!$user) {
-            Application::$app->response->redirect('/login');
+            $this->redirect(url('login'));
             exit();
         }
         $tenantId = $user['tenant_id'];

@@ -13,7 +13,7 @@ ob_start();
 
     <form method="POST" action="<?= url('settings/update') ?>" x-data="{ loading: false }" @submit="loading = true">
         <?= \Core\View::csrf() ?>
-        <input type="hidden" name="redirect_tab" value="/settings/integrations">
+        <input type="hidden" name="redirect_tab" value="<?= url('settings/integrations') ?>">
 
         <!-- WhatsApp Integration -->
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-4 mb-5">
@@ -134,7 +134,7 @@ ob_start();
         </h3>
         <form method="POST" action="<?= url('settings/test-whatsapp') ?>" class="flex gap-4 items-end">
             <?= \Core\View::csrf() ?>
-            <input type="hidden" name="redirect_tab" value="/settings/integrations">
+            <input type="hidden" name="redirect_tab" value="<?= url('settings/integrations') ?>">
             <div class="space-y-1.5 flex-1">
                 <label class="block text-xs font-medium text-slate-400">Phone Number (with Country Code e.g. 919427961426)</label>
                 <input type="text" name="phone" required
