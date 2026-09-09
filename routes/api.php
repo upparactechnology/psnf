@@ -7,9 +7,9 @@ $router->get('/api/v1/health', function () {
     return json_encode(['status' => 'ok', 'version' => '1.0.0', 'time' => now()]);
 });
 
-$router->post('/api/v1/auth/login', [App\Controllers\AuthController::class, 'login'], ['rate.limit:10,1']);
+$router->post('/api/v1/auth/login', [App\Controllers\AuthController::class, 'login'], ['rate.limit:60,1']);
 $router->post('/api/v1/auth/logout', [App\Controllers\AuthController::class, 'logout'], ['auth']);
-$router->post('/api/v1/auth/driver-login', [App\Controllers\AuthController::class, 'apiDriverLogin'], ['rate.limit:10,1']);
+$router->post('/api/v1/auth/driver-login', [App\Controllers\AuthController::class, 'apiDriverLogin'], ['rate.limit:60,1']);
 $router->post('/api/v1/auth/driver-change-password', [App\Controllers\AuthController::class, 'apiDriverChangePassword'], ['auth']);
 
 $router->get('/api/v1/students',      [App\Controllers\StudentController::class, 'index'],   ['auth']);

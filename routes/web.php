@@ -6,11 +6,11 @@ use App\Controllers\{AuthController, DashboardController, UserController, RoleCo
 
 // ─── Auth (Guest Only) ────────────────────────────────────────────────────────
 $router->get('/login',           [AuthController::class, 'showLogin'],          ['guest']);
-$router->post('/login',          [AuthController::class, 'login'],              ['rate.limit:10,1']);
+$router->post('/login',          [AuthController::class, 'login'],              ['rate.limit:60,1']);
 $router->get('/logout',          [AuthController::class, 'logout']);
 $router->post('/logout',         [AuthController::class, 'logout']);
 $router->get('/forgot-password', [AuthController::class, 'showForgotPassword'], ['guest']);
-$router->post('/forgot-password',[AuthController::class, 'forgotPassword'],     ['rate.limit:5,1']);
+$router->post('/forgot-password',[AuthController::class, 'forgotPassword'],     ['rate.limit:30,1']);
 $router->get('/reset-password',  [AuthController::class, 'showResetPassword'],  ['guest']);
 $router->post('/reset-password', [AuthController::class, 'resetPassword']);
 $router->get('/otp',             [AuthController::class, 'showOtp']);
@@ -18,7 +18,7 @@ $router->post('/otp',            [AuthController::class, 'verifyOtp']);
 
 // Parent Portal Auth
 $router->get('/parent-login',          [\App\Controllers\ParentPortalLoginController::class, 'showLogin'], ['guest']);
-$router->post('/parent-login',         [\App\Controllers\ParentPortalLoginController::class, 'login'], ['rate.limit:10,1']);
+$router->post('/parent-login',         [\App\Controllers\ParentPortalLoginController::class, 'login'], ['rate.limit:60,1']);
 $router->get('/parent/logout',         [\App\Controllers\ParentPortalLoginController::class, 'logout']);
 $router->post('/parent/logout',        [\App\Controllers\ParentPortalLoginController::class, 'logout']);
 $router->get('/parent/change-password', [\App\Controllers\ParentPortalLoginController::class, 'showChangePassword'], ['auth', 'role:parent']);
