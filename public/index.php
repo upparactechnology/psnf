@@ -1,9 +1,5 @@
 <?php
 
-if (isset($_GET['debug_test'])) {
-    die('LIVE PUBLIC INDEX IS RUNNING - ' . __FILE__);
-}
-
 declare(strict_types=1);
 
 error_reporting(E_ALL);
