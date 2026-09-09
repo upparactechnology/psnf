@@ -10,6 +10,12 @@
             window.isDark = false;
         }
     </script>
+    <script>
+        window.APP_BASE_URL = '<?= rtrim(get_dynamic_base_url(), '/') ?>';
+        window.appUrl = function(path) {
+            return window.APP_BASE_URL + '/' + path.replace(/^\/+/, '');
+        };
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'PSNF Parent Portal' ?></title>

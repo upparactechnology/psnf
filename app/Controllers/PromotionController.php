@@ -57,7 +57,7 @@ class PromotionController extends Controller
 
         if (!$destClassId || !$destYearId || !$destGroupId) {
             Session::flash('error', 'Destination Year, Main Group, and Class are required.');
-            return $this->redirect("/academics/promotion?src_class_id={$srcClassId}");
+            return $this->redirect(url("academics/promotion?src_class_id={$srcClassId}"));
         }
 
         $destClassRow = $db->selectOne("SELECT * FROM classes WHERE id = ?", [$destClassId]);
@@ -66,7 +66,7 @@ class PromotionController extends Controller
 
         if (!$destClassRow || !$destYearRow || !$destGroupRow) {
             Session::flash('error', 'Invalid destination parameters selected.');
-            return $this->redirect("/academics/promotion?src_class_id={$srcClassId}");
+            return $this->redirect(url("academics/promotion?src_class_id={$srcClassId}"));
         }
 
         $count = 0;
@@ -94,6 +94,6 @@ class PromotionController extends Controller
         }
 
         Session::flash('success', "Promotion wizard completed! Promoted {$count} students to {$destClassRow['name']} for {$destYearRow['year_name']}.");
-        return $this->redirect('/academics/promotion');
+        return $this->redirect(url('academics/promotion'));
     }
 }

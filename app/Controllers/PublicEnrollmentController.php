@@ -144,7 +144,7 @@ class PublicEnrollmentController extends Controller
         if (!empty($errors)) {
             \Core\Session::setFlash('errors', $errors);
             \Core\Session::setFlash('old', $req);
-            $this->redirect('/forms/student-enrollment');
+            $this->redirect(url('forms/student-enrollment'));
             return;
         }
 
@@ -186,7 +186,7 @@ class PublicEnrollmentController extends Controller
         ]);
 
         \Core\Session::setFlash('app_code', $appCode);
-        $this->redirect('/forms/student-enrollment/success');
+        $this->redirect(url('forms/student-enrollment/success'));
     }
 
     public function success(): void

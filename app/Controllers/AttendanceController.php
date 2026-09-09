@@ -305,7 +305,7 @@ class AttendanceController extends Controller
 
         if (!$date) {
             $this->flash('error', 'Date is required to save attendance.');
-            return $this->redirect('/attendance');
+            return $this->redirect(url('attendance'));
         }
 
         // Verify teacher is assigned to this class
@@ -317,7 +317,7 @@ class AttendanceController extends Controller
 
             if (!$isAssigned) {
                 $this->flash('error', 'You are not assigned as the class teacher for this class.');
-                return $this->redirect('/academics/attendance');
+                return $this->redirect(url('academics/attendance'));
             }
         }
 
@@ -347,7 +347,7 @@ class AttendanceController extends Controller
 
         if (empty($students)) {
             $this->flash('error', 'No enrolled students found.');
-            return $this->redirect('/attendance');
+            return $this->redirect(url('attendance'));
         }
 
         try {

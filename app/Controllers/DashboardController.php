@@ -13,7 +13,7 @@ class DashboardController extends Controller
     {
         if (!has_role('super_admin') && !has_role('school_admin') && !has_role('manager') && !has_role('teacher')) {
             if (has_role('parent')) {
-                $this->redirect('/parent/dashboard');
+                $this->redirect(url('parent/dashboard'));
             }
         }
 

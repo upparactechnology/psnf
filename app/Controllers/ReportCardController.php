@@ -324,7 +324,7 @@ class ReportCardController extends Controller
 
         if (is_year_locked($academicYear)) {
             $this->flash('error', 'This academic year is locked. Report card updates are frozen.');
-            return $this->redirect("/students/$studentId/report-card/edit?semester=" . urlencode($semester) . "&academic_year=" . urlencode($academicYear));
+            return $this->redirect(url("students/$studentId/report-card/edit?semester=" . urlencode($semester) . "&academic_year=" . urlencode($academicYear)));
         }
 
         $routineProfile = $this->request->input('routine_profile', []);
@@ -520,7 +520,7 @@ class ReportCardController extends Controller
             $this->flash('error', 'Failed to save Report Card: ' . $e->getMessage());
         }
 
-        return $this->redirect("/students/$studentId/report-card/edit?semester=" . urlencode($semester) . "&academic_year=" . urlencode($academicYear));
+        return $this->redirect(url("students/$studentId/report-card/edit?semester=" . urlencode($semester) . "&academic_year=" . urlencode($academicYear)));
     }
 
     public function show(string $studentId): string
@@ -939,7 +939,7 @@ class ReportCardController extends Controller
             $this->flash('error', 'Failed to update settings: ' . $e->getMessage());
         }
         
-        return $this->redirect('/report-cards/settings');
+        return $this->redirect(url('report-cards/settings'));
     }
 
     public static function getDefaultFields(): array

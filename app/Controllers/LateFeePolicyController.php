@@ -53,7 +53,7 @@ class LateFeePolicyController extends Controller
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
             Session::flash('error', 'Name, Type, and Amount are required.');
-            return $this->redirect('/fees/late-fee-policies');
+            return $this->redirect(url('fees/late-fee-policies'));
         }
 
         $typeMapping = [
@@ -76,7 +76,7 @@ class LateFeePolicyController extends Controller
         ]);
         
         Session::flash('success', 'Late fee policy created successfully.');
-        return $this->redirect('/fees/late-fee-policies?year_id=' . $yearId);
+        return $this->redirect(url('fees/late-fee-policies?year_id=' . $yearId));
     }
 
     public function update(string $id): string
@@ -103,7 +103,7 @@ class LateFeePolicyController extends Controller
         ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
         
         Session::flash('success', 'Late fee policy updated successfully.');
-        return $this->redirect('/fees/late-fee-policies?year_id=' . $yearId);
+        return $this->redirect(url('fees/late-fee-policies?year_id=' . $yearId));
     }
 
     public function destroy(string $id): string
@@ -115,6 +115,6 @@ class LateFeePolicyController extends Controller
         $this->db()->query("DELETE FROM late_fee_policies WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         Session::flash('success', 'Late fee policy deleted.');
         
-        return $this->redirect('/fees/late-fee-policies?year_id=' . $yearId);
+        return $this->redirect(url('fees/late-fee-policies?year_id=' . $yearId));
     }
 }

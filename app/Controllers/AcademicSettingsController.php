@@ -101,7 +101,7 @@ class AcademicSettingsController extends Controller
 
         if (empty($name) || !$yearId) {
             Session::flash('error', 'Semester name and academic year are required.');
-            return $this->redirect('/academics/settings?tab=semesters&year_id=' . $yearId);
+            return $this->redirect(url('academics/settings?tab=semesters&year_id=' . $yearId));
         }
 
         try {
@@ -120,7 +120,7 @@ class AcademicSettingsController extends Controller
             Session::flash('error', 'Failed to create semester: ' . $e->getMessage());
         }
 
-        return $this->redirect('/academics/settings?tab=semesters&year_id=' . $yearId);
+        return $this->redirect(url('academics/settings?tab=semesters&year_id=' . $yearId));
     }
 
     public function deleteSemester(string $id): string
@@ -132,7 +132,7 @@ class AcademicSettingsController extends Controller
         $db->query("DELETE FROM academic_semesters WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         Session::flash('success', "Semester deleted successfully.");
 
-        return $this->redirect('/academics/settings?tab=semesters&year_id=' . $yearId);
+        return $this->redirect(url('academics/settings?tab=semesters&year_id=' . $yearId));
     }
 
     public function saveAttendanceSettings(): string
@@ -145,7 +145,7 @@ class AcademicSettingsController extends Controller
         ], 'id = 1');
 
         Session::flash('success', 'Lecture-wise attendance settings updated.');
-        return $this->redirect('/academics/settings?tab=lock');
+        return $this->redirect(url('academics/settings?tab=lock'));
     }
 
     public function storeYear(): string
@@ -159,7 +159,7 @@ class AcademicSettingsController extends Controller
 
         if (empty($yearName)) {
             Session::flash('error', 'Academic Year Name is required.');
-            return $this->redirect('/academics/settings?tab=' . $tab);
+            return $this->redirect(url('academics/settings?tab=' . $tab));
         }
 
         try {
@@ -261,7 +261,7 @@ class AcademicSettingsController extends Controller
             Session::flash('error', 'Academic year already exists or error: ' . $e->getMessage());
         }
 
-        return $this->redirect('/academics/settings?tab=' . $tab);
+        return $this->redirect(url('academics/settings?tab=' . $tab));
     }
 
     public function lockYear(string $id): string
@@ -273,7 +273,7 @@ class AcademicSettingsController extends Controller
         $db->query("UPDATE academic_years SET status = 'locked' WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         Session::flash('success', "Academic Year locked successfully. Mark & Attendance entry frozen.");
 
-        return $this->redirect('/academics/settings?tab=' . $tab);
+        return $this->redirect(url('academics/settings?tab=' . $tab));
     }
 
     public function archiveYear(string $id): string
@@ -285,7 +285,7 @@ class AcademicSettingsController extends Controller
         $db->query("UPDATE academic_years SET status = 'archived' WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         Session::flash('success', "Academic Year archived successfully.");
 
-        return $this->redirect('/academics/settings?tab=' . $tab);
+        return $this->redirect(url('academics/settings?tab=' . $tab));
     }
 
     public function deleteYear(string $id): string
@@ -297,7 +297,7 @@ class AcademicSettingsController extends Controller
         $db->query("DELETE FROM academic_years WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         Session::flash('success', "Academic Year deleted successfully.");
 
-        return $this->redirect('/academics/settings?tab=' . $tab);
+        return $this->redirect(url('academics/settings?tab=' . $tab));
     }
     public function copyPreviousYear(string $id): string
     {
@@ -309,13 +309,13 @@ class AcademicSettingsController extends Controller
         $currentYear = $db->selectOne("SELECT * FROM academic_years WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (!$currentYear) {
             Session::flash('error', 'Academic Year not found.');
-            return $this->redirect('/academics/settings?tab=' . $tab);
+            return $this->redirect(url('academics/settings?tab=' . $tab));
         }
 
         $prevYear = $db->selectOne("SELECT * FROM academic_years WHERE id < ? AND tenant_id = ? ORDER BY id DESC LIMIT 1", [(int)$id, $tenantId]);
         if (!$prevYear) {
             Session::flash('error', 'No previous academic year found to copy from.');
-            return $this->redirect('/academics/settings?tab=' . $tab);
+            return $this->redirect(url('academics/settings?tab=' . $tab));
         }
 
         // Copy Curriculum Templates, Sections, and Subjects from previous year to current year
@@ -355,7 +355,7 @@ class AcademicSettingsController extends Controller
         }
 
         Session::flash('success', "Curriculum Templates copied from year '{$prevYear['year_name']}' successfully!");
-        return $this->redirect('/academics/settings?tab=' . $tab);
+        return $this->redirect(url('academics/settings?tab=' . $tab));
     }
 
     public function runYearClosingWizard(): string
@@ -390,7 +390,7 @@ class AcademicSettingsController extends Controller
 
         Session::flash('success', "Year Closing Wizard executed! Student promotions & subject rollovers applied successfully.");
 
-        return $this->redirect('/academics/settings?tab=wizard');
+        return $this->redirect(url('academics/settings?tab=wizard'));
     }
 
     public function lectureAttendance(): string
@@ -430,7 +430,7 @@ class AcademicSettingsController extends Controller
 
         if (empty($name)) {
             Session::flash('error', 'Main Group Name is required.');
-            return $this->redirect('/academics/main-groups');
+            return $this->redirect(url('academics/main-groups'));
         }
 
         $db->insert('main_groups', [
@@ -445,9 +445,9 @@ class AcademicSettingsController extends Controller
 
         Session::flash('success', "Main Group '{$name}' created successfully.");
         if ($addNext) {
-            return $this->redirect('/academics/main-groups?add_next=1');
+            return $this->redirect(url('academics/main-groups?add_next=1'));
         }
-        return $this->redirect('/academics/main-groups');
+        return $this->redirect(url('academics/main-groups'));
     }
 
     public function updateMainGroup(string $id): string
@@ -463,7 +463,7 @@ class AcademicSettingsController extends Controller
 
         if (empty($name)) {
             Session::flash('error', 'Main Group Name is required.');
-            return $this->redirect('/academics/main-groups');
+            return $this->redirect(url('academics/main-groups'));
         }
 
         $db->update('main_groups', [
@@ -476,7 +476,7 @@ class AcademicSettingsController extends Controller
         ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
 
         Session::flash('success', "Main Group '{$name}' updated successfully.");
-        return $this->redirect('/academics/main-groups');
+        return $this->redirect(url('academics/main-groups'));
     }
 
     public function subjectMasterIndex(): string
@@ -499,7 +499,7 @@ class AcademicSettingsController extends Controller
 
         if (empty($name) || empty($code)) {
             Session::flash('error', 'Subject Name and Code are required.');
-            return $this->redirect('/academics/subject-master');
+            return $this->redirect(url('academics/subject-master'));
         }
 
         $db->insert('subjects', [
@@ -513,9 +513,9 @@ class AcademicSettingsController extends Controller
 
         Session::flash('success', "Subject '{$name}' added to Master successfully.");
         if ($addNext) {
-            return $this->redirect('/academics/subject-master?add_next=1');
+            return $this->redirect(url('academics/subject-master?add_next=1'));
         }
-        return $this->redirect('/academics/subject-master');
+        return $this->redirect(url('academics/subject-master'));
     }
 
     public function updateSubject(string $id): string
@@ -528,7 +528,7 @@ class AcademicSettingsController extends Controller
 
         if (empty($name) || empty($code)) {
             Session::flash('error', 'Subject Name and Code are required.');
-            return $this->redirect('/academics/subject-master');
+            return $this->redirect(url('academics/subject-master'));
         }
 
         $db->update('subjects', [
@@ -538,7 +538,7 @@ class AcademicSettingsController extends Controller
         ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
 
         Session::flash('success', "Subject '{$name}' updated successfully.");
-        return $this->redirect('/academics/subject-master');
+        return $this->redirect(url('academics/subject-master'));
     }
 
     public function destroySubject(string $id): string
@@ -547,6 +547,6 @@ class AcademicSettingsController extends Controller
         $tenantId = \Core\Database::getTenantId();
         $db->query("DELETE FROM subjects WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         Session::flash('success', "Subject removed from Master successfully.");
-        return $this->redirect('/academics/subject-master');
+        return $this->redirect(url('academics/subject-master'));
     }
 }

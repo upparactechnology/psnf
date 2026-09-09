@@ -107,7 +107,7 @@ ob_start();
                                 <div class="flex items-center justify-end gap-2">
                                     <?php if ($doc): ?>
                                     <?php if (str_starts_with($doc['stored_name'], 'certificate:')): ?>
-                                    <a href="/certificates/<?= (int)substr($doc['stored_name'], 12) ?>/view" target="_blank" 
+                                    <a href="<?= url('certificates/' . (int)substr($doc['stored_name'], 12) . '/view') ?>" target="_blank" 
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-bold text-[10px] text-slate-700 dark:text-slate-300">
                                         View
                                     </a>

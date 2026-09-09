@@ -130,6 +130,6 @@ class ReceiptsController extends Controller
         \App\Models\ActivityLog::log('receipt_settings_updated', auth_id(), ['tenant_id' => $tenantId]);
 
         \Core\Session::flash('success', 'Receipt designer template saved successfully.');
-        return $this->redirect('/receipts/settings');
+        return $this->redirect(url('receipts/settings'));
     }
 }

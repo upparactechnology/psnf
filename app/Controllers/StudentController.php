@@ -112,7 +112,7 @@ class StudentController extends Controller
             }
             \Core\Session::flash('errors', $validator->errors());
             \Core\Session::flash('old', $data);
-            return $this->redirect('/students/create');
+            return $this->redirect(url('students/create'));
         }
 
         $validated = $validator->validated();
@@ -151,10 +151,10 @@ class StudentController extends Controller
                 return $this->successResponse('Student created.', ['id' => $studentId], 201);
             }
 
-            return $this->redirect('/students');
+            return $this->redirect(url('students'));
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to create student. ' . $e->getMessage());
-            return $this->redirect('/academics/students/create');
+            return $this->redirect(url('academics/students/create'));
         }
     }
 
@@ -301,7 +301,7 @@ class StudentController extends Controller
         if ($validator->fails()) {
             \Core\Session::flash('errors', $validator->errors());
             \Core\Session::flash('old', $data);
-            return $this->redirect("/students/$id/edit");
+            return $this->redirect(url("students/$id/edit"));
         }
 
         $validated = $validator->validated();
@@ -342,10 +342,10 @@ class StudentController extends Controller
             }
 
             $this->flash('success', 'Student profile updated successfully.');
-            return $this->redirect("/academics/students/$id");
+            return $this->redirect(url("academics/students/$id"));
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to update student. ' . $e->getMessage());
-            return $this->redirect("/academics/students/$id/edit");
+            return $this->redirect(url("academics/students/$id/edit"));
         }
     }
 
@@ -359,7 +359,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Medical information updated.');
-        return $this->redirect("/academics/students/$id");
+        return $this->redirect(url("academics/students/$id"));
     }
 
     public function updateStatus(string $id): string
@@ -393,7 +393,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Admission status updated.');
-        return $this->redirect("/academics/students/$id");
+        return $this->redirect(url("academics/students/$id"));
     }
 
     public function uploadDocument(string $id): string
@@ -419,7 +419,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Document uploaded successfully.');
-        return $this->redirect("/academics/students/$id");
+        return $this->redirect(url("academics/students/$id"));
     }
 
     public function storeGuardian(string $id): string
@@ -444,7 +444,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Guardian/parent added successfully.');
-        return $this->redirect("/academics/students/$id");
+        return $this->redirect(url("academics/students/$id"));
     }
 
     public function storeEmergencyContact(string $id): string
@@ -457,7 +457,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Emergency contact added.');
-        return $this->redirect("/academics/students/$id");
+        return $this->redirect(url("academics/students/$id"));
     }
 
     public function timeline(string $id): string
@@ -478,7 +478,7 @@ class StudentController extends Controller
         }
 
         $this->flash('success', 'Student record deleted.');
-        return $this->redirect('/students');
+        return $this->redirect(url('students'));
     }
 
     public function search(): string

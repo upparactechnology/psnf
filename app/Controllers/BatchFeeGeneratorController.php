@@ -40,13 +40,13 @@ class BatchFeeGeneratorController extends Controller
         
         if (!$structureId || !$mainGroupId) {
             Session::flash('error', 'Structure and Main Group are required.');
-            return $this->redirect('/fees/batch-generator');
+            return $this->redirect(url('fees/batch-generator'));
         }
 
         $structure = $this->db()->selectOne("SELECT * FROM fee_structures WHERE id = ?", [$structureId]);
         if (!$structure) {
             Session::flash('error', 'Invalid structure.');
-            return $this->redirect('/fees/batch-generator');
+            return $this->redirect(url('fees/batch-generator'));
         }
         
         $items = $this->db()->select("
@@ -58,7 +58,7 @@ class BatchFeeGeneratorController extends Controller
         
         if (empty($items)) {
             Session::flash('error', 'Structure has no fee items.');
-            return $this->redirect('/fees/batch-generator');
+            return $this->redirect(url('fees/batch-generator'));
         }
 
         // Get students in the main group
@@ -70,7 +70,7 @@ class BatchFeeGeneratorController extends Controller
         
         if (empty($students)) {
             Session::flash('warning', 'No active students found in this Main Group.');
-            return $this->redirect('/fees/batch-generator');
+            return $this->redirect(url('fees/batch-generator'));
         }
         
         $totalAmount = array_sum(array_column($items, 'amount'));
@@ -117,6 +117,6 @@ class BatchFeeGeneratorController extends Controller
         }
         
         Session::flash('success', "Successfully generated {$generatedCount} invoices.");
-        return $this->redirect('/fees/batch-generator');
+        return $this->redirect(url('fees/batch-generator'));
     }
 }

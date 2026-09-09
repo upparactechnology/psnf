@@ -155,7 +155,7 @@ class FeeController extends Controller
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
             Session::flash('old', $data);
-            return $this->redirect('/fees/create');
+            return $this->redirect(url('fees/create'));
         }
 
         // Generate invoice number
@@ -211,7 +211,7 @@ class FeeController extends Controller
 
         ActivityLog::log('fee_invoice_created', auth_id(), ['invoice_id' => $id]);
         Session::flash('success', "Invoice {$data['invoice_number']} created successfully.");
-        return $this->redirect('/fees');
+        return $this->redirect(url('fees'));
     }
 
     public function recordPayment(string $id): string
@@ -311,6 +311,6 @@ class FeeController extends Controller
             Session::flash('success', 'Invoice deleted.');
         }
 
-        return $this->redirect('/fees');
+        return $this->redirect(url('fees'));
     }
 }

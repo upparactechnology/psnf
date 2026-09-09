@@ -153,7 +153,7 @@ class StaffWorkspaceController extends Controller
 
         if (!$employee) {
             $this->flash('error', 'Employee record not found.');
-            return $this->redirect('/staff/employees');
+            return $this->redirect(url('staff/employees'));
         }
 
         $profile = $db->selectOne("SELECT * FROM employee_profiles WHERE employee_id = ?", [$id]);
@@ -396,7 +396,7 @@ class StaffWorkspaceController extends Controller
         EmployeeSyncService::syncEmployeeToUser($empId);
 
         $this->flash('success', "Employee $firstName $lastName ($empCode) created successfully. Please register their face now.");
-        return $this->redirect('/attendance/register.php?employee_code=' . $empCode);
+        return $this->redirect(url('attendance/register.php?employee_code=' . $empCode));
     }
 
     public function updateEmployee(string|int $id): string
@@ -429,7 +429,7 @@ class StaffWorkspaceController extends Controller
         EmployeeSyncService::syncEmployeeToUser($id);
 
         $this->flash('success', "Employee record updated successfully.");
-        return $this->redirect('/staff/employees/' . $id);
+        return $this->redirect(url('staff/employees/' . $id));
     }
 
     public function departments(): string
@@ -461,9 +461,9 @@ class StaffWorkspaceController extends Controller
             $this->flash('success', "Department '{$name}' created successfully.");
         }
         if ($addNext) {
-            return $this->redirect('/staff/departments?add_next=1');
+            return $this->redirect(url('staff/departments?add_next=1'));
         }
-        return $this->redirect('/staff/departments');
+        return $this->redirect(url('staff/departments'));
     }
 
     public function updateDepartment(string $id): string
@@ -482,7 +482,7 @@ class StaffWorkspaceController extends Controller
             ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
             $this->flash('success', "Department updated successfully.");
         }
-        return $this->redirect('/staff/departments');
+        return $this->redirect(url('staff/departments'));
     }
 
     public function deleteDepartment(string $id): string
@@ -493,19 +493,19 @@ class StaffWorkspaceController extends Controller
         $dept = $db->selectOne("SELECT id, name FROM departments WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (!$dept) {
             $this->flash('error', 'Department not found.');
-            return $this->redirect('/staff/departments');
+            return $this->redirect(url('staff/departments'));
         }
 
         // Check if any employees are assigned to this department
         $staffCount = $db->selectOne("SELECT COUNT(*) as cnt FROM employees WHERE department_id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (($staffCount['cnt'] ?? 0) > 0) {
             $this->flash('error', "Cannot delete '{$dept['name']}': {$staffCount['cnt']} staff member(s) are assigned to it. Reassign them first.");
-            return $this->redirect('/staff/departments');
+            return $this->redirect(url('staff/departments'));
         }
 
         $db->query("DELETE FROM departments WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         $this->flash('success', "Department '{$dept['name']}' deleted successfully.");
-        return $this->redirect('/staff/departments');
+        return $this->redirect(url('staff/departments'));
     }
 
     public function designations(): string
@@ -537,9 +537,9 @@ class StaffWorkspaceController extends Controller
             $this->flash('success', "Designation '{$title}' created successfully.");
         }
         if ($addNext) {
-            return $this->redirect('/staff/designations?add_next=1');
+            return $this->redirect(url('staff/designations?add_next=1'));
         }
-        return $this->redirect('/staff/designations');
+        return $this->redirect(url('staff/designations'));
     }
 
     public function updateDesignation(string $id): string
@@ -558,7 +558,7 @@ class StaffWorkspaceController extends Controller
             ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
             $this->flash('success', "Designation updated successfully.");
         }
-        return $this->redirect('/staff/designations');
+        return $this->redirect(url('staff/designations'));
     }
 
     public function deleteDesignation(string $id): string
@@ -569,18 +569,18 @@ class StaffWorkspaceController extends Controller
         $desig = $db->selectOne("SELECT id, title FROM designations WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (!$desig) {
             $this->flash('error', 'Designation not found.');
-            return $this->redirect('/staff/designations');
+            return $this->redirect(url('staff/designations'));
         }
 
         $staffCount = $db->selectOne("SELECT COUNT(*) as cnt FROM employees WHERE designation_id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (($staffCount['cnt'] ?? 0) > 0) {
             $this->flash('error', "Cannot delete '{$desig['title']}': {$staffCount['cnt']} staff member(s) are assigned to it. Reassign them first.");
-            return $this->redirect('/staff/designations');
+            return $this->redirect(url('staff/designations'));
         }
 
         $db->query("DELETE FROM designations WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         $this->flash('success', "Designation '{$desig['title']}' deleted successfully.");
-        return $this->redirect('/staff/designations');
+        return $this->redirect(url('staff/designations'));
     }
 
     public function attendanceCalendar(): string
@@ -847,7 +847,7 @@ class StaffWorkspaceController extends Controller
                        [$employeeId, $date, $clockIn, $clockOut, $status]);
             $this->flash('success', "Attendance log recorded.");
         }
-        return $this->redirect('/staff/attendance?date=' . $date);
+        return $this->redirect(url('staff/attendance?date=' . $date));
     }
 
     public function lectureAttendance(): string
@@ -1128,7 +1128,7 @@ class StaffWorkspaceController extends Controller
             ]);
             $this->flash('success', "Leave request submitted & approved.");
         }
-        return $this->redirect('/staff/leaves');
+        return $this->redirect(url('staff/leaves'));
     }
 
     public function payroll(): string
@@ -1296,7 +1296,7 @@ class StaffWorkspaceController extends Controller
         } catch (\Throwable $e) {
             $this->flash('error', "Failed to run payroll: " . $e->getMessage());
         }
-        return $this->redirect('/staff/payroll');
+        return $this->redirect(url('staff/payroll'));
     }
 
     public function payrollDetails(string $id): string
@@ -1307,7 +1307,7 @@ class StaffWorkspaceController extends Controller
         $run = $db->selectOne("SELECT * FROM payroll_runs WHERE id = ?", [$runId]);
         if (!$run) {
             $this->flash('error', 'Payroll run not found.');
-            return $this->redirect('/staff/payroll');
+            return $this->redirect(url('staff/payroll'));
         }
 
         $items = $db->select("
@@ -1336,7 +1336,7 @@ class StaffWorkspaceController extends Controller
 
         if (!$run || !$item) {
             $this->flash('error', 'Payslip not found.');
-            return $this->redirect('/staff/payroll');
+            return $this->redirect(url('staff/payroll'));
         }
 
         return $this->view('staff/payslip', compact('run', 'item'));
@@ -1413,7 +1413,7 @@ class StaffWorkspaceController extends Controller
         \App\Models\ActivityLog::log('role_created', auth_id(), ['role_name' => $data['name']]);
 
         $this->flash('success', 'Role created.');
-        return $this->redirect('/staff/roles');
+        return $this->redirect(url('staff/roles'));
     }
 
     public function updateRole(string $id): string
@@ -1428,7 +1428,7 @@ class StaffWorkspaceController extends Controller
         \App\Models\ActivityLog::log('role_updated', auth_id(), ['role_id' => $id]);
 
         $this->flash('success', 'Role updated.');
-        return $this->redirect('/staff/roles');
+        return $this->redirect(url('staff/roles'));
     }
 
     public function deleteRole(string $id): string
@@ -1437,7 +1437,7 @@ class StaffWorkspaceController extends Controller
         \App\Models\ActivityLog::log('role_deleted', auth_id(), ['role_id' => $id]);
 
         $this->flash('success', 'Role deleted.');
-        return $this->redirect('/staff/roles');
+        return $this->redirect(url('staff/roles'));
     }
 
     public function users(): string
@@ -1542,6 +1542,6 @@ class StaffWorkspaceController extends Controller
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to save staff settings: ' . $e->getMessage());
         }
-        return $this->redirect('/staff/settings?year_id=' . $selectedYearId);
+        return $this->redirect(url('staff/settings?year_id=' . $selectedYearId));
     }
 }

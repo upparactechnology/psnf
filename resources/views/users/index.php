@@ -14,7 +14,7 @@ $roleColors = [
     'parent'       => 'bg-emerald-900/30 text-emerald-400 border-emerald-700/30',
     'driver'       => 'bg-teal-900/30 text-teal-400 border-teal-700/30',
 ];
-$redirectUrl = $isTeachersOnly ? '/academics/teachers' : '/users';
+$redirectUrl = $isTeachersOnly ? url('academics/teachers') : url('users');
 ?>
 
 <div class="space-y-5">

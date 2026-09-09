@@ -120,7 +120,7 @@ class UserController extends Controller
         if ($validator->fails()) {
             \Core\Session::flash('errors', $validator->errors());
             \Core\Session::flash('old', array_merge($data, ['roles' => $roles]));
-            return $this->redirect('/users/create?redirect_to=' . urlencode($redirectTo));
+            return $this->redirect(url('users/create?redirect_to=' . urlencode($redirectTo)));
         }
 
         $lectureTime = !empty($data['lecture_time']) ? $data['lecture_time'] : null;

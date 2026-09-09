@@ -91,7 +91,7 @@ class CertificateController extends Controller
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
             Session::flash('old', $data);
-            return $this->redirect('/certificates/create');
+            return $this->redirect(url('certificates/create'));
         }
 
         // Pack the design parameters as a JSON string to store in `file_path`
@@ -150,7 +150,7 @@ class CertificateController extends Controller
 
         ActivityLog::log('certificate_issued', auth_id(), ['certificate_id' => $certId]);
         Session::flash('success', "Certificate '{$data['title']}' issued successfully.");
-        return $this->redirect('/certificates');
+        return $this->redirect(url('certificates'));
     }
 
     public function show(string $id): string
@@ -158,7 +158,7 @@ class CertificateController extends Controller
         $certificate = Certificate::find((int)$id);
         if (!$certificate) {
             Session::flash('error', 'Certificate not found.');
-            return $this->redirect('/certificates');
+            return $this->redirect(url('certificates'));
         }
 
         $student = $this->db()->selectOne("
@@ -203,6 +203,6 @@ class CertificateController extends Controller
             Session::flash('success', 'Certificate deleted.');
         }
 
-        return $this->redirect('/certificates');
+        return $this->redirect(url('certificates'));
     }
 }

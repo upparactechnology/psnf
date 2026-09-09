@@ -66,14 +66,14 @@ class ClassesController extends Controller
 
         if (empty($className)) {
             Session::flash('error', 'Class name is required.');
-            return $this->redirect('/academics/classes');
+            return $this->redirect(url('academics/classes'));
         }
 
         if ($curriculumTemplateId) {
             $currCheck = $db->selectOne("SELECT id FROM curriculum_templates WHERE id = ? AND main_group_id = ? AND academic_year_id = ? AND tenant_id = ?", [$curriculumTemplateId, $groupId, $yearId, $tenantId]);
             if (!$currCheck) {
                 Session::flash('error', 'The selected curriculum template does not match the selected Main Group or Academic Year.');
-                return $this->redirect('/academics/classes');
+                return $this->redirect(url('academics/classes'));
             }
         }
 
@@ -92,9 +92,9 @@ class ClassesController extends Controller
 
         Session::flash('success', "Class '{$className}' created successfully.");
         if ($addNext) {
-            return $this->redirect('/academics/classes?add_next=1');
+            return $this->redirect(url('academics/classes?add_next=1'));
         }
-        return $this->redirect('/academics/classes');
+        return $this->redirect(url('academics/classes'));
     }
 
     public function show(string $id): string
@@ -114,7 +114,7 @@ class ClassesController extends Controller
 
         if (!$class) {
             Session::flash('error', 'Class not found.');
-            return $this->redirect('/academics/classes');
+            return $this->redirect(url('academics/classes'));
         }
 
         // Resolve curriculum template
@@ -187,14 +187,14 @@ class ClassesController extends Controller
 
         if (empty($className)) {
             Session::flash('error', 'Class name is required.');
-            return $this->redirect('/academics/classes/' . $id);
+            return $this->redirect(url('academics/classes/' . $id));
         }
 
         if ($curriculumTemplateId) {
             $currCheck = $db->selectOne("SELECT id FROM curriculum_templates WHERE id = ? AND main_group_id = ? AND academic_year_id = ? AND tenant_id = ?", [$curriculumTemplateId, $groupId, $yearId, $tenantId]);
             if (!$currCheck) {
                 Session::flash('error', 'The selected curriculum template does not match the selected Main Group or Academic Year.');
-                return $this->redirect('/academics/classes/' . $id);
+                return $this->redirect(url('academics/classes/' . $id));
             }
         }
 
@@ -208,7 +208,7 @@ class ClassesController extends Controller
         ], 'id = ? AND tenant_id = ?', [(int)$id, $tenantId]);
 
         Session::flash('success', "Class '{$className}' updated successfully.");
-        return $this->redirect('/academics/classes/' . $id);
+        return $this->redirect(url('academics/classes/' . $id));
     }
 
     public function destroy(string $id): string
@@ -221,7 +221,7 @@ class ClassesController extends Controller
         $db->query("DELETE FROM classes WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
 
         Session::flash('success', 'Class deleted successfully.');
-        return $this->redirect('/academics/classes');
+        return $this->redirect(url('academics/classes'));
     }
 
     public function enrollStudents(string $id): string
@@ -232,7 +232,7 @@ class ClassesController extends Controller
         $class = $db->selectOne("SELECT * FROM classes WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         if (!$class) {
             Session::flash('error', 'Class not found.');
-            return $this->redirect('/academics/classes');
+            return $this->redirect(url('academics/classes'));
         }
 
         $studentIds = $this->request->input('student_ids', []);
@@ -253,7 +253,7 @@ class ClassesController extends Controller
             Session::flash('error', 'No students selected.');
         }
 
-        return $this->redirect('/academics/classes/' . $id);
+        return $this->redirect(url('academics/classes/' . $id));
     }
 
     public function removeStudent(string $classId, string $studentId): string
@@ -272,6 +272,6 @@ class ClassesController extends Controller
         \App\Models\Student::autoGenerateRollNumbers((int)$classId);
 
         Session::flash('success', 'Student removed from class.');
-        return $this->redirect('/academics/classes/' . $classId);
+        return $this->redirect(url('academics/classes/' . $classId));
     }
 }

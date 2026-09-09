@@ -144,7 +144,7 @@ class TransportController extends Controller
             \Core\Session::flash('success', 'Campus location updated successfully.');
         }
         
-        \Core\Application::$app->response->redirect('/transport/settings');
+        $this->redirect(url('transport/settings'));
         exit();
     }
 
@@ -427,7 +427,7 @@ class TransportController extends Controller
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
             Session::flash('old', $data);
-            return $this->redirect('/transport/create');
+            return $this->redirect(url('transport/create'));
         }
 
         $data['tenant_id'] = \Core\Database::getTenantId();
@@ -442,7 +442,7 @@ class TransportController extends Controller
 
         ActivityLog::log('transport_route_created', auth_id(), ['route_id' => $routeId]);
         Session::flash('success', "Transport Route '{$data['route_name']}' created successfully.");
-        return $this->redirect('/transport');
+        return $this->redirect(url('transport'));
     }
 
     public function edit(string $id): string
@@ -450,7 +450,7 @@ class TransportController extends Controller
         $route = TransportRoute::find((int)$id);
         if (!$route) {
             Session::flash('error', 'Route not found.');
-            return $this->redirect('/transport');
+            return $this->redirect(url('transport'));
         }
 
         $tenantId = \Core\Database::getTenantId();
@@ -470,7 +470,7 @@ class TransportController extends Controller
         $route = TransportRoute::find((int)$id);
         if (!$route) {
             Session::flash('error', 'Route not found.');
-            return $this->redirect('/transport');
+            return $this->redirect(url('transport'));
         }
 
         $data = $this->request->getBody();
@@ -489,7 +489,7 @@ class TransportController extends Controller
                 return $this->json(['success' => false, 'message' => 'Validation failed', 'errors' => $validator->errors()], 422);
             }
             Session::flash('errors', $validator->errors());
-            return $this->redirect("/transport/{$id}/edit");
+            return $this->redirect(url("transport/{$id}/edit"));
         }
 
         $data['current_latitude']  = $data['current_latitude'] ? (float)$data['current_latitude'] : null;
@@ -505,7 +505,7 @@ class TransportController extends Controller
             return $this->json(['success' => true, 'message' => 'Route updated successfully.']);
         }
 
-        return $this->redirect('/transport');
+        return $this->redirect(url('transport'));
     }
 
     public function assignStudent(string $id): string
@@ -514,7 +514,7 @@ class TransportController extends Controller
         $driver = $this->db()->selectOne("SELECT e.*, CONCAT(e.first_name, ' ', e.last_name) as name FROM employees e JOIN designations des ON e.designation_id = des.id WHERE e.id = ? AND e.tenant_id = ? AND des.title = 'Driver'", [(int)$id, $tenantId]);
         if (!$driver) {
             Session::flash('error', 'Driver not found.');
-            return $this->redirect('/transport/student-assignments');
+            return $this->redirect(url('transport/student-assignments'));
         }
 
         $studentId   = (int)$this->request->post('student_id');
@@ -526,7 +526,7 @@ class TransportController extends Controller
 
         if (!$studentId) {
             Session::flash('error', 'Please select a student.');
-            return $this->redirect('/transport/student-assignments');
+            return $this->redirect(url('transport/student-assignments'));
         }
 
         // Delete any existing route map to avoid unique key crash
@@ -559,7 +559,7 @@ class TransportController extends Controller
 
         ActivityLog::log('student_assigned_transport', auth_id(), ['student_id' => $studentId, 'driver_id' => $driver['id']]);
         Session::flash('success', 'Student assigned to driver.');
-        return $this->redirect('/transport/student-assignments');
+        return $this->redirect(url('transport/student-assignments'));
     }
 
     public function updateAssignment(string $id): string
@@ -569,7 +569,7 @@ class TransportController extends Controller
         
         if (!$assignment) {
             Session::flash('error', 'Assignment not found.');
-            return $this->redirect('/transport/student-assignments');
+            return $this->redirect(url('transport/student-assignments'));
         }
 
         $pickupPoint = $this->request->post('pickup_point');
@@ -591,7 +591,7 @@ class TransportController extends Controller
         $this->db()->update('student_transport', $data, 'id = ?', [$assignment['id']]);
         
         Session::flash('success', 'Student assignment updated successfully.');
-        return $this->redirect('/transport/student-assignments');
+        return $this->redirect(url('transport/student-assignments'));
     }
 
     public function removeAssignment(string $id): string
@@ -601,14 +601,14 @@ class TransportController extends Controller
         
         if (!$assignment) {
             Session::flash('error', 'Assignment not found.');
-            return $this->redirect('/transport/student-assignments');
+            return $this->redirect(url('transport/student-assignments'));
         }
 
         $this->db()->query("DELETE FROM student_transport WHERE id = ?", [$assignment['id']]);
         
         ActivityLog::log('student_removed_transport', auth_id(), ['assignment_id' => $id]);
         Session::flash('success', 'Student removed from transport route.');
-        return $this->redirect('/transport/student-assignments');
+        return $this->redirect(url('transport/student-assignments'));
     }
 
     public function destroy(string $id): string
@@ -622,7 +622,7 @@ class TransportController extends Controller
             Session::flash('success', 'Route deleted.');
         }
 
-        return $this->redirect('/transport');
+        return $this->redirect(url('transport'));
     }
 
     public function createDriver(): string
@@ -646,7 +646,7 @@ class TransportController extends Controller
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
             Session::flash('old', $data);
-            return $this->redirect('/transport/driver/create');
+            return $this->redirect(url('transport/driver/create'));
         }
 
         $db = $this->db();
@@ -710,7 +710,7 @@ class TransportController extends Controller
 
         ActivityLog::log('user_created', auth_id(), ['user_id' => $userId, 'role' => 'driver']);
         Session::flash('success', "Driver user '{$data['name']}' created successfully.");
-        return $this->redirect('/transport/drivers');
+        return $this->redirect(url('transport/drivers'));
     }
 
     // --- DRIVER APP API ENDPOINTS ---

@@ -17,7 +17,7 @@ class FaceRecognitionController extends Controller
 
     public function index(): string
     {
-        return $this->redirect('/attendance/face-kiosk');
+        return $this->redirect(url('attendance/face-kiosk'));
     }
 
     /**
@@ -39,11 +39,11 @@ class FaceRecognitionController extends Controller
 
     public function historyView(): string
     {
-        return $this->redirect('/attendance/face-kiosk');
+        return $this->redirect(url('attendance/face-kiosk'));
     }
 
     public function verifyView(): string
     {
-        return $this->redirect('/attendance/face-kiosk');
+        return $this->redirect(url('attendance/face-kiosk'));
     }
 }

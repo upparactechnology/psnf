@@ -39,7 +39,7 @@ class AdmissionsController extends Controller
         $status = $this->request->input('admission_status');
         if (!$status) {
             $this->flash('error', 'Admission status is required.');
-            return $this->redirect('/admissions');
+            return $this->redirect(url('admissions'));
         }
 
         try {
@@ -49,6 +49,6 @@ class AdmissionsController extends Controller
             $this->flash('error', 'Failed to update status: ' . $e->getMessage());
         }
 
-        return $this->redirect('/admissions');
+        return $this->redirect(url('admissions'));
     }
 }

@@ -24,7 +24,7 @@ class SubjectTypesController extends Controller
 
         if (empty($name)) {
             \Core\Session::flash('error', 'Type name is required.');
-            return $this->redirect('/academics/subjects');
+            return $this->redirect(url('academics/subjects'));
         }
 
         $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name));
@@ -48,7 +48,7 @@ class SubjectTypesController extends Controller
             \Core\Session::flash('error', 'A type with this name already exists.');
         }
 
-        return $this->redirect('/academics/subjects');
+        return $this->redirect(url('academics/subjects'));
     }
 
     public function update(string $id): string
@@ -61,7 +61,7 @@ class SubjectTypesController extends Controller
 
         if (empty($name)) {
             \Core\Session::flash('error', 'Type name is required.');
-            return $this->redirect('/academics/subjects');
+            return $this->redirect(url('academics/subjects'));
         }
 
         $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name));
@@ -78,7 +78,7 @@ class SubjectTypesController extends Controller
             \Core\Session::flash('error', 'Error updating type.');
         }
 
-        return $this->redirect('/academics/subjects');
+        return $this->redirect(url('academics/subjects'));
     }
 
     public function destroy(string $id): string
@@ -95,13 +95,13 @@ class SubjectTypesController extends Controller
             );
             if (($count['cnt'] ?? 0) > 0) {
                 \Core\Session::flash('error', "Cannot delete: {$count['cnt']} subject(s) use this type.");
-                return $this->redirect('/academics/subjects');
+                return $this->redirect(url('academics/subjects'));
             }
         }
 
         $db->query("DELETE FROM subject_types WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         \Core\Session::flash('success', "Subject type deleted.");
 
-        return $this->redirect('/academics/subjects');
+        return $this->redirect(url('academics/subjects'));
     }
 }

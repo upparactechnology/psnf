@@ -79,7 +79,7 @@ class TimetablesController extends Controller
 
         if (!$groupId || !$dayOfWeek || !$subjectName || !$startTime || !$endTime) {
             $this->flash('error', 'All required fields must be completed.');
-            return $this->redirect('/academics/timetable');
+            return $this->redirect(url('academics/timetable'));
         }
 
         $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$groupId]);
@@ -88,7 +88,7 @@ class TimetablesController extends Controller
 
         if (!$groupRow) {
             $this->flash('error', 'Invalid Group selected.');
-            return $this->redirect('/academics/timetable');
+            return $this->redirect(url('academics/timetable'));
         }
 
         $tenantId = \Core\Database::getTenantId();
@@ -123,7 +123,7 @@ class TimetablesController extends Controller
             $this->flash('error', 'Failed to create slot: ' . $e->getMessage());
         }
 
-        return $this->redirect("/academics/timetable?main_group_id=" . $groupId);
+        return $this->redirect(url("academics/timetable?main_group_id=" . $groupId));
     }
 
     public function update(string $id): string
@@ -138,7 +138,7 @@ class TimetablesController extends Controller
 
         if (!$groupId || !$dayOfWeek || !$subjectName || !$startTime || !$endTime) {
             $this->flash('error', 'All required fields must be completed.');
-            return $this->redirect('/academics/timetable');
+            return $this->redirect(url('academics/timetable'));
         }
 
         $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$groupId]);
@@ -147,7 +147,7 @@ class TimetablesController extends Controller
 
         if (!$groupRow) {
             $this->flash('error', 'Invalid Group selected.');
-            return $this->redirect('/academics/timetable');
+            return $this->redirect(url('academics/timetable'));
         }
 
         try {
@@ -168,7 +168,7 @@ class TimetablesController extends Controller
             $this->flash('error', 'Failed to update slot: ' . $e->getMessage());
         }
 
-        return $this->redirect("/academics/timetable?main_group_id=" . $groupId);
+        return $this->redirect(url("academics/timetable?main_group_id=" . $groupId));
     }
 
     public function destroy(string $id): string
@@ -177,7 +177,7 @@ class TimetablesController extends Controller
         $groupId = (int)$this->request->input('main_group_id');
         $db->query("DELETE FROM timetables WHERE id = ? AND tenant_id = ?", [(int)$id, \Core\Database::getTenantId()]);
         $this->flash('success', 'Timetable slot deleted successfully.');
-        return $this->redirect("/academics/timetable?main_group_id=" . $groupId);
+        return $this->redirect(url("academics/timetable?main_group_id=" . $groupId));
     }
 
     public function bulkGenerate(): string
@@ -192,7 +192,7 @@ class TimetablesController extends Controller
 
         if (!$groupId || empty($days) || !$subjectName || !$startTime || !$endTime) {
             $this->flash('error', 'All required fields must be completed.');
-            return $this->redirect('/academics/timetable?main_group_id=' . $groupId);
+            return $this->redirect(url('academics/timetable?main_group_id=' . $groupId));
         }
 
         $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$groupId]);
@@ -230,7 +230,7 @@ class TimetablesController extends Controller
         }
 
         $this->flash('success', "Generated {$count} timetable slot(s) successfully.");
-        return $this->redirect("/academics/timetable?main_group_id=" . $groupId);
+        return $this->redirect(url("academics/timetable?main_group_id=" . $groupId));
     }
 
     public function clearTimetable(): string
@@ -242,7 +242,7 @@ class TimetablesController extends Controller
         $db->query("DELETE FROM timetables WHERE main_group_id = ? AND tenant_id = ?", [$groupId, $tenantId]);
 
         $this->flash('success', 'Timetable cleared successfully.');
-        return $this->redirect("/academics/timetable?main_group_id=" . $groupId);
+        return $this->redirect(url("academics/timetable?main_group_id=" . $groupId));
     }
 
     public function share(): string
@@ -254,7 +254,7 @@ class TimetablesController extends Controller
 
         if (!$groupId) {
             $this->flash('error', 'Invalid group selected.');
-            return $this->redirect('/academics/timetable');
+            return $this->redirect(url('academics/timetable'));
         }
 
         try {
@@ -272,6 +272,6 @@ class TimetablesController extends Controller
             $this->flash('error', 'Failed to share timetable: ' . $e->getMessage());
         }
 
-        return $this->redirect("/academics/timetable?main_group_id=" . $groupId);
+        return $this->redirect(url("academics/timetable?main_group_id=" . $groupId));
     }
 }

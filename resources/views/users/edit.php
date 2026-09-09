@@ -22,7 +22,7 @@ $emp = $user['employee'] ?? null;
             <h2 class="text-xl font-bold text-white">Edit User</h2>
             <p class="text-sm text-slate-500 mt-0.5"><?= e($user['email'] ?? '') ?></p>
         </div>
-        <a href="<?= e($_GET['redirect_to'] ?? '/users') ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
+        <a href="<?= e($_GET['redirect_to'] ?? url('users')) ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
     </div>
 
     <?php
@@ -36,7 +36,7 @@ $emp = $user['employee'] ?? null;
             $currentRoleSlugs[] = $role['slug'];
         }
     }
-    $redirectTo = $_GET['redirect_to'] ?? '/users';
+    $redirectTo = $_GET['redirect_to'] ?? url('users');
     ?>
     <form method="POST" action="<?= url('users/'.$user['id']) ?>" x-data="{ loading: false, showPass: false, selectedRoleSlugs: <?= json_encode($currentRoleSlugs) ?> }" @submit="loading = true">
         <?= \Core\View::csrf() ?>
