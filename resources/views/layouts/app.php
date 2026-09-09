@@ -505,7 +505,7 @@ if ($user) {
                     if (path.startsWith('/certificates') || path.startsWith('/certificate_generator')) return 'documents';
                     if (path.startsWith('/payroll')) return 'payroll';
                     if (path.startsWith('/medical')) return 'medical';
-                    if (path.startsWith('/documents') || path.startsWith('/file_manager')) return 'documents';
+                    if (path.startsWith('/documents') || path.startsWith('/file_manager') || path.startsWith('/file-manager')) return 'documents';
                     if (path.startsWith('/users') || path.startsWith('/staff') || path.startsWith('/roles') || path.startsWith('/attendance')) return 'staff';
                     return 'launcher';
                 }
@@ -664,7 +664,7 @@ if ($user) {
                 <?php if (can('view_file_manager')): ?>
                 <div x-show="currentModule() === 'documents'" class="space-y-1" x-cloak>
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-650 uppercase px-3" x-show="sidebarOpen">File Manager</div>
-                    <?php navLink('/file_manager/public/', '<svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>', 'Browse Files', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/file-manager/', '<svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>', 'Browse Files', $currentPath, $sidebarOpen); ?>
                 </div>
                 <?php endif; ?>
 

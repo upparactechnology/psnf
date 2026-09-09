@@ -35,7 +35,7 @@ class Controller {
     }
     $requestUri = '/' . ltrim($requestUri, '/');
 
-    if (preg_match('#^(.*?/file_manager/public)(?:/|$)#i', $requestUri, $m)) {
+    if (preg_match('#^(.*?/(?:file_manager/public|file-manager))(?:/|$)#i', $requestUri, $m)) {
       return $m[1];
     }
 

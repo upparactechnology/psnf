@@ -14,7 +14,8 @@ class Auth {
       // Redirect to PSNF ERP login instead of local login
       $app = require __DIR__ . '/../../config/app.php';
       $baseUrl = self::resolveBaseUrl($app);
-      header('Location: ' . rtrim($baseUrl, '/') . '/login?redirect=file_manager');
+      $erpBase = preg_replace('#/(?:file_manager/public|file-manager)$#', '', $baseUrl);
+      header('Location: ' . $erpBase . '/login?redirect=file_manager');
       exit;
     }
   }
@@ -30,7 +31,8 @@ class Auth {
       }
       $app = require __DIR__ . '/../../config/app.php';
       $baseUrl = self::resolveBaseUrl($app);
-      header('Location: ' . rtrim($baseUrl, '/') . '/login?redirect=file_manager');
+      $erpBase = preg_replace('#/(?:file_manager/public|file-manager)$#', '', $baseUrl);
+      header('Location: ' . $erpBase . '/login?redirect=file_manager');
       exit;
     }
   }
@@ -47,7 +49,7 @@ class Auth {
     }
     $requestUri = '/' . ltrim($requestUri, '/');
 
-    if (preg_match('#^(.*?/file_manager/public)(?:/|$)#i', $requestUri, $m)) {
+    if (preg_match('#^(.*?/(?:file_manager/public|file-manager))(?:/|$)#i', $requestUri, $m)) {
       return $m[1];
     }
 

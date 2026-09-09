@@ -18,7 +18,7 @@ $crumb = $title ?? 'Dashboard';
         </div>
       </div>
       <nav class="nav-group mt-3">
-        <a class="nav-item" href="<?= preg_replace('#/file_manager/public$#', '', $app['base_url']) ?>/dashboard" style="background: rgba(99,102,241,0.08); color: #6366f1; border: 1px solid rgba(99,102,241,0.15); margin-bottom: 12px;"><i class="bi bi-arrow-left-circle-fill"></i><span>Back to ERP</span></a>
+        <a class="nav-item" href="<?= preg_replace('#/(?:file_manager/public|file-manager)$#', '', $app['base_url']) ?>/dashboard" style="background: rgba(99,102,241,0.08); color: #6366f1; border: 1px solid rgba(99,102,241,0.15); margin-bottom: 12px;"><i class="bi bi-arrow-left-circle-fill"></i><span>Back to ERP</span></a>
         <a class="nav-item <?= $activeNav==='dashboard'?'active':'' ?>" href="<?= $app['base_url'] ?>/admin/dashboard"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a>
         <a class="nav-item <?= $activeNav==='analytics'?'active':'' ?>" href="<?= $app['base_url'] ?>/admin/analytics"><i class="bi bi-graph-up"></i><span>Analytics</span></a>
         <a class="nav-item <?= $activeNav==='audit'?'active':'' ?>" href="<?= $app['base_url'] ?>/admin/audit"><i class="bi bi-activity"></i><span>Audit &amp; Activity</span></a>

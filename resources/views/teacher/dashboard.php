@@ -239,7 +239,7 @@ ob_start();
 
             <!-- 8b. File Manager -->
             <?php if (in_array('file_manager', $assignedApps)): ?>
-            <a href="<?= url('file_manager/public/') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-teal-500/30 dark:hover:border-teal-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
+            <a href="<?= url('file-manager') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-teal-500/30 dark:hover:border-teal-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-teal-500 to-cyan-600 shadow-lg group-hover:scale-105 transition-transform duration-300 mb-3.5">
                     <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>

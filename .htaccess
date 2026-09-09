@@ -5,11 +5,25 @@ RewriteEngine On
 # Block dotfiles
 RewriteRule (^\.|/\.) - [F,L]
 
-# File Manager
+# File Manager (legacy direct access)
 RewriteRule ^file_manager/public/?$ public/file_manager/public/index.php [L,QSA]
 
+# File Manager — serve static assets directly from FM public dir
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$
+RewriteRule ^(.+/)?file-manager/(.+)$ public/file_manager/public/$2 [L,QSA]
+
+# Serve static assets from public/ for ERP nested URL structure
+# Local dev (docroot=htdocs): /psnf/erp/js/x → public/js/x
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/psnf/public/$1 -f
+RewriteRule ^erp/(.+)$ public/$1 [L]
+
+# Production (docroot=psnf): /erp/js/x → public/js/x
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+RewriteRule ^erp/(.+)$ public/$1 [L]
+
 # Route everything else to front controller
-# In per-directory context (live server), erp/ prefix is already stripped
-# At project root (local dev), full URL is matched
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ public/index.php [L,QSA]

@@ -26,7 +26,7 @@ $access = $accessWindow ?? ['start' => '', 'end' => '', 'label' => 'Today'];
       <div class="text-muted small">Welcome, <?= htmlspecialchars($staffName) ?>. Access window: <?= htmlspecialchars($access['label']) ?> <?= htmlspecialchars($access['start']) ?> - <?= htmlspecialchars($access['end']) ?></div>
     </div>
     <div class="d-flex gap-2 align-items-center">
-      <a class="btn btn-outline-secondary btn-sm" href="<?= preg_replace('#/file_manager/public$#', '', $app['base_url']) ?>/dashboard"><i class="bi bi-arrow-left-short"></i> Back to ERP</a>
+      <a class="btn btn-outline-secondary btn-sm" href="<?= preg_replace('#/(?:file_manager/public|file-manager)$#', '', $app['base_url']) ?>/dashboard"><i class="bi bi-arrow-left-short"></i> Back to ERP</a>
       <div id="staffClock" class="me-2 px-2 py-1 rounded card-glass text-muted small fw-semibold" style="letter-spacing: 0.5px;">--:--:--</div>
       <button class="btn btn-light btn-sm" id="themeToggle" type="button" title="Toggle theme"><i class="bi bi-moon-stars"></i></button>
       <a class="btn btn-outline-primary btn-sm" href="<?= $app['base_url'] ?>/staff/profile">Profile</a>
