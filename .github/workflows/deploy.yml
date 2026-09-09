@@ -19,7 +19,7 @@ jobs:
         run: |
           git diff --name-only HEAD^ HEAD > all_changed_files.txt
 
-          grep -vE '^(driver_app/|staff_app/|online_enrollment/|backend/|core/|graphify-out/|\.agents/|\.github/)' \
+          grep -vE '^(driver_app/|staff_app/|online_enrollment/|backend/|graphify-out/|\.agents/|\.github/)' \
             all_changed_files.txt > changed_files.txt || true
 
           echo "=============================="
