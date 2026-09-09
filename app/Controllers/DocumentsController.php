@@ -221,7 +221,7 @@ class DocumentsController extends Controller
         $expiryDate = !empty($_POST['expiry_date']) ? $_POST['expiry_date'] : null;
 
         if ($studentId <= 0 || empty($_FILES['file']['name'])) {
-            $this->redirect('/documents/student-documents?student_id=' . $studentId . '&error=Invalid parameters');
+            $this->redirect(url('documents/student-documents?student_id=' . $studentId . '&error=Invalid parameters'));
             return;
         }
 
@@ -263,9 +263,9 @@ class DocumentsController extends Controller
                 ", [$studentId, $docType, $title, $file['name'], $storedName, $file['type'], $file['size']]);
             }
 
-            $this->redirect('/documents/student-documents?student_id=' . $studentId . '&success=Document uploaded successfully');
+            $this->redirect(url('documents/student-documents?student_id=' . $studentId . '&success=Document uploaded successfully'));
         } else {
-            $this->redirect('/documents/student-documents?student_id=' . $studentId . '&error=Failed to upload file');
+            $this->redirect(url('documents/student-documents?student_id=' . $studentId . '&error=Failed to upload file'));
         }
     }
 

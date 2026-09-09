@@ -1,15 +1,44 @@
 Options -Indexes -MultiViews
 
 RewriteEngine On
+RewriteBase /psnf/
+
+# Handle Authorization Header (needed for API/Bearer tokens)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
 # Block dotfiles
 RewriteRule (^\.|/\.) - [F,L]
 
-# File Manager
+# ─── File Manager Routing ────────────────────────────────────────────────────
+# Map /file-manager/ to public/file_manager/public/
+# This hides the internal "public" directory from the user-facing URL.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^file-manager/(.+)$ public/file_manager/public/$1 [L,QSA]
+
+# Also handle the bare /file-manager/ (no trailing path)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^file-manager/?$ public/file_manager/public/index.php [L,QSA]
+
+# Legacy direct access: /file_manager/public/ still works
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^file_manager/public/?$ public/file_manager/public/index.php [L,QSA]
 
-# Route everything else to front controller
-# In per-directory context (live server), erp/ prefix is already stripped
-# At project root (local dev), full URL is matched
+# File Manager static assets: /file-manager/assets/... → public/file_manager/public/assets/...
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^file-manager/assets/(.+)$ public/file_manager/public/assets/$1 [L,QSA]
+
+# ─── ERP Static Files ────────────────────────────────────────────────────────
+# Serve static files from public/ when accessed through any base path prefix
+# e.g. /psnf/erp/assets/css/app.css → public/assets/css/app.css
+# e.g. /erp/assets/css/app.css → public/assets/css/app.css
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+/)?(assets|js|css|images|uploads|storage|game|attendance|kiosk_dashboard|certificate_generator)/(.*)$ public/$2/$3 [L,QSA]
+
+# ─── Main ERP Front Controller ───────────────────────────────────────────────
+# Route everything else to public/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ public/index.php [L,QSA]

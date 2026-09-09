@@ -32,7 +32,7 @@ class AuthController extends Controller
 
         if (empty($email) || empty($password)) {
             $this->flash('error', 'Email and password are required.');
-            return $this->redirect('/login');
+            return $this->redirect(url('login'));
         }
 
         $result = $this->authService->attempt($email, $password, $remember);
@@ -44,7 +44,7 @@ class AuthController extends Controller
             if ($this->request->wantsJson()) {
                 return $this->json(['success' => false, 'message' => $result['error']], 401);
             }
-            return $this->redirect('/login');
+            return $this->redirect(url('login'));
         }
 
         if ($this->request->wantsJson()) {
@@ -142,10 +142,10 @@ class AuthController extends Controller
         $this->authService->logout();
 
         if ($isParent) {
-            return $this->redirect('/parent-login');
+            return $this->redirect(url('parent-login'));
         }
 
-        return $this->redirect('/login');
+        return $this->redirect(url('login'));
     }
 
     public function showForgotPassword(): string
@@ -159,7 +159,7 @@ class AuthController extends Controller
 
         if (!$email) {
             $this->flash('error', 'Email is required.');
-            return $this->redirect('/forgot-password');
+            return $this->redirect(url('forgot-password'));
         }
 
         $user = User::findByEmailGlobal($email);
@@ -186,7 +186,7 @@ class AuthController extends Controller
             ActivityLog::log('password_reset_requested', $user['id'], ['email' => $email]);
         }
 
-        return $this->redirect('/forgot-password');
+        return $this->redirect(url('forgot-password'));
     }
 
     public function showResetPassword(): string
@@ -204,12 +204,12 @@ class AuthController extends Controller
 
         if (strlen($password) < 8) {
             $this->flash('error', 'Password must be at least 8 characters.');
-            return $this->redirect("/reset-password?token=$token");
+            return $this->redirect(url("reset-password?token=$token"));
         }
 
         if ($password !== $confirm) {
             $this->flash('error', 'Passwords do not match.');
-            return $this->redirect("/reset-password?token=$token");
+            return $this->redirect(url("reset-password?token=$token"));
         }
 
         $reset = \Core\Application::$app->db->selectOne(
@@ -219,7 +219,7 @@ class AuthController extends Controller
 
         if (!$reset) {
             $this->flash('error', 'Invalid or expired reset link.');
-            return $this->redirect('/forgot-password');
+            return $this->redirect(url('forgot-password'));
         }
 
         $user = User::findByEmailGlobal($reset['email']);
@@ -230,7 +230,7 @@ class AuthController extends Controller
         }
 
         $this->flash('success', 'Password reset successfully. You can now log in.');
-        return $this->redirect('/login');
+        return $this->redirect(url('login'));
     }
 
     public function showOtp(): string
@@ -251,7 +251,7 @@ class AuthController extends Controller
 
         if (!$otp || $otp['code'] !== $code) {
             $this->flash('error', 'Invalid OTP code.');
-            return $this->redirect('/otp');
+            return $this->redirect(url('otp'));
         }
 
         \Core\Application::$app->db->update('otp_codes', ['used' => 1], 'id = ?', [$otp['id']]);

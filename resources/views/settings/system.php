@@ -13,7 +13,7 @@ ob_start();
 
     <form method="POST" action="<?= url('settings/update') ?>" x-data="{ loading: false }" @submit="loading = true">
         <?= \Core\View::csrf() ?>
-        <input type="hidden" name="redirect_tab" value="/settings/system">
+        <input type="hidden" name="redirect_tab" value="<?= url('settings/system') ?>">
 
         <!-- Academic & Portal Permission Rules -->
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 space-y-4 mb-5">

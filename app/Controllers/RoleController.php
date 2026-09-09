@@ -28,7 +28,7 @@ class RoleController extends Controller
 
     public function create(): string
     {
-        return $this->redirect('/roles');
+        return $this->redirect(url('roles'));
     }
 
     public function store(): string
@@ -51,7 +51,7 @@ class RoleController extends Controller
             return $this->successResponse('Role created successfully.');
         }
         $this->flash('success', 'Role created.');
-        return $this->redirect('/roles');
+        return $this->redirect(url('roles'));
     }
 
     public function edit(string $id): string
@@ -60,7 +60,7 @@ class RoleController extends Controller
             $role = Role::withPermissions((int) $id);
             return $this->successResponse('Role loaded.', ['role' => $role]);
         }
-        return $this->redirect('/roles');
+        return $this->redirect(url('roles'));
     }
 
     public function update(string $id): string
@@ -80,7 +80,7 @@ class RoleController extends Controller
             return $this->successResponse('Role updated successfully.');
         }
         $this->flash('success', 'Role updated.');
-        return $this->redirect('/roles');
+        return $this->redirect(url('roles'));
     }
 
     public function destroy(string $id): string
@@ -92,6 +92,6 @@ class RoleController extends Controller
             return $this->successResponse('Role deleted successfully.');
         }
         $this->flash('success', 'Role deleted.');
-        return $this->redirect('/roles');
+        return $this->redirect(url('roles'));
     }
 }

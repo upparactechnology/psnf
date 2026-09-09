@@ -63,7 +63,7 @@ class PayrollController extends Controller
 
         if (!$date || !$name) {
             Session::flash('error', 'Date and Name are required.');
-            return $this->redirect('/payroll/holidays');
+            return $this->redirect(url('payroll/holidays'));
         }
 
         try {
@@ -80,7 +80,7 @@ class PayrollController extends Controller
             Session::flash('error', 'Failed to add holiday: ' . $e->getMessage());
         }
 
-        return $this->redirect('/payroll/holidays');
+        return $this->redirect(url('payroll/holidays'));
     }
 
     public function deleteHoliday(string $id): string
@@ -96,7 +96,7 @@ class PayrollController extends Controller
             Session::flash('success', 'Holiday deleted successfully.');
         }
 
-        return $this->redirect('/payroll/holidays');
+        return $this->redirect(url('payroll/holidays'));
     }
 
     public function runDetails(string $id): string
@@ -107,7 +107,7 @@ class PayrollController extends Controller
 
         if (!$run) {
             Session::flash('error', 'Payroll run not found.');
-            return $this->redirect('/payroll/runs');
+            return $this->redirect(url('payroll/runs'));
         }
 
         $items = $db->select("
@@ -144,7 +144,7 @@ class PayrollController extends Controller
 
         if (!$run || !$item) {
             Session::flash('error', 'Payslip not found.');
-            return $this->redirect('/payroll/runs');
+            return $this->redirect(url('payroll/runs'));
         }
 
         $chronology = $this->getChronologicalBreakdown($run['month_year'], (int)$empId);
@@ -221,7 +221,7 @@ class PayrollController extends Controller
             Session::flash('error', "Failed to run payroll: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
         }
 
-        return $this->redirect('/payroll/runs');
+        return $this->redirect(url('payroll/runs'));
     }
 
     public function regenerate(string $id): string
@@ -232,7 +232,7 @@ class PayrollController extends Controller
 
         if (!$run) {
             Session::flash('error', 'Payroll run not found.');
-            return $this->redirect('/payroll/runs');
+            return $this->redirect(url('payroll/runs'));
         }
 
         $monthYear = $run['month_year'];
@@ -250,7 +250,7 @@ class PayrollController extends Controller
             Session::flash('error', "Failed to regenerate payroll: " . $e->getMessage());
         }
 
-        return $this->redirect('/payroll/runs/' . ($newRunId ?? $runId));
+        return $this->redirect(url('payroll/runs/' . ($newRunId ?? $runId)));
     }
 
     private function calculateAndSavePayroll(string $targetMonth): int
@@ -937,7 +937,7 @@ class PayrollController extends Controller
             Session::flash('success', "Attendance override log saved successfully.");
         }
         
-        return $this->redirect('/payroll/attendance?date=' . $date);
+        return $this->redirect(url('payroll/attendance?date=' . $date));
     }
 
     public function auditLogs(): string

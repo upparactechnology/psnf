@@ -117,12 +117,12 @@ class CurriculumManagerController extends Controller
 
         if (is_year_locked($yearId)) {
             Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}"));
         }
 
         if (empty($name)) {
             Session::flash('error', 'Curriculum Name is required.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}"));
         }
 
         $templateId = $db->insert('curriculum_templates', [
@@ -146,7 +146,7 @@ class CurriculumManagerController extends Controller
         }
 
         Session::flash('success', 'Curriculum Template and default sections created successfully.');
-        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
     }
 
     public function storeSection(string $templateId): string
@@ -159,12 +159,12 @@ class CurriculumManagerController extends Controller
 
         if (is_year_locked($yearId)) {
             Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
         }
 
         if (empty($sectionName)) {
             Session::flash('error', 'Section Name is required.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
         }
 
         $maxOrder = $db->selectOne("SELECT MAX(sort_order) as max_ord FROM curriculum_sections WHERE curriculum_template_id = ?", [(int)$templateId]);
@@ -178,7 +178,7 @@ class CurriculumManagerController extends Controller
         ]);
 
         Session::flash('success', 'Curriculum Section added.');
-        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
     }
 
     public function updateSection(): string
@@ -195,12 +195,12 @@ class CurriculumManagerController extends Controller
 
         if (is_year_locked($yearId)) {
             Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
         }
 
         if (empty($sectionName)) {
             Session::flash('error', 'Section Name is required.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
         }
 
         try {
@@ -214,7 +214,7 @@ class CurriculumManagerController extends Controller
             Session::flash('error', 'Failed to update section: ' . $e->getMessage());
         }
 
-        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
     }
 
     public function storeCurriculumSubject(): string
@@ -230,7 +230,7 @@ class CurriculumManagerController extends Controller
 
         if (empty($subjectIds)) {
             Session::flash('error', 'Please select at least one subject.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}"));
         }
 
         $sec = $db->selectOne("SELECT curriculum_template_id, assessment_type FROM curriculum_sections WHERE id = ?", [$sectionId]);
@@ -239,7 +239,7 @@ class CurriculumManagerController extends Controller
 
         if (is_year_locked($yearId)) {
             Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
         }
 
         $maxSeq = $db->selectOne("SELECT MAX(sequence) as max_seq FROM curriculum_subjects WHERE curriculum_section_id = ?", [(int)$sectionId]);
@@ -277,7 +277,7 @@ class CurriculumManagerController extends Controller
             $msg .= " {$skipped} already existed and were skipped.";
         }
         Session::flash('success', $msg);
-        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
     }
 
     public function destroyCurriculumSubject(string $id): string
@@ -288,7 +288,7 @@ class CurriculumManagerController extends Controller
 
         if (is_year_locked($yearId)) {
             Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}"));
         }
 
         $cs = $db->selectOne("
@@ -302,7 +302,7 @@ class CurriculumManagerController extends Controller
         $db->query("DELETE FROM curriculum_subjects WHERE id = ?", [(int)$id]);
 
         Session::flash('success', 'Subject removed from Curriculum Template.');
-        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
     }
 
     public function reorderSubjects(): string
@@ -314,7 +314,7 @@ class CurriculumManagerController extends Controller
 
         if (is_year_locked($yearId)) {
             Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}"));
         }
 
         $templateId = '';
@@ -336,7 +336,7 @@ class CurriculumManagerController extends Controller
         }
 
         Session::flash('success', 'Curriculum sequence updated.');
-        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}");
+        return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}&template_id={$templateId}"));
     }
 
     public function destroyTemplate(string $id): string
@@ -346,7 +346,7 @@ class CurriculumManagerController extends Controller
 
         if (!$template) {
             Session::flash('error', 'Template not found.');
-            return $this->redirect("/academics/curriculum");
+            return $this->redirect(url('academics/curriculum'));
         }
 
         $yearId = (int)$template['academic_year_id'];
@@ -354,7 +354,7 @@ class CurriculumManagerController extends Controller
 
         if (is_year_locked($yearId)) {
             Session::flash('error', 'This academic year is locked. Only administrators can edit it.');
-            return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+            return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}"));
         }
 
         $sectionIds = array_column(
@@ -371,6 +371,6 @@ class CurriculumManagerController extends Controller
         $db->query("DELETE FROM curriculum_templates WHERE id = ?", [(int)$id]);
 
         Session::flash('success', 'Curriculum template deleted.');
-        return $this->redirect("/academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}");
+        return $this->redirect(url("academics/curriculum?academic_year_id={$yearId}&main_group_id={$groupId}"));
     }
 }

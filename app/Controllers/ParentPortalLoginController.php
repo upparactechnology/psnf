@@ -29,7 +29,7 @@ class ParentPortalLoginController extends Controller
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
             Session::flash('old', $data);
-            return $this->redirect('/parent-login');
+            return $this->redirect(url('parent-login'));
         }
 
         $db = \Core\Application::$app->db;
@@ -45,7 +45,7 @@ class ParentPortalLoginController extends Controller
         if (!$user || !password_verify($data['password'], $user['password'])) {
             Session::flash('error', 'Invalid phone number or password. Please try again.');
             Session::flash('old', ['phone' => $data['phone']]);
-            return $this->redirect('/parent-login');
+            return $this->redirect(url('parent-login'));
         }
 
         // Parent specific logic
@@ -67,11 +67,11 @@ class ParentPortalLoginController extends Controller
         // Check if this user still needs to set up their password
         if ((int)($user['first_login'] ?? 1) === 1) {
             Session::flash('info', 'For security reasons, please set a new password for your account.');
-            return $this->redirect('/parent/change-password');
+            return $this->redirect(url('parent/change-password'));
         }
 
         // Parent portal home
-        return $this->redirect('/parent/dashboard');
+        return $this->redirect(url('parent/dashboard'));
     }
 
     public function showChangePassword(): string
@@ -90,12 +90,12 @@ class ParentPortalLoginController extends Controller
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
             Session::flash('errors', $validator->errors());
-            return $this->redirect('/parent/change-password');
+            return $this->redirect(url('parent/change-password'));
         }
         
         if ($data['password'] !== ($data['password_confirmation'] ?? '')) {
             Session::flash('error', 'Passwords do not match.');
-            return $this->redirect('/parent/change-password');
+            return $this->redirect(url('parent/change-password'));
         }
 
         $userId = auth_id();
@@ -120,7 +120,7 @@ class ParentPortalLoginController extends Controller
         Session::set('user', $userSession);
         
         Session::flash('success', 'Account updated successfully! Welcome to the Parent Portal.');
-        return $this->redirect('/parent/dashboard');
+        return $this->redirect(url('parent/dashboard'));
     }
 
     public function logout(): string
@@ -128,6 +128,6 @@ class ParentPortalLoginController extends Controller
         $authService = new \App\Services\AuthService();
         $authService->logout();
         Session::flash('success', 'Logged out successfully from Parent Portal.');
-        return $this->redirect('/parent-login');
+        return $this->redirect(url('parent-login'));
     }
 }

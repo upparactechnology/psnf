@@ -10,6 +10,12 @@
             window.isDark = false;
         }
     </script>
+    <script>
+        window.APP_BASE_URL = '<?= rtrim(get_dynamic_base_url(), '/') ?>';
+        window.appUrl = function(path) {
+            return window.APP_BASE_URL + '/' + path.replace(/^\/+/, '');
+        };
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'PSNF Management System' ?></title>
@@ -664,7 +670,7 @@ if ($user) {
                 <?php if (can('view_file_manager')): ?>
                 <div x-show="currentModule() === 'documents'" class="space-y-1" x-cloak>
                     <div class="pt-2 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-650 uppercase px-3" x-show="sidebarOpen">File Manager</div>
-                    <?php navLink('/file_manager/public/', '<svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>', 'Browse Files', $currentPath, $sidebarOpen); ?>
+                    <?php navLink('/file-manager/', '<svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>', 'Browse Files', $currentPath, $sidebarOpen); ?>
                 </div>
                 <?php endif; ?>
 

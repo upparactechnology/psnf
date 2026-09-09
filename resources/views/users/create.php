@@ -17,7 +17,7 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
             <h2 class="text-xl font-bold text-white">Create New User</h2>
             <p class="text-sm text-slate-500 mt-0.5">Add a staff member to the system</p>
         </div>
-        <a href="<?= e($_GET['redirect_to'] ?? '/users') ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
+        <a href="<?= e($_GET['redirect_to'] ?? url('users')) ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
     </div>
 
     <?php
@@ -28,7 +28,7 @@ function eMsg(string $f, array $e): string { if(!isset($e[$f]))return ''; return
             $oldRoleSlugs[] = $role['slug'];
         }
     }
-    $redirectTo = $_GET['redirect_to'] ?? $old['redirect_to'] ?? '/users';
+    $redirectTo = $_GET['redirect_to'] ?? $old['redirect_to'] ?? url('users');
     ?>
     <form method="POST" action="<?= url('users') ?>" x-data="{ loading: false, showPass: false, selectedRoleSlugs: <?= json_encode($oldRoleSlugs) ?> }" @submit="loading = true">
         <?= \Core\View::csrf() ?>

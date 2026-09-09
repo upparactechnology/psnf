@@ -62,7 +62,7 @@ ob_start();
                         <form action="<?= url('users/' . $u['id']) ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this user account?')" class="inline">
                             <?= \Core\View::csrf() ?>
                             <input type="hidden" name="_method" value="DELETE">
-                            <input type="hidden" name="redirect_to" value="/staff/users">
+                            <input type="hidden" name="redirect_to" value="<?= url('staff/users') ?>">
                             <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 text-red-400 hover:bg-red-950/20 hover:text-red-500 transition-all text-2xs font-bold border border-red-500/10">
                                 Delete
                             </button>

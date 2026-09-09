@@ -175,7 +175,7 @@ ob_start();
                 
                 <form action="<?= url("fees/{$invoice['id']}/pay") ?>" method="POST" class="space-y-5">
                     <?= \Core\View::csrf() ?>
-                    <input type="hidden" name="return_url" value="/fees/invoices/<?= $invoice['id'] ?>">
+                    <input type="hidden" name="return_url" value="<?= url('fees/invoices/' . $invoice['id']) ?>">
 
                     <div class="space-y-1">
                         <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Amount Received (₹) <span class="text-rose-500">*</span></label>

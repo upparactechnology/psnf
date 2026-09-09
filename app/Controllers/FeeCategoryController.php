@@ -33,7 +33,7 @@ class FeeCategoryController extends Controller
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
             Session::flash('error', 'Name and Code are required.');
-            return $this->redirect('/fees/categories');
+            return $this->redirect(url('fees/categories'));
         }
 
         try {
@@ -51,7 +51,7 @@ class FeeCategoryController extends Controller
             Session::flash('error', 'Could not create category. The code might already exist.');
         }
         
-        return $this->redirect('/fees/categories');
+        return $this->redirect(url('fees/categories'));
     }
 
     public function update(string $id): string
@@ -73,7 +73,7 @@ class FeeCategoryController extends Controller
             Session::flash('error', 'Could not update category. The code might be in use.');
         }
 
-        return $this->redirect('/fees/categories');
+        return $this->redirect(url('fees/categories'));
     }
 
     public function destroy(string $id): string
@@ -82,12 +82,12 @@ class FeeCategoryController extends Controller
         
         if ($inUse) {
             Session::flash('error', 'Cannot delete this category because it is used in a fee structure.');
-            return $this->redirect('/fees/categories');
+            return $this->redirect(url('fees/categories'));
         }
 
         $this->db()->query("DELETE FROM fee_categories WHERE id = ?", [(int)$id]);
         Session::flash('success', 'Fee category deleted.');
         
-        return $this->redirect('/fees/categories');
+        return $this->redirect(url('fees/categories'));
     }
 }

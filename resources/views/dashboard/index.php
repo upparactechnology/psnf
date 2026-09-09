@@ -227,7 +227,7 @@ ob_start();
 
         <!-- File Manager -->
         <?php if (has_permission('view_file_manager')): ?>
-        <a href="<?= url('file_manager/public/') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-cyan-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
+        <a href="<?= url('file-manager/') ?>" class="group p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-cyan-500/50 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all shadow-sm hover:shadow-md">
             <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>

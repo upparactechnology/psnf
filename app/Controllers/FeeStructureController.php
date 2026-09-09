@@ -44,7 +44,7 @@ class FeeStructureController extends Controller
         $validator = new \Core\Validator($data, $rules);
         if ($validator->fails()) {
             Session::flash('error', 'Name, Academic Year, and Main Group are required.');
-            return $this->redirect('/fees/structures');
+            return $this->redirect(url('fees/structures'));
         }
 
         $id = $this->db()->insert('fee_structures', [
@@ -56,7 +56,7 @@ class FeeStructureController extends Controller
         ]);
         
         Session::flash('success', 'Fee structure created. You can now add fee items to it.');
-        return $this->redirect("/fees/structures/{$id}");
+        return $this->redirect(url("fees/structures/{$id}"));
     }
 
     public function show(string $id): string
@@ -71,7 +71,7 @@ class FeeStructureController extends Controller
         
         if (!$structure) {
             Session::flash('error', 'Structure not found.');
-            return $this->redirect('/fees/structures');
+            return $this->redirect(url('fees/structures'));
         }
         
         $items = $this->db()->select("
@@ -104,15 +104,15 @@ class FeeStructureController extends Controller
         
         Session::flash('success', 'Item added to structure.');
         if ($addNext) {
-            return $this->redirect("/fees/structures/{$id}?add_next=1");
+            return $this->redirect(url("fees/structures/{$id}?add_next=1"));
         }
-        return $this->redirect("/fees/structures/{$id}");
+        return $this->redirect(url("fees/structures/{$id}"));
     }
 
     public function destroyItem(string $id, string $itemId): string
     {
         $this->db()->query("DELETE FROM fee_structure_items WHERE id = ? AND fee_structure_id = ?", [(int)$itemId, (int)$id]);
         Session::flash('success', 'Item removed.');
-        return $this->redirect("/fees/structures/{$id}");
+        return $this->redirect(url("fees/structures/{$id}"));
     }
 }

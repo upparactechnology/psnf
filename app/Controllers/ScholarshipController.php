@@ -53,7 +53,7 @@ class ScholarshipController extends Controller
 
         if (!$studentId || !$name || $amount === '') {
             $this->flash('error', 'Student, Scholarship Name, and Amount are required.');
-            return $this->redirect('/scholarships');
+            return $this->redirect(url('scholarships'));
         }
 
         // Get student context details
@@ -64,7 +64,7 @@ class ScholarshipController extends Controller
 
         if (!$student) {
             $this->flash('error', 'Student record not found.');
-            return $this->redirect('/scholarships');
+            return $this->redirect(url('scholarships'));
         }
 
         try {
@@ -91,6 +91,6 @@ class ScholarshipController extends Controller
             $this->flash('error', 'Failed to award scholarship: ' . $e->getMessage());
         }
 
-        return $this->redirect('/scholarships');
+        return $this->redirect(url('scholarships'));
     }
 }

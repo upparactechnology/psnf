@@ -17,6 +17,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// ─── File Manager Interception ──────────────────────────────────────────────
+// When accessed via /psnf/erp/file-manager/..., the .htaccess catch-all sends
+// the request here. We detect the /file-manager prefix and route to the File
+// Manager's own front controller instead of the ERP router.
+$requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+if (($qPos = strpos($requestUri, '?')) !== false) {
+    $requestUri = substr($requestUri, 0, $qPos);
+}
+
+// Match /file-manager or /file-manager/... (with or without project prefix)
+if (preg_match('#(/[^/]+)?/file-manager(?:/(.*))?$#', $requestUri, $fmMatch)) {
+    // Set up File Manager environment
+    $fmPrefix = ltrim($fmMatch[1] ?? '', '/');  // e.g. 'psnf/erp' or ''
+    $fmPath   = $fmMatch[2] ?? '';               // e.g. 'admin/dashboard' or ''
+
+    // Rewrite REQUEST_URI so the File Manager router sees just the FM path
+    $_SERVER['REQUEST_URI'] = '/' . $fmPath;
+
+    // Serve the File Manager
+    require __DIR__ . '/file_manager/public/index.php';
+    exit();
+}
+
 define('ROOT_PATH', dirname(__DIR__));
 define('APP_PATH', ROOT_PATH . '/app');
 define('CORE_PATH', ROOT_PATH . '/core');

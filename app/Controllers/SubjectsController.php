@@ -44,7 +44,7 @@ class SubjectsController extends Controller
 
         if (empty($name) || empty($code)) {
             \Core\Session::flash('error', 'Subject Name and Code are required.');
-            return $this->redirect('/academics/subjects');
+            return $this->redirect(url('academics/subjects'));
         }
 
         // Normalize type to a slug for the `type` column
@@ -66,9 +66,9 @@ class SubjectsController extends Controller
         }
 
         if ($addNext) {
-            return $this->redirect('/academics/subjects?add_next=1');
+            return $this->redirect(url('academics/subjects?add_next=1'));
         }
-        return $this->redirect('/academics/subjects');
+        return $this->redirect(url('academics/subjects'));
     }
 
     public function destroy(string $id): string
@@ -79,7 +79,7 @@ class SubjectsController extends Controller
         $db->query("DELETE FROM subjects WHERE id = ? AND tenant_id = ?", [(int)$id, $tenantId]);
         \Core\Session::flash('success', "Subject deleted successfully.");
 
-        return $this->redirect('/academics/subjects');
+        return $this->redirect(url('academics/subjects'));
     }
 
     public function update(string $id): string
@@ -93,7 +93,7 @@ class SubjectsController extends Controller
 
         if (empty($name) || empty($code)) {
             \Core\Session::flash('error', 'Subject Name and Code are required.');
-            return $this->redirect('/academics/subjects');
+            return $this->redirect(url('academics/subjects'));
         }
 
         // Normalize type to a slug for the `type` column
@@ -111,6 +111,6 @@ class SubjectsController extends Controller
             \Core\Session::flash('error', 'Error updating subject.');
         }
 
-        return $this->redirect('/academics/subjects');
+        return $this->redirect(url('academics/subjects'));
     }
 }

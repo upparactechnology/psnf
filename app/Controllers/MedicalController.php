@@ -183,6 +183,6 @@ class MedicalController extends Controller
             $this->flash('error', 'Failed to update medical record: ' . $e->getMessage());
         }
 
-        return $this->redirect('/medical');
+        return $this->redirect(url('medical'));
     }
 }
