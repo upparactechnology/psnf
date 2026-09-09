@@ -43,6 +43,22 @@ if (preg_match('#(.+)?/file-manager(?:/(.*))?$#', $requestUri, $fmMatch)) {
     exit();
 }
 
+// Match legacy /file_manager/public/... URLs and route to the File Manager
+if (preg_match('#(.+)?/file_manager/public(?:/(.*))?$#', $requestUri, $fmMatch)) {
+    $fmPrefix = ltrim($fmMatch[1] ?? '', '/');
+    $fmPath   = $fmMatch[2] ?? '';
+
+    // Rewrite REQUEST_URI so the File Manager router sees just the FM path
+    $_SERVER['REQUEST_URI'] = '/' . $fmPath;
+
+    // Set SCRIPT_NAME to full path
+    $_SERVER['SCRIPT_NAME'] = '/' . $fmPrefix . '/file-manager/index.php';
+
+    // Serve the File Manager
+    require __DIR__ . '/file_manager/public/index.php';
+    exit();
+}
+
 define('ROOT_PATH', dirname(__DIR__));
 define('APP_PATH', ROOT_PATH . '/app');
 define('CORE_PATH', ROOT_PATH . '/core');
