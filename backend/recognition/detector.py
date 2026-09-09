@@ -60,7 +60,7 @@ class FaceDetector:
         """
         Tier 1: Lightweight face detection using OpenCV Haar cascade.
         No InsightFace model needed. Used for continuous monitoring.
-        When a face is found, notifies ModelManager to keep/load the model.
+        When a face is found, triggers InsightFace model reload so recognition is ready.
         """
         gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
         faces = self._haar_cascade.detectMultiScale(
@@ -84,9 +84,16 @@ class FaceDetector:
                 face_count=len(faces)
             )
 
-        # Face found via Haar — notify ModelManager to keep model alive
+        # Face found via Haar — trigger InsightFace model reload in background
+        # so recognition is ready when verify-face is called
         if self._model_manager is not None:
             self._model_manager.face_detected()
+            if not self._model_manager.is_loaded():
+                try:
+                    logger.info("Face detected via Haar — pre-loading InsightFace model for recognition")
+                    self._model_getter()
+                except Exception as e:
+                    logger.warning(f"Failed to pre-load InsightFace model: {e}")
 
         x, y, w, h = faces[0]
         return FaceDetectionResult(
