@@ -54,10 +54,13 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `online_enrollments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 
 function processUpload($fileKey, $camBase64Key = '') {
-    $uploadDir = __DIR__ . '/uploads/';
+    // Form is at public_html/online_enrollment/ but uploads go to public_html/erp/online_enrollment/uploads/
+    $uploadDir = __DIR__ . '/../erp/online_enrollment/uploads/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }
+
+    $baseUrl = 'https://psnf.upparac.com/erp/online_enrollment/uploads/';
 
     // 1. File Upload
     if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
@@ -65,7 +68,7 @@ function processUpload($fileKey, $camBase64Key = '') {
         if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'pdf'])) {
             $filename = uniqid('up_') . '.' . $ext;
             if (move_uploaded_file($_FILES[$fileKey]['tmp_name'], $uploadDir . $filename)) {
-                return 'uploads/' . $filename;
+                return $baseUrl . $filename;
             }
         }
     }
@@ -81,7 +84,7 @@ function processUpload($fileKey, $camBase64Key = '') {
                 if ($ext === 'jpeg') $ext = 'jpg';
                 $filename = uniqid('cam_') . '.' . $ext;
                 file_put_contents($uploadDir . $filename, $data);
-                return 'uploads/' . $filename;
+                return $baseUrl . $filename;
             }
         }
     }

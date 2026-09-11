@@ -13,6 +13,11 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$
 RewriteRule ^(.+/)?file-manager/(.+)$ public/file_manager/public/$2 [L,QSA]
 
+# Serve online_enrollment uploads directly
+# /erp/online_enrollment/uploads/file.jpg → online_enrollment/uploads/file.jpg
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^erp/online_enrollment/uploads/(.+)$ online_enrollment/uploads/$1 [L]
+
 # Serve static assets from public/ for ERP nested URL structure
 # Local dev (docroot=htdocs): /psnf/erp/js/x → public/js/x
 RewriteCond %{REQUEST_FILENAME} !-f
