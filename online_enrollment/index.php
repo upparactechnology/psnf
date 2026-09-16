@@ -54,8 +54,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS `online_enrollments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
 
 function processUpload($fileKey, $camBase64Key = '') {
-    // Form is at public_html/online_enrollment/ but uploads go to public_html/erp/online_enrollment/uploads/
-    $uploadDir = __DIR__ . '/../erp/online_enrollment/uploads/';
+    $uploadDir = __DIR__ . '/uploads/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }
