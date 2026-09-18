@@ -104,6 +104,7 @@ class ModelManager:
 
     def _auto_unload(self):
         while not self._stop_event.wait(30):
+            reason = None
 
             with self._lock:
                 if self._model is None or self._model_loaded_at is None:
@@ -115,19 +116,23 @@ class ModelManager:
                 if self._last_used is not None:
                     idle_time = now - self._last_used
                     if idle_time >= self._idle_timeout:
-                        self.unload(reason=f"idle for {idle_time:.0f}s")
-                        continue
+                        reason = f"idle for {idle_time:.0f}s"
 
                 # Unload if no face detected for no_face_idle_timeout
                 # (kiosk is on but nobody is in front of camera)
                 # Use model_loaded_at as baseline if face was never detected
-                if self._last_face_detected is not None:
-                    no_face_time = now - self._last_face_detected
-                else:
-                    no_face_time = now - self._model_loaded_at
+                if reason is None:
+                    if self._last_face_detected is not None:
+                        no_face_time = now - self._last_face_detected
+                    else:
+                        no_face_time = now - self._model_loaded_at
 
-                if no_face_time >= self._no_face_idle_timeout:
-                    self.unload(reason=f"no face detected for {no_face_time:.0f}s")
+                    if no_face_time >= self._no_face_idle_timeout:
+                        reason = f"no face detected for {no_face_time:.0f}s"
+
+            # Lock is released before unload() tries to acquire it
+            if reason:
+                self.unload(reason=reason)
 
 
 model_manager = ModelManager()

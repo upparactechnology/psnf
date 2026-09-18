@@ -1,6 +1,7 @@
 import os
 import cv2
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from typing import Dict, Any, Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -15,7 +16,7 @@ from recognition.embedding import EmbeddingExtractor
 from recognition.liveness import verify_face_liveness
 from recognition.matcher import matcher
 
-IST = timezone(timedelta(hours=5, minutes=30))
+IST = ZoneInfo("Asia/Kolkata")
 
 
 class AttendanceService:
