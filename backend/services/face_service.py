@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
@@ -72,7 +73,7 @@ class FaceService:
                 embedding = self.extractor.extract_embedding(img_bgr)
 
                 # Save face image
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+                ts = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y%m%d_%H%M%S_%f")
                 filename = f"user_{user.id}_angle{idx}_{ts}.jpg"
                 save_path = os.path.join(settings.UPLOAD_FACES_DIR, filename)
                 rel_path  = f"uploads/faces/{filename}"

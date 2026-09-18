@@ -19,6 +19,13 @@ from recognition.matcher import matcher
 IST = ZoneInfo("Asia/Kolkata")
 
 
+def _to_aware(dt):
+    """If a datetime from the DB is naive (no tzinfo), attach IST."""
+    if dt is not None and dt.tzinfo is None:
+        return dt.replace(tzinfo=IST)
+    return dt
+
+
 class AttendanceService:
     def __init__(self, detector: FaceDetector, extractor: EmbeddingExtractor):
         self.detector  = detector
@@ -104,7 +111,8 @@ class AttendanceService:
         ).order_by(desc(Attendance.check_in)).first()
 
         if recent:
-            time_diff = (now - recent.check_in).total_seconds()
+            db_check_in = _to_aware(recent.check_in)
+            time_diff = (now - db_check_in).total_seconds()
             if time_diff < 600:  # 10 minutes
                 return {
                     "success": True,
@@ -115,7 +123,7 @@ class AttendanceService:
                     "employee_name": user.name,
                     "designation": user.designation,
                     "confidence": round(confidence, 4),
-                    "message": f"Attendance already marked for {user.name} today ({recent.check_in.strftime('%I:%M %p')}). Please wait 10 minutes before scanning again."
+                    "message": f"Attendance already marked for {user.name} today ({db_check_in.strftime('%I:%M %p')}). Please wait 10 minutes before scanning again."
                 }
 
         # Save snapshot
