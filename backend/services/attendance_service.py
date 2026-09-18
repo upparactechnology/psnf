@@ -18,7 +18,6 @@ from recognition.matcher import matcher
 
 IST = ZoneInfo("Asia/Kolkata")
 
-
 class AttendanceService:
     def __init__(self, detector: FaceDetector, extractor: EmbeddingExtractor):
         self.detector  = detector

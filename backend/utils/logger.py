@@ -5,7 +5,6 @@ from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
 
-
 class ISTFormatter(logging.Formatter):
     """Formatter that always renders timestamps in Asia/Kolkata (IST)."""
 

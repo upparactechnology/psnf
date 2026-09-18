@@ -5,7 +5,6 @@ from typing import Optional, Callable, Any
 
 from utils.logger import logger
 
-
 class ModelManager:
     """
     Lazy-loading model manager with automatic idle-time unload.
