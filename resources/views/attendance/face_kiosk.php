@@ -126,6 +126,9 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         </div>
         <div class="flex items-center gap-3">
             <div class="digital-clock text-2xl" id="kioskClock">--:-- --</div>
+            <span id="detectorBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-slate-700 text-slate-400 border border-slate-600">
+                <span class="w-2 h-2 rounded-full bg-slate-500"></span><span id="detectorBadgeText">Loading...</span>
+            </span>
             <span id="engineBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-slate-700 text-slate-400 border border-slate-600">
                 <span class="w-2 h-2 rounded-full bg-slate-500"></span><span id="engineBadgeText">Checking...</span>
             </span>
@@ -241,7 +244,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
 
 <script>
 (function() {
-    const API  = '<?= url('attendance/api.php?endpoint=/api/verify-face') ?>';
+    const API  = '<?= url('attendance/api.php?endpoint=/api/recognize-face') ?>';
     const vid  = document.getElementById('kioskVideo');
     const cap  = document.getElementById('kioskCapCanvas');   // capture
     const ovl  = document.getElementById('kioskOverlayCanvas'); // dark mask overlay
@@ -259,6 +262,55 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     let faceReady     = false;
     let faceCheckFrame = 0;
     let currentFacingMode = 'user';
+
+    // ── Browser face detector (MediaPipe BlazeFace) ────────────────────────────
+    let faceDetector = null;
+    let detectorReady = false;
+    let detectorLoading = false;
+    let detectorError = false;
+
+    async function loadFaceDetector() {
+        if (detectorLoading || detectorReady) return;
+        detectorLoading = true;
+        updateDetectorBadge('loading');
+        try {
+            const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs');
+            const filesetResolver = await vision.FilesetResolver.forVisionTasks(
+                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'
+            );
+            faceDetector = await vision.FaceDetector.createFromOptions(filesetResolver, {
+                baseOptions: {
+                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+                    delegate: 'GPU'
+                },
+                runningMode: 'VIDEO',
+                minDetectionConfidence: 0.5
+            });
+            detectorReady = true;
+            detectorLoading = false;
+            updateDetectorBadge('ready');
+        } catch (e) {
+            detectorLoading = false;
+            detectorError = true;
+            updateDetectorBadge('error');
+            console.error('MediaPipe face detector failed to load:', e);
+        }
+    }
+
+    function detectLocal() {
+        if (!detectorReady || !faceDetector || !vid.videoWidth) return { faceCount: 0, detections: [] };
+        try {
+            const result = faceDetector.detectForVideo(vid, performance.now());
+            const detections = result.detections || [];
+            if (detections.length > 0) {
+                console.log(`[Detector] Faces: ${detections.length}`);
+            }
+            return { faceCount: detections.length, detections };
+        } catch (e) {
+            console.warn('[Detector] detectForVideo error:', e);
+            return { faceCount: 0, detections: [] };
+        }
+    }
 
     // ── Scan session state ──────────────────────────────────────────────────
     // A "session" = one person appearing, being scanned, and leaving.
@@ -322,7 +374,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                     }
                     resizeOverlay();
                     const track = s.getVideoTracks()[0];
-                    statusTxt.textContent = `W:${vid.videoWidth} H:${vid.videoHeight} - ` + (track ? track.label : 'Scanning...');
+                    statusTxt.textContent = `Camera ready — ${vid.videoWidth}x${vid.videoHeight}`;
                     requestAnimationFrame(drawLoop);
                     startDetectLoop();
                 };
@@ -453,156 +505,84 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     }
     
     async function detectAndWait(W, H, cx, cy, rx, ry) {
-        // Draw the current video frame into the hidden canvas right before sampling
-        const cc = cap.getContext('2d', { willReadFrequently: true });
-        cc.save(); 
-        if (currentFacingMode === 'user') {
-            cc.translate(cap.width, 0); cc.scale(-1,1);
+        // ── Browser-local face detection (MediaPipe BlazeFace) ────────────────
+        if (!detectorReady) return;
+
+        const { faceCount } = detectLocal();
+
+        // ── Track face presence for scan session management ────────────────
+        const facePresentNow = faceCount > 0;
+
+        // When face disappears after a scan session, allow new scans
+        if (scanSessionActive && lastFaceWasPresent && !facePresentNow) {
+            scanSessionActive = false;
+            faceCheckFrame = 0;
+            faceReady = false;
         }
-        const vRatio = vid.videoWidth / vid.videoHeight;
-        const cRatio = cap.width / cap.height;
-        let sWidth = vid.videoWidth, sHeight = vid.videoHeight, sX = 0, sY = 0;
-        if (vRatio > cRatio) {
-            sWidth = vid.videoHeight * cRatio;
-            sX = (vid.videoWidth - sWidth) / 2;
-        } else {
-            sHeight = vid.videoWidth / cRatio;
-            sY = (vid.videoHeight - sHeight) / 2;
+        lastFaceWasPresent = facePresentNow;
+
+        // ── No face detected ──────────────────────────────────────────────
+        if (!facePresentNow) {
+            faceCheckFrame = 0;
+            faceReady = false;
+            scanLine.style.display = 'none';
+            if (!scanSessionActive && !isProcessing) {
+                lbl.textContent = 'Align face in oval';
+                lbl.className = 'kiosk-face-label wait';
+            }
+            return;
         }
-        cc.drawImage(vid, sX, sY, sWidth, sHeight, 0, 0, cap.width, cap.height); 
-        cc.restore();
 
-        const base64Img = cap.toDataURL('image/jpeg', 0.6);
+        // ── Multiple faces detected ───────────────────────────────────────
+        if (faceCount > 1) {
+            faceCheckFrame = 0;
+            faceReady = false;
+            scanLine.style.display = 'none';
+            lbl.textContent = `Only one person allowed (${faceCount} detected)`;
+            lbl.className = 'kiosk-face-label wait';
+            return;
+        }
 
-        try {
-            const res = await fetch('<?= url('attendance/api.php?endpoint=/api/detect-frame') ?>', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({image_base64: base64Img.split(',')[1]})
-            });
-            const data = await res.json();
+        // ── Single face detected — check if scan session is active ────────
+        // After a successful scan, ignore the same person until they leave
+        if (scanSessionActive) {
+            return;
+        }
 
-            // ── Update engine badge from response state ───────────────────────
-            if (data.model_loaded !== undefined) {
-                updateModelBadge(data.model_loaded);
+        // ── Single face detected — capture frame for server recognition ───
+        // Browser handles presence; server handles recognition quality.
+        // Capture the current frame and send for recognition.
+        faceCheckFrame++;
+        if (faceCheckFrame >= 3) {
+            faceReady = true;
+            lbl.textContent = 'Face detected — verifying...';
+            lbl.className = 'kiosk-face-label ready';
+            scanLine.style.display = 'block';
+
+            // Capture frame for server recognition
+            const cc = cap.getContext('2d', { willReadFrequently: true });
+            cc.save();
+            if (currentFacingMode === 'user') {
+                cc.translate(cap.width, 0); cc.scale(-1,1);
             }
-
-            // ── Track face presence for scan session management ────────────────
-            const facePresentNow = data.face_detected === true;
-
-            // When face disappears after a scan session, allow new scans
-            if (scanSessionActive && lastFaceWasPresent && !facePresentNow) {
-                scanSessionActive = false;
-                faceCheckFrame = 0;
-                faceReady = false;
-            }
-            lastFaceWasPresent = facePresentNow;
-
-            // ── No face detected ──────────────────────────────────────────────
-            if (!facePresentNow) {
-                faceCheckFrame = 0;
-                faceReady = false;
-                scanLine.style.display = 'none';
-                if (!scanSessionActive && !isProcessing) {
-                    lbl.textContent = 'Align face in oval';
-                    lbl.className = 'kiosk-face-label wait';
-                }
-                return;
-            }
-
-            // ── Multiple faces detected ───────────────────────────────────────
-            if (data.face_count > 1) {
-                faceCheckFrame = 0;
-                faceReady = false;
-                scanLine.style.display = 'none';
-                lbl.textContent = `Only one person allowed (${data.face_count} detected)`;
-                lbl.className = 'kiosk-face-label wait';
-                return;
-            }
-
-            // ── Single face detected — check if scan session is active ────────
-            // After a successful scan, ignore the same person until they leave
-            if (scanSessionActive) {
-                return;
-            }
-
-            // ── Model still loading (Haar detected face, InsightFace not ready) ─
-            if (!data.model_loaded) {
-                faceCheckFrame = 0;
-                faceReady = false;
-                lbl.textContent = 'Loading recognition model...';
-                lbl.className = 'kiosk-face-label wait';
-                return;
-            }
-
-            // ── Single face, model loaded — validate pose ─────────────────────
-            if (data.success && data.is_valid) {
-                const pitch = data.pitch;
-                const yaw = data.yaw;
-                let poseValid = false;
-                let poseMsg = 'Align face in oval';
-
-                // Haar mode or first InsightFace frame — pitch/yaw may be 0
-                const isHaarMode = (pitch === 0.0 && yaw === 0.0);
-
-                if (isHaarMode) {
-                    poseValid = true;
-                } else {
-                    // InsightFace mode — full pose validation
-                    if (Math.abs(yaw) < 0.45 && pitch > 0.65 && pitch < 1.7) {
-                        poseValid = true;
-                    } else {
-                        if (Math.abs(yaw) >= 0.45) poseMsg = 'Look straight ahead';
-                        else if (pitch <= 0.65) poseMsg = 'Tilt head slightly up';
-                        else if (pitch >= 1.7) poseMsg = 'Tilt head slightly down';
-                    }
-                }
-
-                // Check if bounding box center is roughly within the oval
-                if (data.bbox) {
-                    const [x1, y1, x2, y2] = data.bbox;
-                    const bCx = (x1 + x2) / 2;
-                    const bCy = (y1 + y2) / 2;
-                    
-                    const scaleX = W / data.img_width;
-                    const scaleY = H / data.img_height;
-                    const realBCx = bCx * scaleX;
-                    const realBCy = bCy * scaleY;
-
-                    if (Math.abs(realBCx - cx) > rx * 1.5 || Math.abs(realBCy - cy) > ry * 1.5) {
-                        poseValid = false;
-                        poseMsg = 'Center your face in the oval';
-                    }
-                }
-
-                if (poseValid) {
-                    faceCheckFrame++;
-                    if (faceCheckFrame >= 3) {
-                        faceReady = true;
-                        lbl.textContent = 'Perfect pose — scanning...';
-                        lbl.className = 'kiosk-face-label ready';
-                        scanLine.style.display = 'block';
-                        
-                        // Trigger actual recognition scan!
-                        doScan(base64Img);
-                    } else {
-                        lbl.textContent = `Hold still... (${faceCheckFrame}/3)`;
-                        lbl.className = 'kiosk-face-label wait';
-                    }
-                } else {
-                    faceCheckFrame = 0;
-                    lbl.textContent = `${poseMsg}`;
-                    lbl.className = 'kiosk-face-label wait';
-                }
+            const vRatio = vid.videoWidth / vid.videoHeight;
+            const cRatio = cap.width / cap.height;
+            let sWidth = vid.videoWidth, sHeight = vid.videoHeight, sX = 0, sY = 0;
+            if (vRatio > cRatio) {
+                sWidth = vid.videoHeight * cRatio;
+                sX = (vid.videoWidth - sWidth) / 2;
             } else {
-                faceCheckFrame = 0;
-                faceReady = false;
-                lbl.textContent = `${data.error_message || 'Face not detected'}`;
-                lbl.className = 'kiosk-face-label wait';
+                sHeight = vid.videoWidth / cRatio;
+                sY = (vid.videoHeight - sHeight) / 2;
             }
-        } catch (e) {
-            // Network error
-            lbl.textContent = 'Network error checking face';
+            cc.drawImage(vid, sX, sY, sWidth, sHeight, 0, 0, cap.width, cap.height);
+            cc.restore();
+            const base64Img = cap.toDataURL('image/jpeg', 0.7);
+
+            doScan(base64Img);
+        } else {
+            lbl.textContent = `Hold still... (${faceCheckFrame}/3)`;
+            lbl.className = 'kiosk-face-label wait';
         }
     }
 
@@ -747,15 +727,35 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         if (online) {
             badge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
             badge.querySelector('span').className = 'w-2 h-2 rounded-full bg-emerald-400 k-pulse';
-            badgeTxt.textContent = 'InsightFace LIVE';
+            badgeTxt.textContent = 'Server Ready';
             offBanner.style.display = 'none';
             document.getElementById('scanStatusLabel').textContent = 'Scanning...';
         } else {
             badge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-red-500/10 text-red-400 border border-red-500/20';
             badge.querySelector('span').className = 'w-2 h-2 rounded-full bg-red-400';
-            badgeTxt.textContent = 'Backend Offline';
+            badgeTxt.textContent = 'Server Offline';
             offBanner.style.display = 'block';
             document.getElementById('scanStatusLabel').textContent = 'Backend offline!';
+        }
+    }
+
+    function updateDetectorBadge(state) {
+        if (!backendOnline) return;
+        const detectorBadge = document.getElementById('detectorBadge');
+        const detectorBadgeText = document.getElementById('detectorBadgeText');
+        if (!detectorBadge) return;
+        if (state === 'ready') {
+            detectorBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            detectorBadge.querySelector('span').className = 'w-2 h-2 rounded-full bg-emerald-400 k-pulse';
+            detectorBadgeText.textContent = 'Detector Ready';
+        } else if (state === 'loading') {
+            detectorBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20';
+            detectorBadge.querySelector('span').className = 'w-2 h-2 rounded-full bg-amber-400 k-pulse';
+            detectorBadgeText.textContent = 'Loading Detector...';
+        } else {
+            detectorBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-red-500/10 text-red-400 border border-red-500/20';
+            detectorBadge.querySelector('span').className = 'w-2 h-2 rounded-full bg-red-400';
+            detectorBadgeText.textContent = 'Detector Error';
         }
     }
 
@@ -764,11 +764,11 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         if (modelLoaded) {
             badge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
             badge.querySelector('span').className = 'w-2 h-2 rounded-full bg-emerald-400 k-pulse';
-            badgeTxt.textContent = 'InsightFace LIVE';
+            badgeTxt.textContent = 'Server Ready';
         } else {
             badge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20';
             badge.querySelector('span').className = 'w-2 h-2 rounded-full bg-amber-400 k-pulse';
-            badgeTxt.textContent = 'Haar Only';
+            badgeTxt.textContent = 'Server Loading';
         }
     }
 
@@ -824,9 +824,10 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         if (feedEl.children.length > 6) feedEl.removeChild(feedEl.lastChild);
     }
 
-    // Check backend health on load, then start camera
+    // Check backend health on load, then start camera + load detector
     checkBackend();
     setInterval(checkBackend, 30000); // poll every 30s
+    loadFaceDetector();
     initCam();
 })();
 </script>

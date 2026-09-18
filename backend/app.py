@@ -17,7 +17,7 @@ from recognition.matcher import matcher
 from services.face_service import FaceService
 from services.attendance_service import AttendanceService
 
-from routes import register, verify, attendance, detect
+from routes import register, verify, attendance, detect, recognize
 from utils.logger import logger
 
 # ─── Global detector reference (for routes/detect.py import) ────────────────────
@@ -71,6 +71,7 @@ async def lifespan(app: FastAPI):
     # 5. Inject dependencies into routers
     register.set_face_service(face_service)
     verify.set_attendance_service(attendance_service)
+    recognize.set_attendance_service(attendance_service)
     attendance.set_attendance_service_alt(attendance_service)
 
     # 6. Pre-load all face embeddings from MySQL into in-memory matcher cache
@@ -129,6 +130,7 @@ app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 # Routers
 app.include_router(register.router)
 app.include_router(verify.router)
+app.include_router(recognize.router)
 app.include_router(attendance.router)
 app.include_router(detect.router, prefix="/api", tags=["Detect"])
 

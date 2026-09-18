@@ -55,11 +55,13 @@ class AttendanceService:
         # 2. Face detection & quality
         det_res = self.detector.validate_and_detect(img_bgr)
         if not det_res.is_valid:
+            logger.info(f"Detection failed: {det_res.error_message}")
             return {"success": False, "message": det_res.error_message or "Face quality check failed.", "confidence": 0.0}
 
         # 3. Liveness check
         liveness_ok, liveness_msg = verify_face_liveness(img_bgr, det_res.bbox)
         if not liveness_ok:
+            logger.warning(f"Liveness check failed: {liveness_msg}")
             return {"success": False, "message": f"Security: {liveness_msg}", "confidence": 0.0}
 
         # 4. Extract embedding
@@ -81,6 +83,7 @@ class AttendanceService:
                     "message": "No face profiles registered yet. Please register users at Face Registration first.",
                     "confidence": 0.0
                 }
+            logger.info(f"Face not recognized: score={confidence:.4f} < threshold={settings.SIMILARITY_THRESHOLD}")
             return {
                 "success": False,
                 "message": f"Face not recognized (score {confidence:.2f} < threshold {settings.SIMILARITY_THRESHOLD}).",
@@ -114,6 +117,7 @@ class AttendanceService:
             db_check_in = _to_aware(recent.check_in)
             time_diff = (now - db_check_in).total_seconds()
             if time_diff < 600:  # 10 minutes
+                logger.info(f"Cooldown rejection: user_id={user.id} name={user.name} last_check_in={time_diff:.0f}s_ago")
                 return {
                     "success": True,
                     "already_checked_in": True,

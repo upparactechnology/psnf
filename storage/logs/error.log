@@ -836,3 +836,9 @@
 #4 {main}
 [08-Sep-2026 13:57:27 Asia/Kolkata] PHP Warning:  Undefined variable $subjectId in C:\xampp\htdocs\psnf\app\Controllers\TimetablesController.php on line 117
 [08-Sep-2026 14:04:18 Asia/Kolkata] PHP Warning:  Undefined variable $subjectId in C:\xampp\htdocs\psnf\app\Controllers\TimetablesController.php on line 117
+[18-Sep-2026 21:56:42 Asia/Kolkata] Exception: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\psnf\core\Database.php(34): PDO->__construct('mysql:host=127....', 'root', Object(SensitiveParameterValue), Array)
+#1 C:\xampp\htdocs\psnf\core\Database.php(18): Core\Database->connect()
+#2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
+#3 C:\xampp\htdocs\psnf\public\index.php(72): Core\Application->__construct()
+#4 {main}
