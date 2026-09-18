@@ -13,20 +13,29 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$
 RewriteRule ^(.+/)?file-manager/(.+)$ public/file_manager/public/$2 [L,QSA]
 
-# Serve online_enrollment uploads directly
+# ─── Online enrollment uploads ───────────────────────────────────────────────
+
+# Production: .htaccess is inside /erp/, URI has no erp/ prefix
 # /erp/online_enrollment/uploads/file.jpg → online_enrollment/uploads/file.jpg
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^online_enrollment/uploads/(.+)$ online_enrollment/uploads/$1 [L]
+
+# Local dev: .htaccess is at project root, URI includes erp/ prefix
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^erp/online_enrollment/uploads/(.+)$ online_enrollment/uploads/$1 [L]
 
-# Serve static assets from public/ for ERP nested URL structure
-# Local dev (docroot=htdocs): /psnf/erp/js/x → public/js/x
+# ─── Static assets from public/ ──────────────────────────────────────────────
+
+# Production: .htaccess is inside /erp/, URI is relative (e.g. "js/x")
+# /erp/js/tailwindcss.js → js/tailwindcss.js → public/js/tailwindcss.js
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/erp/public/$1 -f
+RewriteRule ^(.+)$ public/$1 [L]
+
+# Local dev: .htaccess is at project root, URI includes erp/ prefix
+# /psnf/erp/js/tailwindcss.js → erp/js/tailwindcss.js → public/js/tailwindcss.js
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{DOCUMENT_ROOT}/psnf/public/$1 -f
-RewriteRule ^erp/(.+)$ public/$1 [L]
-
-# Production (docroot=psnf): /erp/js/x → public/js/x
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
 RewriteRule ^erp/(.+)$ public/$1 [L]
 
 # Route everything else to front controller
