@@ -39,7 +39,7 @@ class FaceDetector:
       - Tier 2 (full): InsightFace buffalo_l — heavy model, loaded on demand
 
     When InsightFace model is not loaded, uses Haar cascade to check for faces.
-    When a face is found via Haar, InsightFace is loaded for accurate detection.
+    When >= 1 face is found via Haar, InsightFace is loaded for accurate detection.
     """
 
     def __init__(self, model_getter, model_manager=None):
@@ -59,7 +59,11 @@ class FaceDetector:
         """
         Tier 1: Lightweight face detection using OpenCV Haar cascade.
         No InsightFace model needed. Used for continuous monitoring.
-        When a face is found, triggers InsightFace model reload so recognition is ready.
+
+        When >= 1 face is found:
+          - notifies model_manager that a face is present
+          - triggers InsightFace model load if not already loaded
+          - returns face_count >= 1 (frontend/InsightFace decides multiple-face policy)
         """
         gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
         faces = self._haar_cascade.detectMultiScale(
@@ -69,32 +73,37 @@ class FaceDetector:
             minSize=(50, 50)
         )
 
-        if len(faces) == 0:
+        face_count = len(faces)
+
+        if face_count == 0:
             return FaceDetectionResult(
                 is_valid=False,
                 error_message="No face detected",
                 face_count=0
             )
 
-        if len(faces) > 1:
-            return FaceDetectionResult(
-                is_valid=False,
-                error_message=f"Multiple faces detected ({len(faces)})",
-                face_count=len(faces)
-            )
-
-        # Face found via Haar — trigger InsightFace model reload in background
-        # so recognition is ready when verify-face is called
+        # At least one face found — notify model manager and ensure model is loaded
         if self._model_manager is not None:
-            self._model_manager.face_detected()
+            self._model_manager.mark_face_present()
             if not self._model_manager.is_loaded():
                 try:
-                    logger.info("Face detected via Haar — pre-loading InsightFace model for recognition")
+                    logger.info("Face detected via Haar — loading InsightFace model for recognition")
                     self._model_getter()
+                    logger.info("InsightFace model loaded automatically after Haar detection")
                 except Exception as e:
-                    logger.warning(f"Failed to pre-load InsightFace model: {e}")
+                    logger.warning(f"Failed to auto-load InsightFace model: {e}")
 
+        # Return first face bbox for UI positioning
         x, y, w, h = faces[0]
+
+        if face_count > 1:
+            return FaceDetectionResult(
+                is_valid=False,
+                error_message=f"Multiple faces detected ({face_count}). Only one person must be in frame.",
+                face_count=face_count,
+                bbox=(x, y, x + w, y + h)
+            )
+
         return FaceDetectionResult(
             is_valid=True,
             face_count=1,
@@ -103,14 +112,23 @@ class FaceDetector:
 
     def validate_and_detect(self, img_bgr: np.ndarray) -> FaceDetectionResult:
         """
+        Tier 2: InsightFace-based detection with quality checks.
+
         Pipeline:
           1. Blur quality check (Laplacian variance)
           2. Brightness quality check
-          3. InsightFace face detection (exactly 1 face required)
+          3. InsightFace face detection
+
+        Updates model_manager face-presence state:
+          - 0 faces  -> no-face state (timer starts ticking toward unload)
+          - 1+ faces -> face-present state (timer resets)
         """
         # ── 1. Blur check ────────────────────────────────────────────────────────
         blur_score = check_image_blur(img_bgr)
         if blur_score < settings.BLUR_THRESHOLD:
+            # Blur failure — treat as no-face for lifecycle purposes
+            if self._model_manager is not None:
+                self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
                 error_message=(
@@ -123,6 +141,8 @@ class FaceDetector:
         # ── 2. Brightness check ──────────────────────────────────────────────────
         brightness_score = check_image_brightness(img_bgr)
         if brightness_score < settings.MIN_BRIGHTNESS:
+            if self._model_manager is not None:
+                self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
                 error_message=(
@@ -132,6 +152,8 @@ class FaceDetector:
                 brightness_score=brightness_score
             )
         if brightness_score > settings.MAX_BRIGHTNESS:
+            if self._model_manager is not None:
+                self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
                 error_message=(
@@ -146,6 +168,8 @@ class FaceDetector:
             faces = self._model_getter().get(img_bgr)
         except Exception as e:
             logger.error(f"InsightFace detection error: {str(e)}")
+            if self._model_manager is not None:
+                self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
                 error_message=f"InsightFace detection failed: {str(e)}",
@@ -156,6 +180,9 @@ class FaceDetector:
         face_count = len(faces)
 
         if face_count == 0:
+            # No face — start/reset no-face timer
+            if self._model_manager is not None:
+                self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
                 error_message="No face detected. Please align your face clearly in front of the camera.",
@@ -163,6 +190,10 @@ class FaceDetector:
                 blur_score=blur_score,
                 brightness_score=brightness_score
             )
+
+        # At least one face detected — face is present, reset no-face timer
+        if self._model_manager is not None:
+            self._model_manager.mark_face_present()
 
         if face_count > 1:
             return FaceDetectionResult(
@@ -176,10 +207,6 @@ class FaceDetector:
         face = faces[0]
         bbox = tuple(map(int, face.bbox))
         kps  = getattr(face, 'kps', None)
-
-        # Notify ModelManager that a face was detected — keeps model alive
-        if self._model_manager is not None:
-            self._model_manager.face_detected()
 
         pitch, yaw = 0.0, 0.0
         if kps is not None and len(kps) == 5:

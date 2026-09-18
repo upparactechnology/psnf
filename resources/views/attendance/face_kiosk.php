@@ -254,15 +254,18 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
 
     let isProcessing  = false;
     let pauseUntil    = 0;
-    let lastScan      = 0;
     let scanCount     = 0;
     let checkedToday  = 0;
     let faceReady     = false;
     let faceCheckFrame = 0;
     let currentFacingMode = 'user';
 
-    const SCAN_INTERVAL = 800;  // ms between scans
-    const FACE_HOLD_FRAMES = 8; // consecutive "face detected" frames before scan fires
+    // ── Scan session state ──────────────────────────────────────────────────
+    // A "session" = one person appearing, being scanned, and leaving.
+    // After a successful scan, we wait for the face to disappear before
+    // allowing a new scan. This prevents repeated verify-face calls.
+    let scanSessionActive = false;   // true after successful verify, until face disappears
+    let lastFaceWasPresent = false;  // tracks face presence across frames
 
     // ── Clock ────────────────────────────────────────────────────────────────
     const clockEl = document.getElementById('kioskClock');
@@ -338,6 +341,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
 
     window.restartCam = function() {
         pauseUntil = 0; faceCheckFrame = 0; faceReady = false;
+        scanSessionActive = false; lastFaceWasPresent = false;
         if(vid.srcObject) vid.srcObject.getTracks().forEach(t=>t.stop());
         initCam();
     };
@@ -409,26 +413,24 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         // ── 3. Handle pause state ──────────────────────────────────────────────
         const now = Date.now();
         if (isProcessing) {
-            lbl.textContent = '⚡ Processing...';
+            lbl.textContent = 'Processing...';
             lbl.className = 'kiosk-face-label scan';
         } else if (now < pauseUntil) {
             if (!lbl.getAttribute('data-custom-status')) {
                 const sec = Math.ceil((pauseUntil - now) / 1000);
-                lbl.textContent = `⏳ Next scan in ${sec}s...`;
+                lbl.textContent = `Next scan in ${sec}s...`;
                 lbl.className = 'kiosk-face-label wait';
             }
         } else {
             lbl.removeAttribute('data-custom-status');
             hideOverlayResult();
-            // Real-time detection runs in independent loop!
         }
 
         requestAnimationFrame(drawLoop);
     }
     
-    // ── Independent Face Detection Loop (4 FPS) ────────────────────────────────
+    // ── Independent Face Detection Loop (~4 FPS) ─────────────────────────────
     let detectLoopRunning = false;
-    let lastDetectTime = 0;
     
     function startDetectLoop() {
         if (detectLoopRunning) return;
@@ -480,17 +482,70 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             });
             const data = await res.json();
 
+            // ── Update engine badge from response state ───────────────────────
+            if (data.model_loaded !== undefined) {
+                updateModelBadge(data.model_loaded);
+            }
+
+            // ── Track face presence for scan session management ────────────────
+            const facePresentNow = data.face_detected === true;
+
+            // When face disappears after a scan session, allow new scans
+            if (scanSessionActive && lastFaceWasPresent && !facePresentNow) {
+                scanSessionActive = false;
+                faceCheckFrame = 0;
+                faceReady = false;
+            }
+            lastFaceWasPresent = facePresentNow;
+
+            // ── No face detected ──────────────────────────────────────────────
+            if (!facePresentNow) {
+                faceCheckFrame = 0;
+                faceReady = false;
+                scanLine.style.display = 'none';
+                if (!scanSessionActive && !isProcessing) {
+                    lbl.textContent = 'Align face in oval';
+                    lbl.className = 'kiosk-face-label wait';
+                }
+                return;
+            }
+
+            // ── Multiple faces detected ───────────────────────────────────────
+            if (data.face_count > 1) {
+                faceCheckFrame = 0;
+                faceReady = false;
+                scanLine.style.display = 'none';
+                lbl.textContent = `Only one person allowed (${data.face_count} detected)`;
+                lbl.className = 'kiosk-face-label wait';
+                return;
+            }
+
+            // ── Single face detected — check if scan session is active ────────
+            // After a successful scan, ignore the same person until they leave
+            if (scanSessionActive) {
+                return;
+            }
+
+            // ── Model still loading (Haar detected face, InsightFace not ready) ─
+            if (!data.model_loaded) {
+                faceCheckFrame = 0;
+                faceReady = false;
+                lbl.textContent = 'Loading recognition model...';
+                lbl.className = 'kiosk-face-label wait';
+                return;
+            }
+
+            // ── Single face, model loaded — validate pose ─────────────────────
             if (data.success && data.is_valid) {
                 const pitch = data.pitch;
                 const yaw = data.yaw;
                 let poseValid = false;
                 let poseMsg = 'Align face in oval';
 
-                // Haar cascade mode (pitch=0, yaw=0) — skip pose check, just check face center
+                // Haar mode or first InsightFace frame — pitch/yaw may be 0
                 const isHaarMode = (pitch === 0.0 && yaw === 0.0);
 
                 if (isHaarMode) {
-                    // Haar detected a face — just check if it's centered in the oval
                     poseValid = true;
                 } else {
                     // InsightFace mode — full pose validation
@@ -503,43 +558,46 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                     }
                 }
 
-                // Check if bounding box center is roughly within the circle
-                const [x1, y1, x2, y2] = data.bbox;
-                const bCx = (x1 + x2) / 2;
-                const bCy = (y1 + y2) / 2;
-                
-                const scaleX = W / data.img_width;
-                const scaleY = H / data.img_height;
-                const realBCx = bCx * scaleX;
-                const realBCy = bCy * scaleY;
+                // Check if bounding box center is roughly within the oval
+                if (data.bbox) {
+                    const [x1, y1, x2, y2] = data.bbox;
+                    const bCx = (x1 + x2) / 2;
+                    const bCy = (y1 + y2) / 2;
+                    
+                    const scaleX = W / data.img_width;
+                    const scaleY = H / data.img_height;
+                    const realBCx = bCx * scaleX;
+                    const realBCy = bCy * scaleY;
 
-                if (Math.abs(realBCx - cx) > rx * 1.5 || Math.abs(realBCy - cy) > ry * 1.5) {
-                    poseValid = false;
-                    poseMsg = 'Center your face in the oval';
+                    if (Math.abs(realBCx - cx) > rx * 1.5 || Math.abs(realBCy - cy) > ry * 1.5) {
+                        poseValid = false;
+                        poseMsg = 'Center your face in the oval';
+                    }
                 }
 
                 if (poseValid) {
                     faceCheckFrame++;
                     if (faceCheckFrame >= 3) {
                         faceReady = true;
-                        lbl.textContent = '✅ Perfect pose — scanning...';
+                        lbl.textContent = 'Perfect pose — scanning...';
                         lbl.className = 'kiosk-face-label ready';
                         scanLine.style.display = 'block';
                         
                         // Trigger actual recognition scan!
                         doScan(base64Img);
                     } else {
-                        lbl.textContent = `✅ Hold still... (${faceCheckFrame}/3)`;
+                        lbl.textContent = `Hold still... (${faceCheckFrame}/3)`;
                         lbl.className = 'kiosk-face-label wait';
                     }
                 } else {
                     faceCheckFrame = 0;
-                    lbl.textContent = `❌ ${poseMsg}`;
+                    lbl.textContent = `${poseMsg}`;
                     lbl.className = 'kiosk-face-label wait';
                 }
             } else {
                 faceCheckFrame = 0;
-                lbl.textContent = `⚠️ ${data.error_message || 'Face not detected'}`;
+                faceReady = false;
+                lbl.textContent = `${data.error_message || 'Face not detected'}`;
                 lbl.className = 'kiosk-face-label wait';
             }
         } catch (e) {
@@ -607,9 +665,10 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     // ── Scan & Submit ─────────────────────────────────────────────────────────
     async function doScan(base64Img) {
         isProcessing = true;
+        scanSessionActive = true;  // lock the session — don't scan again until face leaves
         scanCount++;
         document.getElementById('statScans').textContent = scanCount;
-        lbl.textContent = '⚡ Identifying...'; lbl.className = 'kiosk-face-label scan';
+        lbl.textContent = 'Identifying...'; lbl.className = 'kiosk-face-label scan';
 
         try {
             const r = await fetch(API, {
@@ -629,7 +688,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                 if (data.already_checked_in) {
                     beep('dupe');
                     showResult('warn', data.employee_name||'Staff', data.message, data.confidence);
-                    lbl.textContent = `⚠️ Already Checked In: ${data.employee_name || 'Staff'}`;
+                    lbl.textContent = `Already Checked In: ${data.employee_name || 'Staff'}`;
                     lbl.className = 'kiosk-face-label wait';
                     lbl.setAttribute('data-custom-status', '1');
                     showOverlayResult('warn', data.employee_name || 'Staff', 'Already Checked In', data.message);
@@ -638,9 +697,9 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                     beep('ok');
                     checkedToday++;
                     document.getElementById('statChecked').textContent = checkedToday;
-                    showResult('success', data.employee_name||'Staff', '✔ Attendance marked successfully!', data.confidence);
+                    showResult('success', data.employee_name||'Staff', 'Attendance marked successfully!', data.confidence);
                     addFeed(data.employee_name, data.employee_code, data.check_in);
-                    lbl.textContent = `🎉 Marked: ${data.employee_name || 'Staff'}`;
+                    lbl.textContent = `Marked: ${data.employee_name || 'Staff'}`;
                     lbl.className = 'kiosk-face-label ready';
                     lbl.setAttribute('data-custom-status', '1');
                     showOverlayResult('success', data.employee_name || 'Staff', 'Attendance Marked', 'Clocked in successfully!');
@@ -648,7 +707,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                 }
             } else if (data && data.no_faces_registered) {
                 showResult('warn', 'No Faces Registered', 'Please register at least one employee face first.', null);
-                lbl.textContent = `⚠️ No Faces Registered`;
+                lbl.textContent = `No Faces Registered`;
                 lbl.className = 'kiosk-face-label wait';
                 lbl.setAttribute('data-custom-status', '1');
                 showOverlayResult('warn', 'No Faces Registered', 'Register faces first', 'Face profiles must be enrolled before verification.');
@@ -656,7 +715,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             } else {
                 beep('error');
                 showResult('error', 'Not Recognized', data && data.message ? data.message : 'Face not recognized. Please try again.', data && data.confidence ? data.confidence : null);
-                lbl.textContent = `❌ Not Recognized`;
+                lbl.textContent = `Not Recognized`;
                 lbl.className = 'kiosk-face-label wait';
                 lbl.setAttribute('data-custom-status', '1');
                 showOverlayResult('error', 'Not Recognized', 'Please try again', data && data.message ? data.message : 'Face not recognized.');
@@ -666,7 +725,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             // Network error — backend likely offline
             setBackendStatus(false);
             showResult('error', 'Backend Offline', 'InsightFace service is unreachable. Please start the Python backend.');
-            lbl.textContent = `❌ Backend Offline`;
+            lbl.textContent = `Backend Offline`;
             lbl.className = 'kiosk-face-label wait';
             lbl.setAttribute('data-custom-status', '1');
             showOverlayResult('error', 'Backend Offline', 'Service unreachable', 'Please start the Python face recognition service.');
@@ -697,6 +756,19 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             badgeTxt.textContent = 'Backend Offline';
             offBanner.style.display = 'block';
             document.getElementById('scanStatusLabel').textContent = 'Backend offline!';
+        }
+    }
+
+    function updateModelBadge(modelLoaded) {
+        if (!backendOnline) return;
+        if (modelLoaded) {
+            badge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+            badge.querySelector('span').className = 'w-2 h-2 rounded-full bg-emerald-400 k-pulse';
+            badgeTxt.textContent = 'InsightFace LIVE';
+        } else {
+            badge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20';
+            badge.querySelector('span').className = 'w-2 h-2 rounded-full bg-amber-400 k-pulse';
+            badgeTxt.textContent = 'Haar Only';
         }
     }
 

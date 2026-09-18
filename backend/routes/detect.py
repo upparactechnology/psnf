@@ -41,29 +41,49 @@ class DetectFrameRequest(BaseModel):
 def detect_frame(req: DetectFrameRequest):
     """
     Real-time face detection endpoint for frontend feedback.
-    Uses Haar cascade when InsightFace model not loaded (lightweight).
-    Uses InsightFace when model is loaded (accurate with pitch/yaw).
+
+    State-based behavior:
+      Model unloaded  -> Haar-only detection (cheap, near-zero CPU)
+      Model loaded    -> InsightFace detection (accurate, pitch/yaw)
+
+    Response includes lifecycle state information so the frontend can
+    manage scan sessions and UI feedback without calling verify-face
+    on every frame.
     """
     from app import detector
     try:
         img_bgr = base64_to_cv2(req.image_base64)
-        
+
         # Max resolution for detection speed
         h, w = img_bgr.shape[:2]
         if max(h, w) > 640:
             scale = 640 / max(h, w)
             img_bgr = cv2.resize(img_bgr, (int(w * scale), int(h * scale)))
 
+        model_loaded = model_manager.is_loaded()
+
         # Tier 1: Use Haar cascade if InsightFace model not loaded (saves RAM)
         # Tier 2: Use InsightFace if model is already loaded (accurate pitch/yaw)
-        if model_manager.is_loaded():
+        if model_loaded:
             det_res = detector.validate_and_detect(img_bgr)
         else:
             det_res = detector.detect_any_face(img_bgr)
 
+        # Determine lifecycle state for frontend
+        if det_res.face_count > 0:
+            state = "active"
+        elif model_loaded:
+            state = "active"
+        else:
+            state = "idle"
+
         return {
             "success": True,
             "is_valid": bool(det_res.is_valid),
+            "face_detected": det_res.face_count > 0,
+            "face_count": int(det_res.face_count),
+            "model_loaded": model_loaded,
+            "state": state,
             "error_message": det_res.error_message,
             "bbox": [int(x) for x in det_res.bbox] if det_res.bbox else None,
             "pitch": float(det_res.pitch) if det_res.pitch is not None else None,
@@ -76,5 +96,9 @@ def detect_frame(req: DetectFrameRequest):
         return {
             "success": False,
             "is_valid": False,
+            "face_detected": False,
+            "face_count": 0,
+            "model_loaded": model_manager.is_loaded(),
+            "state": "error",
             "error_message": str(e)
         }
