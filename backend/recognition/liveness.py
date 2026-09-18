@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from typing import Tuple, Optional
-
+ 
 def verify_face_liveness(img_bgr: np.ndarray, bbox: Optional[Tuple[int, int, int, int]] = None) -> Tuple[bool, str]:
     """
     Validates anti-spoofing / liveness criteria:

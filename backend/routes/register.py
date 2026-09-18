@@ -7,7 +7,7 @@ from utils.security import check_rate_limit, get_client_ip
 from utils.logger import logger
 
 router = APIRouter(prefix="/api", tags=["Face Registration"])
-
+ 
 # The face service instance will be injected during app startup
 face_service_instance: FaceService = None
 

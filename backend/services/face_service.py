@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
+
 from config import settings
 from database.models import ERPUser, FaceEmbedding
 from models.schemas import RegisterFaceRequest

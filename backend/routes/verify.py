@@ -8,6 +8,7 @@ from utils.logger import logger
 
 router = APIRouter(prefix="/api", tags=["Face Verification"])
 
+
 attendance_service_instance: AttendanceService = None
 
 def set_attendance_service(service: AttendanceService):

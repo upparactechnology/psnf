@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from database.connection import Base
 
-
 class ERPUser(Base):
     """
     Maps to the ERP's main `users` table (staff/teachers from /staff/users).

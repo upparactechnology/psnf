@@ -4,6 +4,7 @@ from sqlalchemy import func, desc
 from typing import Optional
 from datetime import date
 
+
 from database.connection import get_db
 from database.models import ERPUser, FaceEmbedding, Attendance
 from models.schemas import VerifyFaceRequest, VerifyFaceResponse, StandardAPIResponse

@@ -3,7 +3,6 @@ import cv2
 from typing import Optional, Any
 from utils.logger import logger
 
-
 class EmbeddingExtractor:
     """
     InsightFace-only embedding extractor.

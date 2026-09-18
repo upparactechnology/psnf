@@ -2,7 +2,7 @@ import numpy as np
 from typing import Dict, List, Tuple, Optional
 from config import settings
 from utils.logger import logger
-
+ 
 class FaceMatcher:
     def __init__(self):
         # In-memory cache structure: { employee_id: [np.ndarray(512,), np.ndarray(512,), ...] }

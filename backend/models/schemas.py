@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime, date
 
-
 class RegisterFaceRequest(BaseModel):
     """
     Register face for a user from the ERP users table.

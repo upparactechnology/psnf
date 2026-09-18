@@ -2,8 +2,8 @@ import gc
 import time
 import threading
 from typing import Optional, Callable, Any
-
 from utils.logger import logger
+
 
 class ModelManager:
     """

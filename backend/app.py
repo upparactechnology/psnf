@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-
+ 
 from config import settings
 from database.connection import init_db, SessionLocal
 from database.models import FaceEmbedding, ERPUser

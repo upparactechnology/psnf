@@ -5,7 +5,7 @@ from PIL import Image
 import io
 from config import settings
 from utils.logger import logger
-
+ 
 def base64_to_cv2(base64_string: str) -> np.ndarray:
     """Decodes base64 string (data URI or raw base64) into OpenCV BGR image array."""
     try:

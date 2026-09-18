@@ -8,7 +8,6 @@ from utils.logger import logger
 # Haar cascade path (bundled with OpenCV)
 _HAAR_CASCADE_PATH = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 
-
 class FaceDetectionResult:
     def __init__(
         self,

@@ -8,7 +8,6 @@ import cv2
 
 router = APIRouter()
 
-
 @router.post("/model/load")
 def load_model():
     """Force-load InsightFace model into RAM (for registration pages)."""

@@ -5,7 +5,7 @@ from fastapi import Request, HTTPException, Security, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from config import settings
 from utils.logger import logger
-
+ 
 security = HTTPBearer(auto_error=False)
 
 # In-memory IP Rate Limiting dictionary: {ip: [timestamps]}
