@@ -390,6 +390,24 @@ if ($prefilledCode !== '') {
         let countdownTimer = null;
         let countdownSeconds = 5;
 
+        function cameraLog(label, data) {
+            console.log('[Camera] ' + label + ':', data || '');
+            console.log('[Camera] URL:', window.location.href);
+            console.log('[Camera] Protocol:', window.location.protocol);
+            console.log('[Camera] Secure Context:', window.isSecureContext);
+            console.log('[Camera] User Agent:', navigator.userAgent);
+        }
+
+        function stopCameraStream() {
+            if (video && video.srcObject) {
+                try {
+                    var tracks = video.srcObject.getTracks();
+                    tracks.forEach(function(t) { t.stop(); });
+                } catch(e) {}
+                video.srcObject = null;
+            }
+        }
+
         function handleStep1Submit(e) {
             e.preventDefault();
             const empCode = document.getElementById('employee_code').value.trim();
@@ -460,16 +478,94 @@ if ($prefilledCode !== '') {
         }
 
         async function initWebcam() {
-            try {
-                webcamInitialized = true;
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
-                });
-                video.srcObject = stream;
-                requestAnimationFrame(scanLoop);
-            } catch (err) {
-                showAlert('danger', 'Camera access error: ' + err.message);
+            if (video && video.srcObject) {
+                var existingTracks = video.srcObject.getTracks();
+                var hasLive = existingTracks.some(function(t) { return t.readyState === 'live'; });
+                if (hasLive) {
+                    console.log('[Camera] Reusing existing live stream');
+                    if (!webcamInitialized) {
+                        webcamInitialized = true;
+                        requestAnimationFrame(scanLoop);
+                    }
+                    return;
+                }
+                stopCameraStream();
             }
+
+            if (!window.isSecureContext) {
+                cameraLog('Failed: not a secure context');
+                showAlert('danger', 'Camera requires HTTPS. Your page is not running in a secure context. Please use HTTPS or contact your administrator.');
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                cameraLog('Failed: getUserMedia not supported');
+                showAlert('danger', 'Your browser does not support camera access. Please use a modern browser like Chrome, Firefox, Edge, or Safari.');
+                return;
+            }
+
+            var idealConstraints = {
+                video: {
+                    facingMode: { ideal: 'user' },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            };
+
+            var stream = null;
+            try {
+                cameraLog('Requesting camera with ideal constraints');
+                stream = await navigator.mediaDevices.getUserMedia(idealConstraints);
+            } catch (err) {
+                cameraLog('Ideal constraints failed: ' + (err.name || 'unknown'), err.message);
+
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    showAlert('danger', 'Camera access was denied. Please allow camera permission in your browser settings and reload the page.');
+                    return;
+                }
+                if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                    showAlert('danger', 'No camera found on this device. Please connect a camera and try again.');
+                    return;
+                }
+                if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                    showAlert('danger', 'Camera is not readable. It may be in use by another app. Please close other camera apps and try again.');
+                    return;
+                }
+                if (err.name === 'SecurityError') {
+                    showAlert('danger', 'Camera blocked by browser security policy. Ensure you are using HTTPS and not in an incognito iframe.');
+                    return;
+                }
+
+                console.log('[Camera] Retrying with basic constraints...');
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                } catch (err2) {
+                    cameraLog('Basic fallback also failed: ' + (err2.name || 'unknown'), err2.message);
+                    if (err2.name === 'NotAllowedError' || err2.name === 'PermissionDeniedError') {
+                        showAlert('danger', 'Camera access was denied. Please allow camera permission in your browser settings and reload the page.');
+                    } else {
+                        showAlert('danger', 'Camera access error: ' + (err2.message || err2.name || 'Unknown error'));
+                    }
+                    return;
+                }
+            }
+
+            video.srcObject = stream;
+
+            stream.getVideoTracks().forEach(function(track) {
+                var s = track.getSettings();
+                console.log('[Camera] Active track:', track.label, 'width:', s.width, 'height:', s.height, 'facingMode:', s.facingMode, 'frameRate:', s.frameRate);
+            });
+
+            try {
+                await video.play();
+            } catch (playErr) {
+                console.warn('[Camera] video.play() error:', playErr.message);
+            }
+
+            webcamInitialized = true;
+            requestAnimationFrame(scanLoop);
         }
 
         function captureFrame() {
@@ -542,6 +638,9 @@ if ($prefilledCode !== '') {
         }
 
         function scanLoop() {
+            if (!webcamInitialized) {
+                return;
+            }
             if (!step1Submitted || capturedImage || isSubmitting || countdownSeconds > 0) {
                 requestAnimationFrame(scanLoop);
                 return;
@@ -610,8 +709,10 @@ if ($prefilledCode !== '') {
             requestAnimationFrame(scanLoop);
         }
 
-        btnReset.addEventListener('click', () => {
-            resetForNewEmployee();
+        document.getElementById('authBadgeContainer').addEventListener('click', function(e) {
+            if (e.target.closest('#btnResetPhotos')) {
+                resetForNewEmployee();
+            }
         });
 
         function resetForNewEmployee() {
@@ -640,10 +741,7 @@ if ($prefilledCode !== '') {
             if (step2Col) step2Col.classList.add('d-none');
 
             // Stop Webcam Stream
-            if (video && video.srcObject) {
-                try { video.srcObject.getTracks().forEach(t => t.stop()); } catch(e) {}
-                video.srcObject = null;
-            }
+            stopCameraStream();
             webcamInitialized = false;
 
             angleBadge.className = "badge bg-secondary px-3 py-2";
