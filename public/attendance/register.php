@@ -373,7 +373,6 @@ if ($prefilledCode !== '') {
 
         const video = document.getElementById('webcam');
         const canvas = document.getElementById('canvas');
-        const btnReset = document.getElementById('btnResetPhotos');
         const angleBadge = document.getElementById('angleHintBadge');
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
