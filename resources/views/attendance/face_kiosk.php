@@ -326,22 +326,25 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     const DETECT_INTERVAL = isLowEnd ? 500 : 280;
     const DRAW_FPS = isLowEnd ? 18 : 30;
 
-    console.log('[Detector] deviceMemory:', deviceMemory, 'GB');
-    console.log('[Detector] hardwareConcurrency:', hwConcurrency);
-    console.log('[Detector] mobile:', isMobile, 'tablet:', isTablet);
-    console.log('[Detector] isLowMemory:', isLowMemory, 'isLowEnd:', isLowEnd);
-    console.log('[Detector] DETECT_INTERVAL:', DETECT_INTERVAL + 'ms');
-    console.log('[Detector] DRAW_FPS:', DRAW_FPS);
+    console.log('[Detector] deviceMemory:', navigator.deviceMemory);
+    console.log('[Detector] hardwareConcurrency:', navigator.hardwareConcurrency);
+    console.log('[Detector] isMobile:', isMobile);
+    console.log('[Detector] isLowMemory:', isLowMemory);
+
+    // Delegate strategy: mobile/low-memory → CPU first, desktop → GPU first
+    const primaryDelegate   = (isMobile || isLowMemory) ? 'CPU' : 'GPU';
+    const fallbackDelegate  = primaryDelegate === 'CPU' ? 'GPU' : 'CPU';
+
+    console.log('[Detector] primaryDelegate:', primaryDelegate);
+    console.log('[Detector] fallbackDelegate:', fallbackDelegate);
 
     // ── Browser face detector (MediaPipe BlazeFace) ─────────────────────────
     let faceDetector = null;
     let detectorReady = false;
     let detectorLoading = false;
     let detectorError = false;
-    let detectorState = 'loading'; // loading | ready | error | unsupported | retrying
 
     function updateDetectorBadge(state) {
-        detectorState = state;
         const detectorBadge = document.getElementById('detectorBadge');
         const detectorBadgeText = document.getElementById('detectorBadgeText');
         if (!detectorBadge) return;
@@ -349,14 +352,10 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             detectorBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
             detectorBadge.querySelector('span').className = 'w-2 h-2 rounded-full bg-emerald-400 k-pulse';
             detectorBadgeText.textContent = 'Detector Ready';
-        } else if (state === 'loading' || state === 'retrying') {
+        } else if (state === 'loading') {
             detectorBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20';
             detectorBadge.querySelector('span').className = 'w-2 h-2 rounded-full bg-amber-400 k-pulse';
-            detectorBadgeText.textContent = state === 'retrying' ? 'Retrying Detector...' : 'Loading Detector...';
-        } else if (state === 'unsupported') {
-            detectorBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20';
-            detectorBadge.querySelector('span').className = 'w-2 h-2 rounded-full bg-orange-400';
-            detectorBadgeText.textContent = 'Detector Unavailable';
+            detectorBadgeText.textContent = 'Loading Detector...';
         } else {
             detectorBadge.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-red-500/10 text-red-400 border border-red-500/20';
             detectorBadge.querySelector('span').className = 'w-2 h-2 rounded-full bg-red-400';
@@ -364,10 +363,21 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         }
     }
 
+    async function createFaceDetector(vision, filesetResolver, delegate) {
+        console.log('[Detector] Creating detector with delegate:', delegate);
+        return await vision.FaceDetector.createFromOptions(filesetResolver, {
+            baseOptions: {
+                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
+                delegate: delegate
+            },
+            runningMode: 'VIDEO',
+            minDetectionConfidence: 0.5
+        });
+    }
+
     async function loadFaceDetector() {
         if (detectorLoading || detectorReady) return;
         detectorLoading = true;
-        detectorState = 'loading';
         updateDetectorBadge('loading');
 
         const t0 = performance.now();
@@ -384,15 +394,23 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             );
             console.log('[Detector] WASM initialized');
 
-            console.log('[Detector] model initialization started (delegate: GPU)...');
-            faceDetector = await vision.FaceDetector.createFromOptions(filesetResolver, {
-                baseOptions: {
-                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
-                    delegate: 'GPU'
-                },
-                runningMode: 'VIDEO',
-                minDetectionConfidence: 0.5
-            });
+            try {
+                faceDetector = await createFaceDetector(vision, filesetResolver, primaryDelegate);
+                console.log('[Detector] Initialized successfully with:', primaryDelegate);
+            } catch (primaryError) {
+                console.warn('[Detector] Primary delegate failed:', primaryDelegate, primaryError);
+                try {
+                    faceDetector = null;
+                    faceDetector = await createFaceDetector(vision, filesetResolver, fallbackDelegate);
+                    console.log('[Detector] Initialized successfully with fallback:', fallbackDelegate);
+                } catch (fallbackError) {
+                    faceDetector = null;
+                    console.error('[Detector] BOTH delegates failed');
+                    console.error('[Detector] Primary:', primaryError);
+                    console.error('[Detector] Fallback:', fallbackError);
+                    throw fallbackError;
+                }
+            }
 
             const elapsed = Math.round(performance.now() - t0);
             detectorReady = true;
