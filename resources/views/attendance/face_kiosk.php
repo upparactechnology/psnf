@@ -247,6 +247,47 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     color: #c7d2fe;
 }
 .dd-btn:active { transform: scale(0.97); }
+.dd-detail {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.15);
+    border-radius: 8px;
+    font-size: 10px;
+    line-height: 1.45;
+    color: #cbd5e1;
+    word-break: break-word;
+    max-height: 260px;
+    overflow-y: auto;
+}
+.dd-detail-row {
+    padding: 2px 0;
+    display: flex;
+    gap: 6px;
+}
+.dd-detail-label {
+    color: #94a3b8;
+    flex-shrink: 0;
+    min-width: 90px;
+    font-weight: 700;
+}
+.dd-detail-value {
+    color: #e2e8f0;
+    flex: 1;
+}
+.dd-detail-value.err { color: #fca5a5; }
+.dd-detail-value pre {
+    margin: 2px 0 0 0;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    font-size: 9px;
+    color: #f87171;
+    background: rgba(0,0,0,0.3);
+    padding: 4px 6px;
+    border-radius: 4px;
+    max-height: 80px;
+    overflow-y: auto;
+}
 @media (max-width: 900px) {
     .dd-panel {
         bottom: 8px;
@@ -410,6 +451,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             <div class="dd-stage" id="ddDetectorReady"><span class="dd-dot">○</span><span class="dd-label">Detector ready</span><span class="dd-err" id="ddDetectorReadyError"></span></div>
             <div class="dd-stage" id="ddFaceDetection"><span class="dd-dot">○</span><span class="dd-label">Face detection</span><span class="dd-err" id="ddFaceDetectionError"></span></div>
         </div>
+        <div class="dd-detail" id="ddImportDiag" style="display:none"></div>
         <div class="dd-buttons">
             <button class="dd-btn" id="ddRetryBtn">Retry Detector</button>
             <button class="dd-btn" id="ddCopyBtn">Copy Diagnostics</button>
@@ -486,8 +528,12 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         detectErrorCount: 0,
         selectedDelegate: null,
         savedVision: null,
-        savedFileset: null
+        savedFileset: null,
+        importError: null,
+        importFetchDiag: null
     };
+
+    var IMPORT_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs';
 
     function ddUpdate(stage, state, errorMsg) {
         var el = document.getElementById('dd' + stage.charAt(0).toUpperCase() + stage.slice(1));
@@ -517,6 +563,69 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                 errEl.style.display = 'none';
             }
         }
+    }
+
+    function runImportDiag() {
+        console.log('[DetectorDebug] Fetch diagnostic started for:', IMPORT_URL);
+        return fetch(IMPORT_URL, { method: 'GET', mode: 'cors' })
+            .then(function(response) {
+                var info = {
+                    fetchStatus: response.status,
+                    fetchOk: response.ok,
+                    fetchStatusText: response.statusText || 'N/A',
+                    fetchUrl: response.url || IMPORT_URL,
+                    fetchRedirected: response.redirected,
+                    fetchType: 'N/A',
+                    fetchLength: 'N/A'
+                };
+                try {
+                    if (response.headers) {
+                        info.fetchType = response.headers.get('Content-Type') || 'N/A';
+                        info.fetchLength = response.headers.get('Content-Length') || 'N/A';
+                    }
+                } catch(hErr) {}
+                return response.text().then(function(txt) {
+                    info.fetchTotalChars = txt.length;
+                    info.fetchFirst200 = txt.substring(0, 200);
+                    console.log('[DetectorDebug] Fetch result:', JSON.stringify(info, null, 2));
+                    return info;
+                });
+            })
+            .catch(function(e) {
+                var info = {
+                    fetchError: e.message || String(e),
+                    fetchErrorName: e.name || 'unknown'
+                };
+                console.error('[DetectorDebug] Fetch diagnostic error:', info);
+                return info;
+            });
+    }
+
+    function showImportDiag(errInfo, fetchInfo) {
+        var el = document.getElementById('ddImportDiag');
+        if (!el) return;
+        var html = '';
+        html += '<div class="dd-detail-row"><span class="dd-detail-label">error.name:</span><span class="dd-detail-value err">' + escapeHtml(errInfo.name) + '</span></div>';
+        html += '<div class="dd-detail-row"><span class="dd-detail-label">error.message:</span><span class="dd-detail-value err">' + escapeHtml(errInfo.message) + '</span></div>';
+        html += '<div class="dd-detail-row"><span class="dd-detail-label">error.stack:</span><span class="dd-detail-value"><pre>' + escapeHtml(errInfo.stack) + '</pre></span></div>';
+        html += '<div class="dd-detail-row"><span class="dd-detail-label">userAgent:</span><span class="dd-detail-value">' + escapeHtml(navigator.userAgent) + '</span></div>';
+        html += '<div class="dd-detail-row"><span class="dd-detail-label">document URL:</span><span class="dd-detail-value">' + escapeHtml(document.URL) + '</span></div>';
+        html += '<div class="dd-detail-row"><span class="dd-detail-label">import URL:</span><span class="dd-detail-value">' + escapeHtml(IMPORT_URL) + '</span></div>';
+        html += '<div style="border-top:1px solid rgba(239,68,68,0.15);margin:6px 0;"></div>';
+        if (fetchInfo) {
+            if (fetchInfo.fetchError) {
+                html += '<div class="dd-detail-row"><span class="dd-detail-label">fetch error:</span><span class="dd-detail-value err">' + escapeHtml(fetchInfo.fetchError) + '</span></div>';
+            } else {
+                html += '<div class="dd-detail-row"><span class="dd-detail-label">HTTP status:</span><span class="dd-detail-value">' + fetchInfo.fetchStatus + ' (ok: ' + fetchInfo.fetchOk + ')</span></div>';
+                html += '<div class="dd-detail-row"><span class="dd-detail-label">Content-Type:</span><span class="dd-detail-value">' + escapeHtml(fetchInfo.fetchType) + '</span></div>';
+                html += '<div class="dd-detail-row"><span class="dd-detail-label">Content-Length:</span><span class="dd-detail-value">' + escapeHtml(String(fetchInfo.fetchLength)) + '</span></div>';
+                html += '<div class="dd-detail-row"><span class="dd-detail-label">Total chars:</span><span class="dd-detail-value">' + fetchInfo.fetchTotalChars + '</span></div>';
+                html += '<div class="dd-detail-row"><span class="dd-detail-label">First 200 chars:</span></div>';
+                html += '<div class="dd-detail-value"><pre>' + escapeHtml(fetchInfo.fetchFirst200 || '') + '</pre></div>';
+            }
+        }
+        el.innerHTML = html;
+        el.style.display = 'block';
     }
 
     function logCapabilities() {
