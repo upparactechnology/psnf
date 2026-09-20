@@ -684,9 +684,13 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         dd.selectedDelegate = null;
         dd.savedVision = null;
         dd.savedFileset = null;
+        dd.importError = null;
+        dd.importFetchDiag = null;
         ['MediaPipe','WasmInit','Model','CpuDetector','GpuDetector','DetectorReady','FaceDetection'].forEach(function(s) {
             ddUpdate(s, 'pending');
         });
+        var diagEl = document.getElementById('ddImportDiag');
+        if (diagEl) { diagEl.innerHTML = ''; diagEl.style.display = 'none'; }
         updateDetectorBadge('loading');
         loadFaceDetector();
     };
@@ -722,7 +726,21 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             'Detector Ready: ' + dd.detectorReady,
             'Face Detection: ' + dd.faceDetection,
             'Last detectForVideo error: ' + (dd.lastDetectError || 'none'),
-            'detectForVideo error count: ' + dd.detectErrorCount
+            'detectForVideo error count: ' + dd.detectErrorCount,
+            '',
+            '--- Import Error Details ---',
+            'error.name: ' + (dd.importError ? dd.importError.name : 'N/A'),
+            'error.message: ' + (dd.importError ? dd.importError.message : 'N/A'),
+            'error.stack: ' + (dd.importError ? dd.importError.stack : 'N/A'),
+            'importUrl: ' + IMPORT_URL,
+            'docUrl: ' + document.URL,
+            '',
+            '--- HTTP Fetch Diagnostic ---',
+            'HTTP status: ' + (dd.importFetchDiag ? (dd.importFetchDiag.fetchStatus || dd.importFetchDiag.fetchError || 'N/A') : 'not run'),
+            'response.ok: ' + (dd.importFetchDiag ? (dd.importFetchDiag.fetchOk || 'N/A') : 'not run'),
+            'Content-Type: ' + (dd.importFetchDiag ? (dd.importFetchDiag.fetchType || 'N/A') : 'not run'),
+            'Content-Length: ' + (dd.importFetchDiag ? (dd.importFetchDiag.fetchLength || 'N/A') : 'not run'),
+            'First 200 chars: ' + (dd.importFetchDiag && dd.importFetchDiag.fetchFirst200 ? dd.importFetchDiag.fetchFirst200 : 'N/A')
         ].join('\n');
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(lines).then(function() {
@@ -785,7 +803,35 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             // Step 1: Import MediaPipe
             ddUpdate('MediaPipe', 'running');
             console.log('[DetectorDebug] MediaPipe import started');
-            const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs');
+            console.log('[DetectorDebug] Import URL:', IMPORT_URL);
+
+            var vision = null;
+            try {
+                vision = await import(IMPORT_URL);
+            } catch (importErr) {
+                var impName = importErr.name || 'unknown';
+                var impMsg = importErr.message || String(importErr);
+                var impStack = importErr.stack || 'no stack trace';
+                dd.importError = { name: impName, message: impMsg, stack: impStack };
+                dd.mediaPipeImport = 'failed';
+                ddUpdate('MediaPipe', 'failed', impName + ': ' + impMsg.substring(0, 120));
+
+                console.error('[DetectorDebug] MediaPipe import FAILED');
+                console.error('[DetectorDebug]   error.name:', impName);
+                console.error('[DetectorDebug]   error.message:', impMsg);
+                console.error('[DetectorDebug]   error.stack:', impStack);
+                console.error('[DetectorDebug]   importUrl:', IMPORT_URL);
+                console.error('[DetectorDebug]   docUrl:', document.URL);
+                console.error('[DetectorDebug]   userAgent:', navigator.userAgent);
+
+                console.log('[DetectorDebug] Running fetch diagnostic...');
+                var fetchInfo = await runImportDiag();
+                dd.importFetchDiag = fetchInfo;
+                showImportDiag(dd.importError, fetchInfo);
+
+                throw importErr;
+            }
+
             dd.savedVision = vision;
             ddUpdate('MediaPipe', 'success');
             dd.mediaPipeImport = 'success';
