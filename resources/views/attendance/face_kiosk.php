@@ -143,6 +143,12 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     .k-result { padding: 0.8rem 0.7rem !important; }
     .k-feed-item { padding: 0.4rem 0.6rem !important; }
 }
+@media (max-width: 900px) and (orientation: portrait) {
+    .kiosk-wrap { aspect-ratio: 3/4 !important; }
+}
+@media (max-width: 900px) and (orientation: landscape) {
+    .kiosk-wrap { aspect-ratio: 16/9 !important; max-height: 60vh !important; }
+}
 @media (max-width: 480px) {
     .kiosk-header-badges { width: 100% !important; }
     .kiosk-stats-row { grid-template-columns: 1fr !important; gap: 4px !important; }
@@ -318,9 +324,6 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
 
     // Adaptive detection interval: low-end ~500ms (2 FPS), normal ~280ms (3-4 FPS)
     const DETECT_INTERVAL = isLowEnd ? 500 : 280;
-    const DETECT_CANVAS_W = 320;
-    const DETECT_CANVAS_H = 240;
-    const DETECTOR_TIMEOUT_MS = 12000;
     const DRAW_FPS = isLowEnd ? 18 : 30;
 
     console.log('[Detector] deviceMemory:', deviceMemory, 'GB');
@@ -329,12 +332,6 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     console.log('[Detector] isLowMemory:', isLowMemory, 'isLowEnd:', isLowEnd);
     console.log('[Detector] DETECT_INTERVAL:', DETECT_INTERVAL + 'ms');
     console.log('[Detector] DRAW_FPS:', DRAW_FPS);
-
-    // ── Offscreen detection canvas (low-res for performance) ─────────────────
-    const detCanvas = document.createElement('canvas');
-    detCanvas.width = DETECT_CANVAS_W;
-    detCanvas.height = DETECT_CANVAS_H;
-    const detCtx = detCanvas.getContext('2d', { willReadFrequently: false });
 
     // ── Browser face detector (MediaPipe BlazeFace) ─────────────────────────
     let faceDetector = null;
@@ -367,8 +364,6 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         }
     }
 
-    let detectorRetried = false;
-
     async function loadFaceDetector() {
         if (detectorLoading || detectorReady) return;
         detectorLoading = true;
@@ -376,20 +371,24 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         updateDetectorBadge('loading');
 
         const t0 = performance.now();
+        console.log('[Detector] initialization started');
 
         try {
+            console.log('[Detector] importing vision_bundle.mjs...');
             const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs');
+            console.log('[Detector] import completed');
+
+            console.log('[Detector] initializing WASM...');
             const filesetResolver = await vision.FilesetResolver.forVisionTasks(
                 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'
             );
+            console.log('[Detector] WASM initialized');
 
-            // Low-end devices: CPU delegate. Normal: CPU for reliability.
-            const delegate = 'CPU';
-
+            console.log('[Detector] model initialization started (delegate: GPU)...');
             faceDetector = await vision.FaceDetector.createFromOptions(filesetResolver, {
                 baseOptions: {
                     modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite',
-                    delegate: delegate
+                    delegate: 'GPU'
                 },
                 runningMode: 'VIDEO',
                 minDetectionConfidence: 0.5
@@ -399,36 +398,25 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             detectorReady = true;
             detectorLoading = false;
             updateDetectorBadge('ready');
-            console.log('[Detector] Initialized in ' + elapsed + 'ms, delegate:', delegate);
-            console.log('[Detector] Detector FPS target:', Math.round(1000 / DETECT_INTERVAL));
+            console.log('[Detector] model initialization completed in ' + elapsed + 'ms');
         } catch (e) {
             const elapsed = Math.round(performance.now() - t0);
             detectorLoading = false;
             detectorError = true;
-            console.error('[Detector] Failed to load after ' + elapsed + 'ms:', e.message || e);
-            console.error('[Detector] Full error:', e);
-
-            // Try CPU fallback if GPU failed (shouldn't happen now since we default to CPU)
-            if (!detectorRetried) {
-                detectorRetried = true;
-                detectorState = 'retrying';
-                updateDetectorBadge('retrying');
-                console.log('[Detector] Retrying with CPU fallback...');
-                setTimeout(loadFaceDetector, 500);
-            } else {
-                updateDetectorBadge('unsupported');
-                console.warn('[Detector] All initialization attempts failed.');
-            }
+            console.error('[Detector] initialization failed after ' + elapsed + 'ms:', e.message || e);
+            console.error('[Detector] full error:', e);
+            updateDetectorBadge('error');
         }
     }
 
     function detectLocal() {
         if (!detectorReady || !faceDetector || !vid.videoWidth) return { faceCount: 0, detections: [] };
         try {
-            // Draw video frame to small offscreen canvas for detection
-            detCtx.drawImage(vid, 0, 0, DETECT_CANVAS_W, DETECT_CANVAS_H);
-            const result = faceDetector.detectForVideo(detCanvas, performance.now());
+            const result = faceDetector.detectForVideo(vid, performance.now());
             const detections = result.detections || [];
+            if (detections.length > 0) {
+                console.log('[Detector] Faces: ' + detections.length);
+            }
             return { faceCount: detections.length, detections };
         } catch (e) {
             console.warn('[Detector] detectForVideo error:', e.message);
@@ -550,11 +538,6 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                 const settings = track ? track.getSettings() : {};
                 statusTxt.textContent = 'Camera ready \u2014 ' + vid.videoWidth + 'x' + vid.videoHeight;
                 console.log('[Camera] Active track:', track ? track.label : 'none', 'resolution:', settings.width + 'x' + settings.height);
-
-                // Camera is ready — now start detector if not already started
-                if (!detectorReady && !detectorLoading) {
-                    loadFaceDetector();
-                }
                 requestAnimationFrame(drawLoop);
                 startDetectLoop();
             };
@@ -820,6 +803,8 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             cc.restore();
             const base64Img = cap.toDataURL('image/jpeg', 0.7);
 
+            console.log('[Scan] Sending recognition request');
+            console.log('[Scan] Image size:', Math.round(base64Img.length / 1024) + 'KB');
             doScan(base64Img);
         } else {
             lbl.textContent = 'Hold still... (' + faceCheckFrame + '/3)';
@@ -886,16 +871,19 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     // ── Scan & Submit ─────────────────────────────────────────────────────────
     async function doScan(base64Img) {
         isProcessing = true;
-        scanSessionActive = true;  // lock the session — don't scan again until face leaves
+        scanSessionActive = true;
         scanCount++;
         document.getElementById('statScans').textContent = scanCount;
         lbl.textContent = 'Identifying...'; lbl.className = 'kiosk-face-label scan';
+
+        console.log('[Scan] POST:', API);
 
         try {
             const r = await fetch(API, {
                 method:'POST', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({image_base64: base64Img})
             });
+            console.log('[Scan] Response:', r.status);
             let data = null;
             try { data = await r.json(); } catch(e){}
 
@@ -1034,22 +1022,11 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         if (feedEl.children.length > 6) feedEl.removeChild(feedEl.lastChild);
     }
 
-    // ── Initialization: Camera first, then detector ──────────────────────────
+    // ── Initialization ───────────────────────────────────────────────────────
     checkBackend();
     setInterval(checkBackend, 30000);
-
-    // Start camera immediately — detector loads after camera is playing
+    loadFaceDetector();
     initCam();
-
-    // Hard timeout: if detector doesn't load within 12s, show unavailable
-    setTimeout(function() {
-        if (!detectorReady && !detectorError) {
-            console.warn('[Detector] Timed out after ' + DETECTOR_TIMEOUT_MS + 'ms');
-            detectorLoading = false;
-            detectorError = true;
-            updateDetectorBadge('unsupported');
-        }
-    }, DETECTOR_TIMEOUT_MS);
 })();
 </script>
 
