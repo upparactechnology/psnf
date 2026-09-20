@@ -491,43 +491,111 @@ window.clearSelectedUser = function() {
 
 // ── Camera ────────────────────────────────────────────────────────────
 async function initCam() {
-    document.getElementById('scanStatusLabel').textContent = 'Starting...';
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        document.getElementById('scanStatusLabel').textContent = 'HTTPS Required';
-        alert("Camera access is blocked by the browser. When accessing via a local network IP (like 192.168.x.x) on mobile, browsers require a secure HTTPS connection to use the camera. Please use HTTPS, or test on localhost.");
+    const statusEl2 = document.getElementById('scanStatusLabel');
+    statusEl2.textContent = 'Starting camera...';
+
+    console.log('[Camera] initCam called');
+    console.log('[Camera] location.href:', location.href);
+    console.log('[Camera] location.protocol:', location.protocol);
+    console.log('[Camera] location.hostname:', location.hostname);
+    console.log('[Camera] window.isSecureContext:', window.isSecureContext);
+    console.log('[Camera] navigator.mediaDevices exists:', !!navigator.mediaDevices);
+    console.log('[Camera] getUserMedia exists:', !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
+    console.log('[Camera] self === top:', self === top);
+
+    if (!window.isSecureContext) {
+        statusEl2.textContent = 'HTTPS Required';
+        console.error('[Camera] Not a secure context. Protocol:', location.protocol, 'Hostname:', location.hostname);
+        alert('Camera requires HTTPS. Your page is not running in a secure context. Protocol: ' + location.protocol + ', Hostname: ' + location.hostname + '. Please use HTTPS or contact your administrator.');
         return;
     }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusEl2.textContent = 'API Not Supported';
+        console.error('[Camera] navigator.mediaDevices or getUserMedia not available');
+        alert('Your browser does not support camera access. Please use a modern browser like Chrome, Firefox, Edge, or Safari.');
+        return;
+    }
+
+    let s = null;
     try {
-        let s;
-        try {
-            s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacingMode } });
-        } catch (err1) {
-            s = await navigator.mediaDevices.getUserMedia({ video: true });
-        }
-        vid.srcObject = s;
-        vid.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
-        vid.onloadedmetadata = () => {
-            vid.play().catch(e => console.log("Video Play Error: " + e.message));
+        const idealConstraints = {
+            video: {
+                facingMode: { ideal: currentFacingMode },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
         };
-        
-        const checkVideoReady = () => {
-            if (vid.videoWidth === 0 || vid.getBoundingClientRect().width === 0) {
-                requestAnimationFrame(checkVideoReady);
+        console.log('[Camera] Requesting camera with ideal constraints');
+        s = await navigator.mediaDevices.getUserMedia(idealConstraints);
+    } catch (err) {
+        console.error('[Camera] Ideal constraints failed:', err.name, err.message);
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            statusEl2.textContent = 'Permission denied';
+            alert('Camera access was denied. Please allow camera permission in your browser settings and reload the page.');
+            return;
+        }
+        if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            statusEl2.textContent = 'No camera found';
+            alert('No camera found on this device. Please connect a camera and try again.');
+            return;
+        }
+        if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            statusEl2.textContent = 'Camera busy';
+            alert('Camera is not readable. It may be in use by another app. Please close other camera apps and try again.');
+            return;
+        }
+        if (err.name === 'OverconstrainedError') {
+            console.log('[Camera] Retrying with basic constraints...');
+            try {
+                s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            } catch (err2) {
+                console.error('[Camera] Basic fallback also failed:', err2.name, err2.message);
+                statusEl2.textContent = 'Cam error';
+                alert('Camera error: ' + (err2.message || err2.name || 'Unknown error'));
                 return;
             }
-            resizeOverlay();
-            const track = s.getVideoTracks()[0];
-            document.getElementById('scanStatusLabel').textContent = `W:${vid.videoWidth} H:${vid.videoHeight} - ` + (track ? track.label : 'Scanning...');
-            camReady = true;
-            if (!drawLoopRunning) { drawLoopRunning = true; requestAnimationFrame(drawLoop); }
-            startDetectLoop();
-        };
-        checkVideoReady();
-    } catch(e) {
-            document.getElementById('scanStatusLabel').textContent = 'Cam error';
-            alert("Camera Error: " + e.message);
+        } else if (err.name === 'SecurityError') {
+            statusEl2.textContent = 'Security blocked';
+            alert('Camera blocked by browser security policy. Ensure you are using HTTPS and not in an incognito iframe.');
+            return;
+        } else {
+            console.log('[Camera] Retrying with basic constraints...');
+            try {
+                s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            } catch (err2) {
+                console.error('[Camera] Basic fallback also failed:', err2.name, err2.message);
+                statusEl2.textContent = 'Cam error';
+                alert('Camera error: ' + (err2.message || err2.name || 'Unknown error'));
+                return;
+            }
         }
     }
+
+    camStream = s;
+    vid.srcObject = s;
+    vid.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+    vid.onloadedmetadata = () => {
+        vid.play().catch(e => console.warn('[Camera] video.play() error:', e.message));
+    };
+
+    const checkVideoReady = () => {
+        if (vid.videoWidth === 0 || vid.getBoundingClientRect().width === 0) {
+            requestAnimationFrame(checkVideoReady);
+            return;
+        }
+        resizeOverlay();
+        const track = s.getVideoTracks()[0];
+        const settings = track ? track.getSettings() : {};
+        statusEl2.textContent = `W:${vid.videoWidth} H:${vid.videoHeight} - ` + (track ? track.label : 'Scanning...');
+        console.log('[Camera] Active track:', track ? track.label : 'none', 'width:', settings.width, 'height:', settings.height, 'facingMode:', settings.facingMode);
+        camReady = true;
+        if (!drawLoopRunning) { drawLoopRunning = true; requestAnimationFrame(drawLoop); }
+        startDetectLoop();
+    };
+    checkVideoReady();
+}
 
     window.toggleCam = function() {
         currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
