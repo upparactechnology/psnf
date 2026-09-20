@@ -153,6 +153,112 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     .kiosk-header-badges { width: 100% !important; }
     .kiosk-stats-row { grid-template-columns: 1fr !important; gap: 4px !important; }
 }
+
+/* ─── TEMPORARY DETECTOR DIAGNOSTICS ─────────────────────────── */
+.dd-panel {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 1000;
+    border-radius: 14px;
+    background: rgba(15,23,42,0.92);
+    border: 1px solid rgba(99,102,241,0.3);
+    backdrop-filter: blur(12px);
+    padding: 14px 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: #94a3b8;
+    max-width: 360px;
+    min-width: 280px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.dd-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #a5b4fc;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dd-build {
+    font-size: 9px;
+    color: #6366f1;
+    font-weight: 400;
+    background: rgba(99,102,241,0.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+.dd-stages { margin-top: 8px; }
+.dd-stage {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 2px 0;
+    line-height: 1.4;
+}
+.dd-dot {
+    width: 14px;
+    text-align: center;
+    flex-shrink: 0;
+    color: #475569;
+    font-size: 12px;
+}
+.dd-success .dd-dot { color: #22c55e; }
+.dd-failed .dd-dot { color: #ef4444; }
+.dd-running .dd-dot { color: #f59e0b; }
+.dd-label { flex: 1; }
+.dd-success .dd-label { color: #4ade80; }
+.dd-failed .dd-label { color: #f87171; }
+.dd-running .dd-label { color: #fbbf24; }
+.dd-err {
+    display: none;
+    margin-left: 22px;
+    padding: 4px 8px;
+    margin-top: 1px;
+    margin-bottom: 3px;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 6px;
+    color: #fca5a5;
+    font-size: 10px;
+    word-break: break-word;
+    line-height: 1.3;
+}
+.dd-buttons {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+}
+.dd-btn {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(99,102,241,0.3);
+    background: rgba(99,102,241,0.15);
+    color: #a5b4fc;
+    transition: all 0.2s;
+    font-family: 'Courier New', monospace;
+}
+.dd-btn:hover {
+    background: rgba(99,102,241,0.3);
+    color: #c7d2fe;
+}
+.dd-btn:active { transform: scale(0.97); }
+@media (max-width: 900px) {
+    .dd-panel {
+        bottom: 8px;
+        right: 8px;
+        left: 8px;
+        max-width: none;
+        min-width: 0;
+        padding: 12px 14px;
+        font-size: 12px;
+    }
+    .dd-btn { padding: 8px 14px; font-size: 11px; }
+}
 </style>
 
 <div class="space-y-5" id="kioskRoot">
@@ -287,6 +393,28 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
 
         </div>
     </div>
+
+    <!-- ── TEMPORARY DETECTOR DIAGNOSTICS ── -->
+    <div class="dd-panel" id="ddPanel">
+        <div class="dd-title">
+            Detector Diagnostics
+            <span class="dd-build" id="ddBuild">v2</span>
+        </div>
+        <div class="dd-stages">
+            <div class="dd-stage" id="ddJsStarted"><span class="dd-dot">○</span><span class="dd-label">JavaScript started</span><span class="dd-err" id="ddJsStartedError"></span></div>
+            <div class="dd-stage" id="ddMediaPipe"><span class="dd-dot">○</span><span class="dd-label">MediaPipe import</span><span class="dd-err" id="ddMediaPipeError"></span></div>
+            <div class="dd-stage" id="ddWasmInit"><span class="dd-dot">○</span><span class="dd-label">WASM initialization</span><span class="dd-err" id="ddWasmInitError"></span></div>
+            <div class="dd-stage" id="ddModel"><span class="dd-dot">○</span><span class="dd-label">Model download</span><span class="dd-err" id="ddModelError"></span></div>
+            <div class="dd-stage" id="ddCpuDetector"><span class="dd-dot">○</span><span class="dd-label">CPU detector</span><span class="dd-err" id="ddCpuDetectorError"></span></div>
+            <div class="dd-stage" id="ddGpuDetector"><span class="dd-dot">○</span><span class="dd-label">GPU detector</span><span class="dd-err" id="ddGpuDetectorError"></span></div>
+            <div class="dd-stage" id="ddDetectorReady"><span class="dd-dot">○</span><span class="dd-label">Detector ready</span><span class="dd-err" id="ddDetectorReadyError"></span></div>
+            <div class="dd-stage" id="ddFaceDetection"><span class="dd-dot">○</span><span class="dd-label">Face detection</span><span class="dd-err" id="ddFaceDetectionError"></span></div>
+        </div>
+        <div class="dd-buttons">
+            <button class="dd-btn" id="ddRetryBtn">Retry Detector</button>
+            <button class="dd-btn" id="ddCopyBtn">Copy Diagnostics</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -338,6 +466,167 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     console.log('[Detector] primaryDelegate:', primaryDelegate);
     console.log('[Detector] fallbackDelegate:', fallbackDelegate);
 
+    // ── TEMPORARY DETECTOR DIAGNOSTICS ──────────────────────────────────────
+    const DD_BUILD = 'v2-tablet-diagnostics';
+    console.log('[DetectorDebug] BUILD:', DD_BUILD);
+    document.getElementById('ddBuild').textContent = DD_BUILD;
+
+    const dd = {
+        jsStarted: 'success',
+        mediaPipeImport: 'pending',
+        wasmInit: 'pending',
+        modelDownload: 'pending',
+        cpuDetector: 'pending',
+        gpuDetector: 'pending',
+        detectorReady: 'pending',
+        faceDetection: 'pending',
+        cpuError: null,
+        gpuError: null,
+        lastDetectError: null,
+        detectErrorCount: 0,
+        selectedDelegate: null,
+        savedVision: null,
+        savedFileset: null
+    };
+
+    function ddUpdate(stage, state, errorMsg) {
+        var el = document.getElementById('dd' + stage.charAt(0).toUpperCase() + stage.slice(1));
+        if (!el) {
+            el = document.getElementById('dd' + stage);
+        }
+        if (el) {
+            el.className = 'dd-stage' + (state !== 'pending' ? ' dd-' + state : '');
+            var dot = el.querySelector('.dd-dot');
+            if (dot) {
+                if (state === 'success') dot.textContent = '\u2713';
+                else if (state === 'failed') dot.textContent = '\u2717';
+                else if (state === 'running') dot.textContent = '\u25CE';
+                else dot.textContent = '\u25CB';
+            }
+        }
+        var errEl = document.getElementById('dd' + stage.charAt(0).toUpperCase() + stage.slice(1) + 'Error');
+        if (!errEl) {
+            errEl = document.getElementById('dd' + stage + 'Error');
+        }
+        if (errEl) {
+            if (errorMsg) {
+                errEl.textContent = errorMsg;
+                errEl.style.display = 'block';
+            } else {
+                errEl.textContent = '';
+                errEl.style.display = 'none';
+            }
+        }
+    }
+
+    function logCapabilities() {
+        var webgl = false, webgl2 = false;
+        try { webgl = !!document.createElement('canvas').getContext('webgl'); } catch(e) {}
+        try { webgl2 = !!document.createElement('canvas').getContext('webgl2'); } catch(e) {}
+        var caps = {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            hardwareConcurrency: navigator.hardwareConcurrency,
+            deviceMemory: navigator.deviceMemory || 'N/A',
+            maxTouchPoints: navigator.maxTouchPoints,
+            isSecureContext: window.isSecureContext,
+            protocol: location.protocol,
+            hostname: location.hostname,
+            mediaDevices: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+            webAssembly: typeof WebAssembly !== 'undefined',
+            webgl: webgl,
+            webgl2: webgl2,
+            isMobile: isMobile,
+            isTablet: isTablet,
+            isLowMemory: isLowMemory,
+            isLowEnd: isLowEnd,
+            primaryDelegate: primaryDelegate,
+            fallbackDelegate: fallbackDelegate
+        };
+        console.log('[DetectorDebug] Capabilities:', JSON.stringify(caps, null, 2));
+        return caps;
+    }
+    logCapabilities();
+    ddUpdate('JsStarted', 'success');
+
+    window.ddRetryDetector = function() {
+        console.log('[DetectorDebug] Retry requested');
+        if (faceDetector) {
+            try {
+                if (typeof faceDetector.close === 'function') faceDetector.close();
+                else if (typeof faceDetector.destroy === 'function') faceDetector.destroy();
+            } catch(e) { console.warn('[DetectorDebug] Destroy error:', e.message); }
+            faceDetector = null;
+        }
+        detectorReady = false;
+        detectorLoading = false;
+        detectorError = false;
+        dd.mediaPipeImport = 'pending';
+        dd.wasmInit = 'pending';
+        dd.modelDownload = 'pending';
+        dd.cpuDetector = 'pending';
+        dd.gpuDetector = 'pending';
+        dd.detectorReady = 'pending';
+        dd.faceDetection = 'pending';
+        dd.cpuError = null;
+        dd.gpuError = null;
+        dd.lastDetectError = null;
+        dd.detectErrorCount = 0;
+        dd.selectedDelegate = null;
+        dd.savedVision = null;
+        dd.savedFileset = null;
+        ['MediaPipe','WasmInit','Model','CpuDetector','GpuDetector','DetectorReady','FaceDetection'].forEach(function(s) {
+            ddUpdate(s, 'pending');
+        });
+        updateDetectorBadge('loading');
+        loadFaceDetector();
+    };
+
+    window.ddCopyDiagnostics = function() {
+        var caps = logCapabilities();
+        var lines = [
+            '=== Face Kiosk Detector Diagnostics ===',
+            'Build: ' + DD_BUILD,
+            '',
+            '--- Browser Capabilities ---',
+            'User Agent: ' + caps.userAgent,
+            'Platform: ' + caps.platform,
+            'Hardware Concurrency: ' + caps.hardwareConcurrency,
+            'Device Memory: ' + caps.deviceMemory,
+            'Max Touch Points: ' + caps.maxTouchPoints,
+            'Secure Context: ' + caps.isSecureContext,
+            'Protocol: ' + caps.protocol,
+            'Hostname: ' + caps.hostname,
+            'MediaDevices: ' + caps.mediaDevices,
+            'WebAssembly: ' + caps.webAssembly,
+            'WebGL: ' + caps.webgl,
+            'WebGL2: ' + caps.webgl2,
+            '',
+            '--- Detector Results ---',
+            'JS Started: ' + dd.jsStarted,
+            'MediaPipe Import: ' + dd.mediaPipeImport,
+            'WASM Init: ' + dd.wasmInit,
+            'Model Download: ' + dd.modelDownload,
+            'CPU Detector: ' + dd.cpuDetector + (dd.cpuError ? ' (Error: ' + dd.cpuError + ')' : ''),
+            'GPU Detector: ' + dd.gpuDetector + (dd.gpuError ? ' (Error: ' + dd.gpuError + ')' : ''),
+            'Selected Delegate: ' + (dd.selectedDelegate || 'none'),
+            'Detector Ready: ' + dd.detectorReady,
+            'Face Detection: ' + dd.faceDetection,
+            'Last detectForVideo error: ' + (dd.lastDetectError || 'none'),
+            'detectForVideo error count: ' + dd.detectErrorCount
+        ].join('\n');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(lines).then(function() {
+                alert('Diagnostics copied to clipboard.');
+            }).catch(function() {
+                prompt('Copy diagnostics:', lines);
+            });
+        } else {
+            prompt('Copy diagnostics:', lines);
+        }
+    };
+    // ── END TEMPORARY DETECTOR DIAGNOSTICS ──────────────────────────────────
+
     // ── Browser face detector (MediaPipe BlazeFace) ─────────────────────────
     let faceDetector = null;
     let detectorReady = false;
@@ -381,48 +670,105 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         updateDetectorBadge('loading');
 
         const t0 = performance.now();
-        console.log('[Detector] initialization started');
+        console.log('[DetectorDebug] initialization started');
 
         try {
-            console.log('[Detector] importing vision_bundle.mjs...');
+            // Step 1: Import MediaPipe
+            ddUpdate('MediaPipe', 'running');
+            console.log('[DetectorDebug] MediaPipe import started');
             const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs');
-            console.log('[Detector] import completed');
+            dd.savedVision = vision;
+            ddUpdate('MediaPipe', 'success');
+            dd.mediaPipeImport = 'success';
+            console.log('[DetectorDebug] MediaPipe import completed');
 
-            console.log('[Detector] initializing WASM...');
+            // Step 2: Initialize WASM
+            ddUpdate('WasmInit', 'running');
+            console.log('[DetectorDebug] WASM initialization started');
             const filesetResolver = await vision.FilesetResolver.forVisionTasks(
                 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'
             );
-            console.log('[Detector] WASM initialized');
+            dd.savedFileset = filesetResolver;
+            ddUpdate('WasmInit', 'success');
+            dd.wasmInit = 'success';
+            console.log('[DetectorDebug] WASM initialization completed');
 
+            // Step 3: Test CPU detector independently
+            ddUpdate('CpuDetector', 'running');
+            console.log('[DetectorDebug] CPU detector creation started');
+            var cpuDetector = null;
             try {
-                faceDetector = await createFaceDetector(vision, filesetResolver, primaryDelegate);
-                console.log('[Detector] Initialized successfully with:', primaryDelegate);
-            } catch (primaryError) {
-                console.warn('[Detector] Primary delegate failed:', primaryDelegate, primaryError);
-                try {
-                    faceDetector = null;
-                    faceDetector = await createFaceDetector(vision, filesetResolver, fallbackDelegate);
-                    console.log('[Detector] Initialized successfully with fallback:', fallbackDelegate);
-                } catch (fallbackError) {
-                    faceDetector = null;
-                    console.error('[Detector] BOTH delegates failed');
-                    console.error('[Detector] Primary:', primaryError);
-                    console.error('[Detector] Fallback:', fallbackError);
-                    throw fallbackError;
-                }
+                cpuDetector = await createFaceDetector(vision, filesetResolver, 'CPU');
+                ddUpdate('CpuDetector', 'success');
+                dd.cpuDetector = 'success';
+                console.log('[DetectorDebug] CPU detector created successfully');
+            } catch (e) {
+                dd.cpuError = e.message || String(e);
+                dd.cpuDetector = 'failed';
+                ddUpdate('CpuDetector', 'failed', dd.cpuError);
+                console.error('[DetectorDebug] CPU detector creation failed:', dd.cpuError);
             }
 
-            const elapsed = Math.round(performance.now() - t0);
+            // Step 4: Test GPU detector independently
+            ddUpdate('GpuDetector', 'running');
+            console.log('[DetectorDebug] GPU detector creation started');
+            var gpuDetector = null;
+            try {
+                gpuDetector = await createFaceDetector(vision, filesetResolver, 'GPU');
+                ddUpdate('GpuDetector', 'success');
+                dd.gpuDetector = 'success';
+                console.log('[DetectorDebug] GPU detector created successfully');
+            } catch (e) {
+                dd.gpuError = e.message || String(e);
+                dd.gpuDetector = 'failed';
+                ddUpdate('GpuDetector', 'failed', dd.gpuError);
+                console.error('[DetectorDebug] GPU detector creation failed:', dd.gpuError);
+            }
+
+            // Model was downloaded during detector creation
+            if (cpuDetector || gpuDetector) {
+                ddUpdate('Model', 'success');
+                dd.modelDownload = 'success';
+                console.log('[DetectorDebug] Model download completed');
+            } else {
+                ddUpdate('Model', 'failed', 'Model download failed with both delegates');
+                dd.modelDownload = 'failed';
+            }
+
+            // Step 5: Select the best available detector
+            if (cpuDetector && gpuDetector) {
+                faceDetector = (primaryDelegate === 'GPU') ? gpuDetector : cpuDetector;
+                dd.selectedDelegate = (primaryDelegate === 'GPU') ? 'GPU' : 'CPU';
+                console.log('[DetectorDebug] Both delegates work, selected:', dd.selectedDelegate);
+            } else if (cpuDetector) {
+                faceDetector = cpuDetector;
+                dd.selectedDelegate = 'CPU';
+                console.log('[DetectorDebug] Only CPU works, selected: CPU');
+            } else if (gpuDetector) {
+                faceDetector = gpuDetector;
+                dd.selectedDelegate = 'GPU';
+                console.log('[DetectorDebug] Only GPU works, selected: GPU');
+            } else {
+                faceDetector = null;
+                throw new Error('Both CPU and GPU failed. CPU: ' + (dd.cpuError || 'unknown') + ' | GPU: ' + (dd.gpuError || 'unknown'));
+            }
+
+            var elapsed = Math.round(performance.now() - t0);
             detectorReady = true;
             detectorLoading = false;
+            dd.detectorReady = 'success';
+            ddUpdate('DetectorReady', 'success');
             updateDetectorBadge('ready');
-            console.log('[Detector] model initialization completed in ' + elapsed + 'ms');
+            console.log('[DetectorDebug] Detector ready in ' + elapsed + 'ms with delegate:', dd.selectedDelegate);
+
         } catch (e) {
-            const elapsed = Math.round(performance.now() - t0);
+            var elapsed = Math.round(performance.now() - t0);
             detectorLoading = false;
             detectorError = true;
-            console.error('[Detector] initialization failed after ' + elapsed + 'ms:', e.message || e);
-            console.error('[Detector] full error:', e);
+            dd.detectorReady = 'failed';
+            ddUpdate('DetectorReady', 'failed', e.message || String(e));
+            console.error('[DetectorDebug] initialization failed after ' + elapsed + 'ms:', e.message || e);
+            console.error('[DetectorDebug] full error:', e);
             updateDetectorBadge('error');
         }
     }
@@ -431,13 +777,27 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         if (!detectorReady || !faceDetector || !vid.videoWidth) return { faceCount: 0, detections: [] };
         try {
             const result = faceDetector.detectForVideo(vid, performance.now());
+            if (dd.detectErrorCount === 0 && dd.faceDetection !== 'success') {
+                dd.faceDetection = 'success';
+                ddUpdate('FaceDetection', 'success');
+                console.log('[DetectorDebug] detectForVideo first successful call');
+            }
             const detections = result.detections || [];
             if (detections.length > 0) {
-                console.log('[Detector] Faces: ' + detections.length);
+                console.log('[DetectorDebug] Faces: ' + detections.length);
             }
             return { faceCount: detections.length, detections };
         } catch (e) {
-            console.warn('[Detector] detectForVideo error:', e.message);
+            dd.detectErrorCount++;
+            if (dd.detectErrorCount === 1) {
+                dd.lastDetectError = e.message || String(e);
+                dd.faceDetection = 'failed';
+                ddUpdate('FaceDetection', 'failed', dd.lastDetectError);
+                console.error('[DetectorDebug] detectForVideo first error:', dd.lastDetectError);
+                console.error('[DetectorDebug] detectForVideo full error:', e);
+            } else if (dd.detectErrorCount <= 5 || dd.detectErrorCount % 50 === 0) {
+                console.warn('[DetectorDebug] detectForVideo error count:', dd.detectErrorCount, e.message || e);
+            }
             return { faceCount: 0, detections: [] };
         }
     }
@@ -1041,6 +1401,9 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     }
 
     // ── Initialization ───────────────────────────────────────────────────────
+    document.getElementById('ddRetryBtn').addEventListener('click', function() { window.ddRetryDetector(); });
+    document.getElementById('ddCopyBtn').addEventListener('click', function() { window.ddCopyDiagnostics(); });
+
     checkBackend();
     setInterval(checkBackend, 30000);
     loadFaceDetector();
