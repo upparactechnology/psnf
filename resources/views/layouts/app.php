@@ -21,6 +21,16 @@
     <title><?= $title ?? 'PSNF Management System' ?></title>
     <meta name="description" content="Pearl Special Needs Foundation — Management System">
     <meta name="csrf-token" content="<?= \Core\View::csrfToken() ?>">
+    <?php if ((\Core\Application::$app->request->getPath() ?? '') === '/attendance/face-kiosk'): ?>
+    <!-- Face Kiosk PWA: install to Home Screen for true tab-less fullscreen -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Face Kiosk">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="<?= url('kiosk-manifest.json') ?>">
+    <link rel="apple-touch-icon" href="<?= url('kiosk-icon-192.png') ?>">
+    <?php endif; ?>
 
     <!-- Tailwind CSS (Local Fallback) -->
     <script src="<?= url('js/tailwindcss.js') ?>"></script>
