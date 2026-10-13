@@ -7,6 +7,10 @@ header("Pragma: no-cache");
 $layout    = 'app';
 $pageTitle = 'Face Attendance Kiosk';
 $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'Attendance'], ['label' => 'Face Kiosk']];
+// Admin-only panels: stats + verification status visible only when logged in (hidden on tablet/guest kiosk)
+$isLoggedIn = function_exists('is_logged_in') ? is_logged_in() : (bool)(function_exists('auth') && auth());
+// Detector Diagnostics visible only when URL contains dev (e.g. ?dev=1)
+$isDevMode = isset($_GET['dev']) || (isset($_SERVER['REQUEST_URI']) && stripos($_SERVER['REQUEST_URI'], 'dev') !== false);
 ?>
 
 <style>
@@ -354,7 +358,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     <div class="kiosk-main-grid grid grid-cols-1 lg:grid-cols-12 gap-5">
 
         <!-- Camera Column -->
-        <div class="kiosk-camera-col lg:col-span-7 space-y-4">
+        <div class="kiosk-camera-col <?= $isLoggedIn ? 'lg:col-span-7' : 'lg:col-span-12' ?> space-y-4">
             <div class="kiosk-camera-panel rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5 shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-sm font-bold text-white flex items-center gap-2">
@@ -392,8 +396,8 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                 </p>
             </div>
 
-            <!-- Stats -->
-            <div class="kiosk-stats-row grid grid-cols-3 gap-3">
+            <!-- Stats (admin-only: hidden for guest kiosk / tablet without login) -->
+            <div class="kiosk-stats-row grid grid-cols-3 gap-3" id="kioskStatsRow"<?php if (!$isLoggedIn): ?> style="display:none;"<?php endif; ?>>
                 <div class="rounded-xl border border-slate-800/60 bg-slate-900/40 p-3 text-center">
                     <div class="text-lg font-bold text-emerald-400" id="statChecked">0</div>
                     <div class="text-2xs text-slate-500 mt-0.5">Checked In Today</div>
@@ -409,8 +413,8 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
             </div>
         </div>
 
-        <!-- Right Panel -->
-        <div class="kiosk-right-col lg:col-span-5 space-y-4">
+        <!-- Right Panel (admin-only: Verification Status + Recent Check-Ins hidden without login) -->
+        <div class="kiosk-right-col lg:col-span-5 space-y-4"<?php if (!$isLoggedIn): ?> style="display:none;"<?php endif; ?>>
 
             <!-- Status Panel -->
             <div class="kiosk-right-panel rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5 shadow-sm">
@@ -435,8 +439,8 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         </div>
     </div>
 
-    <!-- ── TEMPORARY DETECTOR DIAGNOSTICS ── -->
-    <div class="dd-panel" id="ddPanel">
+    <!-- ── DETECTOR DIAGNOSTICS (dev-only: visible only when URL contains dev, e.g. ?dev=1) ── -->
+    <div class="dd-panel" id="ddPanel"<?php if (!$isDevMode): ?> style="display:none;"<?php endif; ?>>
         <div class="dd-title">
             Detector Diagnostics
             <span class="dd-build" id="ddBuild">v2</span>
@@ -508,10 +512,19 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     console.log('[Detector] primaryDelegate:', primaryDelegate);
     console.log('[Detector] fallbackDelegate:', fallbackDelegate);
 
-    // ── TEMPORARY DETECTOR DIAGNOSTICS ──────────────────────────────────────
+    // ── TEMPORARY DETECTOR DIAGNOSTICS (dev-only) ────────────────────────────
     const DD_BUILD = 'v2-tablet-diagnostics';
     console.log('[DetectorDebug] BUILD:', DD_BUILD);
-    document.getElementById('ddBuild').textContent = DD_BUILD;
+    // Show diagnostics panel only when URL contains dev (e.g. ?dev=1). Hidden otherwise.
+    try {
+        var _isDevMode = /dev/i.test(window.location.href) && /(?:\?|&|#).*dev|dev/i.test(window.location.href);
+        // Simpler robust check: any "dev" substring in full URL (covers ?dev, ?dev=1, &dev, #dev, /dev)
+        _isDevMode = window.location.href.toLowerCase().indexOf('dev') !== -1;
+        var _ddPanel = document.getElementById('ddPanel');
+        if (_ddPanel) _ddPanel.style.display = _isDevMode ? 'block' : 'none';
+    } catch(e) {}
+    var _ddBuildEl = document.getElementById('ddBuild');
+    if (_ddBuildEl) _ddBuildEl.textContent = DD_BUILD;
 
     const dd = {
         jsStarted: 'success',
@@ -1406,7 +1419,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
         isProcessing = true;
         scanSessionActive = true;
         scanCount++;
-        document.getElementById('statScans').textContent = scanCount;
+        var _stScans = document.getElementById('statScans'); if (_stScans) _stScans.textContent = scanCount;
         lbl.textContent = 'Identifying...'; lbl.className = 'kiosk-face-label scan';
 
         console.log('[Scan] POST:', API);
@@ -1425,7 +1438,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
 
             if (data && data.success) {
                 const conf = data.confidence ? Math.round(data.confidence * 100)+'%' : '—';
-                document.getElementById('statConf').textContent = conf;
+                var _stConf = document.getElementById('statConf'); if (_stConf) _stConf.textContent = conf;
 
                 if (data.already_checked_in) {
                     beep('dupe');
@@ -1438,7 +1451,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
                 } else {
                     beep('ok');
                     checkedToday++;
-                    document.getElementById('statChecked').textContent = checkedToday;
+                    var _stChecked = document.getElementById('statChecked'); if (_stChecked) _stChecked.textContent = checkedToday;
                     showResult('success', data.employee_name||'Staff', 'Attendance marked successfully!', data.confidence);
                     addFeed(data.employee_name, data.employee_code, data.check_in);
                     lbl.textContent = `Marked: ${data.employee_name || 'Staff'}`;
@@ -1556,8 +1569,8 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'At
     }
 
     // ── Initialization ───────────────────────────────────────────────────────
-    document.getElementById('ddRetryBtn').addEventListener('click', function() { window.ddRetryDetector(); });
-    document.getElementById('ddCopyBtn').addEventListener('click', function() { window.ddCopyDiagnostics(); });
+    var _ddRetry = document.getElementById('ddRetryBtn'); if (_ddRetry) _ddRetry.addEventListener('click', function() { window.ddRetryDetector(); });
+    var _ddCopy = document.getElementById('ddCopyBtn'); if (_ddCopy) _ddCopy.addEventListener('click', function() { window.ddCopyDiagnostics(); });
 
     checkBackend();
     setInterval(checkBackend, 30000);
