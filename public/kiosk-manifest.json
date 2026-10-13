@@ -1,6 +1,7 @@
 {
   "name": "Face Attendance Kiosk",
   "short_name": "Face Kiosk",
+  "id": "./attendance/face-kiosk?fullscreen=1",
   "description": "Face attendance kiosk — tap-free fullscreen camera",
   "start_url": "attendance/face-kiosk?fullscreen=1",
   "scope": "./",

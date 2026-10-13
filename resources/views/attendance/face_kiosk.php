@@ -231,6 +231,65 @@ html.kiosk-fs .kiosk-wrap {
     cursor: pointer;
 }
 html.kiosk-fs #kioskFsExit { display: block; }
+/* ─── On-screen Install App button (PWA) ─────────────────────────────── */
+#kioskInstallBtn {
+    display: none;
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 2000;
+    padding: 11px 16px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    background: rgba(79,70,229,0.92);
+    border: 1px solid rgba(165,180,252,0.5);
+    box-shadow: 0 6px 24px rgba(99,102,241,0.45);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+}
+#kioskInstallBtn:active { transform: scale(0.96); }
+#kioskInstallHelp {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+#kioskInstallHelp.open { display: flex; }
+#kioskInstallHelp .help-card {
+    max-width: 340px;
+    width: 100%;
+    background: #0f172a;
+    border: 1px solid rgba(99,102,241,0.35);
+    border-radius: 18px;
+    padding: 22px;
+    color: #e2e8f0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+#kioskInstallHelp .help-card h4 {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+}
+#kioskInstallHelp .help-card ol { margin: 0 0 14px 18px; padding: 0; }
+#kioskInstallHelp .help-close {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    background: #4f46e5;
+    border: 0;
+    cursor: pointer;
+}
 
 /* ─── TEMPORARY DETECTOR DIAGNOSTICS ─────────────────────────── */
 .dd-panel {
@@ -476,6 +535,20 @@ html.kiosk-fs #kioskFsExit { display: block; }
                     Only scans when your face fills the oval. Background outside oval is darkened.
                 </p>
                 <button id="kioskFsExit" onclick="toggleKioskFullscreen()">✕ Exit Fullscreen</button>
+                <button id="kioskInstallBtn" onclick="kioskInstallApp()">⬇ Install App</button>
+                <div id="kioskInstallHelp">
+                    <div class="help-card">
+                        <h4>Install Face Kiosk</h4>
+                        <div id="kioskInstallSteps">
+                            <ol>
+                                <li>Tap the <b>Share</b> button in Safari</li>
+                                <li>Choose <b>Add to Home Screen</b></li>
+                                <li>Open it from the <b>Face Kiosk</b> home-screen icon — no tabs, fullscreen camera</li>
+                            </ol>
+                        </div>
+                        <button class="help-close" onclick="document.getElementById('kioskInstallHelp').classList.remove('open')">Close</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Stats (admin-only: hidden for guest kiosk / tablet without login) -->
@@ -1733,6 +1806,80 @@ html.kiosk-fs #kioskFsExit { display: block; }
         document.addEventListener('pointerdown', _upgradeOnFirstTouch);
         document.addEventListener('touchend', _upgradeOnFirstTouch);
     } catch(e) {}
+
+    // ── PWA Install App (on-screen button, no browser menu needed) ──────────
+    // Chrome shows the install prompt only when a service worker is active,
+    // so register the tiny passthrough worker for the kiosk scope.
+    try {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                try {
+                    navigator.serviceWorker.register(
+                        '<?= url('attendance/kiosk-sw.js') ?>',
+                        { scope: '<?= url('attendance/') ?>' }
+                    ).catch(function(){});
+                } catch(e) {}
+            });
+        }
+    } catch(e) {}
+    var _deferredInstallPrompt = null;
+    function _kioskInAppMode() {
+        try {
+            return (window.matchMedia && (window.matchMedia('(display-mode: fullscreen)').matches
+                    || window.matchMedia('(display-mode: standalone)').matches))
+                || window.navigator.standalone === true;
+        } catch(e) { return false; }
+    }
+    function _kioskIsIos() {
+        try {
+            return /iphone|ipad|ipod/i.test(navigator.userAgent)
+                || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        } catch(e) { return false; }
+    }
+    function _refreshInstallBtn() {
+        var btn = document.getElementById('kioskInstallBtn');
+        if (!btn) return;
+        // Show only while running in a browser tab (hidden once installed/launched as app).
+        // Android/Chrome: appears when the install prompt is ready.
+        // iPhone/iPad: no prompt exists — show so users get the 3-step guide.
+        var show = !_kioskInAppMode() && (_deferredInstallPrompt !== null || _kioskIsIos());
+        btn.style.display = show ? 'block' : 'none';
+    }
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        _deferredInstallPrompt = e;
+        _refreshInstallBtn();
+    });
+    window.addEventListener('appinstalled', function() {
+        _deferredInstallPrompt = null;
+        _refreshInstallBtn();
+    });
+    window.kioskInstallApp = function() {
+        if (_deferredInstallPrompt) {
+            _deferredInstallPrompt.prompt();
+            try {
+                _deferredInstallPrompt.userChoice.then(function() {
+                    _deferredInstallPrompt = null;
+                    _refreshInstallBtn();
+                }).catch(function(){});
+            } catch(e) { _deferredInstallPrompt = null; }
+            return;
+        }
+        // iOS / no prompt: show manual steps (Share → Add to Home Screen).
+        if (!_kioskIsIos()) {
+            var steps = document.getElementById('kioskInstallSteps');
+            if (steps) {
+                steps.innerHTML = '<ol>'
+                    + '<li>Tap the browser menu (⋮)</li>'
+                    + '<li>Choose <b>Add to Home screen</b> / <b>Install app</b></li>'
+                    + '<li>Open it from the <b>Face Kiosk</b> icon — no tabs, fullscreen camera</li>'
+                    + '</ol>';
+            }
+        }
+        var help = document.getElementById('kioskInstallHelp');
+        if (help) help.classList.add('open');
+    };
+    _refreshInstallBtn();
 
     // ── Initialization ───────────────────────────────────────────────────────
     var _ddRetry = document.getElementById('ddRetryBtn'); if (_ddRetry) _ddRetry.addEventListener('click', function() { window.ddRetryDetector(); });
