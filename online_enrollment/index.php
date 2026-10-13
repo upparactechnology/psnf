@@ -269,7 +269,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Student Enrollment Form</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind-play.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -279,13 +279,14 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
         @media (max-width: 640px) {
             input, select, textarea { font-size: 16px !important; }
         }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="min-h-screen py-4 px-3 sm:py-10 sm:px-6">
 
     <div id="enrollment-form-top" class="scroll-mt-4"></div>
 
-    <div x-data="enrollmentForm()" x-init="$watch('step', () => scrollToTop())" class="max-w-4xl mx-auto space-y-5 sm:space-y-8">
+    <div x-data="enrollmentForm()" x-init="$watch('step', () => scrollToTop()); initSubmitGuard()" class="max-w-4xl mx-auto space-y-5 sm:space-y-8">
         
         <!-- Header -->
         <div class="text-center space-y-2 sm:space-y-3 relative">
@@ -334,7 +335,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
             </div>
         </div>
 
-        <form method="POST" action="index.php" enctype="multipart/form-data" @submit="if (isSubmitting) { $event.preventDefault(); return false; } isSubmitting = true;" class="space-y-6">
+        <form method="POST" action="index.php" enctype="multipart/form-data" @submit="submitForm($event)" class="space-y-6">
             
             <!-- SECTION 1: STUDENT INFO -->
             <div x-show="step === 0" class="white-card rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-5 sm:space-y-6">
@@ -380,7 +381,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                     <div class="space-y-3 bg-slate-50 p-3.5 sm:p-4 rounded-2xl border border-slate-200 flex flex-col justify-between">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Student Passport Photo <span class="text-red-500">*</span></label>
-                            <input type="file" name="student_photo" accept="image/*" @change="previewImage($event, 'student_prev', 'student_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                            <input type="file" name="student_photo" accept="image/*" @change="previewImage($event, 'student_prev', 'student_placeholder', 'student_photo_cam')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
                             <div class="mt-2.5">
                                 <button type="button" @click="openModal('student_photo_cam', 'student_prev', 'student_placeholder', 'Student Passport Photo')" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3.5 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-xl border border-slate-300 shadow-sm active:scale-95">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Open Camera
@@ -405,7 +406,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Student Aadhar Document</label>
                             <p class="text-[11px] text-slate-500 mb-1.5">Required if Student Aadhar No. is entered above</p>
-                            <input type="file" name="student_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'student_doc_prev', 'student_doc_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                            <input type="file" name="student_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'student_doc_prev', 'student_doc_placeholder', 'student_aadhar_doc_cam')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
                             <div class="mt-2.5">
                                 <button type="button" @click="openModal('student_aadhar_doc_cam', 'student_doc_prev', 'student_doc_placeholder', 'Student Aadhar Document')" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3.5 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-xl border border-slate-300 shadow-sm active:scale-95">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Snap Document
@@ -459,7 +460,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                         <!-- Father Photo -->
                         <div class="space-y-2">
                             <label class="block text-xs font-semibold text-slate-700">Father Passport Photo <span class="text-red-500">*</span></label>
-                            <input type="file" name="father_photo" accept="image/*" @change="previewImage($event, 'father_prev', 'father_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                            <input type="file" name="father_photo" accept="image/*" @change="previewImage($event, 'father_prev', 'father_placeholder', 'father_photo_cam')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
                             <div class="flex items-center gap-3 pt-1">
                                 <button type="button" @click="openModal('father_photo_cam', 'father_prev', 'father_placeholder', 'Father Passport Photo')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Camera
@@ -478,7 +479,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                         <!-- Father Aadhar Doc -->
                         <div class="space-y-2">
                             <label class="block text-xs font-semibold text-slate-700">Father Aadhar Document <span class="text-red-500">*</span></label>
-                            <input type="file" name="father_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'father_doc_prev', 'father_doc_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                            <input type="file" name="father_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'father_doc_prev', 'father_doc_placeholder', 'father_aadhar_doc_cam')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
                             <div class="flex items-center gap-3 pt-1">
                                 <button type="button" @click="openModal('father_aadhar_doc_cam', 'father_doc_prev', 'father_doc_placeholder', 'Father Aadhar Document')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Snap Doc
@@ -518,7 +519,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                         <!-- Mother Photo -->
                         <div class="space-y-2">
                             <label class="block text-xs font-semibold text-slate-700">Mother Passport Photo <span class="text-red-500">*</span></label>
-                            <input type="file" name="mother_photo" accept="image/*" @change="previewImage($event, 'mother_prev', 'mother_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                            <input type="file" name="mother_photo" accept="image/*" @change="previewImage($event, 'mother_prev', 'mother_placeholder', 'mother_photo_cam')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
                             <div class="flex items-center gap-3 pt-1">
                                 <button type="button" @click="openModal('mother_photo_cam', 'mother_prev', 'mother_placeholder', 'Mother Passport Photo')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Camera
@@ -537,7 +538,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                         <!-- Mother Aadhar Doc -->
                         <div class="space-y-2">
                             <label class="block text-xs font-semibold text-slate-700">Mother / Guardian Aadhar Document <span class="text-red-500">*</span></label>
-                            <input type="file" name="mother_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'mother_doc_prev', 'mother_doc_placeholder')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                            <input type="file" name="mother_aadhar_doc" accept=".pdf,.jpg,.jpeg,.png" @change="previewImage($event, 'mother_doc_prev', 'mother_doc_placeholder', 'mother_aadhar_doc_cam')" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
                             <div class="flex items-center gap-3 pt-1">
                                 <button type="button" @click="openModal('mother_aadhar_doc_cam', 'mother_doc_prev', 'mother_doc_placeholder', 'Mother Aadhar Document')" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 bg-white hover:bg-slate-100 text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Snap Doc
@@ -605,7 +606,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center border-t border-slate-200 pt-3">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Passport Photo <span class="text-red-500">*</span></label>
-                                    <input type="file" :name="'pickup_photo_' + index" accept="image/*" @change="previewImage($event, 'pickup_prev_' + index, 'pickup_placeholder_' + index)" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
+                                    <input type="file" :name="'pickup_photo_' + index" accept="image/*" @change="previewImage($event, 'pickup_prev_' + index, 'pickup_placeholder_' + index, 'pickup_photo_cam_' + index)" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-600 cursor-pointer">
                                     <button type="button" @click="openModal('pickup_photo_cam_' + index, 'pickup_prev_' + index, 'pickup_placeholder_' + index, 'Pickup Person Photo')" class="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold px-3 py-1.5 bg-white text-indigo-600 rounded-lg border border-slate-300 shadow-sm active:scale-95">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg> Open Camera
                                     </button>
@@ -625,13 +626,21 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                     </template>
                 </div>
 
+                <div x-show="submitError" x-cloak class="rounded-2xl bg-red-50 border border-red-200 p-3 sm:p-4 flex items-start gap-2.5">
+                    <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <div class="text-xs sm:text-sm text-red-700 space-y-1">
+                        <p class="font-bold">Submission did not complete</p>
+                        <span x-text="submitError"></span>
+                    </div>
+                </div>
+
                 <div class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-6 border-t border-slate-200">
                     <button type="button" @click="goToStep(1)" class="w-full sm:w-auto px-5 py-3 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-xl text-base sm:text-sm font-semibold transition-all text-center">← Back</button>
                     <button type="submit" :disabled="isSubmitting" :class="isSubmitting ? 'opacity-75 cursor-not-allowed pointer-events-none' : 'hover:from-indigo-700 hover:to-purple-700 active:scale-95'" class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-base sm:text-sm rounded-2xl transition-all shadow-lg shadow-indigo-600/30 text-center inline-flex items-center justify-center gap-2">
-                        <span x-show="!isSubmitting">Submit Enrollment Application</span>
+                        <span x-show="!isSubmitting" x-text="submitError ? 'Retry Submission' : 'Submit Enrollment Application'">Submit Enrollment Application</span>
                         <span x-show="isSubmitting" class="inline-flex items-center gap-2" x-cloak>
                             <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            <span>Submitting Application...</span>
+                            <span x-text="uploadPct > 0 ? 'Uploading... ' + uploadPct + '%' : 'Submitting Application...'">Submitting Application...</span>
                         </span>
                     </button>
                 </div>
@@ -685,6 +694,8 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
             return {
                 step: 0,
                 isSubmitting: false,
+                submitError: '',
+                uploadPct: 0,
                 pickups: [{ name: '', relationship: '', phone: '', email: '', address: '', is_emergency: true }],
                 showCamModal: false,
                 modalTitle: 'Capture Photo',
@@ -700,6 +711,113 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                         if (topEl) {
                             topEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
+                    });
+                },
+
+                initSubmitGuard() {
+                    const reset = () => {
+                        this.isSubmitting = false;
+                        this.uploadPct = 0;
+                    };
+                    window.addEventListener('pageshow', reset);
+                },
+
+                submitForm(event) {
+                    event.preventDefault();
+                    if (this.isSubmitting) return;
+                    if (typeof XMLHttpRequest === 'undefined' || typeof FormData === 'undefined') {
+                        event.target.submit();
+                        return;
+                    }
+
+                    this.isSubmitting = true;
+                    this.submitError = '';
+                    this.uploadPct = 0;
+
+                    const form = event.target;
+                    const self = this;
+                    let settled = false;
+                    const fail = (msg) => {
+                        if (settled) return;
+                        settled = true;
+                        self.submitError = msg;
+                        self.isSubmitting = false;
+                        self.uploadPct = 0;
+                    };
+
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', form.action, true);
+                    xhr.timeout = 180000;
+
+                    xhr.upload.onprogress = (e) => {
+                        if (e.lengthComputable) {
+                            self.uploadPct = Math.min(99, Math.round((e.loaded / e.total) * 100));
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (settled) return;
+                        settled = true;
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            const finalUrl = xhr.responseURL || '';
+                            const text = xhr.responseText || '';
+                            const landedOnSuccess = finalUrl.indexOf('success.php') !== -1
+                                || text.indexOf('Application Submitted Successfully') !== -1;
+                            if (landedOnSuccess) {
+                                if (finalUrl.indexOf('success.php') !== -1) {
+                                    window.location.href = finalUrl;
+                                } else {
+                                    document.open();
+                                    document.write(text);
+                                    document.close();
+                                }
+                                return;
+                            }
+                            self.isSubmitting = false;
+                            self.uploadPct = 0;
+                            document.open();
+                            document.write(text);
+                            document.close();
+                            return;
+                        }
+                        fail('The server returned an error (HTTP ' + xhr.status + '). Please wait a moment and tap Retry.');
+                    };
+                    xhr.onerror = () => fail('The connection was lost while uploading. Your details are still here - tap Retry Submission to try again.');
+                    xhr.ontimeout = () => fail('The upload took too long and timed out. Check your internet connection and tap Retry Submission.');
+                    xhr.onabort = () => fail('The upload was interrupted. Tap Retry Submission to try again.');
+
+                    xhr.send(new FormData(form));
+                },
+
+                compressImage(file, maxEdge, quality) {
+                    maxEdge = maxEdge || 1280;
+                    quality = quality || 0.75;
+                    return new Promise((resolve) => {
+                        if (!file || !file.type || file.type.indexOf('image/') !== 0) return resolve(null);
+                        const url = URL.createObjectURL(file);
+                        const image = new Image();
+                        image.onload = () => {
+                            const w = image.naturalWidth;
+                            const h = image.naturalHeight;
+                            URL.revokeObjectURL(url);
+                            if (!w || !h) return resolve(null);
+                            try {
+                                const scale = Math.min(1, maxEdge / Math.max(w, h));
+                                const canvas = document.createElement('canvas');
+                                canvas.width = Math.max(1, Math.round(w * scale));
+                                canvas.height = Math.max(1, Math.round(h * scale));
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+                                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                                const approxBytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75);
+                                if (approxBytes >= file.size) return resolve(null);
+                                return resolve(dataUrl);
+                            } catch (err) {
+                                return resolve(null);
+                            }
+                        };
+                        image.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+                        image.src = url;
                     });
                 },
 
@@ -794,23 +912,49 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                 removePickup(idx) {
                     this.pickups.splice(idx, 1);
                 },
-                previewImage(event, targetImgId, placeholderId) {
+                async previewImage(event, targetImgId, placeholderId, camInputId) {
                     const file = event.target.files[0];
-                    if (file) {
-                        const img = document.getElementById(targetImgId);
-                        const placeholder = document.getElementById(placeholderId);
-                        if (file.type === 'application/pdf') {
-                            img.classList.add('hidden');
-                            if (placeholder) {
-                                placeholder.innerHTML = '<svg class="w-8 h-8 mx-auto text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 1H7a2 2 0 00-2 2v16a2 2 0 002 2z"/></svg><span class="text-[10px] text-indigo-600 block font-semibold mt-1">PDF Selected</span>';
-                                placeholder.classList.remove('hidden');
-                            }
-                        } else {
-                            img.src = URL.createObjectURL(file);
-                            img.classList.remove('hidden');
-                            if (placeholder) placeholder.classList.add('hidden');
+                    if (!file) return;
+
+                    const img = document.getElementById(targetImgId);
+                    const placeholder = document.getElementById(placeholderId);
+                    const camInput = camInputId ? document.getElementById(camInputId) : null;
+                    const mb = (bytes) => (bytes / 1048576).toFixed(1) + ' MB';
+
+                    if (file.type === 'application/pdf') {
+                        if (file.size > 8 * 1024 * 1024) {
+                            alert('This PDF is ' + mb(file.size) + '. Maximum allowed size is 8 MB.');
+                            event.target.value = '';
+                            return;
                         }
+                        if (camInput) camInput.value = '';
+                        img.classList.add('hidden');
+                        if (placeholder) {
+                            placeholder.innerHTML = '<svg class="w-8 h-8 mx-auto text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 1H7a2 2 0 00-2 2v16a2 2 0 002 2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="text-[10px] text-indigo-600 block font-semibold mt-1">PDF Selected</span>';
+                            placeholder.classList.remove('hidden');
+                        }
+                        return;
                     }
+
+                    const dataUrl = await this.compressImage(file);
+                    if (dataUrl && camInput) {
+                        camInput.value = dataUrl;
+                        event.target.value = '';
+                        img.src = dataUrl;
+                        img.classList.remove('hidden');
+                        if (placeholder) placeholder.classList.add('hidden');
+                        return;
+                    }
+
+                    if (file.size > 6 * 1024 * 1024) {
+                        alert('This image is ' + mb(file.size) + ' and could not be compressed. Maximum allowed size is 6 MB.');
+                        event.target.value = '';
+                        return;
+                    }
+                    if (camInput) camInput.value = '';
+                    img.src = URL.createObjectURL(file);
+                    img.classList.remove('hidden');
+                    if (placeholder) placeholder.classList.add('hidden');
                 },
                 openModal(inputId, imgId, placeholderId, title) {
                     this.activeInputId = inputId;
@@ -891,12 +1035,16 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                 captureFromModal() {
                     const video = document.getElementById('modal_video');
                     const canvas = document.getElementById('modal_canvas');
-                    canvas.width = video.videoWidth || 1280;
-                    canvas.height = video.videoHeight || 720;
+                    const maxEdge = 1280;
+                    const srcW = video.videoWidth || 1280;
+                    const srcH = video.videoHeight || 720;
+                    const scale = Math.min(1, maxEdge / Math.max(srcW, srcH));
+                    canvas.width = Math.max(1, Math.round(srcW * scale));
+                    canvas.height = Math.max(1, Math.round(srcH * scale));
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                    const dataUrl = canvas.toDataURL('image/jpeg');
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
                     
                     // Save base64 to target hidden input
                     const hiddenInput = document.getElementById(this.activeInputId);

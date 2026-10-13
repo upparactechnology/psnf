@@ -7,7 +7,7 @@ $appCode = htmlspecialchars($_GET['code'] ?? 'APP-SUBMITTED');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application Submitted Successfully</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="tailwind-play.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
