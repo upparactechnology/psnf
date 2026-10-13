@@ -290,6 +290,17 @@ html.kiosk-fs #kioskFsExit { display: block; }
     border: 0;
     cursor: pointer;
 }
+/* ─── Battery saver: sleep overlay (pure black, tap anywhere to wake) ────── */
+/* NOTE: this overlay only darkens pixels — it does NOT power off the display.
+   True screen-off happens only via Fully Kiosk (fully.turnScreenOff()). */
+#kioskSleep {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    background: #000;
+    cursor: pointer;
+}
 
 /* ─── TEMPORARY DETECTOR DIAGNOSTICS ─────────────────────────── */
 .dd-panel {
@@ -549,6 +560,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
                         <button class="help-close" onclick="document.getElementById('kioskInstallHelp').classList.remove('open')">Close</button>
                     </div>
                 </div>
+                <div id="kioskSleep" title="Tap to wake"></div>
             </div>
 
             <!-- Stats (admin-only: hidden for guest kiosk / tablet without login) -->
@@ -1240,7 +1252,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 const settings = track ? track.getSettings() : {};
                 statusTxt.textContent = 'Camera ready \u2014 ' + vid.videoWidth + 'x' + vid.videoHeight;
                 console.log('[Camera] Active track:', track ? track.label : 'none', 'resolution:', settings.width + 'x' + settings.height);
-                requestAnimationFrame(drawLoop);
+                startDrawLoop();
                 startDetectLoop();
             };
             checkVideoReady();
@@ -1272,13 +1284,20 @@ html.kiosk-fs #kioskFsExit { display: block; }
     let lastDrawTime = 0;
     const DRAW_INTERVAL = 1000 / DRAW_FPS;
     let lastDetections = [];
+    let drawGen = 0; // generation counter: stale draw chains exit after camera recovery
+    function startDrawLoop() {
+        drawGen++;
+        var g = drawGen;
+        requestAnimationFrame(function(ts){ drawLoop(ts, g); });
+    }
 
-    function drawLoop(timestamp) {
-        if (!vid.videoWidth || !vid.videoHeight) { requestAnimationFrame(drawLoop); return; }
+    function drawLoop(timestamp, gen) {
+        if (gen !== undefined && gen !== drawGen) return; // stale chain — a fresh one took over
+        if (!vid.videoWidth || !vid.videoHeight) { requestAnimationFrame(function(ts){ drawLoop(ts, gen); }); return; }
 
         // Throttle overlay redraws
         if (timestamp - lastDrawTime < DRAW_INTERVAL) {
-            requestAnimationFrame(drawLoop);
+            requestAnimationFrame(function(ts){ drawLoop(ts, gen); });
             return;
         }
         lastDrawTime = timestamp;
@@ -1387,7 +1406,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
             hideOverlayResult();
         }
 
-        requestAnimationFrame(drawLoop);
+        requestAnimationFrame(function(ts){ drawLoop(ts, gen); });
     }
 
     // ── Independent Face Detection Loop (adaptive FPS) ───────────────────────
@@ -1398,6 +1417,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
         detectLoopRunning = true;
 
         function loop() {
+            if (!detectLoopRunning) return; // killed by sleep/release; a fresh chain starts on wake
             if (!vid.videoWidth || isProcessing || Date.now() < pauseUntil) {
                 setTimeout(loop, DETECT_INTERVAL);
                 return;
@@ -1430,6 +1450,15 @@ html.kiosk-fs #kioskFsExit { display: block; }
             faceReady = false;
         }
         lastFaceWasPresent = facePresentNow;
+
+        // ── Battery saver: face-absence sleep tracking ──────────────────────
+        // A face anywhere in frame (even unrecognized/still) resets the timer.
+        if (facePresentNow) {
+            _lastFaceSeenAt = Date.now();
+            if (_sleeping) _wakeFromSleep();
+        } else {
+            _sleepCheck();
+        }
 
         // ── No face detected ──────────────────────────────────────────────
         if (!facePresentNow) {
@@ -1880,6 +1909,123 @@ html.kiosk-fs #kioskFsExit { display: block; }
         if (help) help.classList.add('open');
     };
     _refreshInstallBtn();
+
+    // ── Battery saver: sleep on face absence (guest + fullscreen only) ──────
+    // SINGLE screen-off owner = this page. Fully Kiosk motion detection wakes
+    // the display; the page then resumes its normal detection/recognition flow.
+    // Keep Fully's own Screen Off Timer DISABLED so the two never race.
+    // ?sleeptime=N overrides the timeout in seconds (default 30, 0 = disabled).
+    var _sleepSecs = 30;
+    try {
+        var _slp = new URLSearchParams(window.location.search).get('sleeptime');
+        if (_slp !== null) _sleepSecs = Math.max(0, parseInt(_slp, 10) || 0);
+    } catch(e) {}
+    var _lastFaceSeenAt = 0;
+    var _sleeping = false;
+    var _screenOffSent = false; // one-shot fully.turnScreenOff() per idle episode
+    function _kioskHasFully() {
+        try { return (typeof fully !== 'undefined') && fully !== null && typeof fully.turnScreenOff === 'function'; }
+        catch(e) { return false; }
+    }
+    function _sleepEligible() {
+        if (!KIOSK_GUEST) return false; // admins never sleep
+        if (_sleepSecs <= 0) return false;
+        if (!detectorReady || !vid.videoWidth) return false; // not ready yet
+        try {
+            // Explicit fullscreen state: real Fullscreen API, our theater mode,
+            // or running inside Fully Kiosk (theater class alone is not enough).
+            return !!(document.fullscreenElement || document.webkitFullscreenElement
+                || document.documentElement.classList.contains('kiosk-fs')
+                || (typeof fully !== 'undefined' && fully !== null));
+        } catch(e) { return false; }
+    }
+    function _sleepCheck() {
+        if (_sleeping || isProcessing) return;
+        if (!_sleepEligible()) return;
+        if (!_lastFaceSeenAt) { _lastFaceSeenAt = Date.now(); return; }
+        if (Date.now() - _lastFaceSeenAt >= _sleepSecs * 1000) _enterSleep();
+    }
+    function _enterSleep() {
+        if (_sleeping || !_sleepEligible() || isProcessing) return;
+        _sleeping = true;
+        if (_kioskHasFully() && !_screenOffSent) {
+            _screenOffSent = true;
+            try {
+                fully.turnScreenOff();
+                console.log('[Sleep] no face for ' + _sleepSecs + 's — fully.turnScreenOff() sent');
+            } catch(e) { _showSleepOverlay(); }
+        } else {
+            // Plain browser fallback: black overlay only.
+            // This does NOT power off the backlight — no such claim is made.
+            _showSleepOverlay();
+        }
+    }
+    function _showSleepOverlay() {
+        var s = document.getElementById('kioskSleep');
+        if (s) s.style.display = 'block';
+    }
+    function _hideSleepOverlay() {
+        var s = document.getElementById('kioskSleep');
+        if (s) s.style.display = 'none';
+    }
+    function _wakeFromSleep() {
+        if (!_sleeping) return;
+        _sleeping = false;
+        _screenOffSent = false;
+        _lastFaceSeenAt = Date.now();
+        _hideSleepOverlay();
+        _wakeCamera();
+    }
+    // ── Wake recovery: release camera while hidden, re-acquire on visible ──
+    // Releasing the front camera lets Fully's motion detector own it while the
+    // screen is off (avoids camera-access competition on wake). Recognition
+    // rules are unchanged: wake alone never triggers a scan — the normal
+    // face-position + server-recognition checks still apply.
+    function _releaseCamera() {
+        try {
+            if (vid.srcObject) {
+                vid.srcObject.getTracks().forEach(function(t){ try { t.stop(); } catch(e) {} });
+                vid.srcObject = null;
+            }
+        } catch(e) {}
+        detectLoopRunning = false; // zombie setTimeout chains exit via the guard in loop()
+    }
+    function _wakeCamera() {
+        try {
+            var stream = vid.srcObject;
+            var alive = !!(stream && stream.getVideoTracks && stream.getVideoTracks().length
+                && stream.getVideoTracks()[0].readyState === 'live' && vid.videoWidth);
+            if (!alive) {
+                detectLoopRunning = false;
+                initCam(); // 'playing' handler restarts draw + detect loops
+            } else {
+                if (!detectLoopRunning) startDetectLoop();
+                startDrawLoop();
+            }
+            setTimeout(function() { try { resizeOverlay(); } catch(e) {} }, 300);
+        } catch(e) { try { initCam(); } catch(e2) {} }
+    }
+    document.addEventListener('visibilitychange', function() {
+        try {
+            if (document.hidden) {
+                // Release the camera only when the kiosk put the screen to sleep
+                // (or Fully owns the screen). Plain tab switches keep old behavior.
+                if (_sleeping || _kioskHasFully()) _releaseCamera();
+            } else {
+                _wakeFromSleep(); // no-op unless sleeping; also re-arms the timer
+                _wakeCamera();
+                try { if (typeof checkBackend === 'function') checkBackend(); } catch(e) {}
+            }
+        } catch(e) {}
+    });
+    // Tap anywhere on the sleep overlay to wake (plain-browser fallback path).
+    (function() {
+        var s = document.getElementById('kioskSleep');
+        if (s) {
+            s.addEventListener('click', function() { _wakeFromSleep(); });
+            s.addEventListener('touchend', function() { _wakeFromSleep(); });
+        }
+    })();
 
     // ── Initialization ───────────────────────────────────────────────────────
     var _ddRetry = document.getElementById('ddRetryBtn'); if (_ddRetry) _ddRetry.addEventListener('click', function() { window.ddRetryDetector(); });
