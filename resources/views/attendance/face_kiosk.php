@@ -158,6 +158,80 @@ $isDevMode = isset($_GET['dev']) || (isset($_SERVER['REQUEST_URI']) && stripos($
     .kiosk-stats-row { grid-template-columns: 1fr !important; gap: 4px !important; }
 }
 
+/* ─── Fullscreen Kiosk Theater (tablet: just the camera box) ────────────── */
+/* Toggled by toggleKioskFullscreen() + native Fullscreen API. Falls back to
+   pure CSS theater on browsers without Fullscreen support (iOS Safari). */
+.kiosk-fs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+html.kiosk-fs,
+html.kiosk-fs body {
+    background: #000 !important;
+}
+html.kiosk-fs main#main-content {
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+html.kiosk-fs #kioskRoot {
+    gap: 0 !important;
+}
+html.kiosk-fs #kioskRoot > * + * {
+    margin-top: 0 !important;
+}
+html.kiosk-fs .kiosk-header-row,
+html.kiosk-fs .kiosk-panel-head,
+html.kiosk-fs .kiosk-hint,
+html.kiosk-fs #kioskStatsRow,
+html.kiosk-fs .backend-offline-banner {
+    display: none !important;
+}
+html.kiosk-fs .kiosk-main-grid {
+    display: block !important;
+    margin: 0 !important;
+}
+html.kiosk-fs .kiosk-camera-col {
+    width: 100% !important;
+    max-width: none !important;
+}
+html.kiosk-fs .kiosk-camera-panel {
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: #000 !important;
+    box-shadow: none !important;
+}
+html.kiosk-fs .kiosk-wrap {
+    max-width: none !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    aspect-ratio: auto !important;
+    margin: 0 !important;
+}
+#kioskFsExit {
+    display: none;
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 2000;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #e2e8f0;
+    background: rgba(15,23,42,0.75);
+    border: 1px solid rgba(148,163,184,0.35);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+}
+html.kiosk-fs #kioskFsExit { display: block; }
+
 /* ─── TEMPORARY DETECTOR DIAGNOSTICS ─────────────────────────── */
 .dd-panel {
     position: fixed;
@@ -330,6 +404,10 @@ $isDevMode = isset($_GET['dev']) || (isset($_SERVER['REQUEST_URI']) && stripos($
             <span id="engineBadge" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-2xs font-bold bg-slate-700 text-slate-400 border border-slate-600">
                 <span class="w-2 h-2 rounded-full bg-slate-500"></span><span id="engineBadgeText">Checking...</span>
             </span>
+            <button onclick="toggleKioskFullscreen()" title="Fullscreen kiosk (tablet)" class="kiosk-fs-btn px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-slate-700 hover:bg-slate-600 border border-slate-600 transition shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+                Fullscreen
+            </button>
             <?php if (function_exists('auth') && auth()): ?>
             <a href="<?= url('attendance/face-register') ?>" class="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition shadow-sm">
                 + Register Face
@@ -360,7 +438,7 @@ $isDevMode = isset($_GET['dev']) || (isset($_SERVER['REQUEST_URI']) && stripos($
         <!-- Camera Column -->
         <div class="kiosk-camera-col <?= $isLoggedIn ? 'lg:col-span-7' : 'lg:col-span-12' ?> space-y-4">
             <div class="kiosk-camera-panel rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5 shadow-sm">
-                <div class="flex items-center justify-between mb-4">
+                <div class="kiosk-panel-head flex items-center justify-between mb-4">
                     <h3 class="text-sm font-bold text-white flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-indigo-400 k-pulse"></span> Camera Feed
                     </h3>
@@ -371,6 +449,9 @@ $isDevMode = isset($_GET['dev']) || (isset($_SERVER['REQUEST_URI']) && stripos($
                         </button>
                         <button onclick="restartCam()" class="p-1.5 rounded-lg hover:bg-slate-800 transition text-slate-400 hover:text-white" title="Restart">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
+                        <button onclick="toggleKioskFullscreen()" class="p-1.5 rounded-lg hover:bg-slate-800 transition text-slate-400 hover:text-white" title="Fullscreen — camera only">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
                         </button>
                     </div>
                 </div>
@@ -390,10 +471,11 @@ $isDevMode = isset($_GET['dev']) || (isset($_SERVER['REQUEST_URI']) && stripos($
                     </div>
                 </div>
 
-                <p class="text-2xs text-slate-500 text-center mt-3">
+                <p class="kiosk-hint text-2xs text-slate-500 text-center mt-3">
                     <svg class="w-3.5 h-3.5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Only scans when your face fills the oval. Background outside oval is darkened.
                 </p>
+                <button id="kioskFsExit" onclick="toggleKioskFullscreen()">✕ Exit Fullscreen</button>
             </div>
 
             <!-- Stats (admin-only: hidden for guest kiosk / tablet without login) -->
@@ -1567,6 +1649,54 @@ $isDevMode = isset($_GET['dev']) || (isset($_SERVER['REQUEST_URI']) && stripos($
         feedEl.prepend(el);
         if (feedEl.children.length > 6) feedEl.removeChild(feedEl.lastChild);
     }
+
+    // ── Fullscreen Kiosk Theater (tablet: camera box only, no browser chrome) ──
+    // Uses the Fullscreen API when available; falls back to CSS theater mode
+    // (e.g. iOS Safari) so the camera still fills the viewport.
+    function _kioskFsSupported() {
+        var el = document.documentElement;
+        return !!(el.requestFullscreen || el.webkitRequestFullscreen);
+    }
+    function _kioskEnterFs() {
+        document.documentElement.classList.add('kiosk-fs');
+        try {
+            var el = document.documentElement;
+            if (!_kioskFsSupported()) return Promise.resolve();
+            if (document.fullscreenElement || document.webkitFullscreenElement) return Promise.resolve();
+            if (el.requestFullscreen) return el.requestFullscreen().catch(function(){});
+            if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); return Promise.resolve(); }
+        } catch(e) {}
+        return Promise.resolve();
+    }
+    function _kioskExitFs() {
+        document.documentElement.classList.remove('kiosk-fs');
+        try {
+            if (document.fullscreenElement && document.exitFullscreen) return document.exitFullscreen().catch(function(){});
+            if (document.webkitFullscreenElement && document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+        } catch(e) {}
+        return Promise.resolve();
+    }
+    window.toggleKioskFullscreen = function() {
+        var active = document.documentElement.classList.contains('kiosk-fs')
+            || !!document.fullscreenElement || !!document.webkitFullscreenElement;
+        var done = active ? _kioskExitFs() : _kioskEnterFs();
+        if (done && done.then) done.then(function() { setTimeout(resizeOverlay, 350); });
+        else setTimeout(resizeOverlay, 350);
+    };
+    document.addEventListener('fullscreenchange', function() {
+        if (!document.fullscreenElement) document.documentElement.classList.remove('kiosk-fs');
+        setTimeout(resizeOverlay, 350);
+    });
+    document.addEventListener('webkitfullscreenchange', function() {
+        if (!document.webkitFullscreenElement) document.documentElement.classList.remove('kiosk-fs');
+        setTimeout(resizeOverlay, 350);
+    });
+    // Auto theater mode via ?fullscreen=1 (CSS only — real fullscreen needs a tap)
+    try {
+        if (new URLSearchParams(window.location.search).has('fullscreen')) {
+            document.documentElement.classList.add('kiosk-fs');
+        }
+    } catch(e) {}
 
     // ── Initialization ───────────────────────────────────────────────────────
     var _ddRetry = document.getElementById('ddRetryBtn'); if (_ddRetry) _ddRetry.addEventListener('click', function() { window.ddRetryDetector(); });
