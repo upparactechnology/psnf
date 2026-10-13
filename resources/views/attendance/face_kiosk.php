@@ -548,6 +548,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
 <script>
 (function() {
     const API  = '<?= url('attendance/api.php?endpoint=/api/recognize-face') ?>';
+    var KIOSK_GUEST = <?= $isLoggedIn ? 'false' : 'true' ?>;
     const vid  = document.getElementById('kioskVideo');
     const cap  = document.getElementById('kioskCapCanvas');
     const ovl  = document.getElementById('kioskOverlayCanvas');
@@ -1691,11 +1692,46 @@ html.kiosk-fs #kioskFsExit { display: block; }
         if (!document.webkitFullscreenElement) document.documentElement.classList.remove('kiosk-fs');
         setTimeout(resizeOverlay, 350);
     });
-    // Auto theater mode via ?fullscreen=1 (CSS only — real fullscreen needs a tap)
+    // Auto fullscreen-theater on tablet/guest: no tap needed.
+    // Theater CSS applies instantly on load (camera fills viewport).
+    // True browser fullscreen needs a gesture — the browser blocks it on load,
+    // so we attempt it silently and upgrade on the first touch anywhere.
     try {
-        if (new URLSearchParams(window.location.search).has('fullscreen')) {
+        var _qs = new URLSearchParams(window.location.search);
+        var _forceFs = _qs.has('fullscreen') || _qs.has('kiosk');
+        var _isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        var _isSmallScreen = Math.min(screen.width || 9999, screen.height || 9999) <= 900 || window.innerWidth <= 900;
+        var _isTabletUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Tablet|Tab|Kindle|Silk/i.test(navigator.userAgent);
+        if (_forceFs || (!KIOSK_GUEST ? false : (_isTouch && (_isSmallScreen || _isTabletUA)))) {
             document.documentElement.classList.add('kiosk-fs');
+            setTimeout(function() { try { resizeOverlay(); } catch(e) {} }, 120);
         }
+        var _fsAutoTried = false;
+        function _autoFsAttempt() {
+            if (_fsAutoTried) return; _fsAutoTried = true;
+            try {
+                var el = document.documentElement;
+                if (!document.fullscreenElement && el.requestFullscreen) {
+                    el.requestFullscreen().catch(function(){});
+                } else if (!document.webkitFullscreenElement && el.webkitRequestFullscreen) {
+                    try { el.webkitRequestFullscreen(); } catch(e) {}
+                }
+            } catch(e) {}
+        }
+        _autoFsAttempt();
+        var _upgradeOnFirstTouch = function() {
+            try {
+                var el = document.documentElement;
+                if (document.documentElement.classList.contains('kiosk-fs')
+                    && !document.fullscreenElement && el.requestFullscreen) {
+                    el.requestFullscreen().catch(function(){});
+                }
+            } catch(e) {}
+            document.removeEventListener('pointerdown', _upgradeOnFirstTouch);
+            document.removeEventListener('touchend', _upgradeOnFirstTouch);
+        };
+        document.addEventListener('pointerdown', _upgradeOnFirstTouch);
+        document.addEventListener('touchend', _upgradeOnFirstTouch);
     } catch(e) {}
 
     // ── Initialization ───────────────────────────────────────────────────────
