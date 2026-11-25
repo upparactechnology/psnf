@@ -158,8 +158,19 @@ class StudentController extends Controller
         }
     }
 
+    /** Teacher without an admin role — not allowed to open student profiles. */
+    private function isTeacherOnly(): bool
+    {
+        return has_role('teacher') && !has_role('super_admin') && !has_role('school_admin');
+    }
+
     public function show(string $id): string
     {
+        if ($this->isTeacherOnly()) {
+            $this->response->abort(403);
+            exit();
+        }
+
         $student = Student::withDetails((int) $id);
 
         if (!$student) {
@@ -462,6 +473,11 @@ class StudentController extends Controller
 
     public function timeline(string $id): string
     {
+        if ($this->isTeacherOnly()) {
+            $this->response->abort(403);
+            exit();
+        }
+
         $student  = Student::find((int) $id);
         if (!$student) { $this->response->abort(404); exit(); }
 
@@ -471,14 +487,22 @@ class StudentController extends Controller
 
     public function destroy(string $id): string
     {
-        $this->service->delete((int) $id);
-
-        if ($this->request->wantsJson()) {
-            return $this->successResponse('Student deleted.');
+        // Only admins may delete students
+        if (!has_role('super_admin') && !has_role('school_admin')) {
+            $this->response->abort(403);
+            exit();
         }
 
-        $this->flash('success', 'Student record deleted.');
-        return $this->redirect(url('students'));
+        $deleted = $this->service->delete((int) $id);
+
+        if ($this->request->wantsJson()) {
+            return $deleted
+                ? $this->successResponse('Student deleted.')
+                : $this->errorResponse('Student not found.', [], 404);
+        }
+
+        $this->flash($deleted ? 'success' : 'error', $deleted ? 'Student record deleted.' : 'Student not found.');
+        return $this->redirect(url('academics/students'));
     }
 
     public function search(): string

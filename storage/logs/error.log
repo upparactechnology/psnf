@@ -842,3 +842,13 @@
 #2 C:\xampp\htdocs\psnf\core\Application.php(27): Core\Database->__construct()
 #3 C:\xampp\htdocs\psnf\public\index.php(72): Core\Application->__construct()
 #4 {main}
+[25-Nov-2026 14:20:24 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 14:20:24 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 14:20:24 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 14:20:24 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 14:20:24 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 14:22:08 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 14:22:08 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 14:22:08 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 14:22:08 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 14:22:08 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348

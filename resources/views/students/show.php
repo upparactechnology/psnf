@@ -99,6 +99,16 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
         <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-5 space-y-4">
             <h3 class="text-sm font-semibold text-slate-300">Personal Details</h3>
             <?php
+            $addrParts = array_filter(array_map('trim', [
+                (string)($s['address'] ?? ''), (string)($s['city'] ?? ''),
+                (string)($s['state'] ?? ''), (string)($s['pincode'] ?? ''),
+            ]));
+            $fullAddress = implode(', ', $addrParts);
+            if ($fullAddress === '') {
+                foreach ($s['guardians'] ?? [] as $g) {
+                    if (!empty(trim((string)($g['address'] ?? '')))) { $fullAddress = trim($g['address']); break; }
+                }
+            }
             $fields = [
                 'Date of Birth'   => format_date($s['dob']) . ' (' . age($s['dob']) . ')',
                 'Gender'          => ucfirst($s['gender'] ?? '—'),
@@ -107,8 +117,12 @@ $sc = $statusClasses[$s['admission_status']] ?? 'bg-slate-700/50 text-slate-300 
                 'Religion'        => $s['religion'] ?? '—',
                 'Mother Tongue'   => $s['mother_tongue'] ?? '—',
                 'Aadhar Number'   => $s['aadhar_number'] ?? '—',
-                'Address'         => $s['address'] ?? '—',
+                'Address'         => $fullAddress !== '' ? $fullAddress : '—',
             ];
+            // Teachers must not see student addresses
+            if (has_role('teacher') && !has_role('super_admin') && !has_role('school_admin')) {
+                unset($fields['Address']);
+            }
             foreach ($fields as $label => $value): ?>
             <div class="flex items-start gap-3">
                 <span class="text-xs text-slate-500 w-32 flex-shrink-0 mt-0.5"><?= $label ?></span>

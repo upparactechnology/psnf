@@ -322,6 +322,8 @@ ob_start();
                name="search">
     </div>
 
+    <?php $canSeeDetails = !(has_role('teacher') && !has_role('super_admin') && !has_role('school_admin')); ?>
+    <?php $canDeleteStudent = (has_role('super_admin') || has_role('school_admin')) && has_permission('delete_students_list'); ?>
     <!-- Student Cards Container -->
     <div id="student-container">
         <?php if (empty($data)): ?>
@@ -333,7 +335,8 @@ ob_start();
         <!-- ENHANCED STUDENT CARD GRID -->
         <div x-show="viewMode === 'grid'" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <?php foreach ($data as $student): ?>
-            <a href="<?= url('academics/students/' . $student['id']) ?>" class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-4">
+            <div class="relative">
+            <<?= $canSeeDetails ? 'a href="' . url('academics/students/' . $student['id']) . '"' : 'div' ?> class="group p-5 rounded-2xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-4">
                 
                 <!-- Avatar & Identifiers -->
                 <div class="flex items-center gap-3">
@@ -354,6 +357,10 @@ ob_start();
                         <span>Class <?= e($student['class'] ?? '2-A') ?></span>
                         <span><?= ucfirst($student['gender'] ?? 'Male') ?> • <?= age($student['dob']) ?></span>
                     </div>
+                    <?php $cardAddr = implode(', ', array_filter(array_map('trim', [(string)($student['address'] ?? ''), (string)($student['city'] ?? '')]))); ?>
+                    <?php if ($cardAddr !== '' && $canSeeDetails): ?>
+                    <div class="text-slate-500 truncate" title="<?= e($cardAddr) ?>">📍 <?= e($cardAddr) ?></div>
+                    <?php endif; ?>
                     <div class="flex items-center justify-between">
                         <span class="px-2 py-0.5 rounded-full font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                             <?= e($student['disability_type'] ?? 'ADHD') ?>
@@ -365,13 +372,23 @@ ob_start();
                     </div>
                 </div>
 
+                <?php if ($canSeeDetails): ?>
                 <!-- Card Footer Action -->
                 <div class="flex items-center justify-between text-2xs text-slate-400 font-medium">
                     <span>View Profile</span>
                     <span class="group-hover:translate-x-1 transition-transform">→</span>
                 </div>
+                <?php endif; ?>
 
-            </a>
+            </<?= $canSeeDetails ? 'a' : 'div' ?>>
+            <?php if ($canDeleteStudent): ?>
+            <form method="POST" action="<?= url('students/' . $student['id']) ?>" onsubmit="return confirm('Delete student <?= e(addslashes($student['first_name'] . ' ' . $student['last_name'])) ?>? This cannot be undone from this screen.')" class="absolute top-3 right-3">
+                <?= \Core\View::csrf() ?>
+                <input type="hidden" name="_method" value="DELETE">
+                <button type="submit" title="Delete student" class="p-1.5 rounded-lg text-red-500 bg-white/80 dark:bg-slate-900/80 border border-red-500/20 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+            </form>
+            <?php endif; ?>
+            </div>
             <?php endforeach; ?>
         </div>
 
@@ -382,6 +399,7 @@ ob_start();
                     <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-400 text-2xs font-bold uppercase tracking-wider">
                         <th class="px-4 py-3">Student</th>
                         <th class="px-4 py-3">Class</th>
+                        <?php if ($canSeeDetails): ?><th class="px-4 py-3">Address</th><?php endif; ?>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3 text-right">Action</th>
                     </tr>
@@ -394,13 +412,21 @@ ob_start();
                             <span class="block text-2xs text-slate-400 font-normal font-mono"><?= e($student['admission_number'] ?? '') ?></span>
                         </td>
                         <td class="px-4 py-3 text-slate-500"><?= e($student['class'] ?? '—') ?></td>
+                        <?php if ($canSeeDetails): ?><td class="px-4 py-3 text-slate-500 max-w-xs truncate"><?= e(implode(', ', array_filter(array_map('trim', [(string)($student['address'] ?? ''), (string)($student['city'] ?? '')]))) ?: '—') ?></td><?php endif; ?>
                         <td class="px-4 py-3">
                             <span class="px-2 py-0.5 rounded-full text-2xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                                 <?= ucfirst($student['admission_status']) ?>
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <a href="<?= url('academics/students/' . $student['id']) ?>" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">View →</a>
+                            <?php if ($canSeeDetails): ?><a href="<?= url('academics/students/' . $student['id']) ?>" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">View →</a><?php endif; ?>
+                            <?php if ($canDeleteStudent): ?>
+            <form method="POST" action="<?= url('students/' . $student['id']) ?>" onsubmit="return confirm('Delete student <?= e(addslashes($student['first_name'] . ' ' . $student['last_name'])) ?>? This cannot be undone from this screen.')" class="inline-block ml-3">
+                <?= \Core\View::csrf() ?>
+                <input type="hidden" name="_method" value="DELETE">
+                <button type="submit" title="Delete student" class="inline-flex items-center gap-1 text-xs text-red-500 font-semibold hover:underline"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>Delete</button>
+            </form>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

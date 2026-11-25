@@ -163,6 +163,27 @@ $emp = $user['employee'] ?? null;
             </div>
         </div>
 
+        <?php if (has_role('super_admin') || has_role('school_admin')): ?>
+        <!-- Change Password (admin only) -->
+        <div class="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-6 mb-5">
+            <h3 class="text-sm font-semibold text-slate-300 border-b border-slate-800 pb-3 mb-4">Change Password</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">New Password</label>
+                    <div class="relative">
+                        <input :type="showPass ? 'text' : 'password'" name="new_password" autocomplete="new-password"class="<?= iClass('new_password',$errors) ?> pr-16" placeholder="New password">
+                        <button type="button" @click="showPass = !showPass" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white" x-text="showPass ? 'Hide' : 'Show'"></button>
+                    </div>
+                    <?= eMsg('new_password',$errors) ?>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-medium text-slate-400">Confirm New Password</label>
+                    <input :type="showPass ? 'text' : 'password'" name="new_password_confirmation" autocomplete="new-password"class="<?= iClass('new_password',$errors) ?>" placeholder="Repeat new password">
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <div class="flex items-center justify-between">
             <a href="<?= url('users') ?>" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-all">Cancel</a>
             <button type="submit" :disabled="loading" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #a855f7);" :class="loading?'opacity-70 cursor-not-allowed':''">

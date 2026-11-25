@@ -196,7 +196,26 @@ class UserController extends Controller
         $data  = $this->request->getBody();
         $roles = $data['roles'] ?? [];
         $redirectTo = $this->request->input('redirect_to', '/users');
-        unset($data['roles'], $data['_csrf'], $data['_method'], $data['password'], $data['password_confirmation'], $data['redirect_to']);
+        $newPassword        = (string) ($data['new_password'] ?? '');
+        $newPasswordConfirm = (string) ($data['new_password_confirmation'] ?? '');
+        unset($data['roles'], $data['_csrf'], $data['_method'], $data['password'], $data['password_confirmation'], $data['redirect_to'], $data['new_password'], $data['new_password_confirmation']);
+
+        // Only admins may change another user's password
+        if ($newPassword !== '') {
+            if (!has_role('super_admin') && !has_role('school_admin')) {
+                $this->flash('error', 'Only an admin can change passwords.');
+                return $this->redirect(url('users/' . (int) $id . '/edit?redirect_to=' . urlencode($redirectTo)));
+            }
+            $pwError = null;
+            if ($newPassword !== $newPasswordConfirm) {
+                $pwError = 'Passwords do not match.';
+            }
+            if ($pwError) {
+                \Core\Session::flash('errors', ['new_password' => $pwError]);
+                return $this->redirect(url('users/' . (int) $id . '/edit?redirect_to=' . urlencode($redirectTo)));
+            }
+            $data['password'] = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
+        }
 
         $lectureTime = !empty($data['lecture_time']) ? $data['lecture_time'] : null;
         $gracePeriod = isset($data['grace_period']) && $data['grace_period'] !== '' ? (int) $data['grace_period'] : 5;
@@ -235,6 +254,9 @@ class UserController extends Controller
         }
 
         \App\Models\ActivityLog::log('user_updated', auth_id(), ['user_id' => $id]);
+        if ($newPassword !== '') {
+            \App\Models\ActivityLog::log('user_password_changed', auth_id(), ['user_id' => $id]);
+        }
         $this->flash('success', 'User updated.');
         return $this->redirect($redirectTo);
     }

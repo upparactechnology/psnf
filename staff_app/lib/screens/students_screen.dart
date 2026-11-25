@@ -111,6 +111,74 @@ class _StudentsScreenState extends State<StudentsScreen> {
     });
   }
 
+  String _val(dynamic v) {
+    final s = (v ?? '').toString().trim();
+    return s.isEmpty ? '—' : s;
+  }
+
+  String _fullAddress(dynamic student) {
+    final parts = [student['address'], student['city'], student['state'], student['pincode']]
+        .map((p) => (p ?? '').toString().trim())
+        .where((p) => p.isNotEmpty)
+        .toList();
+    return parts.isEmpty ? '' : parts.join(', ');
+  }
+
+  void _showStudentDetails(BuildContext context, dynamic student) {
+    final address = _fullAddress(student);
+    final rows = <MapEntry<String, String>>[
+      MapEntry('Admission No', _val(student['admission_number'])),
+      MapEntry('GR Number', _val(student['gr_number'])),
+      MapEntry('Roll Number', _val(student['roll_number'])),
+      MapEntry('Class / Section', '${_val(student['class'])} / ${_val(student['section'])}'),
+      MapEntry('Date of Birth', _val(student['dob'])),
+      MapEntry('Gender', _val(student['gender'])),
+      MapEntry('Blood Group', _val(student['blood_group'])),
+      MapEntry('Disability', _val(student['disability_type'])),
+      MapEntry('Mother Tongue', _val(student['mother_tongue'])),
+      MapEntry('Address', address.isEmpty ? '—' : address),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        builder: (context, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.all(20),
+          children: [
+            Text(
+              '${student['first_name'] ?? ''} ${student['last_name'] ?? ''}'.trim(),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 16),
+            ...rows.map((r) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 120,
+                        child: Text(r.key, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                      ),
+                      Expanded(
+                        child: Text(r.value, style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _showGuardiansDialog(BuildContext context, dynamic student) async {
     final int studentId = int.tryParse(student['id'].toString()) ?? 0;
     
@@ -524,9 +592,13 @@ class _StudentsScreenState extends State<StudentsScreen> {
                       final String studentClass = student['class'] ?? 'N/A';
                       final String admissionNo = student['admission_number'] ?? 'N/A';
                       final String disability = student['disability_type'] ?? 'Other';
+                      final String address = _fullAddress(student);
 
                       return Card(
                         margin: EdgeInsets.zero,
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                        onTap: () => _showStudentDetails(context, student),
                         child: Padding(
                           padding: const EdgeInsets.all(14.0),
                           child: Column(
@@ -567,6 +639,23 @@ class _StudentsScreenState extends State<StudentsScreen> {
                                             color: Colors.grey.shade500,
                                           ),
                                         ),
+                                        if (address.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade500),
+                                              const SizedBox(width: 3),
+                                              Expanded(
+                                                child: Text(
+                                                  address,
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ],
                                     ),
                                   ),
@@ -641,6 +730,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
                               ),
                             ],
                           ),
+                        ),
                         ),
                       );
                     },
