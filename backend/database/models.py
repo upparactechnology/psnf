@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Enum, DateTime, Float, Text, Date, BigInteger, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from database.connection import Base
+from utils.timeutil import now_ist_naive
 
 class ERPUser(Base):
     """
@@ -23,7 +23,7 @@ class ERPUser(Base):
     employee_id     = Column(String(50), nullable=True, index=True)  # employee code / ID
     avatar          = Column(String(255), nullable=True)
     is_active       = Column(Integer, default=1)
-    created_at      = Column(DateTime, default=datetime.utcnow)
+    created_at      = Column(DateTime, default=now_ist_naive)
     updated_at      = Column(DateTime, nullable=True)
     deleted_at      = Column(DateTime, nullable=True)
 
@@ -46,7 +46,7 @@ class FaceEmbedding(Base):
     employee_id = Column(Integer, nullable=True, index=True)    # legacy column (kept for compat)
     embedding   = Column(Text, nullable=False)                  # JSON list of 512 floats
     image_path  = Column(String(255), nullable=True)
-    created_at  = Column(DateTime, default=datetime.utcnow)
+    created_at  = Column(DateTime, default=now_ist_naive)
 
     user = relationship("ERPUser", back_populates="face_embeddings", foreign_keys=[user_id])
 
@@ -70,6 +70,6 @@ class Attendance(Base):
     image_path      = Column(String(255), nullable=True)
     ip_address      = Column(String(45), nullable=True)
     user_agent      = Column(Text, nullable=True)
-    created_at      = Column(DateTime, default=datetime.utcnow)
+    created_at      = Column(DateTime, default=now_ist_naive)
 
     user = relationship("ERPUser", back_populates="attendances", foreign_keys=[user_id])

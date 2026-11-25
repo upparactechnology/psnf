@@ -634,6 +634,8 @@ html.kiosk-fs #kioskFsExit { display: block; }
 (function() {
     const API  = '<?= url('attendance/api.php?endpoint=/api/recognize-face') ?>';
     var KIOSK_GUEST = <?= $isLoggedIn ? 'false' : 'true' ?>;
+    // Per-session kiosk token issued by KioskAuthMiddleware; required by attendance/api.php
+    const KIOSK_TOKEN = <?= json_encode((string) \Core\Session::get('kiosk_token', '')) ?>;
     const vid  = document.getElementById('kioskVideo');
     const cap  = document.getElementById('kioskCapCanvas');
     const ovl  = document.getElementById('kioskOverlayCanvas');
@@ -1611,7 +1613,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
 
         try {
             const r = await fetch(API, {
-                method:'POST', headers:{'Content-Type':'application/json'},
+                method:'POST', headers:{'Content-Type':'application/json','X-Kiosk-Token':KIOSK_TOKEN},
                 body: JSON.stringify({image_base64: base64Img})
             });
             console.log('[Scan] Response:', r.status);
@@ -1703,7 +1705,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
 
     window.checkBackend = async function() {
         try {
-            const r = await fetch('<?= url('attendance/api.php?endpoint=/health') ?>', { method: 'GET' });
+            const r = await fetch('<?= url('attendance/api.php?endpoint=/health') ?>', { method: 'GET', headers: {'X-Kiosk-Token': KIOSK_TOKEN} });
             if (r.ok || r.status === 200) {
                 const d = await r.json().catch(() => null);
                 const alive = d && (d.status === 'healthy' || d.model_loaded === true);
@@ -1739,7 +1741,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
         const txtClr = {success:'text-emerald-300',warn:'text-amber-300',error:'text-red-300'};
         const confBadge = conf ? `<div class="mt-1.5"><span class="text-2xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">Confidence: ${Math.round(conf*100)}%</span></div>` : '';
         resultEl.className = `k-result border ${clr[type]||clr.error} text-center`;
-        resultEl.innerHTML = `${ico[type]||ico.error}<div class="font-bold ${txtClr[type]||'text-red-300'} text-sm">${name}</div><div class="text-xs text-slate-400 mt-1">${msg}</div>${confBadge}`;
+        resultEl.innerHTML = `${ico[type]||ico.error}<div class="font-bold ${txtClr[type]||'text-red-300'} text-sm">${escapeHtml(name)}</div><div class="text-xs text-slate-400 mt-1">${escapeHtml(msg)}</div>${confBadge}`;
     }
 
     function addFeed(name, code, time) {
@@ -1748,7 +1750,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
         const t = time ? new Date(time.replace(' ','T')).toLocaleTimeString('en-IN',opts).toUpperCase() : new Date().toLocaleTimeString('en-IN',opts).toUpperCase();
         const el = document.createElement('div');
         el.className = 'k-feed-item';
-        el.innerHTML = `<div class="flex items-center justify-between"><div><span class="text-xs font-bold text-emerald-300">${name||'Staff'}</span>${code?`<span class="ml-2 text-2xs text-slate-500 font-mono">${code}</span>`:''}</div><span class="text-2xs text-slate-400 font-mono">${t}</span></div>`;
+        el.innerHTML = `<div class="flex items-center justify-between"><div><span class="text-xs font-bold text-emerald-300">${escapeHtml(name||'Staff')}</span>${code?`<span class="ml-2 text-2xs text-slate-500 font-mono">${escapeHtml(code)}</span>`:''}</div><span class="text-2xs text-slate-400 font-mono">${escapeHtml(t)}</span></div>`;
         feedEl.prepend(el);
         if (feedEl.children.length > 6) feedEl.removeChild(feedEl.lastChild);
     }

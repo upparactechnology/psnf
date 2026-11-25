@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+from models.schemas import Base64Image
 from recognition.detector import FaceDetector
 from recognition.model_manager import model_manager
 from utils.image_utils import base64_to_cv2
@@ -19,7 +20,8 @@ def load_model():
         logger.info("Model force-loaded via /api/model/load")
         return {"success": True, "message": "Model loaded"}
     except Exception as e:
-        return {"success": False, "message": str(e)}
+        logger.error(f"Model load failed: {e}")
+        return {"success": False, "message": "Model could not be loaded."}
 
 
 @router.post("/model/unload")
@@ -31,11 +33,12 @@ def unload_model():
         model_manager.unload(reason="manual unload from registration UI")
         return {"success": True, "message": "Model unloaded"}
     except Exception as e:
-        return {"success": False, "message": str(e)}
+        logger.error(f"Model unload failed: {e}")
+        return {"success": False, "message": "Model could not be unloaded."}
 
 
 class DetectFrameRequest(BaseModel):
-    image_base64: str
+    image_base64: Base64Image
 
 @router.post("/detect-frame")
 def detect_frame(req: DetectFrameRequest):
@@ -93,6 +96,7 @@ def detect_frame(req: DetectFrameRequest):
             "img_height": int(img_bgr.shape[0])
         }
     except Exception as e:
+        logger.error(f"detect-frame failed: {e}")
         return {
             "success": False,
             "is_valid": False,
@@ -100,5 +104,5 @@ def detect_frame(req: DetectFrameRequest):
             "face_count": 0,
             "model_loaded": model_manager.is_loaded(),
             "state": "error",
-            "error_message": str(e)
+            "error_message": "Frame could not be processed."
         }

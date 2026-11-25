@@ -2,8 +2,44 @@ Options -Indexes -MultiViews
 
 RewriteEngine On
 
+# ─── Security: deny sensitive files & folders (before any other rule) ────────
+# Patterns are relative to this .htaccess, so they work both locally
+# (/psnf/... and /psnf/erp/...) and in production (.htaccess inside /erp/).
+
 # Block dotfiles
 RewriteRule (^\.|/\.) - [F,L]
+
+# Sensitive file types anywhere (dumps, logs, scripts, docs, lockfiles, env)
+<FilesMatch "(?i)\.(sql|log|bat|ps1|md|sh|lock|env|ini|bak)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^(composer\.(json|lock)|package(-lock)?\.json|\.env.*)$">
+    Require all denied
+</FilesMatch>
+RewriteRule (?i)\.(sql|log|bat|ps1|md|sh|lock|env)$ - [F,L]
+RewriteRule (^|/)composer\.(json|lock)$ - [F,L]
+
+# Internal source / data folders (optionally reached through the erp/ or public/ prefix)
+RewriteRule ^(erp/)?(backend|database|config|core|app|routes|resources|graphify-out|\.agents|staff_app|driver_app)(/|$) - [F,L]
+RewriteRule ^(erp/)?(public/)?storage/(logs|keys)(/|$) - [F,L]
+
+# Root-level maintenance / debug scripts
+RewriteRule ^(erp/)?(fix|test|test_req|check_duplicates|check_table|file_manager|student_enrollment_duplicates|websocket_server)\.php$ - [F,L]
+
+# Report-card PDFs / test PDFs in the project root
+RewriteRule ^(erp/)?[^/]*REPORTCARD[^/]*\.pdf$ - [F,L]
+RewriteRule ^(erp/)?test_cert\.pdf$ - [F,L]
+
+# Never execute scripts inside upload / storage folders
+RewriteRule ^(erp/)?(public/)?(storage|uploads)/.*\.(php[0-9]?|phtml|phar|pht|phps|shtml)$ - [F,L,NC]
+RewriteRule ^(erp/)?(online_enrollment/uploads|backend/uploads|public/certificate_generator/storage|certificate_generator/storage)/.*\.(php[0-9]?|phtml|phar|pht|phps|shtml)$ - [F,L,NC]
+
+# Debug / test / maintenance scripts in public/ (direct /public/... access).
+# Requests that go through erp/ are mapped into public/ and checked again by public/.htaccess.
+RewriteRule ^(erp/)?public/(?!index\.php$)[^/]+\.php$ - [F,L]
+RewriteRule ^(erp/)?(attendance/)?(debug_|test_|run_|check_|verify_|force_|get_ip|get_my_ip|migrate_|remove_portal|restore_flutter|copy_flutter|find_npm|build_kiosk)[^/]*\.php$ - [F,L]
+RewriteRule ^(erp/)?public/attendance/run_backend\.php$ - [F,L]
+RewriteRule ^(erp/)?public/file_manager/.*\.sql$ - [F,L]
 
 # File Manager (legacy direct access)
 RewriteRule ^file_manager/public/?$ public/file_manager/public/index.php [L,QSA]

@@ -33,16 +33,18 @@ class ParentPortalController extends Controller
 
         if ($isAdminOrStaff) {
             $sessGuardianId = Session::get('parent.impersonated_guardian_id');
+            $authTenant = (int)(auth()['tenant_id'] ?? 0);
+            $tenantSql = has_role('super_admin') ? '' : ' AND tenant_id = ' . $authTenant;
             if ($sessGuardianId) {
                 $guardian = $this->db()->selectOne(
-                    "SELECT * FROM guardians WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+                    "SELECT * FROM guardians WHERE id = ? AND deleted_at IS NULL{$tenantSql} LIMIT 1",
                     [(int)$sessGuardianId]
                 );
             }
             if (!$guardian) {
-                // Default to the first available guardian in the database
+                // Default to the first available guardian in the user's tenant
                 $guardian = $this->db()->selectOne(
-                    "SELECT * FROM guardians WHERE deleted_at IS NULL ORDER BY id ASC LIMIT 1"
+                    "SELECT * FROM guardians WHERE deleted_at IS NULL{$tenantSql} ORDER BY id ASC LIMIT 1"
                 );
                 if ($guardian) {
                     Session::set('parent.impersonated_guardian_id', $guardian['id']);
@@ -158,22 +160,27 @@ class ParentPortalController extends Controller
 
     public function impersonate(string $id): void
     {
-        $isAdminOrStaff = has_role('super_admin') || has_role('school_admin') || has_role('manager') || has_role('teacher');
-        if (!$isAdminOrStaff) {
+        // Only administrators (or staff explicitly granted parent-management rights) may view the portal as a guardian
+        $canImpersonate = has_role('super_admin') || has_role('school_admin') || has_role('manager')
+            || has_permission('view_student_parents');
+        if (!$canImpersonate) {
             Application::$app->response->abort(403);
             exit();
         }
 
-        $guardian = $this->db()->selectOne(
-            "SELECT id FROM guardians WHERE id = ? AND deleted_at IS NULL LIMIT 1",
-            [(int)$id]
-        );
+        $tenantId = (int)(auth()['tenant_id'] ?? 0);
+        $guardian = has_role('super_admin')
+            ? $this->db()->selectOne("SELECT id FROM guardians WHERE id = ? AND deleted_at IS NULL LIMIT 1", [(int)$id])
+            : $this->db()->selectOne("SELECT id FROM guardians WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL LIMIT 1", [(int)$id, $tenantId]);
 
-        if ($guardian) {
-            Session::set('parent.impersonated_guardian_id', $guardian['id']);
-            Session::remove('parent.active_student_id'); // reset active student context so it recalculates
-            Session::flash('success', "Switched view to parent: " . $id);
+        if (!$guardian) {
+            Application::$app->response->abort(404);
+            exit();
         }
+
+        Session::set('parent.impersonated_guardian_id', $guardian['id']);
+        Session::forget('parent.active_student_id'); // reset active student context so it recalculates
+        Session::flash('success', "Switched view to parent #" . (int)$guardian['id']);
 
         $this->redirect(url('parent/dashboard'));
         exit();
@@ -463,17 +470,15 @@ class ParentPortalController extends Controller
                 mkdir($uploadDir, 0755, true);
             }
 
-            $fileInfo = pathinfo($_FILES['medical_certificate']['name']);
-            $ext = strtolower($fileInfo['extension']);
-            $allowedExts = ['pdf', 'jpg', 'jpeg', 'png'];
-
-            if (!in_array($ext, $allowedExts)) {
-                \Core\Session::flash('error', 'Invalid file type. Only PDF and images are allowed.');
+            try {
+                $ext = \App\Services\UploadGuard::check($_FILES['medical_certificate'], ['pdf', 'jpg', 'jpeg', 'png'], 5 * 1024 * 1024);
+            } catch (\RuntimeException $e) {
+                \Core\Session::flash('error', $e->getMessage());
                 $this->redirect(url("parent/students/{$id}/attendance"));
                 return;
             }
 
-            $fileName = $student['id'] . '_' . time() . '_' . uniqid() . '.' . $ext;
+            $fileName = \App\Services\UploadGuard::storedName($ext, $student['id'] . '_');
             if (move_uploaded_file($_FILES['medical_certificate']['tmp_name'], $uploadDir . $fileName)) {
                 $medicalCertPath = $fileName;
             } else {
@@ -498,7 +503,7 @@ class ParentPortalController extends Controller
         ]);
 
         \Core\Session::flash('success', 'Leave request submitted successfully.');
-        \Core\$this->redirect(url("parent/students/{$id}/attendance"));
+        $this->redirect(url("parent/students/{$id}/attendance"));
     }
 
     public function submitTomorrowAttendance(string $id): void
@@ -571,14 +576,10 @@ class ParentPortalController extends Controller
         if ($status === 'absent' && $isMedical === '1') {
             $file = Application::$app->request->file('medical_certificate');
             if ($file && $file['error'] === UPLOAD_ERR_OK) {
-                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                if (!in_array($ext, ['pdf', 'png', 'jpg', 'jpeg'])) {
-                    Session::flash('error', 'Medical certificate must be a PDF, PNG, JPG, or JPEG file.');
-                    $this->redirect(url("parent/students/{$id}/attendance"));
-                    exit();
-                }
-                if ($file['size'] > 5 * 1024 * 1024) {
-                    Session::flash('error', 'Medical certificate size must be less than 5MB.');
+                try {
+                    $ext = \App\Services\UploadGuard::check($file, ['pdf', 'png', 'jpg', 'jpeg'], 5 * 1024 * 1024);
+                } catch (\RuntimeException $e) {
+                    Session::flash('error', 'Medical certificate: ' . $e->getMessage());
                     $this->redirect(url("parent/students/{$id}/attendance"));
                     exit();
                 }
@@ -587,7 +588,7 @@ class ParentPortalController extends Controller
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0755, true);
                 }
-                $storedName = bin2hex(random_bytes(16)) . '.' . $ext;
+                $storedName = \App\Services\UploadGuard::storedName($ext);
                 move_uploaded_file($file['tmp_name'], $uploadDir . '/' . $storedName);
             } else {
                 // Check if we already have a medical certificate stored
@@ -856,9 +857,46 @@ class ParentPortalController extends Controller
 
         $certId = (int) $id;
 
+        // Ownership: parents may only download certificates of their own children;
+        // staff need the certificate permission and may only see their own tenant's students.
+        $user = auth() ?? [];
+        $isSuper = has_role('super_admin');
+        $isCertStaff = $isSuper || has_permission('view_certificates');
+        $ownStudentIds = [];
+        if (has_role('parent')) {
+            $rows = $this->db()->select(
+                "SELECT gs.student_id FROM guardians g
+                 JOIN guardian_student gs ON gs.guardian_id = g.id
+                 WHERE g.user_id = ? AND g.deleted_at IS NULL",
+                [(int) auth_id()]
+            );
+            $ownStudentIds = array_map('intval', array_column($rows, 'student_id'));
+        }
+        if (!$isCertStaff && empty($ownStudentIds)) {
+            Application::$app->response->abort(403);
+            exit();
+        }
+        $canAccessStudent = function ($studentId) use ($isSuper, $isCertStaff, $ownStudentIds, $user): bool {
+            if ($studentId === null || $studentId === '') {
+                return $isCertStaff && $isSuper;
+            }
+            $studentId = (int) $studentId;
+            if (in_array($studentId, $ownStudentIds, true)) {
+                return true;
+            }
+            if (!$isCertStaff) {
+                return false;
+            }
+            if ($isSuper) {
+                return true;
+            }
+            $row = $this->db()->selectOne("SELECT tenant_id FROM students WHERE id = ? LIMIT 1", [$studentId]);
+            return $row && (int) $row['tenant_id'] === (int) ($user['tenant_id'] ?? 0);
+        };
+
         // 1. Try fetching from generated_certificates joined with participants
         $cert = $this->db()->selectOne("
-            SELECT 
+            SELECT
                 gc.id,
                 gc.participant_id,
                 gc.pdf_path,
@@ -869,9 +907,14 @@ class ParentPortalController extends Controller
             FROM generated_certificates gc
             JOIN participants p ON p.id = gc.participant_id
             JOIN certificate_types ct ON ct.id = p.certificate_type_id
-            WHERE p.id = ? OR gc.id = ?
+            WHERE (p.id = ? OR gc.id = ?)
+            " . ($isCertStaff ? '' : ' AND p.student_id IN (' . implode(',', array_map('intval', $ownStudentIds ?: [0])) . ')') . "
             LIMIT 1
         ", [$certId, $certId]);
+
+        if ($cert && !$canAccessStudent($cert['student_id'] ?? null)) {
+            $cert = null; // not yours — fall through (and ultimately 404)
+        }
 
         if ($cert) {
             $relative = $format === 'pdf' ? (string)($cert['pdf_path'] ?? '') : (string)($cert['jpg_path'] ?? '');
@@ -918,7 +961,15 @@ class ParentPortalController extends Controller
         }
 
         // 2. Check main certificates table
-        $mainCert = $this->db()->selectOne("SELECT * FROM certificates WHERE id = ?", [$certId]);
+        $mainCert = null;
+        try {
+            $mainCert = $this->db()->selectOne("SELECT * FROM certificates WHERE id = ?", [$certId]);
+        } catch (\Throwable $e) {
+            $mainCert = null;
+        }
+        if ($mainCert && !$canAccessStudent($mainCert['student_id'] ?? null)) {
+            $mainCert = null;
+        }
         if ($mainCert) {
             $filePath = (string) $mainCert['file_path'];
             $cleanPath = ltrim(str_replace('\\', '/', $filePath), '/');
@@ -1069,86 +1120,23 @@ class ParentPortalController extends Controller
         ]));
     }
 
+    /**
+     * Online fee payment by parents.
+     * No payment gateway is integrated (the previous implementation marked invoices as
+     * paid without collecting any money), so this endpoint is disabled. Fees are paid at
+     * the school office and recorded by staff through /fees/{id}/pay.
+     */
     public function payFee(string $studentId, string $invoiceId): string
     {
         $context = $this->getContext((int)$studentId);
         $student = $context['active_student'];
-
-        $invoice = $this->db()->selectOne(
-            "SELECT * FROM fee_invoices WHERE id = ? AND student_id = ? LIMIT 1",
-            [(int)$invoiceId, $student['id']]
-        );
-
-        if (!$invoice || $invoice['status'] === 'paid') {
-            if (Application::$app->request->isHtmx()) {
-                return '<div class="text-red-400 font-medium">Invalid or already paid invoice.</div>';
-            }
-            Session::flash('error', 'Invalid or already paid invoice.');
-            $this->redirect(url("parent/students/{$student['id']}/fees"));
-            exit();
-        }
-
-        $method = Application::$app->request->post('payment_method', 'Credit Card');
-        $ref    = 'SIM-' . strtoupper(substr(md5(uniqid()), 0, 10));
-        $amount = (float)$invoice['amount'];
-
-        // Mark invoice paid
-        $this->db()->update('fee_invoices', [
-            'status'      => 'paid',
-            'paid_amount' => $amount,
-            'paid_at'     => now(),
-        ], 'id = ?', [$invoice['id']]);
-
-        // Insert payment details
-        $paymentId = $this->db()->insert('fee_payments', [
-            'tenant_id'      => $student['tenant_id'],
-            'school_id'      => $student['school_id'],
-            'branch_id'      => $student['branch_id'],
-            'invoice_id'     => $invoice['id'],
-            'amount'         => $amount,
-            'payment_method' => $method,
-            'payment_ref'    => $ref,
-            'paid_at'        => now(),
-            'payment_source' => 'parent_online',
-        ]);
-
-        // Record to Student Ledger
-        $currentBalance = (float)($this->db()->selectOne("SELECT balance FROM student_ledgers WHERE student_id = ? ORDER BY id DESC LIMIT 1", [$student['id']])['balance'] ?? 0);
-        $newBalance = $currentBalance - $amount;
-        $this->db()->insert('student_ledgers', [
-            'student_id'   => $student['id'],
-            'entry_type'   => 'payment',
-            'debit'        => 0.00,
-            'credit'       => $amount,
-            'balance'      => $newBalance,
-            'reference_id' => $paymentId,
-            'description'  => "Online Payment: Received {$amount} via {$method} for '{$invoice['title']}'"
-        ]);
-
-        // WhatsApp Notification
-        \App\Services\NotificationService::notifyPaymentReceived($student, $invoice, $amount);
-
-        // Log to Student Timeline
-        $this->db()->insert('student_timeline', [
-            'student_id'  => $student['id'],
-            'event_type'  => 'fee_payment',
-            'title'       => 'Fee Payment Successful',
-            'description' => "Paid {$amount} INR for '{$invoice['title']}' via {$method}. Ref: {$ref}.",
-            'color'       => 'green',
-            'icon'        => 'cash',
-            'actor_name'  => $context['guardian']['name'],
-            'occurred_at' => now(),
-        ]);
+        $msg = 'Online payment is not configured. Please pay at the school office.';
 
         if (Application::$app->request->isHtmx()) {
-            return '<div class="bg-green-950/60 border border-green-800/40 text-green-300 p-4 rounded-xl text-sm font-medium">
-                        ✓ Payment successful! Ref: ' . $ref . '. Reloading page...
-                        <script>setTimeout(() => window.location.reload(), 1500)</script>
-                    </div>';
+            return '<div class="text-red-400 font-medium">' . e($msg) . '</div>';
         }
-
-        Session::flash('success', 'Fee paid successfully!');
-        $this->redirect(url("parent/students/{$student['id']}/fees"));
+        Session::flash('error', $msg);
+        $this->redirect(url("parent/students/" . (int)($student['id'] ?? $studentId) . "/fees"));
         exit();
     }
 
@@ -1343,44 +1331,12 @@ class ParentPortalController extends Controller
 
     public function apiPayFee(string $studentId, string $invoiceId): string
     {
-        $context = $this->getContext((int)$studentId);
-        $student = $context['active_student'];
-
-        $invoice = $this->db()->selectOne(
-            "SELECT * FROM fee_invoices WHERE id = ? AND student_id = ? LIMIT 1",
-            [(int)$invoiceId, $student['id']]
-        );
-
-        if (!$invoice || $invoice['status'] === 'paid') {
-            return $this->respondJson(['success' => false, 'message' => 'Invalid or paid invoice'], 400);
-        }
-
-        $amount = (float)$invoice['amount'];
-        $ref    = 'API-' . strtoupper(substr(md5(uniqid()), 0, 10));
-
-        $this->db()->update('fee_invoices', [
-            'status'      => 'paid',
-            'paid_amount' => $amount,
-            'paid_at'     => now(),
-        ], 'id = ?', [$invoice['id']]);
-
-        $this->db()->insert('fee_payments', [
-            'tenant_id'      => $student['tenant_id'],
-            'school_id'      => $student['school_id'],
-            'branch_id'      => $student['branch_id'],
-            'invoice_id'     => $invoice['id'],
-            'amount'         => $amount,
-            'payment_method' => 'API Gateway',
-            'payment_ref'    => $ref,
-            'paid_at'        => now(),
-        ]);
-
+        // Ownership check still applies; payment itself is disabled (no gateway integrated).
+        $this->getContext((int)$studentId);
         return $this->respondJson([
-            'success'       => true,
-            'transaction'   => $ref,
-            'amount_paid'   => $amount,
-            'message'       => 'Payment processed successfully'
-        ]);
+            'success' => false,
+            'message' => 'Online payment is not configured. Please pay at the school office.',
+        ], 503);
     }
 
     public function apiUpdateEmergency(string $studentId): string
@@ -1498,6 +1454,19 @@ class ParentPortalController extends Controller
         }
 
         $validated = $validator->validated();
+
+        // School / branch must belong to the guardian's tenant
+        $okSchool = $this->db()->selectOne(
+            "SELECT b.id FROM branches b JOIN schools s ON s.id = b.school_id
+             WHERE b.id = ? AND s.id = ? AND s.tenant_id = ? LIMIT 1",
+            [(int)$validated['branch_id'], (int)$validated['school_id'], (int)$guardian['tenant_id']]
+        );
+        if (!$okSchool) {
+            Session::flash('errors', ['school_id' => ['Please select a valid school and branch.']]);
+            Session::flash('old', $data);
+            $this->redirect(url('parent/students/add'));
+            exit();
+        }
 
         // Build Student Data
         $studentData = [

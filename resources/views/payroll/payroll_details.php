@@ -96,11 +96,13 @@ ob_start();
                                 <div class="space-y-0.5 text-3xs leading-tight">
                                     <div><span class="text-amber-500 font-bold">Lates:</span> <?= (int)$it['late_count'] ?> <span class="text-slate-400">(Ex: <?= (int)$it['late_exempted_count'] ?>)</span></div>
                                     <div><span class="text-rose-500 font-bold">Penalty Days:</span> <?= (int)$it['late_penalty_half_days'] ?></div>
+                                    <?php if ((int)($it['late_remainder'] ?? 0) > 0): ?><div><span class="text-slate-400">Below limit:</span> <?= (int)$it['late_remainder'] ?></div><?php endif; ?>
                                 </div>
                             </td>
                             <td class="p-3 font-mono text-rose-500 text-3xs leading-tight">
                                 <div>Absents: ₹<?= number_format((float)$it['absent_deduction'], 2) ?></div>
                                 <div>Unpaid Leaves: ₹<?= number_format((float)($it['unpaid_leave_deduction'] ?? 0), 2) ?></div>
+                                <?php if ((float)($it['unpaid_holiday_deduction'] ?? 0) > 0): ?><div>Unpaid Holidays: ₹<?= number_format((float)$it['unpaid_holiday_deduction'], 2) ?></div><?php endif; ?>
                                 <div>Half-Days: ₹<?= number_format((float)($it['normal_half_day_deduction'] ?? 0), 2) ?></div>
                                 <div>Lates Penalty: ₹<?= number_format((float)($it['late_penalty_deduction'] ?? 0), 2) ?></div>
                             </td>
@@ -142,6 +144,17 @@ ob_start();
                                             } elseif ($ch['status'] === 'ABSENT') {
                                                 $badgeText = 'Absent';
                                                 $cardBg = 'bg-red-500/10 text-red-500 border-red-500/20';
+                                            } elseif ($ch['status'] === 'UNPAID_HOLIDAY') {
+                                                $badgeText = 'Unpaid Hol';
+                                                $cardBg = 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-500/20';
+                                            } elseif ($ch['status'] === 'NOT_JOINED') {
+                                                $badgeText = 'Not Joined';
+                                                $cardBg = 'bg-slate-100/50 dark:bg-slate-850/50 opacity-60';
+                                            } elseif ($ch['status'] === 'UPCOMING') {
+                                                $badgeText = 'Upcoming';
+                                                $cardBg = 'bg-slate-100/50 dark:bg-slate-850/50 opacity-60';
+                                            } elseif ($ch['status'] === 'PRESENT') {
+                                                $badgeText = ($ch['label'] ?? '') === 'wfh' ? 'WFH' : 'Present';
                                             } elseif ($ch['status'] === 'HALF_DAY') {
                                                 $badgeText = 'Half-Day';
                                                 $cardBg = 'bg-orange-500/10 text-orange-600 border-orange-500/20';
@@ -159,13 +172,13 @@ ob_start();
                                             }
 
                                             if ($ch['penalty']) {
-                                                $badgeText = 'Late Penalty';
+                                                $badgeText = !empty($ch['penalty_carried']) ? 'Late Penalty (month end)' : 'Late Penalty';
                                                 $cardBg = 'bg-rose-600/15 border-rose-500 text-rose-600 dark:text-rose-400 font-bold';
                                             }
                                         ?>
                                         <div class="p-2.5 rounded-xl border <?= $cardBorder ?> <?= $cardBg ?> flex flex-col justify-between h-16 transition-all shadow-sm">
                                             <span class="text-3xs font-mono font-bold text-slate-400"><?= date('d M', strtotime($ch['date'])) ?></span>
-                                            <span class="text-3xs font-bold block truncate"><?= $badgeText ?: $ch['status'] ?></span>
+                                            <span class="text-3xs font-bold block truncate" title="<?= e($ch['reason'] ?? '') ?>"><?= e($badgeText ?: $ch['status']) ?><?= !empty($ch['incomplete_log']) ? ' · no clock-out' : '' ?></span>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>

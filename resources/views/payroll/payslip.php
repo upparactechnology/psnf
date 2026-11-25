@@ -47,11 +47,11 @@ ob_start();
             </div>
             <div>
                 <span class="text-3xs text-slate-400 font-bold uppercase block">Designation / Title</span>
-                <span class="font-bold text-slate-900 dark:text-white"><?= e($item['designation_title'] ?? 'Educator') ?></span>
+                <span class="font-bold text-slate-900 dark:text-white"><?= e($item['designation_title'] ?: '—') ?></span>
             </div>
             <div>
                 <span class="text-3xs text-slate-400 font-bold uppercase block">Department</span>
-                <span class="font-bold text-slate-900 dark:text-white"><?= e($item['department_name'] ?? 'Teaching Faculty') ?></span>
+                <span class="font-bold text-slate-900 dark:text-white"><?= e($item['department_name'] ?: '—') ?></span>
             </div>
         </div>
 
@@ -119,16 +119,22 @@ ob_start();
                             <td class="p-3">Unpaid Leaves (<?= (int)$item['unpaid_leave_days'] ?> days)</td>
                             <td class="p-3 text-right font-mono font-bold text-rose-500">-₹<?= number_format((float)($item['unpaid_leave_deduction'] ?? 0), 2) ?></td>
                         </tr>
+                        <?php if ((int)($item['unpaid_holiday_days'] ?? 0) > 0): ?>
+                        <tr>
+                            <td class="p-3">Unpaid Holidays (<?= (int)$item['unpaid_holiday_days'] ?> days)</td>
+                            <td class="p-3 text-right font-mono font-bold text-rose-500">-₹<?= number_format((float)($item['unpaid_holiday_deduction'] ?? 0), 2) ?></td>
+                        </tr>
+                        <?php endif; ?>
                         <tr>
                             <td class="p-3">Normal Half-Days (<?= (int)$item['normal_half_days'] ?> days)</td>
                             <td class="p-3 text-right font-mono font-bold text-rose-500">-₹<?= number_format((float)($item['normal_half_day_deduction'] ?? 0), 2) ?></td>
                         </tr>
                         <tr>
-                            <td class="p-3">Lateness Penalties (<?= (int)$item['late_penalty_half_days'] ?> penalty half-days)</td>
+                            <td class="p-3">Lateness Penalties (<?= (int)$item['late_penalty_half_days'] ?> penalty half-days<?php if ((int)($item['late_remainder'] ?? 0) > 0): ?>; <?= (int)$item['late_remainder'] ?> late(s) carried below the penalty limit<?php endif; ?>)</td>
                             <td class="p-3 text-right font-mono font-bold text-rose-500">-₹<?= number_format((float)($item['late_penalty_deduction'] ?? 0), 2) ?></td>
                         </tr>
                         <tr class="bg-slate-50/50 dark:bg-slate-800/10 font-bold">
-                            <td class="p-3 text-rose-600">Total Salary Deductions</td>
+                            <td class="p-3 text-rose-600">Total Salary Deductions<?php if ((float)$item['total_deductions'] + 0.001 < (float)$item['absent_deduction'] + (float)($item['unpaid_leave_deduction'] ?? 0) + (float)($item['unpaid_holiday_deduction'] ?? 0) + (float)($item['normal_half_day_deduction'] ?? 0) + (float)($item['late_penalty_deduction'] ?? 0)): ?> <span class="text-3xs font-normal text-slate-400">(capped at basic salary)</span><?php endif; ?></td>
                             <td class="p-3 text-right font-mono text-rose-600">-₹<?= number_format((float)$item['total_deductions'], 2) ?></td>
                         </tr>
                     </tbody>

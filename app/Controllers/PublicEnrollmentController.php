@@ -6,19 +6,21 @@ namespace App\Controllers;
 
 use Core\Controller;
 use Core\Application;
+use Core\Session;
+use App\Services\UploadGuard;
 
 class PublicEnrollmentController extends Controller
 {
-    public function showForm(): void
+    public function showForm(): string
     {
-        $this->render('public/enrollment_form', [
-            'errors'  => session_flash('errors') ?? [],
-            'old'     => session_flash('old') ?? [],
-            'success' => session_flash('success')
-        ], 'public');
+        return $this->render('public/enrollment_form', [
+            'errors'  => Session::getFlash('errors') ?? [],
+            'old'     => Session::getFlash('old') ?? [],
+            'success' => Session::getFlash('success'),
+        ]);
     }
 
-    public function submitForm(): void
+    public function submitForm(): string
     {
         $req = $this->request->all();
 
@@ -141,11 +143,18 @@ class PublicEnrollmentController extends Controller
             }
         }
 
+        if (!in_array($req['gender'] ?? '', ['male', 'female', 'other'], true)) {
+            $errors['gender'] = 'Please select a valid gender.';
+        }
+        if (!empty($this->uploadErrors)) {
+            $errors = array_merge($errors, $this->uploadErrors);
+        }
+
         if (!empty($errors)) {
-            \Core\Session::setFlash('errors', $errors);
-            \Core\Session::setFlash('old', $req);
-            $this->redirect(url('forms/student-enrollment'));
-            return;
+            Session::flash('errors', $errors);
+            // never echo back base64 camera payloads / tokens as "old" input
+            Session::flash('old', array_filter($req, fn($v, $k) => is_string($v) && !str_ends_with((string)$k, '_cam') && $k !== '_csrf', ARRAY_FILTER_USE_BOTH));
+            return $this->redirect(url('forms/student-enrollment'));
         }
 
         // 2. Generate Unique Application Code (e.g. APP-2026-X89A)
@@ -185,70 +194,91 @@ class PublicEnrollmentController extends Controller
             'pickups'  => json_encode($processedPickups)
         ]);
 
-        \Core\Session::setFlash('app_code', $appCode);
-        $this->redirect(url('forms/student-enrollment/success'));
+        Session::flash('app_code', $appCode);
+        return $this->redirect(url('forms/student-enrollment/success'));
     }
 
-    public function success(): void
+    public function success(): string
     {
-        $appCode = session_flash('app_code') ?? 'APP-SUBMITTED';
-        $this->render('public/enrollment_success', [
-            'appCode' => $appCode
-        ], 'public');
+        $appCode = Session::getFlash('app_code');
+        if (!$appCode) {
+            return $this->redirect(url('forms/student-enrollment'));
+        }
+        return $this->render('public/enrollment_success', [
+            'appCode' => $appCode,
+        ]);
     }
 
+    /** Field => message for rejected uploads (wrong type, bad content, too large). */
+    private array $uploadErrors = [];
+
+    private function uploadDir(): string
+    {
+        $uploadDir = ROOT_PATH . '/public/uploads/enrollments/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        return $uploadDir;
+    }
+
+    /** Uploaded image file, or a webcam capture (base64 data URL). Returns the public path or null. */
     private function processImageUpload(string $fileKey, string $camBase64Key): ?string
     {
-        $uploadDir = ROOT_PATH . '/public/uploads/enrollments/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        // 1. Check file upload
-        if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
-            $ext = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-                $filename = uniqid('img_') . '.' . $ext;
-                if (move_uploaded_file($_FILES[$fileKey]['tmp_name'], $uploadDir . $filename)) {
+        if (isset($_FILES[$fileKey]) && ($_FILES[$fileKey]['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try {
+                $ext = UploadGuard::check($_FILES[$fileKey], ['jpg', 'jpeg', 'png', 'webp'], 5 * 1024 * 1024);
+                $filename = UploadGuard::storedName($ext, 'img_');
+                if (move_uploaded_file($_FILES[$fileKey]['tmp_name'], $this->uploadDir() . $filename)) {
                     return '/uploads/enrollments/' . $filename;
                 }
+            } catch (\RuntimeException $e) {
+                $this->uploadErrors[$fileKey] = ucfirst(str_replace('_', ' ', $fileKey)) . ': ' . $e->getMessage();
+                return null;
             }
         }
 
-        // 2. Check webcam base64 upload
-        $base64 = $_POST[$camBase64Key] ?? '';
-        if (!empty($base64) && preg_match('/^data:image\/(\w+);base64,/', $base64, $type)) {
-            $data = substr($base64, strpos($base64, ',') + 1);
-            $data = base64_decode($data);
-            if ($data !== false) {
-                $ext = strtolower($type[1]);
-                if ($ext === 'jpeg') $ext = 'jpg';
-                $filename = uniqid('cam_') . '.' . $ext;
-                file_put_contents($uploadDir . $filename, $data);
-                return '/uploads/enrollments/' . $filename;
-            }
-        }
-
-        return null;
+        return $this->processCameraImage($camBase64Key);
     }
 
+    /** Aadhar document: uploaded PDF/image, or a webcam capture. */
     private function processFileUpload(string $fileKey): ?string
     {
-        $uploadDir = ROOT_PATH . '/public/uploads/enrollments/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
-
-        if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
-            $ext = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
-            if (in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'])) {
-                $filename = uniqid('doc_') . '.' . $ext;
-                if (move_uploaded_file($_FILES[$fileKey]['tmp_name'], $uploadDir . $filename)) {
+        if (isset($_FILES[$fileKey]) && ($_FILES[$fileKey]['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try {
+                $ext = UploadGuard::check($_FILES[$fileKey], ['pdf', 'jpg', 'jpeg', 'png'], 5 * 1024 * 1024);
+                $filename = UploadGuard::storedName($ext, 'doc_');
+                if (move_uploaded_file($_FILES[$fileKey]['tmp_name'], $this->uploadDir() . $filename)) {
                     return '/uploads/enrollments/' . $filename;
                 }
+            } catch (\RuntimeException $e) {
+                $this->uploadErrors[$fileKey] = ucfirst(str_replace('_', ' ', $fileKey)) . ': ' . $e->getMessage();
+                return null;
             }
         }
 
-        return null;
+        return $this->processCameraImage($fileKey . '_cam');
+    }
+
+    /** Decode and verify a base64 webcam capture; only real JPEG/PNG/WEBP images are stored. */
+    private function processCameraImage(string $camBase64Key): ?string
+    {
+        $base64 = (string)($_POST[$camBase64Key] ?? '');
+        if ($base64 === '' || !preg_match('/^data:image\/(jpeg|jpg|png|webp);base64,/', $base64)) {
+            return null;
+        }
+        $data = base64_decode(substr($base64, strpos($base64, ',') + 1), true);
+        if ($data === false || strlen($data) === 0 || strlen($data) > 5 * 1024 * 1024) {
+            return null;
+        }
+        $info = @getimagesizefromstring($data);
+        $map = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'];
+        if ($info === false || !isset($map[$info[2]])) {
+            return null;
+        }
+        $filename = UploadGuard::storedName($map[$info[2]], 'cam_');
+        if (file_put_contents($this->uploadDir() . $filename, $data) === false) {
+            return null;
+        }
+        return '/uploads/enrollments/' . $filename;
     }
 }

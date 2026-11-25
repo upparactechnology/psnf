@@ -27,11 +27,20 @@ session_name('PSNF_FM_SESSION');
 session_start();
 
 if ($erpUser && !empty($erpUser['id'])) {
-    $erpRoles = $erpUser['roles'] ?? [];
+    $erpRoles = (array) ($erpUser['roles'] ?? []);
     $staffRoles = ['teacher', 'staff', 'driver', 'therapist'];
-    $isStaff = !empty(array_intersect($erpRoles, $staffRoles));
+    // Only ERP administrators become File Manager admins.
+    $isFmAdmin = !empty(array_intersect($erpRoles, ['super_admin', 'school_admin']));
+    $isStaff = !$isFmAdmin && !empty(array_intersect($erpRoles, $staffRoles));
 
-    if ($isStaff) {
+    if ($isFmAdmin) {
+        if (!empty($_SESSION['staff_id'])) {
+            unset($_SESSION['staff_id'], $_SESSION['staff_name']);
+        }
+        $_SESSION['admin_id']   = (int) $erpUser['id'];
+        $_SESSION['admin_name'] = (string) ($erpUser['name'] ?? 'ERP User');
+        $_SESSION['erp_bridged'] = true;
+    } elseif ($isStaff) {
         if (!empty($_SESSION['admin_id'])) {
             unset($_SESSION['admin_id'], $_SESSION['admin_name']);
         }
@@ -45,7 +54,8 @@ if ($erpUser && !empty($erpUser['id'])) {
 
                 if (!$staffRow) {
                     $erpName = $erpUser['name'] ?? 'Staff';
-                    $defaultPass = password_hash('changeme123', PASSWORD_BCRYPT);
+                    // Random, unknown password: bridged staff log in through the ERP session only
+                    $defaultPass = password_hash(bin2hex(random_bytes(24)), PASSWORD_BCRYPT);
                     $ins = $pdo->prepare("INSERT INTO staff (name, email, password, is_active) VALUES (?, ?, ?, 1)");
                     $ins->execute([$erpName, $erpEmail, $defaultPass]);
                     $staffId = (int) $pdo->lastInsertId();
@@ -70,20 +80,19 @@ if ($erpUser && !empty($erpUser['id'])) {
             $_SESSION['staff_name'] = (string) ($erpUser['name'] ?? 'Staff');
         }
         $_SESSION['erp_bridged'] = true;
-    } else {
-        if (!empty($_SESSION['staff_id'])) {
-            unset($_SESSION['staff_id'], $_SESSION['staff_name']);
-        }
-        $_SESSION['admin_id']   = (int) $erpUser['id'];
-        $_SESSION['admin_name'] = (string) ($erpUser['name'] ?? 'ERP User');
-        $_SESSION['erp_bridged'] = true;
+    } elseif (!empty($_SESSION['erp_bridged'])) {
+        // Parents / other roles get no File Manager access; drop any bridged identity
+        unset($_SESSION['staff_id'], $_SESSION['staff_name'], $_SESSION['admin_id'], $_SESSION['admin_name'], $_SESSION['erp_bridged']);
     }
+} elseif (!empty($_SESSION['erp_bridged'])) {
+    // ERP session ended: drop the bridged File Manager identity as well
+    unset($_SESSION['staff_id'], $_SESSION['staff_name'], $_SESSION['admin_id'], $_SESSION['admin_name'], $_SESSION['erp_bridged']);
 }
 // ────────────────────────────────────────────────────────────────────────────
 
 // Debug-friendly error handling: log to file and show errors on page.
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
+ini_set('display_errors', '0'); // errors are logged, never shown
 
 $logFile = __DIR__ . '/../storage/logs/app.log';
 $logError = function (string $message) use ($logFile): void {
@@ -101,7 +110,7 @@ set_error_handler(function (int $severity, string $message, string $file, int $l
 set_exception_handler(function (Throwable $e) use ($logError): void {
   $logError('UNCAUGHT ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
   http_response_code(500);
-  echo 'Uncaught ' . get_class($e) . ': ' . htmlspecialchars($e->getMessage()) . ' in ' . htmlspecialchars($e->getFile()) . ':' . $e->getLine();
+  echo 'An internal error occurred. Please try again later.';
 });
 
 register_shutdown_function(function () use ($logError): void {

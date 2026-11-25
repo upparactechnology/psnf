@@ -1,4 +1,5 @@
 import os
+import threading
 import cv2
 from datetime import datetime, date
 from zoneinfo import ZoneInfo
@@ -17,6 +18,21 @@ from recognition.liveness import verify_face_liveness
 from recognition.matcher import matcher
 
 IST = ZoneInfo("Asia/Kolkata")
+
+# Per-user locks so two concurrent scans of the same person cannot both pass the
+# cooldown check and insert duplicate rows (single-process guard; the DB row lock
+# below covers multi-process deployments).
+_user_locks: Dict[int, threading.Lock] = {}
+_user_locks_guard = threading.Lock()
+
+
+def _lock_for(user_id: int) -> threading.Lock:
+    with _user_locks_guard:
+        lock = _user_locks.get(user_id)
+        if lock is None:
+            lock = threading.Lock()
+            _user_locks[user_id] = lock
+        return lock
 
 
 def _to_aware(dt):
@@ -45,7 +61,7 @@ class AttendanceService:
           3. Liveness check
           4. Extract 512D embedding
           5. Match against in-memory cache (user_id keyed)
-          6. Cooldown check (10 min)
+          6. Cooldown check (settings.COOLDOWN_MINUTES)
           7. Write attendance row to DB (user_id)
         """
         # 1. Decode & resize
@@ -64,14 +80,25 @@ class AttendanceService:
             logger.warning(f"Liveness check failed: {liveness_msg}")
             return {"success": False, "message": f"Security: {liveness_msg}", "confidence": 0.0}
 
-        # 4. Extract embedding
+        # 4. Extract embedding (reuses the detection pass when possible)
         try:
-            target_embedding = self.extractor.extract_embedding(img_bgr)
-        except (ValueError, RuntimeError) as e:
+            target_embedding = self.extractor.extract_embedding(img_bgr, face=det_res.face)
+        except ValueError as e:
             return {"success": False, "message": str(e), "confidence": 0.0}
+        except RuntimeError as e:
+            logger.error(f"Embedding extraction failed: {e}")
+            return {"success": False, "message": "Face processing failed. Please try again.", "confidence": 0.0}
 
-        # 5. Cosine match
-        matched_user_id, confidence = matcher.match(target_embedding, threshold=settings.SIMILARITY_THRESHOLD)
+        # 5. Cosine match (optionally restricted to one tenant's users)
+        allowed_ids = None
+        tenant_id = getattr(req, "tenant_id", None)
+        if tenant_id is not None:
+            allowed_ids = {
+                row[0] for row in db.query(ERPUser.id).filter(ERPUser.tenant_id == tenant_id).all()
+            }
+        matched_user_id, confidence = matcher.match(
+            target_embedding, threshold=settings.SIMILARITY_THRESHOLD, allowed_ids=allowed_ids
+        )
 
         if not matched_user_id:
             # Check if any faces are registered at all
@@ -86,18 +113,27 @@ class AttendanceService:
             logger.info(f"Face not recognized: score={confidence:.4f} < threshold={settings.SIMILARITY_THRESHOLD}")
             return {
                 "success": False,
-                "message": f"Face not recognized (score {confidence:.2f} < threshold {settings.SIMILARITY_THRESHOLD}).",
-                "confidence": round(confidence, 4)
+                "message": "Face not recognized. Please try again or contact the administrator.",
+                "confidence": 0.0
             }
 
-        # Fetch user from ERP users table
+        with _lock_for(matched_user_id):
+            return self._mark_for_user(db, matched_user_id, confidence, img_bgr, ip_address, user_agent)
+
+    def _mark_for_user(self, db: Session, matched_user_id: int, confidence: float, img_bgr,
+                       ip_address: str, user_agent: str) -> Dict[str, Any]:
+        # End any transaction started by earlier reads so the checks below see fresh data
+        db.rollback()
+
+        # Fetch user from ERP users table — row lock serialises concurrent check-ins
         user = db.query(ERPUser).filter(
             ERPUser.id == matched_user_id,
             ERPUser.is_active == 1,
             ERPUser.deleted_at == None
-        ).first()
+        ).with_for_update().first()
 
         if not user:
+            db.rollback()
             return {
                 "success": False,
                 "message": "Matched user account is inactive or has been removed.",
@@ -107,7 +143,8 @@ class AttendanceService:
         now   = datetime.now(IST)
         today = now.date()
 
-        # 6. Check if already checked in today
+        # 6. Cooldown: reject a new check-in within COOLDOWN_MINUTES of the last one today
+        cooldown_seconds = max(0, int(settings.COOLDOWN_MINUTES)) * 60
         recent = db.query(Attendance).filter(
             Attendance.user_id == user.id,
             Attendance.attendance_date == today
@@ -116,7 +153,9 @@ class AttendanceService:
         if recent:
             db_check_in = _to_aware(recent.check_in)
             time_diff = (now - db_check_in).total_seconds()
-            if time_diff < 600:  # 10 minutes
+            if time_diff < cooldown_seconds:
+                db.rollback()
+                wait_min = max(1, int((cooldown_seconds - time_diff + 59) // 60))
                 logger.info(f"Cooldown rejection: user_id={user.id} name={user.name} last_check_in={time_diff:.0f}s_ago")
                 return {
                     "success": True,
@@ -127,7 +166,10 @@ class AttendanceService:
                     "employee_name": user.name,
                     "designation": user.designation,
                     "confidence": round(confidence, 4),
-                    "message": f"Attendance already marked for {user.name} today ({db_check_in.strftime('%I:%M %p')}). Please wait 10 minutes before scanning again."
+                    "message": (
+                        f"{user.name} was already checked in at {db_check_in.strftime('%I:%M %p')}. "
+                        f"Please wait {wait_min} more minute(s) before scanning again."
+                    )
                 }
 
         # Save snapshot
@@ -136,7 +178,8 @@ class AttendanceService:
         save_path = os.path.join(settings.UPLOAD_ATTENDANCE_DIR, filename)
         rel_path  = f"uploads/attendance/{filename}"
         try:
-            cv2.imwrite(save_path, img_bgr)
+            if not cv2.imwrite(save_path, img_bgr):
+                rel_path = None
         except Exception:
             rel_path = None
 
@@ -154,9 +197,18 @@ class AttendanceService:
             ip_address      = ip_address,
             user_agent      = user_agent
         )
-        db.add(att)
-        db.commit()
-        db.refresh(att)
+        try:
+            db.add(att)
+            db.commit()
+        except Exception:
+            db.rollback()
+            # Don't leave an orphan snapshot behind if the insert failed
+            if rel_path:
+                try:
+                    os.remove(save_path)
+                except OSError:
+                    pass
+            raise
 
         logger.info(f"✅ Attendance marked: {user.name} (user_id={user.id}) confidence={confidence:.3f}")
 
@@ -178,7 +230,8 @@ class AttendanceService:
         db: Session,
         target_date: Optional[date] = None,
         user_id: Optional[int] = None,
-        limit: int = 50
+        limit: int = 50,
+        tenant_id: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """Retrieves face attendance logs joined with ERP users."""
         query = db.query(Attendance, ERPUser).join(ERPUser, Attendance.user_id == ERPUser.id)
@@ -187,6 +240,8 @@ class AttendanceService:
             query = query.filter(Attendance.attendance_date == target_date)
         if user_id:
             query = query.filter(Attendance.user_id == user_id)
+        if tenant_id is not None:
+            query = query.filter(ERPUser.tenant_id == tenant_id)
 
         records = query.order_by(desc(Attendance.check_in)).limit(limit).all()
 

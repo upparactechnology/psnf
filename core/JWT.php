@@ -10,7 +10,7 @@ class JWT
 
     public static function encode(array $payload, ?string $secret = null): string
     {
-        $secret = $secret ?? config('auth.jwt_secret', 'psnf-secret-key-change-in-production');
+        $secret = $secret ?? self::secret();
 
         $header  = base64url_encode(json_encode(['alg' => self::$algorithm, 'typ' => 'JWT']));
         $payload['iat'] = $payload['iat'] ?? time();
@@ -24,12 +24,15 @@ class JWT
 
     public static function decode(string $token, ?string $secret = null): array|false
     {
-        $secret = $secret ?? config('auth.jwt_secret', 'psnf-secret-key-change-in-production');
+        $secret = $secret ?? self::secret();
 
         $parts = explode('.', $token);
         if (count($parts) !== 3) return false;
 
         [$header, $payload, $signature] = $parts;
+
+        $hdr = json_decode(base64url_decode($header), true);
+        if (!is_array($hdr) || ($hdr['alg'] ?? '') !== self::$algorithm) return false;
 
         // Verify signature
         $expectedSig = self::sign("$header.$payload", $secret);
@@ -53,6 +56,15 @@ class JWT
 
         unset($decoded['iat'], $decoded['exp']);
         return self::encode($decoded, $secret);
+    }
+
+    private static function secret(): string
+    {
+        $secret = (string) config('auth.jwt_secret', '');
+        if (strlen($secret) < 32) {
+            throw new \RuntimeException('JWT secret is not configured (set JWT_SECRET or storage/keys/jwt_secret).');
+        }
+        return $secret;
     }
 
     private static function sign(string $data, string $secret): string

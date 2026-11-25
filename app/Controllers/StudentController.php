@@ -77,7 +77,8 @@ class StudentController extends Controller
     {
         $data = $this->request->getBody();
         if (!isset($data['full_name']) && isset($data['first_name'])) {
-            $data['full_name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['middle_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
+            // full_name only feeds the validator; the separate fields are stored unchanged
+            $data['full_name'] = trim(preg_replace('/\s+/', ' ', ($data['first_name'] ?? '') . ' ' . ($data['middle_name'] ?? '') . ' ' . ($data['last_name'] ?? '')));
         }
         $rules = [
             'full_name'             => 'required|min:2|max:200',
@@ -112,7 +113,7 @@ class StudentController extends Controller
             }
             \Core\Session::flash('errors', $validator->errors());
             \Core\Session::flash('old', $data);
-            return $this->redirect(url('students/create'));
+            return $this->redirect(url('academics/students/create'));
         }
 
         $validated = $validator->validated();
@@ -121,21 +122,8 @@ class StudentController extends Controller
         $validated['guardians'] = $data['guardians'] ?? [];
         $validated['emergency_contacts'] = $data['emergency_contacts'] ?? [];
 
-        // Split Full Name
-        $parts = preg_split('/\s+/', trim($validated['full_name']));
-        if (count($parts) === 1) {
-            $validated['first_name'] = $parts[0];
-            $validated['middle_name'] = '';
-            $validated['last_name'] = '';
-        } elseif (count($parts) === 2) {
-            $validated['first_name'] = $parts[0];
-            $validated['middle_name'] = '';
-            $validated['last_name'] = $parts[1];
-        } else {
-            $validated['first_name'] = $parts[0];
-            $validated['last_name'] = array_pop($parts);
-            $validated['middle_name'] = implode(' ', array_slice($parts, 1));
-        }
+        // Use the posted first/middle/last fields as-is; only split full_name when they are absent
+        $validated = array_merge($validated, $this->resolveNames($data));
 
         try {
             $photoFile = $this->request->file('photo');
@@ -151,11 +139,46 @@ class StudentController extends Controller
                 return $this->successResponse('Student created.', ['id' => $studentId], 201);
             }
 
-            return $this->redirect(url('students'));
+            return $this->redirect(url('academics/students'));
         } catch (\Throwable $e) {
+            if ($this->request->wantsJson()) {
+                return $this->errorResponse('Failed to create student. ' . $e->getMessage(), null, 500);
+            }
             $this->flash('error', 'Failed to create student. ' . $e->getMessage());
+            \Core\Session::flash('old', $data);
             return $this->redirect(url('academics/students/create'));
         }
+    }
+
+    /**
+     * First/middle/last name resolution. When the form posts separate name fields they are
+     * used verbatim (multi-word first or last names stay intact); full_name is split only
+     * when the separate fields are absent (e.g. API clients posting a single name).
+     */
+    private function resolveNames(array $data): array
+    {
+        if (isset($data['first_name']) || isset($data['last_name'])) {
+            $names = [
+                'first_name' => trim((string) ($data['first_name'] ?? '')),
+                'last_name'  => trim((string) ($data['last_name'] ?? '')),
+            ];
+            // Forms without a middle-name field (e.g. edit) must not wipe the stored middle name
+            if (array_key_exists('middle_name', $data)) {
+                $names['middle_name'] = trim((string) $data['middle_name']);
+            }
+            return $names;
+        }
+
+        $parts = preg_split('/\s+/', trim((string) ($data['full_name'] ?? '')));
+        if (count($parts) === 1) {
+            return ['first_name' => $parts[0], 'middle_name' => '', 'last_name' => ''];
+        }
+        if (count($parts) === 2) {
+            return ['first_name' => $parts[0], 'middle_name' => '', 'last_name' => $parts[1]];
+        }
+        $first = array_shift($parts);
+        $last  = array_pop($parts);
+        return ['first_name' => $first, 'middle_name' => implode(' ', $parts), 'last_name' => $last];
     }
 
     /** Teacher without an admin role — not allowed to open student profiles. */
@@ -266,7 +289,8 @@ class StudentController extends Controller
     {
         $data = $this->request->getBody();
         if (!isset($data['full_name']) && isset($data['first_name'])) {
-            $data['full_name'] = trim(($data['first_name'] ?? '') . ' ' . ($data['middle_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
+            // full_name only feeds the validator; the separate fields are stored unchanged
+            $data['full_name'] = trim(preg_replace('/\s+/', ' ', ($data['first_name'] ?? '') . ' ' . ($data['middle_name'] ?? '') . ' ' . ($data['last_name'] ?? '')));
         }
 
         $student = Student::find((int) $id);
@@ -312,7 +336,7 @@ class StudentController extends Controller
         if ($validator->fails()) {
             \Core\Session::flash('errors', $validator->errors());
             \Core\Session::flash('old', $data);
-            return $this->redirect(url("students/$id/edit"));
+            return $this->redirect(url("academics/students/$id/edit"));
         }
 
         $validated = $validator->validated();
@@ -321,21 +345,8 @@ class StudentController extends Controller
         $validated['guardians'] = $data['guardians'] ?? [];
         $validated['emergency_contacts'] = $data['emergency_contacts'] ?? [];
 
-        // Split Full Name
-        $parts = preg_split('/\s+/', trim($validated['full_name']));
-        if (count($parts) === 1) {
-            $validated['first_name'] = $parts[0];
-            $validated['middle_name'] = '';
-            $validated['last_name'] = '';
-        } elseif (count($parts) === 2) {
-            $validated['first_name'] = $parts[0];
-            $validated['middle_name'] = '';
-            $validated['last_name'] = $parts[1];
-        } else {
-            $validated['first_name'] = $parts[0];
-            $validated['last_name'] = array_pop($parts);
-            $validated['middle_name'] = implode(' ', array_slice($parts, 1));
-        }
+        // Use the posted first/middle/last fields as-is; only split full_name when they are absent
+        $validated = array_merge($validated, $this->resolveNames($data));
 
         try {
             $photoFile = $this->request->file('photo');
@@ -356,6 +367,7 @@ class StudentController extends Controller
             return $this->redirect(url("academics/students/$id"));
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to update student. ' . $e->getMessage());
+            \Core\Session::flash('old', $data);
             return $this->redirect(url("academics/students/$id/edit"));
         }
     }
@@ -423,7 +435,19 @@ class StudentController extends Controller
             'type_label' => $this->request->input('document_type', 'other'),
         ];
 
-        $docId = $this->service->uploadDocument((int) $id, $fileData);
+        if (!Student::find((int) $id)) {
+            return $this->errorResponse('Student not found.', null, 404);
+        }
+
+        try {
+            $docId = $this->service->uploadDocument((int) $id, $fileData);
+        } catch (\RuntimeException $e) {
+            if ($this->request->wantsJson()) {
+                return $this->errorResponse($e->getMessage(), null, 422);
+            }
+            $this->flash('error', $e->getMessage());
+            return $this->redirect(url("academics/students/$id"));
+        }
 
         if ($this->request->wantsJson()) {
             return $this->successResponse('Document uploaded.', ['id' => $docId], 201);
@@ -505,10 +529,90 @@ class StudentController extends Controller
         return $this->redirect(url('academics/students'));
     }
 
+    /** Enrol a student in an (elective) subject — student_subject_enrollments. */
+    public function assignSubject(string $id): string
+    {
+        $db       = \Core\Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+        $student  = Student::find((int) $id);
+        if (!$student) {
+            $this->response->abort(404);
+            exit();
+        }
+
+        $subjectId = (int) $this->request->input('subject_id', 0);
+        $subject   = $db->selectOne("SELECT id, name FROM subjects WHERE id = ? AND tenant_id = ? LIMIT 1", [$subjectId, $tenantId]);
+        if (!$subject) {
+            $this->flash('error', 'Please select a valid subject.');
+            return $this->redirect(url("academics/students/$id"));
+        }
+
+        $yearId = (int) $this->request->input('academic_year_id', 0);
+        $year = $yearId
+            ? $db->selectOne("SELECT id FROM academic_years WHERE id = ? AND tenant_id = ? LIMIT 1", [$yearId, $tenantId])
+            : $db->selectOne("SELECT id FROM academic_years WHERE tenant_id = ? ORDER BY (status = 'current') DESC, id DESC LIMIT 1", [$tenantId]);
+        if (!$year) {
+            $this->flash('error', 'No academic year found. Create one under Academic Settings first.');
+            return $this->redirect(url("academics/students/$id"));
+        }
+
+        $exists = $db->selectOne(
+            "SELECT id, status FROM student_subject_enrollments WHERE student_id = ? AND subject_id = ? AND academic_year_id = ? LIMIT 1",
+            [(int) $id, $subjectId, (int) $year['id']]
+        );
+        if ($exists) {
+            $db->query("UPDATE student_subject_enrollments SET status = 'active' WHERE id = ?", [(int) $exists['id']]);
+        } else {
+            $db->insert('student_subject_enrollments', [
+                'student_id'       => (int) $id,
+                'subject_id'       => $subjectId,
+                'academic_year_id' => (int) $year['id'],
+                'status'           => 'active',
+            ]);
+        }
+
+        StudentTimeline::logEvent((int) $id, 'subject_assigned', 'Subject assigned: ' . $subject['name'], [], auth_id(), 'blue', 'book');
+        $this->flash('success', 'Subject assigned.');
+        return $this->redirect(url("academics/students/$id"));
+    }
+
+    public function removeSubject(string $id, string $subjectId): string
+    {
+        $db       = \Core\Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+        if (!Student::find((int) $id)) {
+            $this->response->abort(404);
+            exit();
+        }
+
+        $subject = $db->selectOne("SELECT id, name FROM subjects WHERE id = ? AND tenant_id = ? LIMIT 1", [(int) $subjectId, $tenantId]);
+        if ($subject) {
+            $db->query(
+                "UPDATE student_subject_enrollments SET status = 'dropped' WHERE student_id = ? AND subject_id = ? AND status = 'active'",
+                [(int) $id, (int) $subjectId]
+            );
+            StudentTimeline::logEvent((int) $id, 'subject_removed', 'Subject removed: ' . $subject['name'], [], auth_id(), 'red', 'book');
+            $this->flash('success', 'Subject removed.');
+        } else {
+            $this->flash('error', 'Subject not found.');
+        }
+        return $this->redirect(url("academics/students/$id"));
+    }
+
     public function search(): string
     {
-        $q       = $this->request->get('q', '');
+        $q       = trim((string) $this->request->get('q', ''));
         $results = Student::search($q, [], 10);
+        // Expose only what a picker needs — never full student rows (address, medical, ids …)
+        $results['data'] = array_map(static fn(array $r): array => [
+            'id'               => (int) $r['id'],
+            'first_name'       => $r['first_name'] ?? '',
+            'middle_name'      => $r['middle_name'] ?? '',
+            'last_name'        => $r['last_name'] ?? '',
+            'admission_number' => $r['admission_number'] ?? '',
+            'class'            => $r['class'] ?? '',
+            'section'          => $r['section'] ?? '',
+        ], $results['data'] ?? []);
         return $this->json($results);
     }
 }

@@ -21,6 +21,66 @@
     <title><?= $title ?? 'PSNF Management System' ?></title>
     <meta name="description" content="Pearl Special Needs Foundation — Management System">
     <meta name="csrf-token" content="<?= \Core\View::csrfToken() ?>">
+    <script>
+    // ── Global CSRF protection: every same-origin state-changing request carries the session token ──
+    (function () {
+        var token = <?= json_encode(\Core\View::csrfToken()) ?>;
+        window.CSRF_TOKEN = token;
+        var UNSAFE = /^(POST|PUT|PATCH|DELETE)$/i;
+        function sameOrigin(url) {
+            try { return new URL(url || window.location.href, window.location.href).origin === window.location.origin; }
+            catch (e) { return false; }
+        }
+        // fetch()
+        if (window.fetch && !window.fetch.__csrf) {
+            var origFetch = window.fetch;
+            var wrapped = function (input, init) {
+                try {
+                    var isReq = (typeof Request !== 'undefined') && (input instanceof Request);
+                    var method = (init && init.method) || (isReq ? input.method : 'GET');
+                    var url = isReq ? input.url : String(input);
+                    if (UNSAFE.test(method) && sameOrigin(url)) {
+                        init = Object.assign({}, init || {});
+                        var h = new Headers(init.headers || (isReq ? input.headers : undefined) || {});
+                        if (!h.has('X-CSRF-Token')) h.set('X-CSRF-Token', token);
+                        init.headers = h;
+                    }
+                } catch (e) {}
+                return origFetch.call(window, input, init);
+            };
+            wrapped.__csrf = true;
+            window.fetch = wrapped;
+        }
+        // XMLHttpRequest (jQuery, axios, htmx)
+        if (window.XMLHttpRequest && !XMLHttpRequest.prototype.__csrf) {
+            var xOpen = XMLHttpRequest.prototype.open, xSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function (m, u) {
+                this.__csrfNeeded = UNSAFE.test(String(m)) && sameOrigin(String(u));
+                return xOpen.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function () {
+                if (this.__csrfNeeded) { try { this.setRequestHeader('X-CSRF-Token', token); } catch (e) {} }
+                return xSend.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.__csrf = true;
+        }
+        // htmx
+        document.addEventListener('htmx:configRequest', function (e) { e.detail.headers['X-CSRF-Token'] = token; });
+        // <form method="post">: inject hidden _csrf
+        function addInput(form) {
+            if (!form || form.tagName !== 'FORM') return;
+            if ((form.getAttribute('method') || 'get').toLowerCase() !== 'post') return;
+            if (!sameOrigin(form.getAttribute('action') || window.location.href)) return;
+            var el = form.querySelector('input[name="_csrf"]');
+            if (!el) { el = document.createElement('input'); el.type = 'hidden'; el.name = '_csrf'; form.appendChild(el); }
+            el.value = token;
+        }
+        document.addEventListener('DOMContentLoaded', function () { document.querySelectorAll('form').forEach(addInput); });
+        document.addEventListener('submit', function (e) { addInput(e.target); }, true);
+        var fSubmit = HTMLFormElement.prototype.submit;
+        HTMLFormElement.prototype.submit = function () { addInput(this); return fSubmit.apply(this, arguments); };
+    })();
+    </script>
     <?php if ((\Core\Application::$app->request->getPath() ?? '') === '/attendance/face-kiosk'): ?>
     <!-- Face Kiosk PWA: install to Home Screen for true tab-less fullscreen -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -554,7 +614,7 @@ if ($user) {
                 <?php if (can('view_academic_years') || can('view_main_groups') || can('view_curriculum') || can('view_subjects') || can('view_classes') || can('view_students_list') || can('view_teachers') || can('view_acad_attendance') || can('view_timetable') || can('view_assessments') || can('view_exams') || can('view_report_cards') || can('view_promotion') || can('view_announcements') || can('view_academic_settings')): ?>
                 <div x-show="currentModule() === 'academic'" class="space-y-1">
                     <div class="text-2xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-2" x-show="sidebarOpen">Academic</div>
-                    <?php if (can('view_academic_years')): ?><?php navLink('/academics/settings?tab=years', $ic['timetables'], 'Academic Years', $currentPath, $sidebarOpen); ?><?php endif; ?>
+                    <?php if (can('view_academic_settings')): ?><?php navLink('/academics/settings?tab=years', $ic['timetables'], 'Academic Years', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_main_groups')): ?><?php navLink('/academics/main-groups', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1z"/></svg>', 'Main Groups', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_curriculum')): ?><?php navLink('/academics/curriculum', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>', 'Curriculum', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_subjects')): ?><?php navLink('/academics/subjects', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>', 'Subjects', $currentPath, $sidebarOpen); ?><?php endif; ?>
@@ -563,7 +623,7 @@ if ($user) {
                     <?php if (can('view_teachers')): ?><?php navLink('/academics/teachers', $ic['users'], 'Teachers', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_acad_attendance')): ?><?php navLink('/academics/attendance', $ic['attendance'], 'Attendance', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_timetable')): ?><?php navLink('/academics/timetable', $ic['timetables'], 'Timetable', $currentPath, $sidebarOpen); ?><?php endif; ?>
-                    <?php if (can('view_assessments')): ?><?php navLink('/academics/assessments', $ic['exams'], 'Assessments', $currentPath, $sidebarOpen); ?><?php endif; ?>
+                    <?php if (can('view_exams')): ?><?php navLink('/academics/assessments', $ic['exams'], 'Assessments', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_exams')): ?><?php navLink('/academics/exams', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>', 'Exams Setup', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_report_cards')): ?><?php navLink('/academics/report-cards', $ic['certificates'], 'Report Cards', $currentPath, $sidebarOpen); ?><?php endif; ?>
                     <?php if (can('view_promotion')): ?><?php navLink('/academics/promotion', '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>', 'Promotion', $currentPath, $sidebarOpen); ?><?php endif; ?>

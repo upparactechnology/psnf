@@ -190,16 +190,23 @@ class Request
 
     public function ip(): string
     {
-        $keys = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'REMOTE_ADDR'];
-        foreach ($keys as $key) {
-            if (!empty($_SERVER[$key])) {
-                $ip = trim(explode(',', $_SERVER[$key])[0]);
-                if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
+        $remote = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+        // Forwarding headers are client-controlled; only trust them when the
+        // direct peer is a configured reverse proxy (config app.trusted_proxies).
+        $trusted = config('app.trusted_proxies', []);
+        if (is_array($trusted) && in_array($remote, $trusted, true)) {
+            foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP'] as $key) {
+                if (!empty($_SERVER[$key])) {
+                    $ip = trim(explode(',', (string) $_SERVER[$key])[0]);
+                    if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                        return $ip;
+                    }
                 }
             }
         }
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+        return filter_var($remote, FILTER_VALIDATE_IP) ? $remote : '0.0.0.0';
     }
 
     public function userAgent(): string

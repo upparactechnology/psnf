@@ -51,9 +51,14 @@ def verify_face(
             check_in           = res.get("check_in"),
             message            = res.get("message", "Verification completed.")
         )
+    except HTTPException:
+        raise
+    except ValueError as ve:
+        # Controlled, user-facing validation messages (e.g. invalid / oversized image)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
     except Exception as e:
-        logger.error(f"Error in verify-face endpoint: {str(e)}")
+        logger.exception(f"Error in verify-face endpoint: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Face verification internal error: {str(e)}"
+            detail="Face verification failed due to an internal error."
         )

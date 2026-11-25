@@ -852,3 +852,92 @@
 [25-Nov-2026 14:22:08 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
 [25-Nov-2026 14:22:08 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
 [25-Nov-2026 14:22:08 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 16:38:18 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:38:18 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:38:18 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:38:18 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:38:18 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Controllers\DashboardController.php on line 24
+[25-Nov-2026 16:38:18 Asia/Kolkata] Exception: Core\Model::find(): Argument #1 ($id) must be of type string|int, null given, called in C:\xampp\htdocs\psnf\app\Controllers\DashboardController.php on line 24
+#0 C:\xampp\htdocs\psnf\app\Controllers\DashboardController.php(24): Core\Model::find(NULL)
+#1 C:\xampp\htdocs\psnf\core\Router.php(103): App\Controllers\DashboardController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(85): Core\Application->run()
+#4 C:\Users\Het Shah\AppData\Local\Temp\claude\a80ec1d4626cd1e5\1cae71f6-353a-4bcb-a9bf-69fb0131f1f5\scratchpad\r.php(9): require('C:\\xampp\\htdocs...')
+#5 {main}
+[25-Nov-2026 16:38:51 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:38:51 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:38:51 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:38:51 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:38:51 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Controllers\DashboardController.php on line 24
+[25-Nov-2026 16:38:51 Asia/Kolkata] Exception: Core\Model::find(): Argument #1 ($id) must be of type string|int, null given, called in C:\xampp\htdocs\psnf\app\Controllers\DashboardController.php on line 24
+#0 C:\xampp\htdocs\psnf\app\Controllers\DashboardController.php(24): Core\Model::find(NULL)
+#1 C:\xampp\htdocs\psnf\core\Router.php(103): App\Controllers\DashboardController->index()
+#2 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#3 C:\xampp\htdocs\psnf\public\index.php(85): Core\Application->run()
+#4 C:\Users\Het Shah\AppData\Local\Temp\claude\a80ec1d4626cd1e5\1cae71f6-353a-4bcb-a9bf-69fb0131f1f5\scratchpad\r.php(9): require('C:\\xampp\\htdocs...')
+#5 {main}
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:39:36 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 16:39:37 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:37 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:37 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:37 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:39:37 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 16:39:51 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:51 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:51 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:51 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:39:51 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 16:39:52 Asia/Kolkata] PHP Warning:  Undefined array key "tenant_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:52 Asia/Kolkata] PHP Warning:  Undefined array key "school_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:52 Asia/Kolkata] PHP Warning:  Undefined array key "branch_id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 99
+[25-Nov-2026 16:39:52 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\app\Middleware\AuthMiddleware.php on line 102
+[25-Nov-2026 16:39:52 Asia/Kolkata] PHP Warning:  Undefined array key "id" in C:\xampp\htdocs\psnf\resources\views\layouts\app.php on line 348
+[25-Nov-2026 17:44:47 Asia/Kolkata] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 262144 bytes) in C:\xampp\htdocs\psnf\app\Controllers\StaffAppController.php on line 41
+[25-Nov-2026 17:44:59 Asia/Kolkata] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 262144 bytes) in C:\xampp\htdocs\psnf\app\Controllers\StaffAppController.php on line 41
+[25-Nov-2026 17:45:04 Asia/Kolkata] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 262144 bytes) in C:\xampp\htdocs\psnf\app\Controllers\StaffAppController.php on line 41
+[25-Nov-2026 17:45:10 Asia/Kolkata] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 262144 bytes) in C:\xampp\htdocs\psnf\app\Controllers\StaffAppController.php on line 41
+[25-Nov-2026 17:45:16 Asia/Kolkata] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 262144 bytes) in C:\xampp\htdocs\psnf\app\Controllers\StaffAppController.php on line 41
+[25-Nov-2026 17:45:22 Asia/Kolkata] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 262144 bytes) in C:\xampp\htdocs\psnf\app\Controllers\StaffAppController.php on line 41
+[25-Nov-2026 17:47:33 Asia/Kolkata] Payment notification failed: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'p.whatsapp_number' in 'field list'
+[25-Nov-2026 17:50:01 Asia/Kolkata] Exception: Undefined constant "colors"
+#0 [internal function]: Core\View::{closure}(Array)
+#1 C:\xampp\htdocs\psnf\resources\views\reports\students.php(328): array_map(Object(Closure), Array)
+#2 C:\xampp\htdocs\psnf\core\View.php(20): require('C:\\xampp\\htdocs...')
+#3 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('reports/student...', Array)
+#4 C:\xampp\htdocs\psnf\app\Controllers\ReportsController.php(297): Core\Controller->view('reports/student...', Array)
+#5 C:\xampp\htdocs\psnf\core\Router.php(109): App\Controllers\ReportsController->students()
+#6 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#7 C:\xampp\htdocs\psnf\public\index.php(92): Core\Application->run()
+#8 C:\Users\Het Shah\AppData\Local\Temp\claude\a80ec1d4626cd1e5\1cae71f6-353a-4bcb-a9bf-69fb0131f1f5\scratchpad\page.php(13): require('C:\\xampp\\htdocs...')
+#9 {main}
+[25-Nov-2026 17:50:01 Asia/Kolkata] PHP Notice:  fwrite(): Write of 18 bytes failed with errno=22 Invalid argument in C:\Users\Het Shah\AppData\Local\Temp\claude\a80ec1d4626cd1e5\1cae71f6-353a-4bcb-a9bf-69fb0131f1f5\scratchpad\page.php on line 12
+[25-Nov-2026 17:50:02 Asia/Kolkata] Exception: Undefined constant "colors"
+#0 [internal function]: Core\View::{closure}(Array)
+#1 C:\xampp\htdocs\psnf\resources\views\reports\students.php(328): array_map(Object(Closure), Array)
+#2 C:\xampp\htdocs\psnf\core\View.php(20): require('C:\\xampp\\htdocs...')
+#3 C:\xampp\htdocs\psnf\core\Controller.php(20): Core\View::render('reports/student...', Array)
+#4 C:\xampp\htdocs\psnf\app\Controllers\ReportsController.php(297): Core\Controller->view('reports/student...', Array)
+#5 C:\xampp\htdocs\psnf\core\Router.php(109): App\Controllers\ReportsController->students()
+#6 C:\xampp\htdocs\psnf\core\Application.php(114): Core\Router->resolve()
+#7 C:\xampp\htdocs\psnf\public\index.php(92): Core\Application->run()
+#8 C:\Users\Het Shah\AppData\Local\Temp\claude\a80ec1d4626cd1e5\1cae71f6-353a-4bcb-a9bf-69fb0131f1f5\scratchpad\page.php(13): require('C:\\xampp\\htdocs...')
+#9 {main}

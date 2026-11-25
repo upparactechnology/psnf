@@ -109,6 +109,13 @@ ob_start();
                         <input type="text" name="half_day_after" value="<?= e($shift['half_day_after'] ?? '12:00:00') ?>"
                                class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl py-2.5 px-4 focus:outline-none focus:border-brand-500 font-mono">
                     </div>
+
+                    <div>
+                        <label class="block text-slate-400 mb-1.5 font-medium">Break Allowed per Day (Minutes)</label>
+                        <input type="number" name="break_allowed_minutes" min="0" value="<?= (int)($shift['break_allowed_minutes'] ?? 30) ?>"
+                               class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl py-2.5 px-4 focus:outline-none focus:border-brand-500 font-mono">
+                        <span class="text-slate-500 text-[10px] mt-1 block">Paid break. Staff scan out/in at the kiosk; days over this limit are flagged. Can be overridden per employee.</span>
+                    </div>
                 </div>
             </div>
 

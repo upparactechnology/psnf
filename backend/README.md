@@ -43,7 +43,7 @@ mysql -u root psnf_drm < database/schema_face_attendance.sql
 
 ### 3. Start FastAPI Service
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app:app --host 127.0.0.1 --port 8000   # every route except /health needs header X-Internal-Key (key in storage/keys/face_api_key)
 ```
 
 The service will start on `http://localhost:8000`.
@@ -80,6 +80,6 @@ FastAPI Swagger Documentation: `http://localhost:8000/docs`
 
 1. Use **Gunicorn** with **Uvicorn Workers**:
 ```bash
-gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app --bind 0.0.0.0:8000
+uvicorn app:app --host 127.0.0.1 --port 8000   # keep ONE worker: the embedding cache is per-process
 ```
 2. Enable HTTPS via Nginx Reverse Proxy.

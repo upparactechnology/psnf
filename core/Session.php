@@ -12,12 +12,21 @@ class Session
     {
         if (!self::$started && session_status() === PHP_SESSION_NONE) {
             $cfg = config('app.session', []);
+            $https = function_exists('is_https_request')
+                ? is_https_request()
+                : (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+            $samesite = $cfg['samesite'] ?? 'Lax';
+            if (!in_array($samesite, ['Lax', 'Strict'], true)) {
+                $samesite = 'Lax';
+            }
+            ini_set('session.use_strict_mode', '1');
+            ini_set('session.use_only_cookies', '1');
             session_set_cookie_params([
                 'lifetime' => $cfg['lifetime']  ?? 7200,
                 'path'     => '/',
-                'secure'   => $cfg['secure']    ?? false,
+                'secure'   => (bool) ($cfg['secure'] ?? $https),
                 'httponly' => true,
-                'samesite' => $cfg['samesite']  ?? 'Lax',
+                'samesite' => $samesite,
             ]);
             session_name('PSNF_SESSION');
             session_start();

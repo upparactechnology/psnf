@@ -12,10 +12,10 @@ $router->post('/api/v1/auth/logout', [App\Controllers\AuthController::class, 'lo
 $router->post('/api/v1/auth/driver-login', [App\Controllers\AuthController::class, 'apiDriverLogin'], ['rate.limit:60,1']);
 $router->post('/api/v1/auth/driver-change-password', [App\Controllers\AuthController::class, 'apiDriverChangePassword'], ['auth']);
 
-$router->get('/api/v1/students',      [App\Controllers\StudentController::class, 'index'],   ['auth']);
-$router->get('/api/v1/students/{id}', [App\Controllers\StudentController::class, 'show'],    ['auth', 'permission:view_students']);
-$router->post('/api/v1/students',     [App\Controllers\StudentController::class, 'store'],   ['auth', 'permission:create_students']);
-$router->post('/api/v1/students/{id}',[App\Controllers\StudentController::class, 'update'],  ['auth', 'permission:edit_students']);
+$router->get('/api/v1/students',      [App\Controllers\StudentController::class, 'index'],   ['auth', 'permission:view_students_list']);
+$router->get('/api/v1/students/{id}', [App\Controllers\StudentController::class, 'show'],    ['auth', 'permission:view_students_list']);
+$router->post('/api/v1/students',     [App\Controllers\StudentController::class, 'store'],   ['auth', 'permission:create_students_list']);
+$router->post('/api/v1/students/{id}',[App\Controllers\StudentController::class, 'update'],  ['auth', 'permission:edit_students_list']);
 
 // ─── Parent Portal API — Module 3 ───────────────────────────────────────────
 $router->get('/api/v1/parent/students',                   [App\Controllers\ParentPortalController::class, 'apiStudents'],          ['auth', 'role:parent']);
@@ -38,6 +38,7 @@ $router->get('/api/v1/staff/class-attendance',    [App\Controllers\StaffAppContr
 $router->post('/api/v1/staff/attendance/mark-student', [App\Controllers\StaffAppController::class, 'markStudentAttendance'], ['auth']);
 $router->get('/api/v1/staff/summary',           [App\Controllers\StaffAppController::class, 'getSummary'], ['auth']);
 $router->get('/api/v1/staff/guardians',         [App\Controllers\StaffAppController::class, 'getGuardians'], ['auth']);
+$router->get('/api/v1/staff/early-pickup', [App\Controllers\StaffAppController::class, 'earlyPickupList'], ['auth']);
 $router->post('/api/v1/staff/early-pickup/approve', [App\Controllers\StaffAppController::class, 'approveEarlyPickup'], ['auth']);
 
 // ─── Driver App API ──────────────────────────────────────────────────────────

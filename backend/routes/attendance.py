@@ -50,6 +50,7 @@ async def get_history(
     target_date: Optional[str] = Query(None, alias="date"),
     user_id: Optional[int] = Query(None),
     limit: int = Query(50, ge=1, le=500),
+    tenant_id: Optional[int] = Query(None, description="Only return records of this tenant's users"),
     db: Session = Depends(get_db)
 ):
     """GET /api/attendance/history — recent check-in logs."""
@@ -61,20 +62,23 @@ async def get_history(
             raise HTTPException(status_code=400, detail="Invalid date format. Expected YYYY-MM-DD.")
 
     logs = attendance_service_instance.get_attendance_history(
-        db=db, target_date=parsed_date, user_id=user_id, limit=limit
+        db=db, target_date=parsed_date, user_id=user_id, limit=limit, tenant_id=tenant_id
     )
     return {"success": True, "count": len(logs), "data": logs}
 
 
 @router.get("/employees/list")
-async def list_registered_employees(db: Session = Depends(get_db)):
+async def list_registered_employees(
+    tenant_id: Optional[int] = Query(None, description="Only list users of this tenant"),
+    db: Session = Depends(get_db)
+):
     """
     GET /api/employees/list
     Returns ERP users who have at least one face embedding registered,
     along with their embedding count and latest face image.
     Used by the Face Registration UI "Registered Faces" panel.
     """
-    rows = db.query(
+    q = db.query(
         ERPUser.id,
         ERPUser.name,
         ERPUser.email,
@@ -84,7 +88,10 @@ async def list_registered_employees(db: Session = Depends(get_db)):
         func.max(FaceEmbedding.image_path).label("image_path")
     ).join(FaceEmbedding, FaceEmbedding.user_id == ERPUser.id).filter(
         ERPUser.deleted_at == None
-    ).group_by(ERPUser.id).order_by(ERPUser.name).all()
+    )
+    if tenant_id is not None:
+        q = q.filter(ERPUser.tenant_id == tenant_id)
+    rows = q.group_by(ERPUser.id).order_by(ERPUser.name).all()
 
     data = [{
         "id":              r.id,
@@ -102,6 +109,7 @@ async def list_registered_employees(db: Session = Depends(get_db)):
 @router.delete("/employees/delete")
 async def delete_employee_face(
     id: int = Query(..., description="ERP user ID whose face profiles to delete"),
+    tenant_id: Optional[int] = Query(None, description="If set, the user must belong to this tenant"),
     db: Session = Depends(get_db)
 ):
     """
@@ -110,6 +118,8 @@ async def delete_employee_face(
     Does NOT delete the user account itself.
     """
     user = db.query(ERPUser).filter(ERPUser.id == id).first()
+    if user and tenant_id is not None and user.tenant_id != tenant_id:
+        user = None
     if not user:
         raise HTTPException(status_code=404, detail=f"User ID {id} not found.")
 

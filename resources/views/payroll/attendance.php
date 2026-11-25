@@ -76,6 +76,7 @@ ob_start();
                         </td>
                         <td class="p-4 font-mono text-slate-500">
                             <?= e($l['clock_out'] ?? '--:--') ?>
+                            <?php if (!empty($l['incomplete_log'])): ?><span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold text-[9px] uppercase font-sans" title="Only one scan: no clock-out recorded">no clock-out</span><?php endif; ?>
                         </td>
                         <td class="p-4 font-mono text-rose-500 font-bold">
                             <?= e($l['working_hours'] ?? '0 hrs 0 mins') ?>

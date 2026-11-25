@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: <?= json_encode(array_column($examPerformance, 'exam_name')) ?>,
             datasets: [{
                 label: 'Avg %', data: <?= json_encode(array_map(fn($e) => $e['avg_max'] > 0 ? round($e['avg_marks'] / $e['avg_max'] * 100) : 0, $examPerformance)) ?>,
-                backgroundColor: <?= json_encode(array_map(fn($e) => $e['avg_max'] > 0 && ($e['avg_marks']/$e['avg_max']*100) >= 50 ? colors.emerald : colors.rose, $examPerformance)) ?>,
+                backgroundColor: <?= json_encode(array_map(fn($e) => $e['avg_max'] > 0 && ($e['avg_marks']/$e['avg_max']*100) >= 50, $examPerformance)) ?>.map(pass => pass ? colors.emerald : colors.rose),
                 borderRadius: 6
             }]
         },

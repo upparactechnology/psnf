@@ -8,7 +8,10 @@
 set_time_limit(0);
 ob_implicit_flush();
 
-$host = '0.0.0.0';
+// Bind to loopback by default. Set WS_HOST=0.0.0.0 (or put a wss:// reverse proxy
+// in front) to let browsers on other machines subscribe to live tracking.
+$host = getenv('WS_HOST') ?: '127.0.0.1';
+$maxClients = 500;
 $port = 8080;
 $internal_port = 8081;
 
@@ -28,6 +31,10 @@ echo "WebSocket Server started on port $port...\n";
 echo "Internal Broadcast Server started on 127.0.0.1:$internal_port...\n";
 
 $clients = [$public_server, $internal_server];
+// Sockets accepted on the internal (loopback-only) port — the ONLY trusted publishers.
+// Location updates are published by TransportController after the driver's JWT
+// has been verified by the ERP API; browser clients are subscribe-only.
+$internal_clients = [];
 
 while (true) {
     $read = $clients;
@@ -41,12 +48,15 @@ while (true) {
     
     // New connection on public port
     if (in_array($public_server, $read)) {
-        $new_socket = stream_socket_accept($public_server);
+        $new_socket = @stream_socket_accept($public_server, 1);
         if ($new_socket) {
-            $clients[] = $new_socket;
-            $header = fread($new_socket, 1024);
-            perform_handshake($header, $new_socket, $host, $port);
-            echo "New client connected on $port.\n";
+            $header = (string) fread($new_socket, 2048);
+            if (count($clients) >= $maxClients || !perform_handshake($header, $new_socket, $host, $port)) {
+                fclose($new_socket);
+            } else {
+                $clients[] = $new_socket;
+                echo "New client connected on $port.\n";
+            }
         }
         $key = array_search($public_server, $read);
         unset($read[$key]);
@@ -54,9 +64,10 @@ while (true) {
     
     // New connection on internal port
     if (in_array($internal_server, $read)) {
-        $new_socket = stream_socket_accept($internal_server);
+        $new_socket = @stream_socket_accept($internal_server, 1);
         if ($new_socket) {
             $clients[] = $new_socket;
+            $internal_clients[(int) $new_socket] = true;
             echo "New internal client connected on $internal_port.\n";
         }
         $key = array_search($internal_server, $read);
@@ -68,26 +79,30 @@ while (true) {
         // Read data
         $data = @fread($read_sock, 2048);
         
-        if ($data === false || $data === '') { // Connection closed
+        $is_internal = isset($internal_clients[(int) $read_sock]);
+
+        // Connection closed, or a WebSocket close frame (opcode 0x8) from a browser
+        if ($data === false || $data === '' || (!$is_internal && (ord($data[0]) & 0x0F) === 0x8)) {
             $key = array_search($read_sock, $clients);
-            unset($clients[$key]);
+            unset($clients[$key], $internal_clients[(int) $read_sock]);
             fclose($read_sock);
             echo "Client disconnected.\n";
             continue;
         }
-        
-        // Check if it's from an internal raw connection
-        $is_internal = false;
-        $peer_name = stream_socket_get_name($read_sock, true);
-        $char = ord($data[0]);
-        // Simple heuristic: WebSocket frames start with 0x81 (129)
-        if ($char !== 129 && strpos($peer_name, '127.0.0.1') === 0) {
-            $is_internal = true;
-            $message = $data;
-        } else {
-            $message = unmask($data);
+
+        if (!$is_internal) {
+            // Browser (public) clients are subscribe-only: anything they send
+            // (pings, junk, forged location frames) is ignored, never rebroadcast.
+            continue;
         }
-        
+
+        // Internal publisher: accept only a well-formed JSON object
+        $message = trim($data);
+        $decoded = json_decode($message, true);
+        if (!is_array($decoded) || strlen($message) > 8192) {
+            $message = '';
+        }
+
         if (!empty($message)) {
             // Broadcast to all WebSocket clients
             $response = mask($message);
@@ -101,7 +116,7 @@ while (true) {
         if ($is_internal) {
             // Internal connections send one message and disconnect
             $key = array_search($read_sock, $clients);
-            unset($clients[$key]);
+            unset($clients[$key], $internal_clients[(int) $read_sock]);
             fclose($read_sock);
         }
     }
@@ -143,21 +158,22 @@ function mask($text) {
 }
 
 // Handshake
-function perform_handshake($received_header, $client_conn, $host, $port) {
+function perform_handshake($received_header, $client_conn, $host, $port): bool {
     $headers = array();
     $lines = preg_split("/\r\n/", $received_header);
     foreach ($lines as $line) {
         $line = chop($line);
         if (preg_match('/\A(\S+): (.*)\z/', $line, $matches)) {
-            $headers[$matches[1]] = $matches[2];
+            $headers[strtolower($matches[1])] = $matches[2];
         }
     }
-    if (!isset($headers['Sec-WebSocket-Key'])) return;
-    $secKey = $headers['Sec-WebSocket-Key'];
+    if (!isset($headers['sec-websocket-key']) || !preg_match('#^[A-Za-z0-9+/=]{16,64}$#', trim($headers['sec-websocket-key']))) return false;
+    $secKey = trim($headers['sec-websocket-key']);
     $secAccept = base64_encode(pack('H*', sha1($secKey . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')));
     $buffer  = "HTTP/1.1 101 Switching Protocols\r\n" .
                "Upgrade: websocket\r\n" .
                "Connection: Upgrade\r\n" .
                "Sec-WebSocket-Accept:$secAccept\r\n\r\n";
     fwrite($client_conn, $buffer);
+    return true;
 }

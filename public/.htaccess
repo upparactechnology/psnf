@@ -5,6 +5,29 @@ RewriteEngine On
 # Block hidden files
 RewriteRule (^\.|/\.) - [F,L]
 
+# ─── Security ────────────────────────────────────────────────────────────────
+# Sensitive file types (dumps, logs, docs, lockfiles, env)
+<FilesMatch "(?i)\.(sql|log|bat|ps1|md|sh|lock|env|ini|bak)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^composer\.(json|lock)$">
+    Require all denied
+</FilesMatch>
+
+# Only the front controller may be executed from the public/ root —
+# every other *.php here is a debug / test / maintenance script.
+RewriteRule ^(?!index\.php$)[^/]+\.php$ - [F,L]
+RewriteRule ^attendance/run_backend\.php$ - [F,L]
+
+# Logs and private storage
+RewriteRule ^storage/(logs|keys)(/|$) - [F,L]
+RewriteRule ^file_manager/(storage|database|config|app|routes)(/|$) - [F,L]
+RewriteRule ^file_manager/.*\.sql$ - [F,L]
+RewriteRule ^certificate_generator/(storage|database|scripts)(/|$) - [F,L]
+
+# Never execute scripts inside upload / storage folders
+RewriteRule ^(storage|uploads|certificate_generator/storage|certificate_generator/uploads|certificate_generator/generated)/.*\.(php[0-9]?|phtml|phar|pht|phps|shtml)$ - [F,L,NC]
+
 # Handle Authorization Header (needed for API/Bearer tokens)
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

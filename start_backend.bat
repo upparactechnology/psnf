@@ -22,7 +22,10 @@ echo Installing/Verifying Python dependencies...
 pip install -r requirements.txt
 
 echo.
-echo Launching Uvicorn Server at http://localhost:8000 ...
-python -m uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+if "%FACE_API_HOST%"=="" set FACE_API_HOST=127.0.0.1
+
+echo Launching Uvicorn Server at http://%FACE_API_HOST%:8000 ...
+:: Loopback only by default; no --reload in production. Set FACE_API_HOST to override.
+python -m uvicorn app:app --host %FACE_API_HOST% --port 8000
 
 pause

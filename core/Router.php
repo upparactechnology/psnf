@@ -75,6 +75,12 @@ class Router
             $params = $this->matchRoute($route['path'], $path);
             if ($params === false) continue;
 
+            // CSRF protection for every state-changing request (central check)
+            $csrfResponse = (new \App\Middleware\CsrfMiddleware())->handle($this->request);
+            if ($csrfResponse !== null) {
+                return $csrfResponse;
+            }
+
             // Run middleware stack
             $middlewareResponse = $this->runMiddleware($route['middleware'], $params);
             if ($middlewareResponse !== null) {

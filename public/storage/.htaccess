@@ -1,0 +1,11 @@
+# Storage: uploaded files may be read, but nothing here is ever executed,
+# and logs / keys are never served.
+Options -Indexes
+
+<FilesMatch "(?i)\.(php[0-9]?|phtml|phar|pht|phps|shtml|htaccess|log|sql|ini)$">
+    Require all denied
+</FilesMatch>
+
+RewriteEngine On
+RewriteRule ^(logs|keys)(/|$) - [F,L]
+RewriteRule (?i)\.(php[0-9]?|phtml|phar|pht|phps|shtml)$ - [F,L]

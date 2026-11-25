@@ -3,19 +3,26 @@
 declare(strict_types=1);
 
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
+// display_errors is decided by config('app.debug') in Core\Application (APP_DEBUG env);
+// never show errors before the config is loaded.
+ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 ini_set('error_log', dirname(__DIR__) . '/storage/logs/php_error.log');
 
-// Enable CORS for Flutter Web local development and API access
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept");
+// CORS only for the token-based JSON API (Flutter web dev). Never with credentials,
+// so browsers will not send cookies cross-origin.
+$__corsPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+if (preg_match('#/api/v\d+/#', $__corsPath)) {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept");
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(204);
+        exit();
+    }
 }
+unset($__corsPath);
 
 // ─── File Manager Interception ──────────────────────────────────────────────
 // When accessed via .../file-manager/..., the .htaccess catch-all sends
@@ -76,7 +83,7 @@ try {
     require_once ROOT_PATH . '/core/Migration.php';
     $runner = new \Core\Migration();
     ob_start();
-    $runner->run();
+    $runner->runIfChanged();
     ob_end_clean();
 } catch (\Throwable $e) {
     // Ignore database errors if already migrated or during bootstrap

@@ -22,7 +22,7 @@ $emp = $user['employee'] ?? null;
             <h2 class="text-xl font-bold text-white">Edit User</h2>
             <p class="text-sm text-slate-500 mt-0.5"><?= e($user['email'] ?? '') ?></p>
         </div>
-        <a href="<?= e($_GET['redirect_to'] ?? url('users')) ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
+        <a href="<?= e(url(safe_redirect_target($_GET['redirect_to'] ?? null, '/users'))) ?>" class="text-sm text-slate-400 hover:text-slate-300 transition-colors">← Back</a>
     </div>
 
     <?php
@@ -36,7 +36,7 @@ $emp = $user['employee'] ?? null;
             $currentRoleSlugs[] = $role['slug'];
         }
     }
-    $redirectTo = $_GET['redirect_to'] ?? url('users');
+    $redirectTo = safe_redirect_target($_GET['redirect_to'] ?? null, '/users');
     ?>
     <form method="POST" action="<?= url('users/'.$user['id']) ?>" x-data="{ loading: false, showPass: false, selectedRoleSlugs: <?= json_encode($currentRoleSlugs) ?> }" @submit="loading = true">
         <?= \Core\View::csrf() ?>
@@ -133,6 +133,13 @@ $emp = $user['employee'] ?? null;
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Grace (Mins)</label>
                         <input type="number" name="grace_period" min="0" value="<?= e($fn('grace_period') ?: '5') ?>" class="<?= iClass('grace_period',$errors) ?>">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium text-slate-400">Break Allowed (Mins/Day)</label>
+                        <input type="number" name="break_allowed_minutes" min="0" value="<?= e((string)($old['break_allowed_minutes'] ?? ($emp['break_allowed_minutes'] ?? ''))) ?>" class="<?= iClass('break_allowed_minutes',$errors) ?>" placeholder="Default (<?= (int)\App\Services\StaffAttendanceCalculator::globalAllowedMinutes() ?>)">
+                        <span class="text-[10px] text-slate-500">Leave blank to use the global setting.</span>
                     </div>
                 </div>
             </div>

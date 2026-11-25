@@ -105,6 +105,20 @@ class CurriculumManagerController extends Controller
         ));
     }
 
+    /** GET /academics/curriculum/templates/{id} — opens the manager filtered to that template's year & group. */
+    public function showTemplate(string $id): string
+    {
+        $tpl = $this->db()->selectOne(
+            "SELECT id, academic_year_id, main_group_id FROM curriculum_templates WHERE id = ? AND tenant_id = ? LIMIT 1",
+            [(int) $id, \Core\Database::getTenantId()]
+        );
+        if (!$tpl) {
+            \Core\Session::flash('error', 'Curriculum template not found.');
+            return $this->redirect(url('academics/curriculum'));
+        }
+        return $this->redirect(url('academics/curriculum?academic_year_id=' . (int) $tpl['academic_year_id'] . '&main_group_id=' . (int) $tpl['main_group_id']));
+    }
+
     public function storeTemplate(): string
     {
         $db = $this->db();

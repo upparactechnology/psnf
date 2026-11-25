@@ -162,56 +162,20 @@ class StaffWorkspaceController extends Controller
         $designations = $db->select("SELECT * FROM designations WHERE is_active = 1");
 
         // Attendance month filter
-        $attMonth = (int)($this->request->get('att_month') ?? date('m'));
+        $attMonth = max(1, min(12, (int)($this->request->get('att_month') ?? date('m'))));
         $attYear  = (int)($this->request->get('att_year') ?? date('Y'));
         $startDate = sprintf('%04d-%02d-01', $attYear, $attMonth);
         $endDate = date('Y-m-t', strtotime($startDate));
 
-        // Manual attendance logs (staff_attendance_logs)
-        $manualLogs = $db->select("
-            SELECT * FROM staff_attendance_logs 
-            WHERE employee_id = ? AND date BETWEEN ? AND ?
-            ORDER BY date ASC
-        ", [$id, $startDate, $endDate]);
+        // Same engine and shift rules as payroll (manual > kiosk > leave > absent,
+        // holidays / Sundays / pre-joining / future days are never absent).
+        $shift = \App\Services\ShiftSettings::current();
+        $rules = \App\Services\ShiftSettings::rulesFor($employee, $shift);
+        $shiftEnd = $rules['end'];
+        $configuredDays = \App\Services\ShiftSettings::configuredWorkingDays($attMonth, $shift);
+        $resolvedDays = (new \App\Services\PayrollService($db))->resolveDays($employee, $startDate, $endDate, $shift);
 
-        // Face recognition logs (attendance table) - match by employee_id OR user_id
-        $faceLogs = $db->select("
-            SELECT DATE(check_in) as log_date, MIN(check_in) as first_scan, MAX(check_in) as last_scan,
-                   COUNT(id) as scan_count
-            FROM attendance 
-            WHERE (employee_id = ? OR user_id = (SELECT user_id FROM employees WHERE id = ?))
-              AND DATE(check_in) BETWEEN ? AND ?
-            GROUP BY DATE(check_in)
-            ORDER BY DATE(check_in) ASC
-        ", [$id, $id, $startDate, $endDate]);
-
-        // Build lookup maps
-        $manualMap = [];
-        foreach ($manualLogs as $m) {
-            $manualMap[$m['date']] = $m;
-        }
-        $faceMap = [];
-        foreach ($faceLogs as $f) {
-            $faceMap[$f['log_date']] = $f;
-        }
-
-        // Get employee shift times for late/half-day thresholds
-        $shiftStart = $employee['min_clock_in'] ?? '09:00:00';
-        $shiftEnd = $employee['max_clock_out'] ?? '17:00:00';
-        $graceMinutes = (int)($employee['user_grace_period'] ?? 10);
-        $lateThreshold = date('H:i:s', strtotime($shiftStart) + ($graceMinutes * 60));
-        $halfDayThreshold = date('H:i:s', strtotime($shiftStart) + (3 * 3600));
-        $minHoursForFullDay = 6;
-
-        // Resolve working days from configured working_days_json (source of truth)
-        $shift = $db->selectOne("SELECT working_days_json FROM shift_templates WHERE id = 1");
-        $workingDaysMap = json_decode($shift['working_days_json'] ?? '{}', true) ?: [];
-        $monthKey = sprintf('%02d', $attMonth);
-        $configuredDays = (int)($workingDaysMap[$monthKey] ?? 0);
-
-        // Generate all weekdays (Mon-Sat) for the month
         $allAttendance = [];
-        $daysInMonth = (int)date('t', strtotime($startDate));
         $presentCount = 0;
         $lateCount = 0;
         $absentCount = 0;
@@ -219,82 +183,55 @@ class StaffWorkspaceController extends Controller
         $leaveCount = 0;
         $holidayCount = 0;
         $wfhCount = 0;
+        $incompleteCount = 0;
         $totalHours = 0;
         $totalLateMins = 0;
+        $totalBreakMins = 0;
+        $overBreakDays = 0;
+        $allowedBreak = \App\Services\StaffAttendanceCalculator::allowedMinutes($employee['break_allowed_minutes'] ?? null);
 
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $dateStr = sprintf('%04d-%02d-%02d', $attYear, $attMonth, $day);
-            $dayOfWeek = date('w', strtotime($dateStr)); // 0=Sun, 6=Sat
-
-            // Skip Sundays only if not using configured days that include them
-            if ($dayOfWeek == 0 && $configuredDays <= 0) continue;
+        foreach ($resolvedDays as $dateStr => $day) {
+            $status = \App\Services\PayrollService::screenStatus($day);
+            // Sundays, future days and days before joining are not attendance rows
+            if (in_array($status, ['sunday', 'pending', 'not_joined'], true) && $day['source'] !== 'manual' && $day['source'] !== 'kiosk') {
+                continue;
+            }
 
             $entry = [
                 'date' => $dateStr,
                 'day' => date('D', strtotime($dateStr)),
-                'clock_in' => null,
-                'clock_out' => null,
+                'clock_in' => $day['check_in'],
+                'clock_out' => $day['check_out'],
                 'working_hours' => 0,
-                'late_minutes' => 0,
-                'status' => 'absent',
-                'source' => 'none',
+                'late_minutes' => ($day['is_late'] || $day['status'] === 'HALF_DAY') ? (int)$day['late_minutes'] : 0,
+                'status' => $status,
+                'source' => $day['source'] === 'kiosk' ? 'face' : ($day['source'] === 'manual' ? 'manual' : 'none'),
+                'incomplete' => $day['incomplete_log'] && in_array($day['status'], ['PRESENT', 'HALF_DAY'], true),
+                'late_exempted' => $day['late_exempted'],
+                'note' => $day['reason'],
+                'break' => null,
             ];
 
-            // Priority: manual log > face log > absent
-            if (isset($manualMap[$dateStr])) {
-                $m = $manualMap[$dateStr];
-                $entry['clock_in'] = $m['clock_in'];
-                $entry['clock_out'] = $m['clock_out'];
+            if ($day['source'] === 'manual') {
+                $m = $day['manual'];
                 $entry['working_hours'] = (float)($m['working_hours'] ?? 0);
-                $entry['late_minutes'] = (int)($m['late_minutes'] ?? 0);
-                $entry['status'] = $m['status'];
-                $entry['source'] = 'manual';
-
-                // Recalculate working_hours if missing
-                if ($entry['working_hours'] == 0 && $entry['clock_in'] && $entry['clock_out']) {
-                    $in = strtotime($entry['clock_in']);
-                    $out = strtotime($entry['clock_out']);
-                    $entry['working_hours'] = round(($out - $in) / 3600, 2);
+                if ($entry['working_hours'] == 0 && $m['clock_in'] && $m['clock_out']) {
+                    $entry['working_hours'] = max(0, round((strtotime($m['clock_out']) - strtotime($m['clock_in'])) / 3600, 2));
                 }
-
-                // Recalculate late_minutes if missing
-                if ($entry['late_minutes'] == 0 && $entry['clock_in'] && $entry['status'] === 'late') {
-                    $in = strtotime($entry['clock_in']);
-                    $threshold = strtotime($lateThreshold);
-                    $entry['late_minutes'] = max(0, round(($in - $threshold) / 60));
+                if ((int)($m['late_minutes'] ?? 0) > 0) {
+                    $entry['late_minutes'] = (int)$m['late_minutes'];
                 }
-            } elseif (isset($faceMap[$dateStr])) {
-                $f = $faceMap[$dateStr];
-                $firstScan = $f['first_scan'];
-                $lastScan = $f['last_scan'];
-                $entry['clock_in'] = $firstScan;
-                $entry['clock_out'] = $lastScan;
-                $entry['source'] = 'face';
-
-                // Calculate working hours from scans
-                if ($firstScan && $lastScan) {
-                    $in = strtotime($firstScan);
-                    $out = strtotime($lastScan);
-                    $entry['working_hours'] = round(($out - $in) / 3600, 2);
+                $entry['break'] = \App\Services\StaffAttendanceCalculator::summarizeManual($m['break_minutes'] ?? null, $allowedBreak);
+            } elseif ($day['source'] === 'kiosk') {
+                $scans = $day['scans'];
+                $entry['clock_in'] = $scans[0];
+                $entry['clock_out'] = count($scans) > 1 ? $scans[count($scans) - 1] : null;
+                if (count($scans) > 1) {
+                    $entry['working_hours'] = round((strtotime($scans[count($scans) - 1]) - strtotime($scans[0])) / 3600, 2);
                 }
-
-                // Determine status based on shift rules
-                $clockInTime = date('H:i:s', strtotime($firstScan));
-                if ($clockInTime > $lateThreshold) {
-                    $entry['late_minutes'] = max(0, round((strtotime($clockInTime) - strtotime($lateThreshold)) / 60));
-                }
-
-                if ($entry['working_hours'] < 4) {
-                    $entry['status'] = 'half_day';
-                } elseif ($entry['late_minutes'] > 0) {
-                    $entry['status'] = 'late';
-                } else {
-                    $entry['status'] = 'present';
-                }
+                $entry['break'] = \App\Services\StaffAttendanceCalculator::summarizeBreaks($scans, $allowedBreak, $shiftEnd, $dateStr);
             }
-            // else: remains absent
 
-            // Accumulate summary
             switch ($entry['status']) {
                 case 'present': $presentCount++; break;
                 case 'late': $lateCount++; break;
@@ -304,8 +241,13 @@ class StaffWorkspaceController extends Controller
                 case 'holiday': $holidayCount++; break;
                 case 'wfh': $wfhCount++; break;
             }
+            if ($entry['incomplete']) $incompleteCount++;
             $totalHours += $entry['working_hours'];
             $totalLateMins += $entry['late_minutes'];
+            if ($entry['break']) {
+                $totalBreakMins += $entry['break']['total_break_minutes'];
+                if ($entry['break']['exceeded']) $overBreakDays++;
+            }
 
             $allAttendance[] = $entry;
         }
@@ -323,9 +265,13 @@ class StaffWorkspaceController extends Controller
             'on_leave_count' => $leaveCount,
             'holiday_count' => $holidayCount,
             'wfh_count' => $wfhCount,
+            'incomplete_count' => $incompleteCount,
             'total_hours' => $totalHours,
-            'avg_hours' => $totalDays > 0 ? round($totalHours / max(1, $presentCount + $lateCount + $halfDayCount), 1) : 0,
+            'avg_hours' => $totalDays > 0 ? round($totalHours / max(1, $presentCount + $lateCount + $halfDayCount + $wfhCount), 1) : 0,
             'total_late_mins' => $totalLateMins,
+            'total_break_mins' => $totalBreakMins,
+            'over_break_days' => $overBreakDays,
+            'allowed_break_mins' => $allowedBreak,
         ];
 
         // ──── Payroll data ────
@@ -378,7 +324,7 @@ class StaffWorkspaceController extends Controller
         $empCode   = 'EMP-' . $codeCount;
 
         $empId = (int) $db->insert('employees', [
-            'tenant_id'      => 1,
+            'tenant_id'      => \Core\Database::getTenantId() ?? 1,
             'emp_code'       => $empCode,
             'first_name'     => $firstName,
             'last_name'      => $lastName,
@@ -601,76 +547,45 @@ class StaffWorkspaceController extends Controller
         $firstDayOfWeek = 1;
 
         if ($employeeId) {
-            $selectedEmp = $db->selectOne("SELECT e.*, u.grace_period as user_grace_period FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.id = ?", [$employeeId]);
-            
+            $selectedEmp = (new \App\Services\PayrollService($db))->employee((int)$employeeId);
+        }
+
+        if ($selectedEmp) {
+            if (!preg_match('/^\d{4}-\d{2}$/', (string)$month)) {
+                $month = date('Y-m');
+            }
             $startDate = $month . '-01';
             $endDate = date('Y-m-t', strtotime($startDate));
-            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)date('m', strtotime($startDate)), (int)date('Y', strtotime($startDate)));
+            $daysInMonth = (int)date('t', strtotime($startDate));
             $firstDayOfWeek = date('w', strtotime($startDate)); // 0 (Sunday) to 6 (Saturday)
-            
-            $faceLogs = $db->select("
-                SELECT DATE(check_in) as log_date, MIN(check_in) as min_ci, MAX(check_in) as max_ci, COUNT(id) as scans
-                FROM attendance
-                WHERE (employee_id = ? OR user_id = (SELECT user_id FROM employees WHERE id = ?))
-                  AND DATE(check_in) BETWEEN ? AND ?
-                GROUP BY DATE(check_in)
-            ", [$employeeId, $employeeId, $startDate, $endDate]);
-            
-            $manualLogs = $db->select("
-                SELECT date as log_date, clock_in as min_ci, clock_out as max_ci, status
-                FROM staff_attendance_logs
-                WHERE employee_id = ? AND date BETWEEN ? AND ?
-            ", [$employeeId, $startDate, $endDate]);
-            
-            $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-            $empShiftStart = !empty($selectedEmp['min_clock_in']) ? $selectedEmp['min_clock_in'] : ($shift['start_time'] ?? '09:00:00');
-            $grace = !empty($selectedEmp['min_clock_in']) ? (int)($selectedEmp['user_grace_period'] ?? 10) : (int)($shift['grace_minutes'] ?? 15);
-            $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
-            $halfDayTime = !empty($selectedEmp['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
 
-            $logMap = [];
-            
-            foreach ($faceLogs as $fl) {
-                $timeOnly = date('H:i:s', strtotime($fl['min_ci']));
-                $status = 'present';
-                if ($timeOnly > $halfDayTime) {
-                    $status = 'half_day';
-                } elseif ($timeOnly > $latePenaltyTime) {
-                    $status = 'late';
-                }
-                
-                $logMap[$fl['log_date']] = [
-                    'in' => date('h:i A', strtotime($fl['min_ci'])),
-                    'out' => $fl['scans'] > 1 ? date('h:i A', strtotime($fl['max_ci'])) : '--:--',
-                    'status' => $status
+            // Same day engine and shift rules as payroll
+            $shift = \App\Services\ShiftSettings::current();
+            $rules = \App\Services\ShiftSettings::rulesFor($selectedEmp, $shift);
+            $allowedBreak = \App\Services\StaffAttendanceCalculator::allowedMinutes($selectedEmp['break_allowed_minutes'] ?? null);
+            $days = (new \App\Services\PayrollService($db))->resolveDays($selectedEmp, $startDate, $endDate, $shift);
+
+            foreach ($days as $dateStr => $day) {
+                $i = (int)substr($dateStr, 8, 2);
+                $cell = [
+                    'in' => '--:--',
+                    'out' => '--:--',
+                    'status' => \App\Services\PayrollService::screenStatus($day),
+                    'incomplete' => $day['incomplete_log'] && in_array($day['status'], ['PRESENT', 'HALF_DAY'], true),
+                    'note' => $day['reason'],
                 ];
-            }
-            
-            foreach ($manualLogs as $ml) {
-                $logMap[$ml['log_date']] = [
-                    'in' => $ml['min_ci'] ? date('h:i A', strtotime($ml['min_ci'])) : '--:--',
-                    'out' => ($ml['max_ci'] && $ml['max_ci'] !== '--:--') ? date('h:i A', strtotime($ml['max_ci'])) : '--:--',
-                    'status' => $ml['status']
-                ];
-            }
-            
-            for ($i = 1; $i <= $daysInMonth; $i++) {
-                $dateStr = $month . '-' . sprintf('%02d', $i);
-                $isSunday = (date('N', strtotime($dateStr)) == 7);
-                
-                if (isset($logMap[$dateStr])) {
-                    $calData[$i] = $logMap[$dateStr];
-                } else {
-                    $calData[$i] = [
-                        'in' => '--:--',
-                        'out' => '--:--',
-                        'status' => $isSunday ? 'sunday' : 'absent'
-                    ];
-                    
-                    if ($dateStr > date('Y-m-d')) {
-                        $calData[$i]['status'] = 'pending';
-                    }
+                if ($day['source'] === 'kiosk') {
+                    $scans = $day['scans'];
+                    $cell['in'] = date('h:i A', strtotime($scans[0]));
+                    $cell['out'] = count($scans) > 1 ? date('h:i A', strtotime($scans[count($scans) - 1])) : '--:--';
+                    $cell['break'] = \App\Services\StaffAttendanceCalculator::summarizeBreaks($scans, $allowedBreak, $rules['end'], $dateStr);
+                } elseif ($day['source'] === 'manual') {
+                    $m = $day['manual'];
+                    $cell['in'] = $m['clock_in'] ? date('h:i A', strtotime($m['clock_in'])) : '--:--';
+                    $cell['out'] = $m['clock_out'] ? date('h:i A', strtotime($m['clock_out'])) : '--:--';
+                    $cell['break'] = \App\Services\StaffAttendanceCalculator::summarizeManual($m['break_minutes'] ?? null, $allowedBreak);
                 }
+                $calData[$i] = $cell;
             }
         }
         
@@ -684,88 +599,75 @@ class StaffWorkspaceController extends Controller
         }
 
         $db = Application::$app->db;
-        $date = $this->request->get('date', date('Y-m-d'));
+        $date = (string) $this->request->get('date', date('Y-m-d'));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = date('Y-m-d');
+        }
         
-        // 1. Fetch Face Recognition Kiosk Attendance logs for target date
+        // 1. Face Recognition Kiosk scans for the date, each resolved to exactly one employee
+        $resolved = \App\Services\PayrollService::resolvedEmployeeSql('a');
         $faceLogsRaw = $db->select("
-            SELECT 
-                a.id,
-                COALESCE(a.user_id, a.employee_id) as employee_id,
-                a.check_in,
-                a.attendance_date,
-                a.confidence,
-                a.image_path,
-                0 as late_exempted,
-                NULL as late_exemption_reason,
-                COALESCE(u.name, e.first_name, e.emp_code, 'Staff Member') as first_name,
-                COALESCE(e.last_name, '') as last_name,
-                COALESCE(u.employee_id, e.emp_code, CONCAT('EMP-', COALESCE(a.user_id, a.employee_id))) as emp_code,
-                COALESCE(u.designation, d.name, 'General Staff') as department_name,
-                e.min_clock_in,
-                u.grace_period as user_grace_period
-            FROM attendance a
-            LEFT JOIN users u ON a.user_id = u.id
-            LEFT JOIN employees e ON (a.employee_id = e.id OR e.user_id = a.user_id)
-            LEFT JOIN departments d ON e.department_id = d.id
-            WHERE (DATE(a.check_in) = ? OR a.attendance_date = ?)
-            ORDER BY a.check_in ASC
-        ", [$date, $date]);
+            SELECT x.*,
+                   COALESCE(e.first_name, u.name, 'Staff Member') as first_name,
+                   COALESCE(e.last_name, '') as last_name,
+                   COALESCE(e.emp_code, u.employee_id, CONCAT('USR-', x.user_id)) as emp_code,
+                   COALESCE(d.name, u.designation, 'General Staff') as department_name,
+                   e.min_clock_in,
+                   e.max_clock_out,
+                   e.break_allowed_minutes,
+                   COALESCE(u2.grace_period, u.grace_period) as user_grace_period
+            FROM (
+                SELECT a.id, a.user_id, a.check_in, a.confidence, a.image_path,
+                       a.late_exempted, a.late_exemption_reason, $resolved AS resolved_employee_id
+                FROM attendance a
+                WHERE a.check_in >= ? AND a.check_in < DATE_ADD(?, INTERVAL 1 DAY)
+            ) x
+            LEFT JOIN employees e ON e.id = x.resolved_employee_id
+            LEFT JOIN users u ON u.id = x.user_id
+            LEFT JOIN users u2 ON u2.id = e.user_id
+            LEFT JOIN departments d ON d.id = e.department_id
+            ORDER BY x.check_in ASC, x.id ASC
+        ", [$date . ' 00:00:00', $date]);
 
-        // Group by employee_id to find first (check-in) and last (check-out)
+        // Group per resolved employee (unmatched scans stay per login user)
         $grouped = [];
         foreach ($faceLogsRaw as $log) {
-            $empId = $log['employee_id'];
-            if (!isset($grouped[$empId])) {
-                $grouped[$empId] = [
-                    'id' => $log['id'],
-                    'employee_id' => $empId,
-                    'first_name' => $log['first_name'],
-                    'last_name' => $log['last_name'],
-                    'emp_code' => $log['emp_code'],
-                    'department_name' => $log['department_name'],
-                    'min_check_in' => $log['check_in'],
-                    'max_check_in' => $log['check_in'],
-                    'confidence' => $log['confidence'],
-                    'image_path' => $log['image_path'],
-                    'scan_count' => 1,
-                    'min_clock_in' => $log['min_clock_in'],
-                    'late_exempted' => $log['late_exempted'],
-                    'late_exemption_reason' => $log['late_exemption_reason']
-                ];
-            } else {
-                $grouped[$empId]['max_check_in'] = $log['check_in'];
-                $grouped[$empId]['scan_count']++;
+            $key = $log['resolved_employee_id'] ? 'E' . $log['resolved_employee_id'] : 'U' . ($log['user_id'] ?? 'x' . $log['id']);
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = $log + ['scans' => [], 'exempted' => false, 'reason' => null];
+            }
+            $grouped[$key]['scans'][] = $log['check_in'];
+            if (!empty($log['late_exempted'])) {
+                $grouped[$key]['exempted'] = true;
+                $grouped[$key]['reason'] = $log['late_exemption_reason'];
             }
         }
 
-        $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-        $globalShiftStart = $shift['start_time'] ?? '09:00:00';
-        $globalGrace = (int)($shift['grace_minutes'] ?? 15);
+        $shift = \App\Services\ShiftSettings::current();
 
         $faceLogs = [];
-        foreach ($grouped as $empId => $data) {
-            $clockIn = date('h:i A', strtotime($data['min_check_in']));
+        foreach ($grouped as $data) {
+            $scans = $data['scans'];
+            $first = $scans[0];
+            $last = $scans[count($scans) - 1];
             $clockOut = '--:--';
             $workingHours = '0 hrs 0 mins';
+
+            // Same shift rules as payroll
+            $rules = \App\Services\ShiftSettings::rulesFor($data, $shift);
+            $status = \App\Services\ShiftSettings::classifyCheckIn($first, $rules);
             
-            $timeOnly = date('H:i:s', strtotime($data['min_check_in']));
-            $status = 'present';
-            
-            // Resolve employee-specific shift rules
-            $empShiftStart = !empty($data['min_clock_in']) ? $data['min_clock_in'] : $globalShiftStart;
-            $grace = !empty($data['min_clock_in']) ? (int)($data['user_grace_period'] ?? 10) : $globalGrace;
-            $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
-            $halfDayTime = !empty($data['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
-            
-            if ($timeOnly > $halfDayTime) {
-                $status = 'half_day';
-            } elseif ($timeOnly > $latePenaltyTime) {
-                $status = 'late';
-            }
-            
-            if ($data['scan_count'] > 1) {
-                $clockOut = date('h:i A', strtotime($data['max_check_in']));
-                $diff = strtotime($data['max_check_in']) - strtotime($data['min_check_in']);
+            // Break time (paid — tracked and flagged, not deducted)
+            $breakInfo = \App\Services\StaffAttendanceCalculator::summarizeBreaks(
+                $scans,
+                \App\Services\StaffAttendanceCalculator::allowedMinutes($data['break_allowed_minutes']),
+                $rules['end'],
+                $date
+            );
+
+            if (count($scans) > 1 && $breakInfo['on_break_since'] === null) {
+                $clockOut = date('h:i A', strtotime($last));
+                $diff = strtotime($last) - strtotime($first);
                 $hours = floor($diff / 3600);
                 $mins = floor(($diff % 3600) / 60);
                 $workingHours = "{$hours} hrs {$mins} mins";
@@ -773,11 +675,12 @@ class StaffWorkspaceController extends Controller
 
             $faceLogs[] = [
                 'id' => $data['id'],
-                'employee_id' => $empId,
-                'clock_in' => $clockIn,
+                'employee_id' => $data['resolved_employee_id'] ? (int)$data['resolved_employee_id'] : null,
+                'clock_in' => date('h:i A', strtotime($first)),
                 'clock_out' => $clockOut,
                 'working_hours' => $workingHours,
                 'status' => $status,
+                'incomplete_log' => count($scans) === 1,
                 'confidence' => $data['confidence'],
                 'image_path' => $data['image_path'],
                 'first_name' => $data['first_name'],
@@ -785,8 +688,9 @@ class StaffWorkspaceController extends Controller
                 'emp_code' => $data['emp_code'],
                 'department_name' => $data['department_name'],
                 'source' => 'Face Recognition Kiosk',
-                'late_exempted' => $data['late_exempted'],
-                'late_exemption_reason' => $data['late_exemption_reason']
+                'break' => $breakInfo,
+                'late_exempted' => $data['exempted'] ? 1 : 0,
+                'late_exemption_reason' => $data['reason']
             ];
         }
 
@@ -798,10 +702,13 @@ class StaffWorkspaceController extends Controller
                 l.clock_in,
                 l.clock_out,
                 l.working_hours,
+                l.break_minutes,
                 l.status,
-                0 as late_exempted,
-                NULL as late_exemption_reason,
+                l.late_exempted,
+                l.late_exemption_reason,
+                l.incomplete_log,
                 1.0 as confidence,
+                e.break_allowed_minutes,
                 '' as image_path,
                 e.first_name,
                 e.last_name,
@@ -823,7 +730,12 @@ class StaffWorkspaceController extends Controller
             if (!empty($mLog['clock_out']) && $mLog['clock_out'] !== '--:--') {
                 $mLog['clock_out'] = date('h:i A', strtotime($mLog['clock_out']));
             }
+            $mLog['break'] = \App\Services\StaffAttendanceCalculator::summarizeManual(
+                $mLog['break_minutes'],
+                \App\Services\StaffAttendanceCalculator::allowedMinutes($mLog['break_allowed_minutes'])
+            );
         }
+        unset($mLog);
 
         $logs = array_merge($faceLogs, $manualLogs);
         $employees = $db->select("SELECT * FROM employees WHERE status = 'active'");
@@ -833,21 +745,25 @@ class StaffWorkspaceController extends Controller
 
     public function storeAttendance(): string
     {
-        $db = Application::$app->db;
         $employeeId = (int) $this->request->get('employee_id');
-        $date       = $this->request->get('date', date('Y-m-d'));
+        $date       = (string) $this->request->get('date', date('Y-m-d'));
         $clockIn    = $this->request->get('clock_in', '09:00');
         $clockOut   = $this->request->get('clock_out', '17:00');
-        $status     = $this->request->get('status', 'present');
+        $status     = (string) $this->request->get('status', 'present');
+        $breakRaw   = $this->request->get('break_minutes', '');
+        $breakMins  = ($breakRaw === '' || $breakRaw === null) ? null : max(0, (int) $breakRaw);
 
         if ($employeeId > 0) {
-            $db->query("INSERT INTO staff_attendance_logs (tenant_id, employee_id, date, clock_in, clock_out, working_hours, status)
-                        VALUES (1, ?, ?, ?, ?, 8.0, ?)
-                        ON DUPLICATE KEY UPDATE clock_in = VALUES(clock_in), clock_out = VALUES(clock_out), status = VALUES(status)",
-                       [$employeeId, $date, $clockIn, $clockOut, $status]);
-            $this->flash('success', "Attendance log recorded.");
+            try {
+                // Shared with /payroll/attendance: real working hours, audit trail,
+                // tenant scope and payroll runs of that month marked out of sync.
+                \App\Services\PayrollService::saveManualAttendance($employeeId, $date, $clockIn, $clockOut, $status, $breakMins);
+                $this->flash('success', "Attendance log recorded.");
+            } catch (\Throwable $e) {
+                $this->flash('error', 'Failed to save attendance: ' . $e->getMessage());
+            }
         }
-        return $this->redirect(url('staff/attendance?date=' . $date));
+        return $this->redirect(url('staff/attendance?date=' . urlencode($date)));
     }
 
     public function lectureAttendance(): string
@@ -1115,17 +1031,29 @@ class StaffWorkspaceController extends Controller
         $end     = $this->request->get('end_date');
         $reason  = trim($this->request->get('reason', ''));
 
-        if ($empId > 0 && $start && $end) {
-            $db->insert('leave_requests', [
-                'tenant_id'     => 1,
+        if ($empId > 0 && $start && $end && strtotime($start) !== false && strtotime($end) !== false) {
+            if ($end < $start) {
+                [$start, $end] = [$end, $start];
+            }
+            // Leave days = non-Sunday days in the range
+            $days = 0;
+            for ($t = strtotime($start); $t <= strtotime($end); $t = strtotime('+1 day', $t)) {
+                if ((int)date('w', $t) !== 0) $days++;
+            }
+            $leaveId = (int) $db->insert('leave_requests', [
+                'tenant_id'     => \Core\Database::getTenantId() ?? 1,
                 'employee_id'   => $empId,
                 'leave_type_id' => $typeId,
                 'start_date'    => $start,
                 'end_date'      => $end,
-                'days'          => 1.0,
+                'days'          => min(99.9, max(0.5, (float)$days)),
                 'reason'        => $reason,
                 'status'        => 'approved'
             ]);
+            \App\Services\PayrollService::logAudit('leave_approved', 'leave_requests', $leaveId, null, "$start..$end", $reason ?: 'Leave recorded');
+            for ($t = strtotime(date('Y-m-01', strtotime($start))); $t <= strtotime($end); $t = strtotime('+1 month', $t)) {
+                \App\Services\PayrollService::markAffectedRunsOutOfSync(date('Y-m-d', $t));
+            }
             $this->flash('success', "Leave request submitted & approved.");
         }
         return $this->redirect(url('staff/leaves'));
@@ -1142,157 +1070,15 @@ class StaffWorkspaceController extends Controller
 
     public function runPayroll(): string
     {
-        $db = Application::$app->db;
-        $targetMonth = $this->request->input('month', date('Y-m'));
+        $targetMonth = (string) $this->request->input('month', date('Y-m'));
         $monthYear = date('F Y', strtotime($targetMonth . '-01'));
-        
+
         try {
-            // Delete existing run for this month
-            $existingRun = $db->selectOne("SELECT id FROM payroll_runs WHERE month_year = ?", [$monthYear]);
-            if ($existingRun) {
-                $db->delete('payroll_items', "payroll_run_id = ?", [$existingRun['id']]);
-                $db->delete('payroll_runs', "id = ?", [$existingRun['id']]);
-            }
-
-            // Fetch policy
-            $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-            $lateLimit = (int) ($shift['late_limit_count'] ?? 3);
-            $lateDeductionPercent = (float) ($shift['late_deduction_percent'] ?? 10.00);
-            $halfDayDeductionPercent = (float) ($shift['half_day_deduction_percent'] ?? 50.00);
-
-            // Month range and dynamic working days (exclude Sundays)
-            $startDate = date('Y-m-01', strtotime($targetMonth . '-01'));
-            $endDate = date('Y-m-t', strtotime($targetMonth . '-01'));
-            
-            $month = date('m', strtotime($startDate));
-            $year = date('Y', strtotime($startDate));
-            
-            $workingDaysMap = json_decode($shift['working_days_json'] ?? '{}', true) ?: [];
-            $workingDays = (int) ($workingDaysMap[$month] ?? 0);
-            
-            if ($workingDays <= 0) {
-                $month = date('m');
-                $year = date('Y');
-                $totalDaysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-                for ($i = 1; $i <= $totalDaysInMonth; $i++) {
-                    $dateStr = "$year-$month-" . sprintf('%02d', $i);
-                    if (date('N', strtotime($dateStr)) != 7) { // 7 is Sunday
-                        $workingDays++;
-                    }
-                }
-            }
-            
-            // Fallback just in case
-            if ($workingDays == 0) $workingDays = 26;
-
-            $employees = $db->select("SELECT e.*, u.grace_period as user_grace_period FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.status = 'active'");
-            
-            $totalGross = 0;
-            $totalNet = 0;
-            $totalDeductions = 0;
-
-            $items = [];
-            foreach ($employees as $e) {
-                $basic = (float) $e['salary_basic'];
-                $perDaySalary = $basic / $workingDays;
-                
-                // Determine shift settings for employee (template vs customized)
-                $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : ($shift['start_time'] ?? '09:00:00');
-                $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : (int)($shift['grace_minutes'] ?? 15);
-                
-                $startTimeSecs = strtotime($empShiftStart);
-                $latePenaltyTime = date('H:i:s', $startTimeSecs + ($grace * 60));
-                $halfDayTime = !empty($e['min_clock_in']) ? date('H:i:s', $startTimeSecs + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
-
-                // Query month's logs (unique days)
-                $logs = $db->select("
-                    SELECT check_in FROM attendance 
-                    WHERE user_id = (SELECT id FROM users WHERE employee_id = ? LIMIT 1) 
-                    AND (DATE(check_in) BETWEEN ? AND ?)
-                ", [$e['employee_id'], $startDate, $endDate]);
-
-                // Also fetch fallback if attendance was marked by raw employee_id earlier
-                if (empty($logs)) {
-                     $logs = $db->select("
-                        SELECT check_in FROM attendance 
-                        WHERE employee_id = ? AND (DATE(check_in) BETWEEN ? AND ?)
-                    ", [$e['id'], $startDate, $endDate]);
-                }
-
-                $lateCount = 0;
-                $halfDayCount = 0;
-                $presentDays = count($logs);
-
-                foreach ($logs as $log) {
-                    if (empty($log['check_in'])) continue;
-                    $time = date('H:i:s', strtotime($log['check_in']));
-                    if ($time > $halfDayTime) {
-                        $halfDayCount++;
-                    } elseif ($time > $latePenaltyTime) {
-                        $lateCount++;
-                    }
-                }
-
-                // 1. Absent Deduction (Full days missed)
-                $absentDays = $workingDays - $presentDays;
-                if ($absentDays < 0) $absentDays = 0; // Worked overtime/Sundays
-                $absentDeduction = $absentDays * $perDaySalary;
-
-                // 2. Late Deduction
-                $lateDeduction = 0.00;
-                if ($lateCount >= $lateLimit) {
-                    $lateDeduction = round(($basic * ($lateDeductionPercent / 100)), 2);
-                }
-
-                // 3. Half-Day Deduction
-                $halfDayDeduction = round(($perDaySalary * ($halfDayDeductionPercent / 100) * $halfDayCount), 2);
-                
-                $totalEmpDeduction = $absentDeduction + $lateDeduction + $halfDayDeduction;
-
-                if ($totalEmpDeduction > $basic) {
-                    $totalEmpDeduction = $basic;
-                }
-
-                $netSalary = $basic - $totalEmpDeduction;
-
-                $totalGross += $basic;
-                $totalDeductions += $totalEmpDeduction;
-                $totalNet += $netSalary;
-
-                $items[] = [
-                    'employee_id' => $e['id'],
-                    'working_days' => $workingDays,
-                    'present_days' => $presentDays,
-                    'gross_salary' => $basic,
-                    'late_deduction' => $lateDeduction,
-                    'absent_deduction' => $absentDeduction + $halfDayDeduction, // Store total absent + halfday here
-                    'net_salary' => $netSalary
-                ];
-            }
-
-            $runId = $db->insert('payroll_runs', [
-                'tenant_id'        => 1,
-                'month_year'       => $monthYear,
-                'total_gross'      => $totalGross,
-                'total_deductions' => $totalDeductions,
-                'total_net'        => $totalNet,
-                'status'           => 'approved'
-            ]);
-
-            foreach ($items as $item) {
-                $db->insert('payroll_items', [
-                    'payroll_run_id'  => $runId,
-                    'employee_id'     => $item['employee_id'],
-                    'working_days'    => 26,
-                    'present_days'    => $item['present_days'],
-                    'gross_salary'    => $item['gross_salary'],
-                    'late_deduction'  => $item['late_deduction'],
-                    'absent_deduction'=> $item['absent_deduction'],
-                    'net_salary'      => $item['net_salary']
-                ]);
-            }
-
-            $this->flash('success', "Payroll generated and approved for $monthYear dynamically based on late attendance thresholds.");
+            // Same engine as /payroll/runs (holidays, leaves, manual overrides, joining
+            // date, configured working days). Saved as a draft for review, never auto-approved.
+            $runId = (new \App\Services\PayrollService(Application::$app->db))->generateRun($targetMonth, auth_id());
+            \App\Services\PayrollService::logAudit('run_payroll', 'payroll_runs', $runId, null, $monthYear, 'Monthly payroll executed (staff workspace)');
+            $this->flash('success', "Payroll generated for $monthYear as a draft. Review and approve it before payout.");
         } catch (\Throwable $e) {
             $this->flash('error', "Failed to run payroll: " . $e->getMessage());
         }
@@ -1471,7 +1257,8 @@ class StaffWorkspaceController extends Controller
         $shift = $db->selectOne("SELECT * FROM shift_templates WHERE tenant_id = ? AND academic_year_id = ? ORDER BY id DESC LIMIT 1", [$tenantId, $selectedYearId]);
         if (!$shift) {
             // Fall back to global template (id=1) or create one for this year
-            $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
+            $src = \App\Services\ShiftSettings::current($tenantId);
+            $shift = !empty($src['id']) ? $db->selectOne("SELECT * FROM shift_templates WHERE id = ?", [(int)$src['id']]) : false;
             if ($shift && $selectedYearId) {
                 $shiftData = $shift;
                 unset($shiftData['id']);
@@ -1521,6 +1308,7 @@ class StaffWorkspaceController extends Controller
             'late_deduction_percent' => $lateDeductionPercent,
             'half_day_deduction_percent' => $halfDayDeductionPercent,
             'lec_grace_minutes' => $lecGraceMinutes,
+            'break_allowed_minutes' => max(0, (int) $this->request->input('break_allowed_minutes', 30)),
         ];
 
         try {
@@ -1534,6 +1322,8 @@ class StaffWorkspaceController extends Controller
                 $updateData['name'] = 'Default Shift';
                 $db->insert('shift_templates', $updateData);
             }
+
+            \App\Services\ShiftSettings::flush();
 
             // Mark all draft/out_of_sync payroll runs so they regenerate
             $db->query("UPDATE payroll_runs SET status = 'out_of_sync' WHERE status IN ('draft', 'out_of_sync')");

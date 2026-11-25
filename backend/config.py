@@ -9,7 +9,12 @@ class Settings(BaseSettings):
     APP_NAME: str = "Face Recognition Attendance Service"
     DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
     PORT: int = int(os.getenv("PORT", "8000"))
-    HOST: str = os.getenv("HOST", "0.0.0.0")
+    # Bind to loopback by default — only the local PHP proxy should reach this service.
+    HOST: str = os.getenv("FACE_API_HOST", "127.0.0.1")
+    # Enables /docs, /redoc and /openapi.json (off unless FACE_API_DEBUG=1)
+    API_DOCS_ENABLED: bool = os.getenv("FACE_API_DEBUG", "0").lower() in ("1", "true")
+    # Comma-separated CORS origins (default: none — the PHP proxy calls server-to-server)
+    ALLOWED_ORIGINS: str = os.getenv("FACE_API_ALLOWED_ORIGINS", "")
 
     # MySQL Database Config
     DB_HOST: str = os.getenv("DB_HOST", "127.0.0.1")
@@ -77,10 +82,15 @@ class Settings(BaseSettings):
     UPLOAD_ATTENDANCE_DIR: str = os.path.join(BASE_DIR, "uploads", "attendance")
 
     # Security & JWT
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "super-secret-jwt-key-psnf-2026")
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "")  # no default secret; JWT helpers refuse to work without it
     JWT_ALGORITHM: str = "HS256"
     RATE_LIMIT_REQUESTS: int = 60
     RATE_LIMIT_WINDOW_SECONDS: int = 60
+
+    # Request limits
+    MAX_IMAGES_PER_REQUEST: int = 10
+    MAX_IMAGE_BYTES: int = 5 * 1024 * 1024        # decoded size per image
+    MAX_IMAGE_PIXELS: int = 25_000_000            # PIL decompression-bomb guard
 
 settings = Settings()
 

@@ -39,11 +39,11 @@ ob_start();
                     <?php foreach ($requests as $req): ?>
                     <tr>
                         <td class="p-4 font-bold text-slate-900 dark:text-white"><?= e($req['first_name'] . ' ' . $req['last_name']) ?></td>
-                        <td class="p-4 text-indigo-500 font-bold"><?= e($req['leave_type_name'] ?? 'Casual Leave') ?></td>
+                        <td class="p-4 text-indigo-500 font-bold"><?= e($req['leave_type_name'] ?: '—') ?></td>
                         <td class="p-4 font-mono"><?= e($req['start_date']) ?></td>
                         <td class="p-4 font-mono"><?= e($req['end_date']) ?></td>
                         <td class="p-4 font-mono font-bold"><?= e($req['days']) ?> day(s)</td>
-                        <td class="p-4 text-slate-500"><?= e($req['reason'] ?? 'Personal reasons') ?></td>
+                        <td class="p-4 text-slate-500"><?= e($req['reason'] ?: '—') ?></td>
                         <td class="p-4 text-right">
                             <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-500 uppercase"><?= e($req['status']) ?></span>
                         </td>

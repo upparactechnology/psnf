@@ -9,10 +9,23 @@ class AddCurriculumTemplateIdToClasses
     public function up(): void
     {
         $db = Application::$app->db;
-        $db->query("ALTER TABLE `classes` ADD COLUMN `curriculum_template_id` INT UNSIGNED NULL DEFAULT NULL AFTER `main_group_id`");
-        try {
-            $db->query("ALTER TABLE `classes` ADD CONSTRAINT `fk_classes_curriculum_template_id` FOREIGN KEY (`curriculum_template_id`) REFERENCES `curriculum_templates` (`id`) ON DELETE SET NULL");
-        } catch (\Throwable $e) {}
+
+        if (empty($db->select("SHOW COLUMNS FROM `classes` LIKE 'curriculum_template_id'"))) {
+            $db->query("ALTER TABLE `classes` ADD COLUMN `curriculum_template_id` INT UNSIGNED NULL DEFAULT NULL AFTER `main_group_id`");
+        }
+
+        $fk = $db->selectOne(
+            "SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'classes'
+               AND CONSTRAINT_NAME = 'fk_classes_curriculum_template_id' AND CONSTRAINT_TYPE = 'FOREIGN KEY'"
+        );
+        if (!$fk) {
+            try {
+                $db->query("ALTER TABLE `classes` ADD CONSTRAINT `fk_classes_curriculum_template_id` FOREIGN KEY (`curriculum_template_id`) REFERENCES `curriculum_templates` (`id`) ON DELETE SET NULL");
+            } catch (\Throwable $e) {
+                // curriculum_templates may not exist yet; the FK is optional
+            }
+        }
     }
 
     public function down(): void

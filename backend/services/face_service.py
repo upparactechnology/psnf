@@ -2,8 +2,6 @@ import json
 import os
 import cv2
 import numpy as np
-from datetime import datetime
-from zoneinfo import ZoneInfo
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 
@@ -13,6 +11,7 @@ from database.models import ERPUser, FaceEmbedding
 from models.schemas import RegisterFaceRequest
 from utils.image_utils import base64_to_cv2, resize_image_max
 from utils.logger import logger
+from utils.timeutil import now_ist
 from recognition.detector import FaceDetector
 from recognition.embedding import EmbeddingExtractor
 from recognition.matcher import matcher
@@ -35,6 +34,9 @@ class FaceService:
             ERPUser.deleted_at == None
         ).first()
 
+        if user and req.tenant_id is not None and user.tenant_id != req.tenant_id:
+            user = None  # never register a user from another tenant
+
         if not user:
             raise ValueError(
                 f"User with ID {req.user_id} not found in the ERP users table. "
@@ -46,17 +48,17 @@ class FaceService:
 
         logger.info(f"Registering faces for user: {user.name} (ID: {user.id}, emp_id: {user.employee_id})")
 
-        # 2. Delete existing embeddings for this user
-        db.query(FaceEmbedding).filter(FaceEmbedding.user_id == user.id).delete()
-        db.commit()
-
         processed_count = 0
         failed_count    = 0
         errors          = []
-        first_image_path = None
+        new_rows: List[FaceEmbedding] = []
+        new_vectors: List[np.ndarray] = []
+        saved_files: List[str] = []
 
-        images_to_process = req.images_base64[:10]
+        images_to_process = req.images_base64[:settings.MAX_IMAGES_PER_REQUEST]
 
+        # 2. Process all images first — existing embeddings stay untouched until we
+        #    know at least one new embedding was produced.
         for idx, img_b64 in enumerate(images_to_process):
             try:
                 img_bgr = base64_to_cv2(img_b64)
@@ -69,42 +71,56 @@ class FaceService:
                     errors.append(f"Angle {idx+1}: {det_res.error_message}")
                     continue
 
-                # InsightFace embedding
-                embedding = self.extractor.extract_embedding(img_bgr)
+                # InsightFace embedding (reuses the detection pass when possible)
+                embedding = self.extractor.extract_embedding(img_bgr, face=det_res.face)
 
                 # Save face image
-                ts = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y%m%d_%H%M%S_%f")
+                ts = now_ist().strftime("%Y%m%d_%H%M%S_%f")
                 filename = f"user_{user.id}_angle{idx}_{ts}.jpg"
                 save_path = os.path.join(settings.UPLOAD_FACES_DIR, filename)
                 rel_path  = f"uploads/faces/{filename}"
-                cv2.imwrite(save_path, img_bgr)
+                if cv2.imwrite(save_path, img_bgr):
+                    saved_files.append(save_path)
+                else:
+                    rel_path = None
 
-                if first_image_path is None:
-                    first_image_path = rel_path
-
-                # Store embedding row
-                emb_json = json.dumps(embedding.tolist())
-                face_emb = FaceEmbedding(
+                new_rows.append(FaceEmbedding(
                     user_id    = user.id,
                     employee_id= None,          # no longer used
-                    embedding  = emb_json,
+                    embedding  = json.dumps(embedding.tolist()),
                     image_path = rel_path
-                )
-                db.add(face_emb)
-
-                # Update in-memory matcher cache (keyed by user_id)
-                matcher.add_employee_embedding(user.id, embedding)
+                ))
+                new_vectors.append(embedding)
                 processed_count += 1
 
+            except ValueError as e:
+                failed_count += 1
+                errors.append(f"Angle {idx+1}: {str(e)}")
             except Exception as e:
                 failed_count += 1
                 logger.error(f"Error on image {idx+1} for user {user.id}: {str(e)}")
-                errors.append(f"Angle {idx+1}: {str(e)}")
-
-        db.commit()
+                errors.append(f"Angle {idx+1}: could not be processed.")
 
         if processed_count == 0:
+            # Nothing changed in DB or cache — previous registration (if any) remains valid.
             raise ValueError(f"No embeddings saved. Errors: {'; '.join(errors)}")
+
+        # 3. Replace old embeddings with the new ones in a single transaction
+        try:
+            db.query(FaceEmbedding).filter(FaceEmbedding.user_id == user.id).delete()
+            db.add_all(new_rows)
+            db.commit()
+        except Exception:
+            db.rollback()
+            for path in saved_files:
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+            raise
+
+        # 4. Keep the in-memory matcher cache identical to the DB (drop stale vectors)
+        matcher.replace_employee(user.id, new_vectors)
 
         return {
             "success": True,

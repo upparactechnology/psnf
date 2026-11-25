@@ -8,6 +8,8 @@ use Core\Controller;
 use Core\Application;
 use Core\Session;
 use App\Models\ActivityLog;
+use App\Services\PayrollService;
+use App\Services\ShiftSettings;
 
 class PayrollController extends Controller
 {
@@ -37,11 +39,12 @@ class PayrollController extends Controller
             if ($run['status'] === 'approved' || $run['status'] === 'draft') {
                 if ($this->checkIfOutOfSync((int)$run['id'])) {
                     $db->update('payroll_runs', ['status' => 'out_of_sync'], 'id = ?', [$run['id']]);
-                    $run['status'] = 'out_of_sync';
                     $this->logAudit('marked_out_of_sync', 'payroll_runs', (int)$run['id'], $run['status'], 'out_of_sync', 'Automatic data drift detection');
+                    $run['status'] = 'out_of_sync';
                 }
             }
         }
+        unset($run);
 
         return $this->view('payroll/runs', compact('runs', 'employees'));
     }
@@ -123,7 +126,7 @@ class PayrollController extends Controller
         // Get chronological details of late marks and penalties per employee
         $chronology = [];
         foreach ($items as $item) {
-            $chronology[$item['employee_id']] = $this->getChronologicalBreakdown($run['month_year'], (int)$item['employee_id']);
+            $chronology[$item['employee_id']] = $this->getChronologicalBreakdown($run['month_year'], (int)$item['employee_id'], $item['status_engine_json'] ?? null);
         }
 
         return $this->view('payroll/payroll_details', compact('run', 'items', 'chronology'));
@@ -147,7 +150,7 @@ class PayrollController extends Controller
             return $this->redirect(url('payroll/runs'));
         }
 
-        $chronology = $this->getChronologicalBreakdown($run['month_year'], (int)$empId);
+        $chronology = $this->getChronologicalBreakdown($run['month_year'], (int)$empId, $item['status_engine_json'] ?? null);
 
         return $this->view('payroll/payslip', compact('run', 'item', 'chronology'));
     }
@@ -156,11 +159,11 @@ class PayrollController extends Controller
     {
         $db = $this->db();
         $logId = (int)$this->request->input('log_id');
-        $source = $this->request->input('source', 'kiosk'); // kiosk or manual
+        $source = (string) $this->request->input('source', 'kiosk'); // kiosk or manual ('Manual Entry' from the list view)
         $reason = trim((string)$this->request->input('reason', 'Admin Exemption'));
         $exempt = (int)$this->request->input('exempt', 1);
 
-        $table = ($source === 'manual') ? 'staff_attendance_logs' : 'attendance';
+        $table = (stripos($source, 'manual') !== false) ? 'staff_attendance_logs' : 'attendance';
         $log = $db->selectOne("SELECT * FROM `$table` WHERE id = ?", [$logId]);
 
         if (!$log) {
@@ -189,7 +192,7 @@ class PayrollController extends Controller
             $reason
         );
 
-        $date = $log['date'] ?? $log['attendance_date'] ?? null;
+        $date = $log['date'] ?? $log['attendance_date'] ?? (!empty($log['check_in']) ? substr((string)$log['check_in'], 0, 10) : null);
         if ($date) {
             $this->markAffectedRunsOutOfSync($date);
         }
@@ -200,25 +203,15 @@ class PayrollController extends Controller
 
     public function runPayroll(): string
     {
-        $db = $this->db();
-        $targetMonth = $this->request->input('month', date('Y-m'));
+        $targetMonth = (string) $this->request->input('month', date('Y-m'));
         $monthYear = date('F Y', strtotime($targetMonth . '-01'));
 
         try {
-            // Delete existing run for this month to ensure clean regeneration
-            $existingRun = $db->selectOne("SELECT id FROM payroll_runs WHERE month_year = ?", [$monthYear]);
-            if ($existingRun) {
-                $db->delete('payroll_items', "payroll_run_id = ?", [$existingRun['id']]);
-                $db->delete('payroll_runs', "id = ?", [$existingRun['id']]);
-            }
-
-            // Calculate payroll run
-            $runId = $this->calculateAndSavePayroll($targetMonth);
-
+            $runId = (new PayrollService($this->db()))->generateRun($targetMonth, $this->authId());
             $this->logAudit('run_payroll', 'payroll_runs', $runId, null, $monthYear, 'Monthly payroll executed');
-            Session::flash('success', "Payroll generated and approved for $monthYear successfully.");
+            Session::flash('success', "Payroll generated for $monthYear as a draft. Review and approve it before payout.");
         } catch (\Throwable $e) {
-            Session::flash('error', "Failed to run payroll: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+            Session::flash('error', "Failed to run payroll: " . $e->getMessage());
         }
 
         return $this->redirect(url('payroll/runs'));
@@ -236,14 +229,12 @@ class PayrollController extends Controller
         }
 
         $monthYear = $run['month_year'];
-        $targetMonth = date('Y-m', strtotime($monthYear));
+        $targetMonth = date('Y-m', strtotime('1 ' . $monthYear));
+        $newRunId = null;
 
         try {
-            $db->delete('payroll_items', "payroll_run_id = ?", [$runId]);
-            $db->delete('payroll_runs', "id = ?", [$runId]);
-
-            $newRunId = $this->calculateAndSavePayroll($targetMonth);
-
+            // Replaces the old run inside one transaction; on failure the old run stays.
+            $newRunId = (new PayrollService($db))->generateRun($targetMonth, $this->authId());
             $this->logAudit('regenerated', 'payroll_runs', $newRunId, $monthYear, $monthYear, 'Payroll regenerated after sync update');
             Session::flash('success', "Payroll for $monthYear has been regenerated and synchronized.");
         } catch (\Throwable $e) {
@@ -253,616 +244,120 @@ class PayrollController extends Controller
         return $this->redirect(url('payroll/runs/' . ($newRunId ?? $runId)));
     }
 
-    private function calculateAndSavePayroll(string $targetMonth): int
+    /**
+     * Day-by-day breakdown for the run detail / payslip. Uses the snapshot stored on the
+     * payroll item (same engine that produced the numbers); recomputes when absent.
+     */
+    private function getChronologicalBreakdown(string $monthYear, int $employeeId, ?string $statusEngineJson = null): array
     {
-        $db = $this->db();
-        $monthYear = date('F Y', strtotime($targetMonth . '-01'));
-
-        $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-        $globalShiftStart = $shift['start_time'] ?? '09:00:00';
-        $globalGrace = (int)($shift['grace_minutes'] ?? 15);
-        $halfDayDeductionPercent = (float)($shift['half_day_deduction_percent'] ?? 50.00);
-
-        // Resolve working days from configured working_days_json (source of truth)
-        $workingDaysMap = json_decode($shift['working_days_json'] ?? '{}', true) ?: [];
-        $monthNum = (int)date('m', strtotime($targetMonth));
-        $monthKey = sprintf('%02d', $monthNum);
-        $configuredDays = (int)($workingDaysMap[$monthKey] ?? 0);
-
-        if ($configuredDays > 0) {
-            $salaryDays = $configuredDays;
-        } else {
-            // Auto-calculate: all weekdays (Mon-Sat) in the month
-            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $monthNum, (int)date('Y', strtotime($targetMonth)));
-            $salaryDays = 0;
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $w = (int)date('w', mktime(0, 0, 0, $monthNum, $d, (int)date('Y', strtotime($targetMonth))));
-                if ($w != 0) $salaryDays++; // Skip Sunday
-            }
-        }
-
-        $employees = $db->select("SELECT e.*, u.grace_period as user_grace_period FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.status = 'active'");
-        
-        $totalGross = 0;
-        $totalDeductions = 0;
-        $totalNet = 0;
-        $items = [];
-
-        foreach ($employees as $e) {
-            $empId = (int)$e['id'];
-            $basic = (float)$e['salary_basic'];
-            $dailySalary = $basic / $salaryDays;
-
-            // Resolve daily statuses chronologically
-            $presentCount = 0;
-            $normalHalfDayCount = 0;
-            $absentCount = 0;
-            $paidLeaveCount = 0;
-            $unpaidLeaveCount = 0;
-            $paidHolidayCount = 0;
-            $sundayCount = 0;
-            $lateCount = 0;
-            $lateExemptedCount = 0;
-            $latePenaltyHalfDays = 0;
-
-            $statusEngine = [];
-            $accumulatedLates = 0;
-
-            for ($day = 1; $day <= $daysInMonth; $day++) {
-                $dateStr = $targetMonth . '-' . sprintf('%02d', $day);
-                $isSunday = (date('N', strtotime($dateStr)) == 7);
-
-                // Initialize default
-                $dayStatus = 'ABSENT';
-                $checkIn = null;
-                $checkOut = null;
-                $isLate = false;
-                $lateExempted = false;
-                $incompleteLog = false;
-                $source = 'none';
-
-                if ($isSunday) {
-                    $dayStatus = 'SUNDAY';
-                    $sundayCount++;
-                    $source = 'calendar';
-                } else {
-                    // Check paid holiday
-                    $holiday = $db->selectOne("SELECT * FROM holidays WHERE holiday_date = ? AND status = 'active'", [$dateStr]);
-                    if ($holiday) {
-                        $dayStatus = 'PAID_HOLIDAY';
-                        $paidHolidayCount++;
-                        $source = 'calendar';
-                    } else {
-                        // Check Manual logs
-                        $manual = $db->selectOne("SELECT * FROM staff_attendance_logs WHERE employee_id = ? AND date = ?", [$empId, $dateStr]);
-                        // Check Kiosk logs
-                        $kioskLogs = $db->select("
-                            SELECT * FROM attendance 
-                            WHERE (employee_id = ? OR user_id = (SELECT id FROM users WHERE employee_id = ? LIMIT 1) OR user_id = ?)
-                              AND (DATE(check_in) = ? OR attendance_date = ?)
-                            ORDER BY check_in ASC
-                        ", [$empId, $e['employee_code'], $e['user_id'], $dateStr, $dateStr]);
-
-                        // Resolve Priority
-                        if ($manual) {
-                            $dayStatus = strtoupper($manual['status']); // PRESENT, LATE, HALF_DAY, etc.
-                            $checkIn = $manual['clock_in'];
-                            $checkOut = $manual['clock_out'];
-                            $isLate = ($manual['status'] === 'late');
-                            $lateExempted = (bool)$manual['late_exempted'];
-                            $incompleteLog = (bool)$manual['incomplete_log'];
-                            $source = 'manual';
-
-                            // Recalculate late status based on custom shift start if set
-                            $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : $globalShiftStart;
-                            $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : $globalGrace;
-                            $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
-                            if ($checkIn && $checkIn > $latePenaltyTime) {
-                                $isLate = true;
-                            }
-                        } elseif (!empty($kioskLogs)) {
-                            $first = $kioskLogs[0];
-                            $last = count($kioskLogs) > 1 ? $kioskLogs[count($kioskLogs)-1] : null;
-                            $checkIn = date('H:i:s', strtotime($first['check_in']));
-                            $checkOut = $last ? date('H:i:s', strtotime($last['check_in'])) : null;
-                            $source = 'kiosk';
-
-                            if (!$last || $first['id'] === $last['id']) {
-                                $incompleteLog = true;
-                                // Save incomplete flag to DB if not already set
-                                $db->update('attendance', ['incomplete_log' => 1], 'id = ?', [$first['id']]);
-                            }
-
-                            // Check shift start rules
-                            $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : $globalShiftStart;
-                            $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : $globalGrace;
-                            $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
-                            $halfDayTime = !empty($e['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
-
-                            if ($checkIn > $halfDayTime) {
-                                $dayStatus = 'HALF_DAY';
-                            } elseif ($checkIn > $latePenaltyTime) {
-                                $dayStatus = 'PRESENT'; // Lateness calculated below
-                                $isLate = true;
-                                $lateExempted = (bool)$first['late_exempted'];
-                            } else {
-                                $dayStatus = 'PRESENT';
-                            }
-                        } else {
-                            // Check Leave request
-                            $leave = $db->selectOne("
-                                SELECT lr.*, lt.is_paid 
-                                FROM leave_requests lr
-                                JOIN leave_types lt ON lr.leave_type_id = lt.id
-                                WHERE lr.employee_id = ? AND lr.status = 'approved'
-                                  AND ? BETWEEN lr.start_date AND lr.end_date
-                                LIMIT 1
-                            ", [$empId, $dateStr]);
-
-                            if ($leave) {
-                                $dayStatus = $leave['is_paid'] ? 'PAID_LEAVE' : 'UNPAID_LEAVE';
-                                $source = 'leave';
-                            } else {
-                                $dayStatus = 'ABSENT';
-                                $source = 'none';
-                            }
-                        }
-                    }
-                }
-
-                // If approved leave exists but they scanned, marked status wins
-                if (($dayStatus === 'PAID_LEAVE' || $dayStatus === 'UNPAID_LEAVE') && ($source === 'manual' || $source === 'kiosk')) {
-                    $activeLeave = $db->selectOne("
-                        SELECT id FROM leave_requests 
-                        WHERE employee_id = ? AND status = 'approved' AND ? BETWEEN start_date AND end_date LIMIT 1
-                    ", [$empId, $dateStr]);
-                    if ($activeLeave) {
-                        $db->update('leave_requests', [
-                            'status'          => 'rejected', // Recalled/Rejected
-                            'recalled_at'     => now(),
-                            'recalled_by'     => $this->authId(),
-                            'recalled_reason' => 'Physical attendance logged at kiosk'
-                        ], 'id = ?', [$activeLeave['id']]);
-                        $this->logAudit('leave_recalled', 'leave_requests', (int)$activeLeave['id'], 'approved', 'recalled', 'Auto recalled due to scan');
-                    }
-                }
-
-                // Tally days counts
-                if ($dayStatus === 'PRESENT') $presentCount++;
-                elseif ($dayStatus === 'HALF_DAY') $normalHalfDayCount++;
-                elseif ($dayStatus === 'ABSENT') $absentCount++;
-                elseif ($dayStatus === 'PAID_LEAVE') $paidLeaveCount++;
-                elseif ($dayStatus === 'UNPAID_LEAVE') $unpaidLeaveCount++;
-
-                // Track late counts
-                if ($isLate) {
-                    if ($lateExempted) {
-                        $lateExemptedCount++;
-                    } else {
-                        $lateCount++;
-                        $accumulatedLates++;
-                    }
-                }
-
-                $statusEngine[$day] = [
-                    'date'              => $dateStr,
-                    'status'            => $dayStatus,
-                    'is_late'           => $isLate,
-                    'late_exempted'     => $lateExempted,
-                    'incomplete_log'    => $incompleteLog,
-                    'is_sunday_holiday' => ($isSunday || $dayStatus === 'PAID_HOLIDAY'),
-                    'apply_penalty'     => false
-                ];
-            }
-
-            // Calculate chronological late penalty days (Every 3 lates → next eligible day receives 50% salary deduction)
-            $pendingPenalties = 0;
-            $lateTicker = 0;
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $info = &$statusEngine[$d];
-                
-                // Track accumulated lates
-                if ($info['is_late'] && !$info['late_exempted']) {
-                    $lateTicker++;
-                    if ($lateTicker % 3 === 0) {
-                        $pendingPenalties++;
-                    }
-                }
-
-                // Check if this day is eligible to absorb a pending penalty
-                // Eligible day: Not Sunday, Not Paid Holiday, and must be a day of active employment
-                $isEligible = (!$info['is_sunday_holiday'] && ($info['status'] === 'PRESENT' || $info['status'] === 'HALF_DAY' || $info['status'] === 'ABSENT'));
-                
-                // Also: Do NOT penalize the exact same day that creates the 3rd late
-                $isCreationDay = ($info['is_late'] && !$info['late_exempted'] && $lateTicker % 3 === 0);
-
-                if ($pendingPenalties > 0 && $isEligible && !$isCreationDay) {
-                    $info['apply_penalty'] = true;
-                    $latePenaltyHalfDays++;
-                    $pendingPenalties--;
-                }
-            }
-
-            // Deductions Math
-            $absentDeduction = $absentCount * $dailySalary;
-            $unpaidLeaveDeduction = $unpaidLeaveCount * $dailySalary;
-            
-            // Normal Half-Day Deductions
-            $normalHalfDayDeduction = $normalHalfDayCount * $dailySalary * ($halfDayDeductionPercent / 100);
-
-            // Late Penalty Deductions
-            $latePenaltyDeduction = 0.00;
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $info = $statusEngine[$d];
-                if ($info['apply_penalty']) {
-                    // Penalty deduction is 50% of daily salary.
-                    $penaltyAmount = $dailySalary * 0.5;
-
-                    // If already a normal half-day (50% deduction), cap the combined deduction at 100% (Daily Salary)
-                    if ($info['status'] === 'HALF_DAY') {
-                        $normalHalfDayRate = $dailySalary * ($halfDayDeductionPercent / 100);
-                        $remainingEligibleDeduction = max(0.00, $dailySalary - $normalHalfDayRate);
-                        $penaltyAmount = min($penaltyAmount, $remainingEligibleDeduction);
-                    }
-
-                    $latePenaltyDeduction += $penaltyAmount;
-                }
-            }
-
-            $totalEmpDeductions = $absentDeduction + $unpaidLeaveDeduction + $normalHalfDayDeduction + $latePenaltyDeduction;
-
-            // Enforce basic salary cap
-            if ($totalEmpDeductions > $basic) {
-                $totalEmpDeductions = $basic;
-            }
-
-            $netSalary = $basic - $totalEmpDeductions;
-
-            $totalGross += $basic;
-            $totalDeductions += $totalEmpDeductions;
-            $totalNet += $netSalary;
-
-            $items[] = [
-                'employee_id'            => $empId,
-                'salary_basic'           => $basic,
-                'salary_days'            => $salaryDays,
-                'daily_salary'           => $dailySalary,
-                'present_days'           => $presentCount,
-                'normal_half_days'       => $normalHalfDayCount,
-                'absent_days'            => $absentCount,
-                'paid_leave_days'        => $paidLeaveCount,
-                'unpaid_leave_days'      => $unpaidLeaveCount,
-                'paid_holiday_days'      => $paidHolidayCount,
-                'sunday_days'            => $sundayCount,
-                'late_count'             => $lateCount,
-                'late_exempted_count'    => $lateExemptedCount,
-                'late_penalty_half_days' => $latePenaltyHalfDays,
-                'absent_deduction'       => $absentDeduction,
-                'unpaid_leave_deduction' => $unpaidLeaveDeduction,
-                'normal_half_day_deduction' => $normalHalfDayDeduction,
-                'late_penalty_deduction' => $latePenaltyDeduction,
-                'total_deductions'       => $totalEmpDeductions,
-                'net_salary'             => $netSalary,
-                'status_engine_json'     => json_encode($statusEngine)
-            ];
-        }
-
-        $runId = (int)$db->insert('payroll_runs', [
-            'tenant_id'        => 1,
-            'month_year'       => $monthYear,
-            'total_gross'      => $totalGross,
-            'total_deductions' => $totalDeductions,
-            'total_net'        => $totalNet,
-            'status'           => 'draft'
-        ]);
-
-        foreach ($items as $item) {
-            $db->insert('payroll_items', [
-                'payroll_run_id'            => $runId,
-                'employee_id'               => $item['employee_id'],
-                'working_days'              => $item['salary_days'],
-                'present_days'              => $item['present_days'],
-                'gross_salary'              => $item['salary_basic'],
-                'absent_deduction'          => $item['absent_deduction'],
-                'net_salary'                => $item['net_salary'],
-                'salary_basic'              => $item['salary_basic'],
-                'salary_days'               => $item['salary_days'],
-                'daily_salary'              => $item['daily_salary'],
-                'normal_half_days'          => $item['normal_half_days'],
-                'paid_leave_days'           => $item['paid_leave_days'],
-                'unpaid_leave_days'         => $item['unpaid_leave_days'],
-                'paid_holiday_days'         => $item['paid_holiday_days'],
-                'sunday_days'               => $item['sunday_days'],
-                'late_count'                => $item['late_count'],
-                'late_exempted_count'       => $item['late_exempted_count'],
-                'late_penalty_half_days'    => $item['late_penalty_half_days'],
-                'unpaid_leave_deduction'    => $item['unpaid_leave_deduction'],
-                'normal_half_day_deduction' => $item['normal_half_day_deduction'],
-                'late_penalty_deduction'    => $item['late_penalty_deduction'],
-                'total_deductions'          => $item['total_deductions'],
-                'late_days'                 => $item['late_count'],
-                'half_days'                 => $item['normal_half_days'],
-                'absent_days'               => $item['absent_days']
-            ]);
-
-            // Save status engine payload to table for audit chronology
-            $db->query("UPDATE payroll_items SET absent_deduction = ? WHERE payroll_run_id = ? AND employee_id = ?", [$item['absent_deduction'], $runId, $item['employee_id']]);
-        }
-
-        return $runId;
-    }
-
-    private function getChronologicalBreakdown(string $monthYear, int $employeeId): array
-    {
-        $db = $this->db();
-        $targetMonth = date('Y-m', strtotime($monthYear));
-        
-        $run = $db->selectOne("SELECT id FROM payroll_runs WHERE month_year = ? LIMIT 1", [$monthYear]);
-        if (!$run) return [];
-
-        // Regenerate chronological list dynamically for admin panel breakdown
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)date('m', strtotime($targetMonth)), (int)date('Y', strtotime($targetMonth)));
-        
-        $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-        $globalShiftStart = $shift['start_time'] ?? '09:00:00';
-        $globalGrace = (int)($shift['grace_minutes'] ?? 15);
-
-        $e = $db->selectOne("SELECT e.*, u.grace_period as user_grace_period FROM employees e LEFT JOIN users u ON e.user_id = u.id WHERE e.id = ?", [$employeeId]);
-        if (!$e) return [];
-
-        $chronology = [];
-        $lateTicker = 0;
-
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $dateStr = $targetMonth . '-' . sprintf('%02d', $day);
-            $isSunday = (date('N', strtotime($dateStr)) == 7);
-            
-            $status = 'PRESENT';
-            $isLate = false;
-            $lateExempted = false;
-            $reason = '';
-            
-            if ($isSunday) {
-                $status = 'SUNDAY';
-            } else {
-                $holiday = $db->selectOne("SELECT * FROM holidays WHERE holiday_date = ? AND status = 'active'", [$dateStr]);
-                if ($holiday) {
-                    $status = 'PAID_HOLIDAY';
-                    $reason = $holiday['name'];
-                } else {
-                    $manual = $db->selectOne("SELECT * FROM staff_attendance_logs WHERE employee_id = ? AND date = ?", [$employeeId, $dateStr]);
-                    $kiosk = $db->selectOne("
-                        SELECT * FROM attendance 
-                        WHERE (employee_id = ? OR user_id = ?) AND (DATE(check_in) = ? OR attendance_date = ?) 
-                        LIMIT 1
-                    ", [$employeeId, $e['user_id'], $dateStr, $dateStr]);
-
-                    if ($manual) {
-                        $status = strtoupper($manual['status']);
-                        $isLate = ($manual['status'] === 'late');
-                        $lateExempted = (bool)$manual['late_exempted'];
-                        $reason = $manual['late_exemption_reason'] ?? '';
-
-                        $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : $globalShiftStart;
-                        $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : $globalGrace;
-                        $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
-                        if ($manual['clock_in'] && $manual['clock_in'] > $latePenaltyTime) {
-                            $isLate = true;
-                        }
-                    } elseif ($kiosk) {
-                        $status = 'PRESENT';
-                        $checkIn = date('H:i:s', strtotime($kiosk['check_in']));
-                        
-                        $empShiftStart = !empty($e['min_clock_in']) ? $e['min_clock_in'] : $globalShiftStart;
-                        $grace = !empty($e['min_clock_in']) ? (int)($e['user_grace_period'] ?? 10) : $globalGrace;
-                        $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
-                        $halfDayTime = !empty($e['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
-
-                        if ($checkIn > $halfDayTime) {
-                            $status = 'HALF_DAY';
-                        } elseif ($checkIn > $latePenaltyTime) {
-                            $isLate = true;
-                            $lateExempted = (bool)$kiosk['late_exempted'];
-                            $reason = $kiosk['late_exemption_reason'] ?? '';
-                        }
-                    } else {
-                        $leave = $db->selectOne("
-                            SELECT lr.*, lt.is_paid 
-                            FROM leave_requests lr
-                            JOIN leave_types lt ON lr.leave_type_id = lt.id
-                            WHERE lr.employee_id = ? AND lr.status = 'approved' AND ? BETWEEN lr.start_date AND lr.end_date LIMIT 1
-                        ", [$employeeId, $dateStr]);
-                        if ($leave) {
-                            $status = $leave['is_paid'] ? 'PAID_LEAVE' : 'UNPAID_LEAVE';
-                            $reason = $leave['reason'] ?? '';
-                        } else {
-                            $status = 'ABSENT';
-                        }
-                    }
-                }
-            }
-
-            if ($isLate && !$lateExempted) {
-                $lateTicker++;
-            }
-
-            $chronology[$day] = [
-                'date'          => $dateStr,
-                'status'        => $status,
-                'is_late'       => $isLate,
-                'late_exempted' => $lateExempted,
-                'reason'        => $reason,
-                'ticker'        => ($isLate && !$lateExempted) ? $lateTicker : null,
-                'penalty'       => false
-            ];
-        }
-
-        // Apply penalty ticks chronologically
-        $pendingPenalties = 0;
-        $ticker = 0;
-        for ($d = 1; $d <= $daysInMonth; $d++) {
-            $info = &$chronology[$d];
-            if ($info['is_late'] && !$info['late_exempted']) {
-                $ticker++;
-                if ($ticker % 3 === 0) {
-                    $pendingPenalties++;
-                }
-            }
-            $isEligible = ($info['status'] !== 'SUNDAY' && $info['status'] !== 'PAID_HOLIDAY' && ($info['status'] === 'PRESENT' || $info['status'] === 'HALF_DAY' || $info['status'] === 'ABSENT'));
-            $isCreationDay = ($info['is_late'] && !$info['late_exempted'] && $ticker % 3 === 0);
-
-            if ($pendingPenalties > 0 && $isEligible && !$isCreationDay) {
-                $info['penalty'] = true;
-                $pendingPenalties--;
-            }
-        }
-
-        return $chronology;
+        return (new PayrollService($this->db()))->chronology($monthYear, $employeeId, $statusEngineJson);
     }
 
     private function checkIfOutOfSync(int $runId): bool
     {
         $db = $this->db();
-        $run = $db->selectOne("SELECT month_year FROM payroll_runs WHERE id = ?", [$runId]);
+        $run = $db->selectOne("SELECT month_year, created_at FROM payroll_runs WHERE id = ?", [$runId]);
         if (!$run) return false;
 
-        $targetMonth = date('Y-m', strtotime($run['month_year']));
-        $startDate = $targetMonth . '-01';
+        $startDate = date('Y-m-01', strtotime('1 ' . $run['month_year']));
         $endDate = date('Y-m-t', strtotime($startDate));
+        $runDate = $run['created_at'];
 
-        // Check if audit logs exist after payroll generation date
-        $runDate = $db->selectOne("SELECT created_at FROM payroll_runs WHERE id = ?", [$runId])['created_at'];
-        
         $changes = $db->selectOne("
-            SELECT COUNT(*) as cnt FROM payroll_audit_logs 
+            SELECT COUNT(*) as cnt FROM payroll_audit_logs
             WHERE created_at > ? AND (
-                (entity = 'attendance' AND entity_id IN (SELECT id FROM attendance WHERE (DATE(check_in) BETWEEN ? AND ?))) OR
+                (entity = 'attendance' AND entity_id IN (SELECT id FROM attendance WHERE check_in >= ? AND check_in < DATE_ADD(?, INTERVAL 1 DAY))) OR
                 (entity = 'staff_attendance_logs' AND entity_id IN (SELECT id FROM staff_attendance_logs WHERE (date BETWEEN ? AND ?))) OR
-                (entity = 'leave_requests' AND entity_id IN (SELECT id FROM leave_requests WHERE (start_date BETWEEN ? AND ? OR end_date BETWEEN ? AND ?))) OR
+                (entity = 'leave_requests' AND entity_id IN (SELECT id FROM leave_requests WHERE (start_date <= ? AND end_date >= ?))) OR
                 (entity = 'holidays' AND entity_id IN (SELECT id FROM holidays WHERE (holiday_date BETWEEN ? AND ?)))
             )
-        ", [$runDate, $startDate, $endDate, $startDate, $endDate, $startDate, $endDate, $startDate, $endDate, $startDate, $endDate]);
+        ", [$runDate, $startDate, $endDate, $startDate, $endDate, $endDate, $startDate, $startDate, $endDate]);
 
         return ((int)($changes['cnt'] ?? 0) > 0);
     }
 
     private function markAffectedRunsOutOfSync(string $date): void
     {
-        $db = $this->db();
-        $monthYear = date('F Y', strtotime($date));
-        $db->query("UPDATE payroll_runs SET status = 'out_of_sync' WHERE month_year = ? AND status = 'draft'", [$monthYear]);
+        PayrollService::markAffectedRunsOutOfSync($date);
     }
 
     private function logAudit(string $action, string $entity, int $entityId, ?string $oldVal, ?string $newVal, ?string $reason): void
     {
-        $db = $this->db();
-        $db->insert('payroll_audit_logs', [
-            'user_id'   => $this->authId(),
-            'action'    => $action,
-            'entity'    => $entity,
-            'entity_id' => $entityId,
-            'old_value' => $oldVal,
-            'new_value' => $newVal,
-            'reason'    => $reason
-        ]);
+        PayrollService::logAudit($action, $entity, $entityId, $oldVal, $newVal, $reason, $this->authId());
     }
 
     public function attendance(): string
     {
         $db = $this->db();
-        $date = $this->request->get('date', date('Y-m-d'));
+        $date = (string) $this->request->get('date', date('Y-m-d'));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $date = date('Y-m-d');
+        }
 
-        // 1. Fetch Face Recognition Kiosk Attendance logs for target date
+        // 1. Face Recognition Kiosk scans for the date, each resolved to exactly one employee
+        $resolved = PayrollService::resolvedEmployeeSql('a');
         $faceLogsRaw = $db->select("
-            SELECT 
-                a.id,
-                COALESCE(a.user_id, a.employee_id) as employee_id,
-                a.check_in,
-                a.attendance_date,
-                a.confidence,
-                a.image_path,
-                0 as late_exempted,
-                NULL as late_exemption_reason,
-                COALESCE(u.name, e.first_name, e.emp_code, 'Staff Member') as first_name,
-                COALESCE(e.last_name, '') as last_name,
-                COALESCE(u.employee_id, e.emp_code, CONCAT('EMP-', COALESCE(a.user_id, a.employee_id))) as emp_code,
-                COALESCE(u.designation, d.name, 'General Staff') as department_name,
-                e.min_clock_in,
-                u.grace_period as user_grace_period
-            FROM attendance a
-            LEFT JOIN users u ON a.user_id = u.id
-            LEFT JOIN employees e ON (a.employee_id = e.id OR e.user_id = a.user_id)
-            LEFT JOIN departments d ON e.department_id = d.id
-            WHERE (DATE(a.check_in) = ? OR a.attendance_date = ?)
-            ORDER BY a.check_in ASC
-        ", [$date, $date]);
+            SELECT x.*,
+                   COALESCE(e.first_name, u.name, 'Staff Member') as first_name,
+                   COALESCE(e.last_name, '') as last_name,
+                   COALESCE(e.emp_code, u.employee_id, CONCAT('USR-', x.user_id)) as emp_code,
+                   COALESCE(d.name, u.designation, 'General Staff') as department_name,
+                   e.min_clock_in, e.max_clock_out,
+                   COALESCE(u2.grace_period, u.grace_period) as user_grace_period
+            FROM (
+                SELECT a.id, a.user_id, a.employee_id AS raw_employee_id, a.check_in, a.confidence, a.image_path,
+                       a.late_exempted, a.late_exemption_reason, $resolved AS resolved_employee_id
+                FROM attendance a
+                WHERE a.check_in >= ? AND a.check_in < DATE_ADD(?, INTERVAL 1 DAY)
+            ) x
+            LEFT JOIN employees e ON e.id = x.resolved_employee_id
+            LEFT JOIN users u ON u.id = x.user_id
+            LEFT JOIN users u2 ON u2.id = e.user_id
+            LEFT JOIN departments d ON d.id = e.department_id
+            ORDER BY x.check_in ASC, x.id ASC
+        ", [$date . ' 00:00:00', $date]);
+
+        $shift = ShiftSettings::current();
 
         $grouped = [];
         foreach ($faceLogsRaw as $log) {
-            $empId = $log['employee_id'];
-            if (!isset($grouped[$empId])) {
-                $grouped[$empId] = [
-                    'id' => $log['id'],
-                    'employee_id' => $empId,
-                    'first_name' => $log['first_name'],
-                    'last_name' => $log['last_name'],
-                    'emp_code' => $log['emp_code'],
-                    'department_name' => $log['department_name'],
-                    'min_check_in' => $log['check_in'],
-                    'max_check_in' => $log['check_in'],
-                    'confidence' => $log['confidence'],
-                    'image_path' => $log['image_path'],
-                    'scan_count' => 1,
-                    'min_clock_in' => $log['min_clock_in'],
-                    'user_grace_period' => $log['user_grace_period'],
-                    'late_exempted' => $log['late_exempted'],
-                    'late_exemption_reason' => $log['late_exemption_reason']
-                ];
-            } else {
-                $grouped[$empId]['max_check_in'] = $log['check_in'];
-                $grouped[$empId]['scan_count']++;
+            // Group by resolved employee; unmatched scans stay per login user
+            $key = $log['resolved_employee_id'] ? 'E' . $log['resolved_employee_id'] : 'U' . ($log['user_id'] ?? 'x' . $log['id']);
+            if (!isset($grouped[$key])) {
+                $grouped[$key] = $log + ['scans' => [], 'exempted' => false, 'reason' => null];
+            }
+            $grouped[$key]['scans'][] = $log['check_in'];
+            if (!empty($log['late_exempted'])) {
+                $grouped[$key]['exempted'] = true;
+                $grouped[$key]['reason'] = $log['late_exemption_reason'];
             }
         }
 
-        $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
-        $globalShiftStart = $shift['start_time'] ?? '09:00:00';
-        $globalGrace = (int)($shift['grace_minutes'] ?? 15);
-
         $faceLogs = [];
-        foreach ($grouped as $empId => $data) {
-            $clockIn = date('h:i A', strtotime($data['min_check_in']));
+        foreach ($grouped as $data) {
+            $empId = $data['resolved_employee_id'] ? (int) $data['resolved_employee_id'] : null;
+            $scans = $data['scans'];
+            $first = $scans[0];
+            $last  = $scans[count($scans) - 1];
+            $rules = ShiftSettings::rulesFor($data, $shift);
+            $status = ShiftSettings::classifyCheckIn($first, $rules);
+
             $clockOut = '--:--';
             $workingHours = '0 hrs 0 mins';
-            
-            $timeOnly = date('H:i:s', strtotime($data['min_check_in']));
-            $status = 'present';
-            
-            $empShiftStart = !empty($data['min_clock_in']) ? $data['min_clock_in'] : $globalShiftStart;
-            $grace = !empty($data['min_clock_in']) ? (int)($data['user_grace_period'] ?? 10) : $globalGrace;
-            $latePenaltyTime = date('H:i:s', strtotime($empShiftStart) + ($grace * 60));
-            $halfDayTime = !empty($data['min_clock_in']) ? date('H:i:s', strtotime($empShiftStart) + (3 * 3600)) : ($shift['half_day_after'] ?? '12:00:00');
-            
-            if ($timeOnly > $halfDayTime) {
-                $status = 'half_day';
-            } elseif ($timeOnly > $latePenaltyTime) {
-                $status = 'late';
-            }
-            
-            if ($data['scan_count'] > 1) {
-                $clockOut = date('h:i A', strtotime($data['max_check_in']));
-                $diff = strtotime($data['max_check_in']) - strtotime($data['min_check_in']);
-                $hours = floor($diff / 3600);
-                $mins = floor(($diff % 3600) / 60);
-                $workingHours = "{$hours} hrs {$mins} mins";
+            if (count($scans) > 1) {
+                $clockOut = date('h:i A', strtotime($last));
+                $diff = strtotime($last) - strtotime($first);
+                $workingHours = floor($diff / 3600) . ' hrs ' . floor(($diff % 3600) / 60) . ' mins';
             }
 
             $faceLogs[] = [
                 'id' => $data['id'],
                 'employee_id' => $empId,
-                'clock_in' => $clockIn,
+                'clock_in' => date('h:i A', strtotime($first)),
                 'clock_out' => $clockOut,
                 'working_hours' => $workingHours,
                 'status' => $status,
+                'incomplete_log' => count($scans) === 1,
                 'confidence' => $data['confidence'],
                 'image_path' => $data['image_path'],
                 'first_name' => $data['first_name'],
@@ -870,22 +365,23 @@ class PayrollController extends Controller
                 'emp_code' => $data['emp_code'],
                 'department_name' => $data['department_name'],
                 'source' => 'Face Recognition Kiosk',
-                'late_exempted' => $data['late_exempted'],
-                'late_exemption_reason' => $data['late_exemption_reason']
+                'late_exempted' => $data['exempted'] ? 1 : 0,
+                'late_exemption_reason' => $data['reason']
             ];
         }
 
-        // 2. Fetch manual staff attendance logs
+        // 2. Manual staff attendance logs
         $manualLogs = $db->select("
-            SELECT 
+            SELECT
                 l.id,
                 l.employee_id,
                 l.clock_in,
                 l.clock_out,
                 l.working_hours,
                 l.status,
-                0 as late_exempted,
-                NULL as late_exemption_reason,
+                l.late_exempted,
+                l.late_exemption_reason,
+                l.incomplete_log,
                 1.0 as confidence,
                 '' as image_path,
                 e.first_name,
@@ -908,6 +404,7 @@ class PayrollController extends Controller
                 $mLog['clock_out'] = date('h:i A', strtotime($mLog['clock_out']));
             }
         }
+        unset($mLog);
 
         $logs = array_merge($faceLogs, $manualLogs);
         $employees = $db->select("SELECT * FROM employees WHERE status = 'active'");
@@ -917,27 +414,22 @@ class PayrollController extends Controller
 
     public function storeAttendance(): string
     {
-        $db = $this->db();
         $employeeId = (int) $this->request->input('employee_id');
-        $date       = $this->request->input('date', date('Y-m-d'));
+        $date       = (string) $this->request->input('date', date('Y-m-d'));
         $clockIn    = $this->request->input('clock_in', '09:00');
         $clockOut   = $this->request->input('clock_out', '17:00');
-        $status     = $this->request->input('status', 'present');
+        $status     = (string) $this->request->input('status', 'present');
 
         if ($employeeId > 0) {
-            $db->query("
-                INSERT INTO staff_attendance_logs (tenant_id, employee_id, date, clock_in, clock_out, working_hours, status)
-                VALUES (1, ?, ?, ?, ?, 8.0, ?)
-                ON DUPLICATE KEY UPDATE clock_in = VALUES(clock_in), clock_out = VALUES(clock_out), status = VALUES(status)
-            ", [$employeeId, $date, $clockIn, $clockOut, $status]);
-            
-            $insertedId = (int)$db->getLastInsertId();
-            $this->logAudit('manual_attendance_override', 'staff_attendance_logs', $insertedId ?: $employeeId, null, $status, "Manual override logged for date $date");
-            $this->markAffectedRunsOutOfSync($date);
-            Session::flash('success', "Attendance override log saved successfully.");
+            try {
+                PayrollService::saveManualAttendance($employeeId, $date, $clockIn, $clockOut, $status);
+                Session::flash('success', "Attendance override log saved successfully.");
+            } catch (\Throwable $e) {
+                Session::flash('error', 'Failed to save attendance: ' . $e->getMessage());
+            }
         }
-        
-        return $this->redirect(url('payroll/attendance?date=' . $date));
+
+        return $this->redirect(url('payroll/attendance?date=' . urlencode($date)));
     }
 
     public function auditLogs(): string

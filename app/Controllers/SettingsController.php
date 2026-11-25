@@ -69,7 +69,13 @@ class SettingsController extends Controller
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
-            $logoName = bin2hex(random_bytes(16)) . '.' . pathinfo($logoFile['name'], PATHINFO_EXTENSION);
+            try {
+                $logoExt = \App\Services\UploadGuard::check($logoFile, \App\Services\UploadGuard::IMAGES);
+            } catch (\RuntimeException $e) {
+                $this->flash('error', 'Logo: ' . $e->getMessage());
+                return $this->redirect(safe_redirect_path($data['redirect_tab'] ?? null, '/settings'));
+            }
+            $logoName = \App\Services\UploadGuard::storedName($logoExt);
             move_uploaded_file($logoFile['tmp_name'], $uploadDir . '/' . $logoName);
         }
 
@@ -147,7 +153,7 @@ class SettingsController extends Controller
         
         $this->flash('success', 'Settings updated successfully.');
         
-        $redirectUrl = $data['redirect_tab'] ?? '/settings';
+        $redirectUrl = safe_redirect_path($data['redirect_tab'] ?? null, '/settings');
         return $this->redirect($redirectUrl);
     }
 
@@ -155,7 +161,7 @@ class SettingsController extends Controller
     {
         $phone = $this->request->post('phone');
         $message = "Test message from PSNF ERP Settings.";
-        $redirectUrl = $this->request->post('redirect_tab') ?: '/settings/integrations';
+        $redirectUrl = safe_redirect_path($this->request->post('redirect_tab'), '/settings/integrations');
         
         if (empty($phone)) {
             $this->flash('error', 'Phone number is required.');

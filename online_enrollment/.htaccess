@@ -1,5 +1,14 @@
-# Allow direct web access to PHP files inside online_enrollment
+# Allow direct web access to the enrollment form PHP files, but never to config
 <Files "config.php">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </Files>
+
+# Sensitive file types
+<FilesMatch "(?i)\.(sql|log|md|bak|ini|env)$">
+    Require all denied
+</FilesMatch>
+
+# Never execute scripts from the uploads folder
+<If "%{REQUEST_URI} =~ m#/uploads/.*\.(php[0-9]?|phtml|phar|pht|phps|shtml)$#i">
+    Require all denied
+</If>

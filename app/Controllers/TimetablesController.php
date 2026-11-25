@@ -33,7 +33,7 @@ class TimetablesController extends Controller
         $selectedGroup = '';
 
         if ($selectedGroupId) {
-            $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$selectedGroupId]);
+            $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ? AND tenant_id = ?", [$selectedGroupId, $tenantId]);
             if ($groupRow) {
                 $selectedGroup = $groupRow['name'];
 
@@ -82,9 +82,9 @@ class TimetablesController extends Controller
             return $this->redirect(url('academics/timetable'));
         }
 
-        $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$groupId]);
-        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE name = ?", [$subjectName]);
-        $teacherRow = $teacherName ? $db->selectOne("SELECT * FROM users WHERE name = ?", [$teacherName]) : null;
+        $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ? AND tenant_id = ?", [$groupId, \Core\Database::getTenantId()]);
+        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE name = ? AND tenant_id = ? LIMIT 1", [$subjectName, \Core\Database::getTenantId()]);
+        $teacherRow = $teacherName ? $db->selectOne("SELECT * FROM users WHERE name = ? AND tenant_id = ? LIMIT 1", [$teacherName, \Core\Database::getTenantId()]) : null;
 
         if (!$groupRow) {
             $this->flash('error', 'Invalid Group selected.');
@@ -114,7 +114,7 @@ class TimetablesController extends Controller
 
             ActivityLog::log('timetable_slot_added', $this->authId(), [
                 'main_group_id' => $groupId,
-                'subject_id'    => $subjectId,
+                'subject_id'    => $subjectRow['id'] ?? null,
                 'day'           => $dayOfWeek,
             ]);
 
@@ -141,9 +141,9 @@ class TimetablesController extends Controller
             return $this->redirect(url('academics/timetable'));
         }
 
-        $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$groupId]);
-        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE name = ?", [$subjectName]);
-        $teacherRow = $teacherName ? $db->selectOne("SELECT * FROM users WHERE name = ?", [$teacherName]) : null;
+        $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ? AND tenant_id = ?", [$groupId, \Core\Database::getTenantId()]);
+        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE name = ? AND tenant_id = ? LIMIT 1", [$subjectName, \Core\Database::getTenantId()]);
+        $teacherRow = $teacherName ? $db->selectOne("SELECT * FROM users WHERE name = ? AND tenant_id = ? LIMIT 1", [$teacherName, \Core\Database::getTenantId()]) : null;
 
         if (!$groupRow) {
             $this->flash('error', 'Invalid Group selected.');
@@ -195,9 +195,9 @@ class TimetablesController extends Controller
             return $this->redirect(url('academics/timetable?main_group_id=' . $groupId));
         }
 
-        $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ?", [$groupId]);
-        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE name = ?", [$subjectName]);
-        $teacherRow = $teacherName ? $db->selectOne("SELECT * FROM users WHERE name = ?", [$teacherName]) : null;
+        $groupRow = $db->selectOne("SELECT * FROM main_groups WHERE id = ? AND tenant_id = ?", [$groupId, \Core\Database::getTenantId()]);
+        $subjectRow = $db->selectOne("SELECT * FROM subjects WHERE name = ? AND tenant_id = ? LIMIT 1", [$subjectName, \Core\Database::getTenantId()]);
+        $teacherRow = $teacherName ? $db->selectOne("SELECT * FROM users WHERE name = ? AND tenant_id = ? LIMIT 1", [$teacherName, \Core\Database::getTenantId()]) : null;
 
         $tenantId = \Core\Database::getTenantId();
         $schoolId = 1;

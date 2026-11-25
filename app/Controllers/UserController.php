@@ -105,8 +105,16 @@ class UserController extends Controller
     {
         $data  = $this->request->getBody();
         $roles = $data['roles'] ?? [];
-        $redirectTo = $this->request->input('redirect_to', '/users');
+        $redirectTo = safe_redirect_target($this->request->input('redirect_to', '/users'), '/users');
         unset($data['roles'], $data['_csrf'], $data['redirect_to']);
+
+        $roleCheck = $this->sanitizeRoles((array) $roles, null);
+        if (is_string($roleCheck)) {
+            $this->flash('error', $roleCheck);
+            \Core\Session::flash('old', array_merge($data, ['roles' => $roles, 'password' => '', 'password_confirmation' => '']));
+            return $this->redirect(url('users/create?redirect_to=' . urlencode($redirectTo)));
+        }
+        $roles = $roleCheck;
 
         $rules = [
             'first_name'=> 'required|min:2',
@@ -120,6 +128,11 @@ class UserController extends Controller
         if ($validator->fails()) {
             \Core\Session::flash('errors', $validator->errors());
             \Core\Session::flash('old', array_merge($data, ['roles' => $roles]));
+            return $this->redirect(url('users/create?redirect_to=' . urlencode($redirectTo)));
+        }
+
+        if (!$this->validSchoolBranch($data)) {
+            $this->flash('error', 'Invalid school or branch.');
             return $this->redirect(url('users/create?redirect_to=' . urlencode($redirectTo)));
         }
 
@@ -142,10 +155,22 @@ class UserController extends Controller
         $data['name'] = trim($data['first_name'] . ' ' . ($data['last_name'] ?? ''));
         unset($data['password_confirmation'], $data['salary_basic'], $data['department_id'], $data['designation_id'], $data['min_clock_in'], $data['max_clock_out'], $data['first_name'], $data['last_name']);
 
+        // Mass-assignment protection: only whitelisted columns, plus server-set fields
+        $data = array_merge(
+            $this->onlyWritable($data),
+            [
+                'uuid'       => $data['uuid'],
+                'tenant_id'  => $data['tenant_id'],
+                'password'   => $data['password'],
+                'created_by' => $data['created_by'],
+            ]
+        );
+        $data['is_active'] = !empty($data['is_active']) ? 1 : 0;
+
         $userId = (int) User::create($data);
 
         if ($roles) {
-            User::syncRoles($userId, array_map('intval', $roles));
+            User::syncRoles($userId, $roles);
         }
 
         EmployeeSyncService::syncUserToEmployee($userId);
@@ -171,6 +196,9 @@ class UserController extends Controller
 
     public function edit(string $id): string
     {
+        if (!$this->targetInTenant((int) $id)) {
+            $this->abort(404);
+        }
         $user     = User::withRoles((int) $id);
         $roles    = Role::all('sort_order');
         $roles    = array_filter($roles, function($role) {
@@ -195,7 +223,30 @@ class UserController extends Controller
     {
         $data  = $this->request->getBody();
         $roles = $data['roles'] ?? [];
-        $redirectTo = $this->request->input('redirect_to', '/users');
+        $redirectTo = safe_redirect_target($this->request->input('redirect_to', '/users'), '/users');
+        $editUrl = url('users/' . (int) $id . '/edit?redirect_to=' . urlencode($redirectTo));
+
+        if (!$this->targetInTenant((int) $id)) {
+            $this->flash('error', 'User not found.');
+            return $this->redirect($redirectTo);
+        }
+        if ($this->isProtectedTarget((int) $id)) {
+            $this->flash('error', 'Only a super admin can modify a super admin account.');
+            return $this->redirect($redirectTo);
+        }
+
+        $roleCheck = $this->sanitizeRoles((array) $roles, (int) $id);
+        if (is_string($roleCheck)) {
+            $this->flash('error', $roleCheck);
+            return $this->redirect($editUrl);
+        }
+        $roles = $roleCheck;
+
+        if ((isset($data['school_id']) || isset($data['branch_id'])) && !$this->validSchoolBranch($data)) {
+            $this->flash('error', 'Invalid school or branch.');
+            return $this->redirect($editUrl);
+        }
+
         $newPassword        = (string) ($data['new_password'] ?? '');
         $newPasswordConfirm = (string) ($data['new_password_confirmation'] ?? '');
         unset($data['roles'], $data['_csrf'], $data['_method'], $data['password'], $data['password_confirmation'], $data['redirect_to'], $data['new_password'], $data['new_password_confirmation']);
@@ -225,6 +276,8 @@ class UserController extends Controller
         $desigId = !empty($data['designation_id']) ? (int) $data['designation_id'] : null;
         $minClockIn = !empty($data['min_clock_in']) ? $data['min_clock_in'] : null;
         $maxClockOut = !empty($data['max_clock_out']) ? $data['max_clock_out'] : null;
+        $hasBreakField = array_key_exists('break_allowed_minutes', $data);
+        $breakAllowed  = ($hasBreakField && $data['break_allowed_minutes'] !== '') ? max(0, (int) $data['break_allowed_minutes']) : null;
 
         $data['lecture_time'] = $lectureTime;
         $data['grace_period'] = $gracePeriod;
@@ -234,10 +287,19 @@ class UserController extends Controller
         if (!empty($data['first_name'])) {
             $data['name'] = trim($data['first_name'] . ' ' . ($data['last_name'] ?? ''));
         }
-        unset($data['salary_basic'], $data['department_id'], $data['designation_id'], $data['min_clock_in'], $data['max_clock_out'], $data['first_name'], $data['last_name']);
+        unset($data['salary_basic'], $data['department_id'], $data['designation_id'], $data['min_clock_in'], $data['max_clock_out'], $data['first_name'], $data['last_name'], $data['break_allowed_minutes']);
+
+        // Mass-assignment protection: whitelisted columns only (+ admin-set password hash)
+        $hashedPassword = $data['password'] ?? null;
+        $updatedBy      = $data['updated_by'];
+        $data = $this->onlyWritable($data);
+        $data['updated_by'] = $updatedBy;
+        if ($hashedPassword !== null) {
+            $data['password'] = $hashedPassword;
+        }
 
         User::update((int) $id, $data);
-        User::syncRoles((int) $id, array_map('intval', $roles));
+        User::syncRoles((int) $id, $roles);
 
         EmployeeSyncService::syncUserToEmployee((int) $id);
 
@@ -249,6 +311,7 @@ class UserController extends Controller
         if ($desigId) $empUpdate['designation_id'] = $desigId;
         if ($minClockIn) $empUpdate['min_clock_in'] = $minClockIn;
         if ($maxClockOut) $empUpdate['max_clock_out'] = $maxClockOut;
+        if ($hasBreakField) $empUpdate['break_allowed_minutes'] = $breakAllowed; // NULL = use global
         if (!empty($empUpdate)) {
             $db->update('employees', $empUpdate, 'user_id = ?', [(int) $id]);
         }
@@ -263,14 +326,33 @@ class UserController extends Controller
 
     public function destroy(string $id): string
     {
+        $redirectTo = safe_redirect_target($this->request->input('redirect_to', '/users'), '/users');
+
+        $denied = null;
+        if (!$this->targetInTenant((int) $id)) {
+            $denied = 'User not found.';
+        } elseif ((int) $id === (int) auth_id()) {
+            $denied = 'You cannot delete your own account.';
+        } elseif ($this->isProtectedTarget((int) $id)) {
+            $denied = 'Only a super admin can delete a super admin account.';
+        }
+        if ($denied !== null) {
+            if ($this->request->wantsJson()) {
+                return $this->errorResponse($denied, null, 403);
+            }
+            $this->flash('error', $denied);
+            return $this->redirect($redirectTo);
+        }
+
         User::delete((int) $id);
         \App\Models\ActivityLog::log('user_deleted', auth_id(), ['user_id' => $id]);
 
         // Attempt to remove face embeddings from Python backend
         try {
-            $ch = curl_init("http://127.0.0.1:8000/api/employees/delete?id=" . $id);
+            $ch = curl_init("http://127.0.0.1:8000/api/employees/delete?" . http_build_query(['id' => (int) $id, 'tenant_id' => (int) \Core\Database::getTenantId()]));
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Internal-Key: ' . app_secret('FACE_API_KEY', 'face_api_key')]);
             curl_setopt($ch, CURLOPT_TIMEOUT, 2);
             curl_exec($ch);
             curl_close($ch);
@@ -278,13 +360,111 @@ class UserController extends Controller
             // Ignore if backend is down
         }
 
-        $redirectTo = $this->request->input('redirect_to', '/users');
-
         if ($this->request->wantsJson()) {
             return $this->successResponse('User deleted.');
         }
         $this->flash('success', 'User deleted.');
         return $this->redirect($redirectTo);
+    }
+
+    // ─── Security helpers ────────────────────────────────────────────────────
+
+    /** Columns of `users` that may be written from the create/edit forms. */
+    private const WRITABLE_COLUMNS = [
+        'name', 'email', 'phone', 'school_id', 'branch_id', 'is_active',
+        'lecture_time', 'grace_period', 'designation', 'employee_id', 'gender', 'dob',
+    ];
+
+    private function onlyWritable(array $data): array
+    {
+        return array_intersect_key($data, array_flip(self::WRITABLE_COLUMNS));
+    }
+
+    private function actorIsSuperAdmin(): bool
+    {
+        return in_array('super_admin', (array) (auth()['roles'] ?? []), true);
+    }
+
+    /** Target user exists, is not deleted, and belongs to the current tenant. */
+    private function targetInTenant(int $id): bool
+    {
+        $row = \Core\Application::$app->db->selectOne(
+            "SELECT tenant_id FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+            [$id]
+        );
+        if (!$row) return false;
+        $tenantId = \Core\Database::getTenantId();
+        return $tenantId === null || (int) $row['tenant_id'] === (int) $tenantId;
+    }
+
+    /** Super admin accounts can only be changed by a super admin. */
+    private function isProtectedTarget(int $id): bool
+    {
+        if ($this->actorIsSuperAdmin()) return false;
+        $row = \Core\Application::$app->db->selectOne(
+            "SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id WHERE ur.user_id = ? AND r.slug = 'super_admin' LIMIT 1",
+            [$id]
+        );
+        return (bool) $row;
+    }
+
+    /**
+     * Validates requested role ids. Returns the clean int list, or an error string.
+     * - only existing (non-deleted) roles
+     * - only a super admin may grant super_admin
+     * - a non-super-admin may not change their own roles
+     */
+    private function sanitizeRoles(array $roles, ?int $targetUserId): array|string
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $roles), fn($r) => $r > 0)));
+        $db  = \Core\Application::$app->db;
+        $isSuper = $this->actorIsSuperAdmin();
+
+        $valid = [];
+        if ($ids) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $rows = $db->select("SELECT id, slug FROM roles WHERE id IN ($placeholders) AND deleted_at IS NULL", $ids);
+            if (count($rows) !== count($ids)) {
+                return 'One or more selected roles are invalid.';
+            }
+            foreach ($rows as $r) {
+                if ($r['slug'] === 'super_admin' && !$isSuper) {
+                    return 'Only a super admin can assign the Super Admin role.';
+                }
+                $valid[] = (int) $r['id'];
+            }
+        }
+
+        if ($targetUserId !== null && $targetUserId === (int) auth_id() && !$isSuper) {
+            $current = array_map('intval', array_column(
+                $db->select("SELECT role_id FROM user_roles WHERE user_id = ?", [$targetUserId]),
+                'role_id'
+            ));
+            sort($current);
+            $cmp = $valid;
+            sort($cmp);
+            if ($current !== $cmp) {
+                return 'You cannot change your own roles.';
+            }
+        }
+
+        return $valid;
+    }
+
+    /** school_id / branch_id (when given) must belong to the current tenant. */
+    private function validSchoolBranch(array $data): bool
+    {
+        $db = \Core\Application::$app->db;
+        $tenantId = \Core\Database::getTenantId();
+        if (!empty($data['school_id'])) {
+            $ok = $db->selectOne("SELECT 1 FROM schools WHERE id = ? AND tenant_id = ? LIMIT 1", [(int) $data['school_id'], $tenantId]);
+            if (!$ok) return false;
+        }
+        if (!empty($data['branch_id'])) {
+            $ok = $db->selectOne("SELECT 1 FROM branches WHERE id = ? AND tenant_id = ? LIMIT 1", [(int) $data['branch_id'], $tenantId]);
+            if (!$ok) return false;
+        }
+        return true;
     }
 
     public function staffAttendanceLog(): string

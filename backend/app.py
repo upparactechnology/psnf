@@ -1,14 +1,16 @@
 import os
+import re
 import json
 import numpy as np
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, status
+from typing import Optional
+from fastapi import FastAPI, Request, status, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, FileResponse
+from sqlalchemy import text
  
 from config import settings
-from database.connection import init_db, SessionLocal
+from database.connection import init_db, SessionLocal, get_db
 from database.models import FaceEmbedding, ERPUser
 from recognition.detector import FaceDetector
 from recognition.embedding import EmbeddingExtractor
@@ -19,6 +21,7 @@ from services.attendance_service import AttendanceService
 
 from routes import register, verify, attendance, detect, recognize
 from utils.logger import logger
+from utils.auth import HEADER_NAME, is_valid_key, get_api_key
 
 # ─── Global detector reference (for routes/detect.py import) ────────────────────
 detector = None
@@ -47,6 +50,9 @@ async def lifespan(app: FastAPI):
     logger.info(f"  Idle timeout: {settings.MODEL_IDLE_TIMEOUT}s")
     logger.info(f"  No-face idle timeout: {settings.NO_FACE_IDLE_TIMEOUT}s")
     logger.info("=" * 60)
+
+    # 0. Make sure the shared internal API key exists (generates storage/keys/face_api_key if missing)
+    get_api_key()
 
     # 1. Initialize Database Tables
     init_db()
@@ -106,26 +112,61 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down Face Recognition Service...")
 
 
+_docs = settings.API_DOCS_ENABLED
 app = FastAPI(
     title=settings.APP_NAME,
     version="2.0.0",
     description="InsightFace-powered Face Recognition Attendance API (Mandatory Python/InsightFace engine)",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url="/docs" if _docs else None,
+    redoc_url="/redoc" if _docs else None,
+    openapi_url="/openapi.json" if _docs else None,
 )
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# ─── Internal-key authentication (every route except /health) ─────────────────
+_PUBLIC_PATHS = {"/health"}
 
-# Static uploads
-uploads_dir = os.path.join(settings.BASE_DIR, "uploads")
+
+@app.middleware("http")
+async def require_internal_key(request: Request, call_next):
+    if request.method == "OPTIONS" or request.url.path in _PUBLIC_PATHS:
+        return await call_next(request)
+    if not is_valid_key(request.headers.get(HEADER_NAME)):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"success": False, "message": "Unauthorized."}
+        )
+    return await call_next(request)
+
+
+# CORS — no wildcard. Only explicitly configured origins (default: none, since the
+# PHP proxy calls this service server-to-server). Added after the auth middleware so
+# it wraps it and can answer pre-flight requests.
+_origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip() and o.strip() != "*"]
+if _origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "DELETE"],
+        allow_headers=["Content-Type", HEADER_NAME],
+    )
+
+# ─── Uploaded images (key-protected; replaces the public StaticFiles mount) ───
+uploads_dir = os.path.realpath(os.path.join(settings.BASE_DIR, "uploads"))
 os.makedirs(uploads_dir, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+_SAFE_NAME = re.compile(r"^[A-Za-z0-9_\-]+\.(jpg|jpeg|png)$", re.IGNORECASE)
+
+
+@app.get("/uploads/{folder}/{filename}", include_in_schema=False)
+async def serve_upload(folder: str, filename: str):
+    if folder not in ("faces", "attendance") or not _SAFE_NAME.match(filename):
+        raise HTTPException(status_code=404, detail="Not found")
+    path = os.path.realpath(os.path.join(uploads_dir, folder, filename))
+    if os.path.commonpath([path, uploads_dir]) != uploads_dir or not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(path, media_type="image/jpeg" if filename.lower().endswith(("jpg", "jpeg")) else "image/png")
+
 
 # Routers
 app.include_router(register.router)
@@ -135,14 +176,23 @@ app.include_router(attendance.router)
 app.include_router(detect.router, prefix="/api", tags=["Detect"])
 
 
-@app.get("/", tags=["Health"])
 @app.get("/health", tags=["Health"])
 async def health_check():
-    model_loaded = model_manager.is_loaded()
     return {
         "status": "healthy",
         "engine": "InsightFace (buffalo_l)",
-        "model_loaded": model_loaded,
+        "model_loaded": model_manager.is_loaded(),
+        "version": "2.0.0",
+    }
+
+
+@app.get("/", tags=["Health"])
+async def health_detail():
+    """Detailed status (requires the internal key)."""
+    return {
+        "status": "healthy",
+        "engine": "InsightFace (buffalo_l)",
+        "model_loaded": model_manager.is_loaded(),
         "idle_timeout_seconds": settings.MODEL_IDLE_TIMEOUT,
         "service": settings.APP_NAME,
         "version": "2.0.0",
@@ -151,50 +201,56 @@ async def health_check():
     }
 
 
-from fastapi import Depends
-from fastapi.responses import JSONResponse as _JSONResponse
-from sqlalchemy import func as _func
-
 @app.get("/api/users/list", tags=["Users"])
-async def list_erp_users(db=Depends(lambda: next(__import__('database.connection', fromlist=['get_db']).get_db()))):
+def list_erp_users(
+    tenant_id: Optional[int] = Query(None, description="Only list users of this tenant"),
+    db=Depends(get_db)
+):
     """
     Returns active ERP users with their face embedding count.
     Used by face registration UI to let admin pick who to register.
     """
-    from database.connection import get_db as _get_db
-    from sqlalchemy import text
-    db2 = next(_get_db())
-    try:
-        query = text("""
-            SELECT u.id, u.name, u.email, u.employee_id, u.designation, u.is_active,
-                   COUNT(fe.id) as embedding_count
-            FROM users u
-            LEFT JOIN user_roles ur ON ur.user_id = u.id
-            LEFT JOIN roles r ON r.id = ur.role_id
-            LEFT JOIN face_embeddings fe ON fe.user_id = u.id
-            WHERE u.is_active = 1 AND u.deleted_at IS NULL
-              AND (r.slug IS NULL OR r.slug NOT IN ('parent', 'student'))
-            GROUP BY u.id
-            ORDER BY u.name
-        """)
-        rows = db2.execute(query).fetchall()
+    tenant_sql = "AND u.tenant_id = :tenant_id" if tenant_id is not None else ""
+    query = text(f"""
+        SELECT u.id, u.name, u.email, u.employee_id, u.designation, u.is_active,
+               COUNT(DISTINCT fe.id) as embedding_count
+        FROM users u
+        LEFT JOIN user_roles ur ON ur.user_id = u.id
+        LEFT JOIN roles r ON r.id = ur.role_id
+        LEFT JOIN face_embeddings fe ON fe.user_id = u.id
+        WHERE u.is_active = 1 AND u.deleted_at IS NULL
+          AND (r.slug IS NULL OR r.slug NOT IN ('parent', 'student'))
+          {tenant_sql}
+        GROUP BY u.id
+        ORDER BY u.name
+    """)
+    params = {"tenant_id": tenant_id} if tenant_id is not None else {}
+    rows = db.execute(query, params).fetchall()
 
-        data = [{
-            "id": r[0], "name": r[1], "email": r[2],
-            "employee_id": r[3], "designation": r[4],
-            "embedding_count": r[6] or 0
-        } for r in rows]
-        return {"success": True, "count": len(data), "data": data}
-    finally:
-        db2.close()
+    data = [{
+        "id": r[0], "name": r[1], "email": r[2],
+        "employee_id": r[3], "designation": r[4],
+        "embedding_count": r[6] or 0
+    } for r in rows]
+    return {"success": True, "count": len(data), "data": data}
+
+
+from fastapi.exceptions import RequestValidationError
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Don't echo request input (could be multi-MB base64 images) back to the client
+    errors = [{"loc": e.get("loc"), "msg": e.get("msg"), "type": e.get("type")} for e in exc.errors()]
+    return JSONResponse(status_code=422, content={"success": False, "detail": errors})
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled Exception: {str(exc)}")
+    logger.exception(f"Unhandled Exception: {str(exc)}")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"success": False, "message": f"Internal Server Error: {str(exc)}"}
+        content={"success": False, "message": "Internal Server Error"}
     )
 
 

@@ -17,6 +17,10 @@ public/certificate_generator/generated/
 public/certificate_generator/uploads/
 public/file_manager/storage/private/
 
+# ─── Secrets / runtime caches ────────────────────────────
+storage/keys/
+storage/cache/
+
 # ─── Logs ────────────────────────────────────────────────
 storage/logs/*.log
 public/file_manager/storage/logs/*.log

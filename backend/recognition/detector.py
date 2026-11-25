@@ -19,7 +19,8 @@ class FaceDetectionResult:
         blur_score: float = 0.0,
         brightness_score: float = 0.0,
         pitch: float = 0.0,
-        yaw: float = 0.0
+        yaw: float = 0.0,
+        face: Any = None
     ):
         self.is_valid         = is_valid
         self.error_message    = error_message
@@ -30,6 +31,8 @@ class FaceDetectionResult:
         self.brightness_score = brightness_score
         self.pitch            = pitch
         self.yaw              = yaw
+        # InsightFace Face object (carries .embedding) — lets callers skip a second inference
+        self.face             = face
 
 
 class FaceDetector:
@@ -172,7 +175,7 @@ class FaceDetector:
                 self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
-                error_message=f"InsightFace detection failed: {str(e)}",
+                error_message="Face detection failed. Please try again.",
                 blur_score=blur_score,
                 brightness_score=brightness_score
             )
@@ -230,5 +233,6 @@ class FaceDetector:
             blur_score=blur_score,
             brightness_score=brightness_score,
             pitch=pitch,
-            yaw=yaw
+            yaw=yaw,
+            face=face
         )

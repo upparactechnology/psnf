@@ -21,6 +21,66 @@
     <title><?= $title ?? 'PSNF Parent Portal' ?></title>
     <meta name="description" content="Pearl Special Needs Foundation — Parent Portal">
     <meta name="csrf-token" content="<?= \Core\View::csrfToken() ?>">
+    <script>
+    // ── Global CSRF protection: every same-origin state-changing request carries the session token ──
+    (function () {
+        var token = <?= json_encode(\Core\View::csrfToken()) ?>;
+        window.CSRF_TOKEN = token;
+        var UNSAFE = /^(POST|PUT|PATCH|DELETE)$/i;
+        function sameOrigin(url) {
+            try { return new URL(url || window.location.href, window.location.href).origin === window.location.origin; }
+            catch (e) { return false; }
+        }
+        // fetch()
+        if (window.fetch && !window.fetch.__csrf) {
+            var origFetch = window.fetch;
+            var wrapped = function (input, init) {
+                try {
+                    var isReq = (typeof Request !== 'undefined') && (input instanceof Request);
+                    var method = (init && init.method) || (isReq ? input.method : 'GET');
+                    var url = isReq ? input.url : String(input);
+                    if (UNSAFE.test(method) && sameOrigin(url)) {
+                        init = Object.assign({}, init || {});
+                        var h = new Headers(init.headers || (isReq ? input.headers : undefined) || {});
+                        if (!h.has('X-CSRF-Token')) h.set('X-CSRF-Token', token);
+                        init.headers = h;
+                    }
+                } catch (e) {}
+                return origFetch.call(window, input, init);
+            };
+            wrapped.__csrf = true;
+            window.fetch = wrapped;
+        }
+        // XMLHttpRequest (jQuery, axios, htmx)
+        if (window.XMLHttpRequest && !XMLHttpRequest.prototype.__csrf) {
+            var xOpen = XMLHttpRequest.prototype.open, xSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function (m, u) {
+                this.__csrfNeeded = UNSAFE.test(String(m)) && sameOrigin(String(u));
+                return xOpen.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function () {
+                if (this.__csrfNeeded) { try { this.setRequestHeader('X-CSRF-Token', token); } catch (e) {} }
+                return xSend.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.__csrf = true;
+        }
+        // htmx
+        document.addEventListener('htmx:configRequest', function (e) { e.detail.headers['X-CSRF-Token'] = token; });
+        // <form method="post">: inject hidden _csrf
+        function addInput(form) {
+            if (!form || form.tagName !== 'FORM') return;
+            if ((form.getAttribute('method') || 'get').toLowerCase() !== 'post') return;
+            if (!sameOrigin(form.getAttribute('action') || window.location.href)) return;
+            var el = form.querySelector('input[name="_csrf"]');
+            if (!el) { el = document.createElement('input'); el.type = 'hidden'; el.name = '_csrf'; form.appendChild(el); }
+            el.value = token;
+        }
+        document.addEventListener('DOMContentLoaded', function () { document.querySelectorAll('form').forEach(addInput); });
+        document.addEventListener('submit', function (e) { addInput(e.target); }, true);
+        var fSubmit = HTMLFormElement.prototype.submit;
+        HTMLFormElement.prototype.submit = function () { addInput(this); return fSubmit.apply(this, arguments); };
+    })();
+    </script>
 
     <!-- Tailwind CSS (Local Fallback) -->
     <script src="<?= url('js/tailwindcss.js') ?>"></script>

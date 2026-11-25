@@ -74,6 +74,7 @@ class Database
     public function insert(string $table, array $data): int|string
     {
         $data = array_filter($data, fn($k) => !str_starts_with((string)$k, '_'), ARRAY_FILTER_USE_KEY);
+        self::assertIdentifiers($table, array_keys($data));
         $cols = implode(', ', array_map(fn($k) => "`$k`", array_keys($data)));
         $plh  = implode(', ', array_fill(0, count($data), '?'));
         $this->query("INSERT INTO `$table` ($cols) VALUES ($plh)", array_values($data));
@@ -83,9 +84,20 @@ class Database
     public function update(string $table, array $data, string $where, array $whereParams = []): int
     {
         $data = array_filter($data, fn($k) => !str_starts_with((string)$k, '_'), ARRAY_FILTER_USE_KEY);
+        self::assertIdentifiers($table, array_keys($data));
         $set  = implode(', ', array_map(fn($k) => "`$k` = ?", array_keys($data)));
         $stmt = $this->query("UPDATE `$table` SET $set WHERE $where", [...array_values($data), ...$whereParams]);
         return $stmt->rowCount();
+    }
+
+    /** Column / table names are interpolated into SQL: allow only plain identifiers. */
+    private static function assertIdentifiers(string $table, array $columns): void
+    {
+        foreach ([$table, ...$columns] as $name) {
+            if (!preg_match('/^[A-Za-z0-9_]+$/', (string) $name)) {
+                throw new \InvalidArgumentException('Invalid SQL identifier: ' . substr((string) $name, 0, 64));
+            }
+        }
     }
 
     public function delete(string $table, string $where, array $whereParams = []): int
@@ -124,6 +136,26 @@ class Database
             [$dbname, $table]
         );
         return ($result['cnt'] ?? 0) > 0;
+    }
+
+    /** Schema helper for idempotent migrations. */
+    public function columnExists(string $table, string $column): bool
+    {
+        $row = $this->selectOne(
+            "SELECT COUNT(*) AS cnt FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?",
+            [$table, $column]
+        );
+        return ((int) ($row['cnt'] ?? 0)) > 0;
+    }
+
+    /** Schema helper for idempotent migrations. */
+    public function indexExists(string $table, string $index): bool
+    {
+        $row = $this->selectOne(
+            "SELECT COUNT(*) AS cnt FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?",
+            [$table, $index]
+        );
+        return ((int) ($row['cnt'] ?? 0)) > 0;
     }
 
     public function getLastInsertId(): int|string { return self::$pdo->lastInsertId(); }

@@ -52,6 +52,7 @@
         </div>
 
         <form method="POST" action="<?= url('forms/student-enrollment') ?>" enctype="multipart/form-data" class="space-y-6">
+            <?= \Core\View::csrf() ?>
             
             <!-- SECTION 1: STUDENT INFO -->
             <div x-show="step === 0" class="glass-card rounded-3xl p-6 sm:p-8 space-y-6">

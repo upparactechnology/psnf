@@ -169,15 +169,10 @@ class ProfileController extends Controller
         }
 
         $file = $_FILES['avatar'];
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-
-        if (!in_array($file['type'], $allowedTypes)) {
-            $this->flash('error', 'Only JPG, PNG, GIF, and WebP images are allowed.');
-            return $this->redirect(url('profile'));
-        }
-
-        if ($file['size'] > 2 * 1024 * 1024) {
-            $this->flash('error', 'Image must be less than 2MB.');
+        try {
+            $avatarExt = \App\Services\UploadGuard::check($file, \App\Services\UploadGuard::IMAGES, 2 * 1024 * 1024);
+        } catch (\RuntimeException $e) {
+            $this->flash('error', $e->getMessage());
             return $this->redirect(url('profile'));
         }
 
@@ -187,8 +182,7 @@ class ProfileController extends Controller
                 mkdir($uploadDir, 0755, true);
             }
 
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename = 'avatar_' . $userId . '_' . time() . '.' . strtolower($ext);
+            $filename = \App\Services\UploadGuard::storedName($avatarExt, 'avatar_' . $userId . '_');
             $filepath = $uploadDir . '/' . $filename;
 
             if (!move_uploaded_file($file['tmp_name'], $filepath)) {

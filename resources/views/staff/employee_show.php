@@ -215,6 +215,17 @@ if (!empty($employee['user_id'])) {
                     <div class="text-2xs text-slate-400 font-semibold">Late Mins</div>
                 </div>
             </div>
+            <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <div class="font-extrabold text-slate-900 dark:text-white"><?= (int)($s->total_break_mins ?? 0) ?>m
+                        <?php if ((int)($s->over_break_days ?? 0) > 0): ?><span class="text-2xs font-bold text-red-500">· <?= (int)$s->over_break_days ?> over</span><?php endif; ?>
+                    </div>
+                    <div class="text-2xs text-slate-400 font-semibold">Break (<?= (int)($s->allowed_break_mins ?? 30) ?>m/day allowed)</div>
+                </div>
+            </div>
         </div>
 
         <!-- Attendance Table -->
@@ -235,6 +246,7 @@ if (!empty($employee['user_id'])) {
                             <th class="px-4 py-3 font-semibold">Clock Out</th>
                             <th class="px-4 py-3 font-semibold">Hours</th>
                             <th class="px-4 py-3 font-semibold">Late</th>
+                            <th class="px-4 py-3 font-semibold">Break</th>
                             <th class="px-4 py-3 font-semibold">Status</th>
                             <th class="px-4 py-3 font-semibold">Source</th>
                         </tr>
@@ -285,10 +297,28 @@ if (!empty($employee['user_id'])) {
                                     <span class="text-slate-300 dark:text-slate-600">—</span>
                                 <?php endif; ?>
                             </td>
+                            <td class="px-4 py-3 text-2xs">
+                                <?php $bk = $att['break'] ?? null; ?>
+                                <?php if ($bk && $bk['on_break_since']): ?>
+                                    <span class="font-bold text-sky-600 dark:text-sky-400">On break</span>
+                                <?php elseif ($bk && $bk['total_break_minutes'] > 0): ?>
+                                    <span class="font-mono font-bold <?= $bk['exceeded'] ? 'text-red-500' : 'text-slate-600 dark:text-slate-300' ?>" title="<?= e(implode(', ', array_map(fn($x) => $x['out'] . '–' . $x['in'], $bk['breaks']))) ?>"><?= (int)$bk['total_break_minutes'] ?>m</span>
+                                    <?php if ($bk['exceeded']): ?><span class="ml-1 px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 font-bold text-[9px] uppercase">+<?= (int)$bk['exceeded_by'] ?>m</span><?php endif; ?>
+                                <?php else: ?>
+                                    <span class="text-slate-300 dark:text-slate-600">—</span>
+                                <?php endif; ?>
+                                <?php if ($bk && $bk['unmatched']): ?><span class="ml-1 text-amber-600 font-bold" title="Unmatched break punch">!</span><?php endif; ?>
+                            </td>
                             <td class="px-4 py-3">
                                 <span class="px-2 py-0.5 rounded-lg text-2xs font-bold uppercase border <?= $colorClass ?>">
                                     <?= e(str_replace('_', ' ', $status)) ?>
                                 </span>
+                                <?php if (!empty($att['incomplete'])): ?>
+                                    <span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold text-[9px] uppercase" title="Only one kiosk scan: no clock-out recorded">incomplete (no clock-out)</span>
+                                <?php endif; ?>
+                                <?php if (!empty($att['late_exempted'])): ?>
+                                    <span class="ml-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-bold text-[9px] uppercase">late exempt</span>
+                                <?php endif; ?>
                             </td>
                             <td class="px-4 py-3">
                                 <?php if ($source === 'face'): ?>

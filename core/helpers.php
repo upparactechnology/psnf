@@ -105,7 +105,8 @@ if (!function_exists('get_dynamic_base_url')) {
             $scheme = 'https';
         }
 
-        $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
+        // Only honour X-Forwarded-Host from a configured trusted proxy (host-header injection)
+        $host = (is_trusted_proxy() ? ($_SERVER['HTTP_X_FORWARDED_HOST'] ?? null) : null) ?? $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
 
         // If base_url is a full URL (e.g. 'https://example.com/erp'), extract path
         $configuredBase = config('app.base_url', '');
@@ -342,5 +343,102 @@ if (!function_exists('is_year_locked')) {
             return in_array($row['status'], ['locked', 'archived']);
         }
         return false;
+    }
+}
+
+// ─── Security helpers ────────────────────────────────────────────────────────
+
+if (!function_exists('is_trusted_proxy')) {
+    /** True when the direct peer (REMOTE_ADDR) is listed in config('app.trusted_proxies'). */
+    function is_trusted_proxy(?string $remoteAddr = null): bool
+    {
+        $remoteAddr = $remoteAddr ?? ($_SERVER['REMOTE_ADDR'] ?? '');
+        $trusted = config('app.trusted_proxies', []);
+        return $remoteAddr !== '' && is_array($trusted) && in_array($remoteAddr, $trusted, true);
+    }
+}
+
+if (!function_exists('is_https_request')) {
+    function is_https_request(): bool
+    {
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') return true;
+        if (($_SERVER['SERVER_PORT'] ?? null) == 443) return true;
+        return strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+    }
+}
+
+if (!function_exists('safe_redirect_path')) {
+    /**
+     * Returns $value only if it is a local, relative path ("/students?x=1").
+     * Rejects absolute URLs, protocol-relative "//host", backslashes, schemes
+     * such as "javascript:", and control characters. Otherwise returns $default.
+     */
+    function safe_redirect_path(mixed $value, string $default = '/'): string
+    {
+        if (!is_string($value)) return $default;
+        $value = html_entity_decode(trim($value), ENT_QUOTES, 'UTF-8');
+        if ($value === '' || $value[0] !== '/') return $default;
+        if (str_starts_with($value, '//') || str_contains($value, "\\")) return $default;
+        if (preg_match('/[\x00-\x1F\x7F]/', $value)) return $default;
+        return $value;
+    }
+}
+
+if (!function_exists('app_secret')) {
+    /**
+     * Reads a secret from the environment variable $envName, else from
+     * storage/keys/$fileName (generated with random_bytes on first use).
+     * storage/keys is denied by .htaccess.
+     */
+    function app_secret(string $envName, string $fileName, int $bytes = 32): string
+    {
+        $env = getenv($envName);
+        if (is_string($env) && $env !== '') return $env;
+
+        $dir  = dirname(__DIR__) . '/storage/keys';
+        $file = $dir . '/' . basename($fileName);
+        if (is_file($file)) {
+            $val = trim((string) file_get_contents($file));
+            if ($val !== '') return $val;
+        }
+
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0700, true);
+        }
+        if (!is_file($dir . '/.htaccess')) {
+            @file_put_contents($dir . '/.htaccess', "Require all denied\n");
+        }
+        $secret = bin2hex(random_bytes($bytes));
+        // Write atomically; if another request won the race, use its value.
+        $fp = @fopen($file, 'x');
+        if ($fp) {
+            fwrite($fp, $secret);
+            fclose($fp);
+            @chmod($file, 0600);
+            return $secret;
+        }
+        $val = is_file($file) ? trim((string) file_get_contents($file)) : '';
+        if ($val === '') {
+            throw new \RuntimeException('Unable to create secret key file in storage/keys.');
+        }
+        return $val;
+    }
+}
+
+if (!function_exists('safe_redirect_target')) {
+    /**
+     * Like safe_redirect_path(), but first converts an absolute URL that points
+     * at this application (e.g. url('users')) into its app-relative path.
+     * Returns an app-relative path suitable for redirect()/url().
+     */
+    function safe_redirect_target(mixed $value, string $default = '/'): string
+    {
+        if (!is_string($value)) return $default;
+        $value = html_entity_decode(trim($value), ENT_QUOTES, 'UTF-8');
+        $base  = rtrim(get_dynamic_base_url(), '/');
+        if ($base !== '' && ($value === $base || str_starts_with($value, $base . '/') || str_starts_with($value, $base . '?'))) {
+            $value = '/' . ltrim(substr($value, strlen($base)), '/');
+        }
+        return safe_redirect_path($value, $default);
     }
 }

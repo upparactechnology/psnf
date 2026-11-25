@@ -103,6 +103,25 @@ $weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                         $borderColor = 'border-red-200 dark:border-red-800/50';
                         $textColor = 'text-red-700 dark:text-red-500';
                         $badge = '<span class="text-[9px] bg-red-500/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-bold uppercase">Absent</span>';
+                    } elseif ($d['status'] === 'wfh') {
+                        $bgColor = 'bg-cyan-50 dark:bg-cyan-900/10';
+                        $borderColor = 'border-cyan-200 dark:border-cyan-800/50';
+                        $textColor = 'text-cyan-700 dark:text-cyan-400';
+                        $badge = '<span class="text-[9px] bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 px-1.5 py-0.5 rounded font-bold uppercase">WFH</span>';
+                    } elseif ($d['status'] === 'on_leave') {
+                        $bgColor = 'bg-blue-50 dark:bg-blue-900/10';
+                        $borderColor = 'border-blue-200 dark:border-blue-800/50';
+                        $textColor = 'text-blue-700 dark:text-blue-400';
+                        $badge = '<span class="text-[9px] bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold uppercase">Leave</span>';
+                    } elseif ($d['status'] === 'holiday') {
+                        $bgColor = 'bg-purple-50 dark:bg-purple-900/10';
+                        $borderColor = 'border-purple-200 dark:border-purple-800/50';
+                        $textColor = 'text-purple-700 dark:text-purple-400';
+                        $badge = '<span class="text-[9px] bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded font-bold uppercase" title="' . e($d['note'] ?? '') . '">Holiday</span>';
+                    } elseif ($d['status'] === 'not_joined') {
+                        $bgColor = 'bg-slate-50 dark:bg-slate-900/80';
+                        $textColor = 'text-slate-400';
+                        $badge = '<span class="text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold uppercase">Not joined</span>';
                     } elseif ($d['status'] === 'sunday') {
                         $bgColor = 'bg-slate-50 dark:bg-slate-900/80';
                         $textColor = 'text-slate-400';
@@ -112,7 +131,11 @@ $weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                     echo '<div class="' . $bgColor . ' border border-l-0 border-t-0 ' . $borderColor . ' p-3 min-h-[110px] relative transition-colors">';
                     echo '<span class="absolute top-3 right-3 text-sm font-bold opacity-30 ' . $textColor . '">' . $day . '</span>';
                     
-                    if ($d['status'] !== 'pending' && $d['status'] !== 'sunday') {
+                    if (!empty($d['incomplete'])) {
+                        $badge .= ' <span class="text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-bold uppercase" title="Only one kiosk scan: no clock-out recorded">No out</span>';
+                    }
+
+                    if (!in_array($d['status'], ['pending', 'sunday', 'not_joined', 'holiday'], true)) {
                         echo '<div class="mt-6 flex flex-col gap-1.5">';
                         echo '  <div class="flex items-center justify-between text-xs font-mono">';
                         echo '      <span class="text-slate-400">IN</span>';
@@ -122,6 +145,13 @@ $weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                         echo '      <span class="text-slate-400">OUT</span>';
                         echo '      <span class="font-bold ' . $textColor . '">' . e($d['out']) . '</span>';
                         echo '  </div>';
+                        if (!empty($d['break']) && $d['break']['total_break_minutes'] > 0) {
+                            $bc = $d['break']['exceeded'] ? 'text-red-500' : $textColor;
+                            echo '  <div class="flex items-center justify-between text-xs font-mono">';
+                            echo '      <span class="text-slate-400">BRK</span>';
+                            echo '      <span class="font-bold ' . $bc . '">' . (int)$d['break']['total_break_minutes'] . 'm' . ($d['break']['exceeded'] ? ' ⚠' : '') . '</span>';
+                            echo '  </div>';
+                        }
                         echo '</div>';
                     }
                     

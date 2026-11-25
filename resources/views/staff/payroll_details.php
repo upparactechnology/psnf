@@ -29,7 +29,7 @@ ob_start();
                         <th class="p-4">Employee</th>
                         <th class="p-4">Stats</th>
                         <th class="p-4">Base Salary</th>
-                        <th class="p-4 text-red-400">Absent Ded.</th>
+                        <th class="p-4 text-red-400">Attendance Ded.</th>
                         <th class="p-4 text-red-400">Late Ded.</th>
                         <th class="p-4">Net Salary</th>
                         <th class="p-4 text-right">Actions</th>
@@ -54,13 +54,14 @@ ob_start();
                                     <span class="text-slate-500">Working: <span class="font-bold text-slate-700 dark:text-slate-300"><?= (int)$item['working_days'] ?></span></span>
                                     <span class="text-emerald-500">Present: <span class="font-bold"><?= (int)$item['present_days'] ?></span></span>
                                     <span class="text-amber-500">Late: <span class="font-bold"><?= (int)$item['late_days'] ?></span></span>
+                                    <span class="text-rose-500">Absent: <span class="font-bold"><?= (int)$item['absent_days'] ?></span></span>
                                 </div>
                             </td>
                             <td class="p-4 font-mono font-bold text-slate-700 dark:text-slate-300">
                                 ₹<?= number_format((float)$item['gross_salary'], 2) ?>
                             </td>
                             <td class="p-4 font-mono text-red-400">
-                                -₹<?= number_format((float)$item['absent_deduction'], 2) ?>
+                                -₹<?= number_format((float)$item['absent_deduction'] + (float)($item['unpaid_leave_deduction'] ?? 0) + (float)($item['unpaid_holiday_deduction'] ?? 0) + (float)($item['normal_half_day_deduction'] ?? 0), 2) ?>
                             </td>
                             <td class="p-4 font-mono text-red-400">
                                 -₹<?= number_format((float)$item['late_deduction'], 2) ?>

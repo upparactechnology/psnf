@@ -53,7 +53,7 @@ $layout = false; // No layout for printable view
             </div>
             <div>
                 <span class="text-slate-500 block text-xs uppercase tracking-wider mb-1">Designation & Dept</span>
-                <span class="font-semibold text-slate-700"><?= e($item['designation_title'] ?? 'Staff') ?> - <?= e($item['department_name'] ?? 'General') ?></span>
+                <span class="font-semibold text-slate-700"><?= e($item['designation_title'] ?: '—') ?> - <?= e($item['department_name'] ?: '—') ?></span>
             </div>
             <div>
                 <span class="text-slate-500 block text-xs uppercase tracking-wider mb-1">Date of Joining</span>
@@ -73,7 +73,7 @@ $layout = false; // No layout for printable view
                 <span class="block text-xs text-emerald-600 uppercase mt-1">Present</span>
             </div>
             <div class="p-3 bg-red-50 rounded border border-red-100">
-                <span class="block text-xl font-bold text-red-600"><?= (int)$item['working_days'] - (int)$item['present_days'] ?></span>
+                <span class="block text-xl font-bold text-red-600"><?= (int)$item['absent_days'] ?></span>
                 <span class="block text-xs text-red-600 uppercase mt-1">Absent</span>
             </div>
             <div class="p-3 bg-amber-50 rounded border border-amber-100">
@@ -97,11 +97,23 @@ $layout = false; // No layout for printable view
             <div>
                 <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 border-b border-slate-200 pb-2">Deductions</h3>
                 <div class="flex justify-between py-2 text-sm text-red-600">
-                    <span>Absent Deduction</span>
+                    <span>Absent Deduction (<?= (int)$item['absent_days'] ?> days)</span>
                     <span class="font-mono font-bold">-₹<?= number_format((float)$item['absent_deduction'], 2) ?></span>
                 </div>
+                <?php if ((float)($item['unpaid_leave_deduction'] ?? 0) + (float)($item['unpaid_holiday_deduction'] ?? 0) > 0): ?>
                 <div class="flex justify-between py-2 text-sm text-red-600">
-                    <span>Late/Half-Day Penalty</span>
+                    <span>Unpaid Leave / Holiday (<?= (int)($item['unpaid_leave_days'] ?? 0) + (int)($item['unpaid_holiday_days'] ?? 0) ?> days)</span>
+                    <span class="font-mono font-bold">-₹<?= number_format((float)($item['unpaid_leave_deduction'] ?? 0) + (float)($item['unpaid_holiday_deduction'] ?? 0), 2) ?></span>
+                </div>
+                <?php endif; ?>
+                <?php if ((float)($item['normal_half_day_deduction'] ?? 0) > 0): ?>
+                <div class="flex justify-between py-2 text-sm text-red-600">
+                    <span>Half-Days (<?= (int)($item['normal_half_days'] ?? 0) ?>)</span>
+                    <span class="font-mono font-bold">-₹<?= number_format((float)$item['normal_half_day_deduction'], 2) ?></span>
+                </div>
+                <?php endif; ?>
+                <div class="flex justify-between py-2 text-sm text-red-600">
+                    <span>Late Penalty<?= isset($item['late_penalty_half_days']) ? ' (' . (int)$item['late_penalty_half_days'] . ' penalty half-days)' : '' ?></span>
                     <span class="font-mono font-bold">-₹<?= number_format((float)$item['late_deduction'], 2) ?></span>
                 </div>
             </div>
@@ -115,7 +127,7 @@ $layout = false; // No layout for printable view
             </div>
             <div class="flex justify-between items-center text-lg mb-4 text-red-600">
                 <span class="font-semibold">Total Deductions</span>
-                <span class="font-mono font-bold">-₹<?= number_format((float)$item['absent_deduction'] + (float)$item['late_deduction'], 2) ?></span>
+                <span class="font-mono font-bold">-₹<?= number_format((float)$item['gross_salary'] - (float)$item['net_salary'], 2) ?></span>
             </div>
             <div class="border-t-2 border-indigo-200 pt-4 mt-2 flex justify-between items-center">
                 <span class="text-2xl font-black text-indigo-900 uppercase">Net Salary Payable</span>

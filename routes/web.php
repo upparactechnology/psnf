@@ -213,12 +213,10 @@ $router->get('/reports/finance',                [\App\Controllers\ReportsControl
 $router->get('/reports/students',               [\App\Controllers\ReportsController::class, 'students'],  ['auth', 'permission:view_student_reports']);
 $router->get('/reports/staff',                  [\App\Controllers\ReportsController::class, 'staff'],     ['auth', 'permission:view_staff_reports']);
 $router->get('/reports/communication',           [\App\Controllers\ReportsController::class, 'communication'], ['auth', 'permission:view_whatsapp_logs']);
-$router->get('/settings',                       [\App\Controllers\SettingsController::class, 'index'],    ['auth', 'permission:view_general_settings']);
 $router->get('/settings/general',               [\App\Controllers\SettingsController::class, 'index'],    ['auth', 'permission:view_general_settings']);
 $router->get('/settings/school',                function() { header('Location: /settings/general'); exit; },     ['auth', 'permission:view_general_settings']);
 $router->get('/settings/integrations',          [\App\Controllers\SettingsController::class, 'integrations'],['auth', 'permission:view_integrations']);
 $router->get('/settings/system',                [\App\Controllers\SettingsController::class, 'system'],   ['auth', 'permission:view_system_config']);
-$router->post('/settings',                      [\App\Controllers\SettingsController::class, 'update'],   ['auth', 'permission:edit_general_settings']);
 $router->post('/settings/update',               [\App\Controllers\SettingsController::class, 'update'],   ['auth', 'permission:edit_general_settings']);
 $router->post('/settings/test-whatsapp',        [\App\Controllers\SettingsController::class, 'testWhatsApp'],['auth', 'permission:edit_general_settings']);
 
@@ -237,13 +235,11 @@ $router->post('/academics/curriculum/reorder',        [App\Controllers\Curriculu
 $router->get('/academics/promotion',                  [App\Controllers\PromotionController::class, 'index'], ['auth', 'permission:view_promotion']);
 $router->post('/academics/promotion/run',             [App\Controllers\PromotionController::class, 'promoteStudents'], ['auth', 'permission:create_promotion']);
 
-// Legacy fallbacks
-$router->get('/academic', [App\Controllers\AcademicWorkspaceController::class, 'index'], ['auth']);
 
 $router->get('/students',                          [StudentController::class, 'index'],              ['auth', 'permission:view_students_list']);
 $router->get('/students/create',                   [StudentController::class, 'create'],             ['auth', 'permission:create_students_list']);
 $router->post('/students',                         [StudentController::class, 'store'],              ['auth', 'permission:create_students_list']);
-$router->get('/students/search',                   [StudentController::class, 'search'],             ['auth']);
+$router->get('/students/search',                   [StudentController::class, 'search'],             ['auth', 'permission:view_students_list']);
 $router->get('/students/{id}',                     [StudentController::class, 'show'],               ['auth', 'permission:view_students_list']);
 $router->get('/students/{id}/edit',                [StudentController::class, 'edit'],               ['auth', 'permission:edit_students_list']);
 $router->post('/students/{id}',                    [StudentController::class, 'update'],             ['auth', 'permission:edit_students_list']);
@@ -310,6 +306,13 @@ $router->post('/receipts/settings', [ReceiptsController::class, 'saveSettings'],
 $router->get('/receipts/{id}/view', [ReceiptsController::class, 'show'], ['auth', 'permission:view_receipts_log']);
 
 // ─── Scholarships — Admin ─────────────────────────────────────────────────────
+$router->get('/scholarships',        [ScholarshipController::class, 'index'], ['auth', 'permission:view_scholarships']);
+$router->post('/scholarships/store', [ScholarshipController::class, 'store'], ['auth', 'permission:create_scholarships']);
+
+// ─── Public Online Enrollment (no login) ──────────────────────────────────────
+$router->get('/forms/student-enrollment',          [\App\Controllers\PublicEnrollmentController::class, 'showForm']);
+$router->post('/forms/student-enrollment',         [\App\Controllers\PublicEnrollmentController::class, 'submitForm'], ['rate.limit:60,1']);
+$router->get('/forms/student-enrollment/success',  [\App\Controllers\PublicEnrollmentController::class, 'success']);
 
 
 
@@ -329,6 +332,9 @@ $router->get('/transport/settings',             [TransportController::class, 'se
 $router->post('/transport/settings',            [TransportController::class, 'storeSettings'],      ['auth', 'permission:edit_transport_settings']);
 
 $router->get('/transport/create',           [TransportController::class, 'create'],   ['auth', 'permission:create_transport_drivers']);
+// Static driver routes MUST be registered before /transport/{id} (first match wins)
+$router->get('/transport/driver/create',    [TransportController::class, 'createDriver'], ['auth', 'permission:create_transport_drivers']);
+$router->post('/transport/driver',          [TransportController::class, 'storeDriver'],  ['auth', 'permission:create_transport_drivers']);
 $router->get('/transport/tracking',         [TransportController::class, 'tracking'], ['auth', 'permission:view_live_tracking']);
 $router->get('/transport/live-data',        [TransportController::class, 'liveData'], ['auth', 'permission:view_live_tracking']);
 $router->post('/transport',                 [TransportController::class, 'store'],    ['auth', 'permission:create_transport_drivers']);
@@ -345,29 +351,15 @@ $router->get('/certificates/{id}/view',     [CertificateController::class, 'show
 $router->post('/certificates/{id}/delete',  [CertificateController::class, 'destroy'],['auth', 'permission:delete_certificates']);
 
 // ─── Finance & Fee Management ────────────────────────────────────────────────
-$router->get('/fees',                         [FeeController::class, 'index'],            ['auth', 'permission:view_fees_dashboard']);
 $router->get('/fees/create',                  [FeeController::class, 'create'],           ['auth', 'permission:create_all_invoices']);
 $router->post('/fees',                        [FeeController::class, 'store'],            ['auth', 'permission:create_all_invoices']);
 $router->get('/fees/export-csv',              [FeeController::class, 'exportCsv'],        ['auth', 'permission:view_fees_dashboard']);
-$router->post('/fees/{id}/pay',               [FeeController::class, 'recordPayment'],    ['auth', 'permission:create_all_invoices']);
 $router->post('/fees/{id}/delete',            [FeeController::class, 'destroy'],          ['auth', 'permission:delete_all_invoices']);
 
-$router->get('/fees/structures',              [App\Controllers\FeeStructureController::class, 'index'], ['auth', 'permission:view_fee_structures']);
-$router->post('/fees/structures',             [App\Controllers\FeeStructureController::class, 'store'], ['auth', 'permission:create_fee_structures']);
 
-$router->get('/fees/categories',              [App\Controllers\FeeCategoryController::class, 'index'],  ['auth', 'permission:view_fee_categories']);
-$router->post('/fees/categories',             [App\Controllers\FeeCategoryController::class, 'store'],  ['auth', 'permission:create_fee_categories']);
 
-$router->get('/fees/batch-generator',         [App\Controllers\BatchFeeGeneratorController::class, 'index'], ['auth', 'permission:view_batch_generator']);
-$router->post('/fees/batch-generator',        [App\Controllers\BatchFeeGeneratorController::class, 'generate'], ['auth', 'permission:create_batch_generator']);
 
-$router->get('/fees/late-fee-policies',       [App\Controllers\LateFeePolicyController::class, 'index'], ['auth', 'permission:view_late_fee_policies']);
-$router->post('/fees/late-fee-policies',      [App\Controllers\LateFeePolicyController::class, 'store'], ['auth', 'permission:create_late_fee_policies']);
 
-$router->get('/receipts',                     [ReceiptsController::class, 'index'],          ['auth', 'permission:view_receipts_log']);
-$router->get('/receipts/settings',            [ReceiptsController::class, 'settings'],       ['auth', 'permission:view_receipts_log']);
-$router->post('/receipts/settings',           [ReceiptsController::class, 'saveSettings'],   ['auth', 'permission:edit_receipts_log']);
-$router->get('/receipts/{id}/view',           [ReceiptsController::class, 'show'],           ['auth', 'permission:view_receipts_log']);
 
 // ─── Admissions ──────────────────────────────────────────────────────────────
 $router->get('/admissions', [AdmissionsController::class, 'index'], ['auth', 'permission:view_enrollments']);
@@ -387,13 +379,13 @@ $router->get('/classes/{class}', [ClassesController::class, 'show'], ['auth', 'p
 // ─── Attendance ──────────────────────────────────────────────────────────────
 $router->get('/student-attendance', [AttendanceController::class, 'index'], ['auth', 'permission:view_acad_attendance']);
 $router->post('/student-attendance/save', [AttendanceController::class, 'save'], ['auth', 'permission:edit_acad_attendance']);
-$router->get('/attendance', [AttendanceController::class, 'index'], ['auth', 'permission:view_staff_attendance']);
-$router->post('/attendance/save', [AttendanceController::class, 'save'], ['auth', 'permission:edit_staff_attendance']);
+$router->get('/attendance', [AttendanceController::class, 'index'], ['auth', 'permission:view_acad_attendance']);
+$router->post('/attendance/save', [AttendanceController::class, 'save'], ['auth', 'permission:edit_acad_attendance']);
 $router->get('/attendance/face-kiosk',    [App\Controllers\FaceRecognitionController::class, 'kioskView'], ['auth.kiosk']);
 $router->post('/attendance/face-kiosk',   [App\Controllers\FaceRecognitionController::class, 'kioskView'], ['auth.kiosk']);
 $router->get('/attendance/face-register', [App\Controllers\FaceRecognitionController::class, 'registerView'], ['auth', 'permission:view_face_register']);
 $router->post('/attendance/face-register',[App\Controllers\FaceRecognitionController::class, 'registerView'], ['auth', 'permission:view_face_register']);
-$router->get('/attendance/face-history',  [App\Controllers\FaceRecognitionController::class, 'historyView']);
+$router->get('/attendance/face-history',  [App\Controllers\FaceRecognitionController::class, 'historyView'], ['auth', 'permission:view_staff_attendance']);
 
 // ─── Timetables ──────────────────────────────────────────────────────────────
 $router->get('/timetables', [TimetablesController::class, 'index'], ['auth', 'permission:view_timetable']);
@@ -414,10 +406,12 @@ $router->get('/migrate', function () {
     $runner->run();
     $output = ob_get_clean();
     return "<h1>Migration Output:</h1><pre>" . htmlspecialchars($output) . "</pre>";
-});
+}, ['auth', 'role:super_admin']);
 
 // ─── Parent Portal — Module 3 ────────────────────────────────────────────────
-$router->get('/parent/impersonate/{id}',           [ParentPortalController::class, 'impersonate'],   ['auth']);
+$router->post('/parent/impersonate/{id}',          [ParentPortalController::class, 'impersonate'],   ['auth']); // admin-only + tenant check in controller
+$router->get('/parent/students/add',               [ParentPortalController::class, 'addStudent'],    ['auth', 'role:parent']);
+$router->post('/parent/students/add',              [ParentPortalController::class, 'storeStudent'],  ['auth', 'role:parent']);
 $router->get('/parent/dashboard',                  [ParentPortalController::class, 'dashboard'],     ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/attendance',   [ParentPortalController::class, 'attendance'],    ['auth', 'role:parent']);
 $router->get('/parent/students/{id}/attendance/check-date', [ParentPortalController::class, 'checkDateAttendance'], ['auth', 'role:parent']);
@@ -437,37 +431,27 @@ $router->post('/parent/students/{id}/fees/{invoice_id}/pay', [ParentPortalContro
 $router->post('/parent/students/{id}/emergency',   [ParentPortalController::class, 'updateEmergency'],['auth', 'role:parent']);
 $router->get('/parent/announcements',              [ParentPortalController::class, 'announcements'], ['auth', 'role:parent']);
 
-$router->get('/uploads/certificates/{file}', function ($file) {
-    $path = STORAGE_PATH . '/uploads/certificates/' . $file;
-    if (!file_exists($path)) {
-        $path = ROOT_PATH . '/test_cert.pdf';
+// Uploaded files — logged-in users only; plain file names only (no traversal); 404 when missing.
+$serveUpload = static function (string $dir, string $file, bool $download): string {
+    $name = basename(rawurldecode($file));
+    if ($name === '' || $name !== rawurldecode($file) || $name[0] === '.' || !preg_match('/^[A-Za-z0-9._-]+$/', $name)) {
+        \Core\Application::$app->response->abort(404);
     }
-    if (file_exists($path)) {
-        $mime = mime_content_type($path);
-        header('Content-Type: ' . $mime);
-        readfile($path);
-        exit();
+    $path = STORAGE_PATH . '/uploads/' . $dir . '/' . $name;
+    if (!is_file($path)) {
+        \Core\Application::$app->response->abort(404);
     }
-    \Core\Application::$app->response->abort(404);
-});
+    header('Content-Type: ' . (mime_content_type($path) ?: 'application/octet-stream'));
+    header('X-Content-Type-Options: nosniff');
+    if ($download) {
+        header('Content-Disposition: attachment; filename="' . $name . '"');
+    }
+    readfile($path);
+    exit();
+};
+$router->get('/uploads/certificates/{file}', fn ($file) => $serveUpload('certificates', $file, false), ['auth']);
+$router->get('/uploads/homework/{file}',     fn ($file) => $serveUpload('homework', $file, true), ['auth']);
 
-$router->get('/uploads/homework/{file}', function ($file) {
-    $path = STORAGE_PATH . '/uploads/homework/' . $file;
-    if (!file_exists($path)) {
-        $path = ROOT_PATH . '/test_cert.pdf';
-    }
-    if (file_exists($path)) {
-        $mime = mime_content_type($path);
-        header('Content-Type: ' . $mime);
-        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
-        readfile($path);
-        exit();
-    }
-    \Core\Application::$app->response->abort(404);
-});
-
-$router->get('/transport/driver/create',    [TransportController::class, 'createDriver'], ['auth', 'permission:create_transport_drivers']);
-$router->post('/transport/driver',          [TransportController::class, 'storeDriver'],  ['auth', 'permission:create_transport_drivers']);
 
 // ─── Documents Workspace ──────────────────────────────────────────────────────
 $router->get('/documents',                     [App\Controllers\DocumentsController::class, 'dashboard'],         ['auth', 'permission:view_documents_overview']);

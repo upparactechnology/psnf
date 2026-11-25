@@ -18,7 +18,21 @@ class TransportController extends Controller
 
     private function ensureTransportColumns(): void
     {
+        // The columns are created by migration 20261126_RoutesPermissionsFixes; only fall back to
+        // runtime ALTERs (once per request) when that migration has not been applied yet.
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+        $checked = true;
+        try {
+            if ($this->db()->columnExists('employees', 'last_updated_at') && $this->db()->columnExists('employees', 'remaining_km')) {
+                return;
+            }
+        } catch (\Throwable $e) {}
+
         $cols = [
+            "ALTER TABLE `employees` ADD COLUMN `last_updated_at` TIMESTAMP NULL DEFAULT NULL",
             "ALTER TABLE `employees` ADD COLUMN `route_status` VARCHAR(20) DEFAULT 'idle'",
             "ALTER TABLE `employees` ADD COLUMN `current_latitude` DECIMAL(10,7) NULL",
             "ALTER TABLE `employees` ADD COLUMN `current_longitude` DECIMAL(10,7) NULL",
@@ -258,7 +272,7 @@ class TransportController extends Controller
             LEFT JOIN attendance att ON att.student_id = s.id AND att.date = CURRENT_DATE()
             WHERE st.driver_id = ? AND s.deleted_at IS NULL
               AND (att.id IS NULL OR att.use_bus_transport = 1)
-              AND (ts.status IS NULL OR ts.status != 'EarlyPickup')
+              AND (ts.status IS NULL OR ts.status != 'Skipped') -- early pickups (and skipped stops) are stored as 'Skipped' in the trip_students enum
             ORDER BY st.pickup_time ASC, s.first_name ASC
         ", [$tripId, $driver['id']]);
 

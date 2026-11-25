@@ -120,7 +120,13 @@ class AuthService
         }
         if (isset($_COOKIE['remember_token'])) {
             unset($_COOKIE['remember_token']);
-            setcookie('remember_token', '', time() - 3600, '/');
+            setcookie('remember_token', '', [
+                'expires'  => time() - 3600,
+                'path'     => '/',
+                'secure'   => is_https_request(),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
         }
         Session::destroy();
     }
@@ -133,13 +139,23 @@ class AuthService
         Session::set('tenant_id', $user['tenant_id']);
         Session::set('school_id', $user['school_id']);
         Session::set('branch_id', $user['branch_id']);
+        Session::set('login_at', time());
         Session::updateActivity();
+        // New session id on every successful login (prevents session fixation);
+        // also rotate the CSRF token.
         Session::regenerate();
+        Session::forget('csrf_token');
 
         if ($remember) {
             $token = bin2hex(random_bytes(40));
             \Core\Application::$app->db->update('users', ['remember_token' => hash('sha256', $token)], 'id = ?', [$user['id']]);
-            setcookie('remember_token', $token, time() + (86400 * config('auth.remember_me_days', 30)), '/', '', false, true);
+            setcookie('remember_token', $token, [
+                'expires'  => time() + (86400 * config('auth.remember_me_days', 30)),
+                'path'     => '/',
+                'secure'   => is_https_request(),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
         }
     }
 

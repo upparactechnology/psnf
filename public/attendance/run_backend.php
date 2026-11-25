@@ -2,6 +2,13 @@
 declare(strict_types=1);
 header('Content-Type: application/json');
 
+// Only callable from the server itself (CLI or loopback). Also blocked in .htaccess.
+if (PHP_SAPI !== 'cli' && !in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Forbidden']);
+    exit();
+}
+
 /**
  * InsightFace Backend Launcher
  * Checks if the Python FastAPI service is running on port 8000.
@@ -28,13 +35,13 @@ if ($fp) {
 if (!$backendDir || !is_dir($backendDir)) {
     echo json_encode([
         'success' => false,
-        'message' => 'Backend directory not found: ' . ($backendDir ?: 'unknown'),
+        'message' => 'Backend directory not found.',
     ]);
     exit();
 }
 
 $logFile = $backendDir . '\\backend_startup.log';
-$cmd = "start /B python -m uvicorn app:app --host 0.0.0.0 --port {$port} --reload > \"{$logFile}\" 2>&1";
+$cmd = "start /B python -m uvicorn app:app --host 127.0.0.1 --port {$port} > \"{$logFile}\" 2>&1";
 
 $descriptorspec = [
     0 => ['pipe', 'r'],
@@ -75,7 +82,7 @@ if (is_resource($process)) {
             'success'        => false,
             'message'        => 'Backend process started but port ' . $port . ' did not open in time. Check startup log.',
             'log'            => $logFile,
-            'manual_command' => "cd \"{$backendDir}\" && python -m uvicorn app:app --host 0.0.0.0 --port {$port} --reload",
+            'manual_command' => "cd \"{$backendDir}\" && python -m uvicorn app:app --host 127.0.0.1 --port {$port}",
         ]);
     }
     exit();
@@ -86,6 +93,6 @@ echo json_encode([
     'success'        => false,
     'engine'         => 'InsightFace (buffalo_l) — REQUIRED',
     'message'        => 'Could not auto-start the InsightFace backend. Please start it manually.',
-    'manual_command' => "cd \"{$backendDir}\" && python -m uvicorn app:app --host 0.0.0.0 --port {$port} --reload",
+    'manual_command' => "cd \"{$backendDir}\" && python -m uvicorn app:app --host 127.0.0.1 --port {$port}",
     'note'           => 'Make sure Python is in your PATH and all requirements are installed: pip install -r requirements.txt',
 ]);

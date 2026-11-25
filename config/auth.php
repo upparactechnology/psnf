@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 return [
-    'jwt_secret'        => 'psnf-erp-jwt-secret-key-2026-change-me',
+    // Read from env JWT_SECRET, else storage/keys/jwt_secret (auto-generated, denied by .htaccess)
+    'jwt_secret'        => app_secret('JWT_SECRET', 'jwt_secret'),
     'jwt_ttl'           => 3600,           // 1 hour
     'jwt_refresh_ttl'   => 604800,         // 7 days
     'otp_length'        => 6,

@@ -1,6 +1,12 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 from typing import List, Optional
+from typing_extensions import Annotated
 from datetime import datetime, date
+
+# ~5 MB decoded image → ~7 MB of base64 text (+ data-URI prefix). Decoded size is
+# re-checked in utils.image_utils.base64_to_cv2.
+MAX_B64_LEN = (5 * 1024 * 1024 * 4) // 3 + 1024
+Base64Image = Annotated[str, StringConstraints(max_length=MAX_B64_LEN)]
 
 class RegisterFaceRequest(BaseModel):
     """
@@ -8,11 +14,13 @@ class RegisterFaceRequest(BaseModel):
     Submit user_id (from /staff/users) — the system will look up their name/employee_id automatically.
     """
     user_id: int = Field(..., description="The ERP user ID (from staff/users page)")
-    images_base64: List[str] = Field(..., description="List of base64-encoded face images (5-angle capture)")
+    images_base64: List[Base64Image] = Field(..., max_length=10, description="List of base64-encoded face images (5-angle capture, max 10, max 5 MB each)")
+    tenant_id: Optional[int] = Field(None, description="If set, the user must belong to this tenant (set by the PHP proxy)")
 
 
 class VerifyFaceRequest(BaseModel):
-    image_base64: str = Field(..., description="Base64-encoded frame from camera")
+    image_base64: Base64Image = Field(..., description="Base64-encoded frame from camera (max 5 MB)")
+    tenant_id: Optional[int] = Field(None, description="Restrict matching to users of this tenant (set by the PHP proxy)")
 
 
 class VerifyFaceResponse(BaseModel):

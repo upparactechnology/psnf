@@ -663,7 +663,7 @@ $activeExams = \Core\Application::$app->db->select(
                     </div>
                     <div class="student-badge-row">
                         <span class="student-badge-label">Class Name:</span>
-                        <span class="student-badge-value"><?= e($student['class'] ?? 'Special Care Program') ?></span>
+                        <span class="student-badge-value"><?= e(!empty($student['class']) ? $student['class'] : '—') ?></span>
                     </div>
                     <div class="student-badge-row">
                         <span class="student-badge-label">GR Number:</span>

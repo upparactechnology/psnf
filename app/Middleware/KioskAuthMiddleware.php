@@ -12,6 +12,12 @@ class KioskAuthMiddleware
     {
         $path = $request->getPath();
 
+        // Per-session kiosk token: the kiosk page embeds it and attendance/api.php
+        // requires it (X-Kiosk-Token) for the recognize/health proxy calls.
+        if ($path === '/attendance/face-kiosk' && !Session::get('kiosk_token')) {
+            Session::set('kiosk_token', bin2hex(random_bytes(32)));
+        }
+
         // If user is already logged in, proceed with normal auth checks
         if (Session::has('user')) {
             // Check session timeout

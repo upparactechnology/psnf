@@ -210,7 +210,7 @@ ob_start();
             <?php endif; ?>
 
             <!-- 6. Medical Log -->
-            <?php if (in_array('medical', $assignedApps)): ?>
+            <?php /* Medical Logs tile disabled: there is no /medical route and the student_medical table no longer exists. */ if (false && in_array('medical', $assignedApps)): ?>
             <a href="<?= url('medical') ?>" class="flex flex-col items-center p-5 rounded-2xl border border-slate-200 dark:border-slate-800/40 bg-white dark:bg-slate-900/20 hover:border-red-500/30 dark:hover:border-red-500/30 hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:-translate-y-1 transition-all duration-300 group text-center shadow-sm hover:shadow-md">
                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600 shadow-lg group-hover:scale-105 transition-transform duration-300 mb-3.5">
                     <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -103,24 +103,18 @@ class AttendanceController extends Controller
                 [$tenantId, $selectedClass, $selectedSection]
             );
 
-            // If empty with section filter, fallback to class matching
-            if (empty($students)) {
+            // A class picked without a section shows every section of that class.
+            // A chosen section that has no students must NOT fall back to the whole class.
+            if (empty($students) && $selectedSection === '') {
                 $students = $db->select(
-                    "SELECT * FROM students 
+                    "SELECT * FROM students
                      WHERE tenant_id = ? AND class = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
                      ORDER BY first_name ASC",
                     [$tenantId, $selectedClass]
                 );
             }
-        } else {
-            // Fallback: Fetch all enrolled students across all classes
-            $students = $db->select(
-                "SELECT * FROM students 
-                 WHERE tenant_id = ? AND deleted_at IS NULL AND admission_status = 'enrolled'
-                 ORDER BY class ASC, first_name ASC",
-                [$tenantId]
-            );
         }
+        // No class selected: render nothing (marking must always be done per class)
 
         if (!empty($students)) {
             $studentIds = array_column($students, 'id');
@@ -323,38 +317,53 @@ class AttendanceController extends Controller
 
         $tenantId = \Core\Database::getTenantId();
 
-        // Get students in this class/section (or all enrolled students if no class specified)
-        if ($class) {
+        if (trim((string)$class) === '') {
+            $this->flash('error', 'Please select a class before saving attendance.');
+            return $this->redirect(url('academics/attendance'));
+        }
+        if (!is_array($attData) || empty($attData)) {
+            $this->flash('error', 'No attendance entries were submitted.');
+            return $this->redirect(url('academics/attendance'));
+        }
+        if (!is_array($remarks)) {
+            $remarks = [];
+        }
+
+        // Students of this class (and section, if one was chosen) — mirrors what index() rendered
+        if ($section !== '' && $section !== null) {
             $students = $db->select(
-                "SELECT id, tenant_id, school_id, branch_id FROM students 
+                "SELECT id, tenant_id, school_id, branch_id FROM students
                  WHERE tenant_id = ? AND class = ? AND COALESCE(section, '') = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
                 [$tenantId, $class, $section]
             );
-            if (empty($students)) {
-                $students = $db->select(
-                    "SELECT id, tenant_id, school_id, branch_id FROM students 
-                     WHERE tenant_id = ? AND class = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
-                    [$tenantId, $class]
-                );
-            }
         } else {
             $students = $db->select(
-                "SELECT id, tenant_id, school_id, branch_id FROM students 
-                 WHERE tenant_id = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
-                [$tenantId]
+                "SELECT id, tenant_id, school_id, branch_id FROM students
+                 WHERE tenant_id = ? AND class = ? AND deleted_at IS NULL AND admission_status = 'enrolled'",
+                [$tenantId, $class]
             );
         }
 
+        // Only students that were actually posted (rendered on the page) are processed
+        $postedIds = array_map('intval', array_keys($attData));
+        $students = array_values(array_filter($students, fn($st) => in_array((int)$st['id'], $postedIds, true)));
+
         if (empty($students)) {
-            $this->flash('error', 'No enrolled students found.');
-            return $this->redirect(url('attendance'));
+            $this->flash('error', 'No enrolled students found for the selected class.');
+            return $this->redirect(url('academics/attendance'));
         }
+
+        $allowedStatuses = ['present', 'absent', 'late', 'half_day'];
+        $saved = 0;
 
         try {
             foreach ($students as $student) {
                 $studentId = (int) $student['id'];
-                $status    = $attData[$studentId] ?? 'present';
-                $remark    = $remarks[$studentId] ?? '';
+                $status    = trim((string)($attData[$studentId] ?? ''));
+                if ($status === '' || !in_array($status, $allowedStatuses, true)) {
+                    continue; // not marked (e.g. read-only hidden '' value) — leave untouched
+                }
+                $remark    = (string)($remarks[$studentId] ?? '');
 
                 $exists = $db->selectOne(
                     "SELECT id FROM attendance WHERE student_id = ? AND date = ?",
@@ -380,6 +389,7 @@ class AttendanceController extends Controller
                         'created_at' => now(),
                     ]);
                 }
+                $saved++;
             }
 
             ActivityLog::log('attendance_marked', $this->authId(), [
@@ -388,7 +398,7 @@ class AttendanceController extends Controller
                 'date'    => $date,
             ]);
 
-            $this->flash('success', 'Attendance marked successfully.');
+            $this->flash('success', $saved > 0 ? "Attendance saved for {$saved} student(s)." : 'No attendance changes to save.');
         } catch (\Throwable $e) {
             $this->flash('error', 'Failed to save attendance: ' . $e->getMessage());
         }
@@ -397,5 +407,65 @@ class AttendanceController extends Controller
         $baseRedirect = str_contains($redirectTo, 'academics/attendance') ? '/academics/attendance' : '/student-attendance';
 
         return $this->redirect($baseRedirect . "?class=" . urlencode($class) . "&section=" . urlencode($section) . "&date=" . urlencode($date));
+    }
+    public function approveLeave(string $id): string
+    {
+        return $this->reviewLeave((int) $id, 'Approved');
+    }
+
+    public function rejectLeave(string $id): string
+    {
+        return $this->reviewLeave((int) $id, 'Rejected');
+    }
+
+    private function reviewLeave(int $id, string $newStatus): string
+    {
+        $db = $this->db();
+        $tenantId = \Core\Database::getTenantId();
+        $redirectTo = (string) $this->request->input('redirect_to', '/academics/attendance/leaves');
+        $back = str_contains($redirectTo, 'academics/attendance/leaves') ? 'academics/attendance/leaves' : 'academics/attendance';
+
+        $leave = $db->selectOne(
+            "SELECT l.*, s.first_name, s.last_name, s.class, s.section
+             FROM leave_applications l JOIN students s ON s.id = l.student_id
+             WHERE l.id = ? AND l.tenant_id = ? AND l.deleted_at IS NULL LIMIT 1",
+            [$id, $tenantId]
+        );
+        if (!$leave) {
+            $this->flash('error', 'Leave request not found.');
+            return $this->redirect(url($back));
+        }
+
+        // Teachers may only review leaves of students in the classes they teach
+        if (has_role('teacher') && !has_role('super_admin') && !has_role('school_admin')) {
+            $ok = $db->selectOne(
+                "SELECT 1 FROM classes WHERE tenant_id = ? AND class_teacher_id = ? AND name = ? AND COALESCE(section, '') = COALESCE(?, '') LIMIT 1",
+                [$tenantId, $this->authId(), $leave['class'], $leave['section']]
+            );
+            if (!$ok) {
+                $this->flash('error', 'You can only review leave requests for your own class.');
+                return $this->redirect(url($back));
+            }
+        }
+
+        if ($leave['status'] !== 'Pending') {
+            $this->flash('error', 'This leave request has already been ' . strtolower((string) $leave['status']) . '.');
+            return $this->redirect(url($back));
+        }
+
+        $db->query(
+            "UPDATE leave_applications SET status = ?, reviewed_by = ?, reviewed_at = NOW(), updated_at = NOW()
+             WHERE id = ? AND tenant_id = ? AND status = 'Pending'",
+            [$newStatus, $this->authId(), $id, $tenantId]
+        );
+
+        ActivityLog::log('leave_' . strtolower($newStatus), $this->authId(), [
+            'leave_id'   => $id,
+            'student_id' => (int) $leave['student_id'],
+        ]);
+
+        $name = trim(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? ''));
+        $this->flash('success', "Leave request for {$name} " . strtolower($newStatus) . '.');
+        return $this->redirect(url($back));
     }
 }

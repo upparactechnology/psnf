@@ -1,6 +1,25 @@
 <?php
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 session_start();
 date_default_timezone_set('Asia/Kolkata');
+
+// CSRF token for every form on this page
+if (empty($_SESSION['oe_csrf'])) {
+    $_SESSION['oe_csrf'] = bin2hex(random_bytes(32));
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $postedToken = (string) ($_POST['_csrf'] ?? '');
+    if ($postedToken === '' || !hash_equals($_SESSION['oe_csrf'], $postedToken)) {
+        http_response_code(419);
+        die('Session expired. Please <a href="admin.php">reload the page</a> and try again.');
+    }
+}
 
 $config = require __DIR__ . '/config.php';
 
@@ -12,15 +31,14 @@ try {
     ]);
     $pdo->exec("SET time_zone = '+05:30'");
 } catch (PDOException $e) {
-    die("Database Connection Error: " . $e->getMessage());
+    error_log('online_enrollment admin DB error: ' . $e->getMessage());
+    die("Database connection error.");
 }
 
-
-$adminPass = $config['admin_password'] ?? 'admin123';
 $error = '';
 
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
-    unset($_SESSION['enrollment_admin_auth']);
+    unset($_SESSION['enrollment_admin_auth'], $_SESSION['enrollment_admin_user']);
     header('Location: admin.php');
     exit;
 }
@@ -29,16 +47,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
     $identity  = trim($_POST['admin_identity'] ?? '');
     $inputPass = $_POST['admin_password'] ?? '';
 
-    if (!empty($identity)) {
+    // Simple brute-force protection: 5 failures per 15 minutes per session
+    $fails = array_filter((array) ($_SESSION['oe_login_fails'] ?? []), fn($t) => $t > time() - 900);
+    $_SESSION['oe_login_fails'] = $fails;
+
+    if (count($fails) >= 5) {
+        $error = 'Too many attempts. Try again in 15 minutes.';
+    } elseif (!empty($identity) && $inputPass !== '') {
         $authenticated = false;
 
-        // 1. Try querying 'admins' table first
+        // 1. Try querying 'admins' table first (bcrypt hashes only)
         try {
             $stmt = $pdo->prepare("SELECT * FROM admins WHERE (email = :id OR username = :id OR name = :id OR phone = :id) LIMIT 1");
             $stmt->execute([':id' => $identity]);
             $adminUser = $stmt->fetch();
 
-            if ($adminUser && (password_verify($inputPass, $adminUser['password']) || (isset($adminUser['password']) && $adminUser['password'] === md5($inputPass)) || $inputPass === $adminPass)) {
+            if ($adminUser && !empty($adminUser['password']) && password_verify($inputPass, $adminUser['password'])) {
                 $_SESSION['enrollment_admin_auth'] = true;
                 $_SESSION['enrollment_admin_user'] = $adminUser['name'] ?? $adminUser['username'] ?? $identity;
                 $authenticated = true;
@@ -50,11 +74,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
         // 2. Fallback to 'users' table if not authenticated
         if (!$authenticated) {
             try {
-                $stmt = $pdo->prepare("SELECT * FROM users WHERE (email = :id OR name = :id OR phone = :id) LIMIT 1");
+                // Only active ERP administrators / users allowed to manage enrollments
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE (email = :id OR phone = :id) AND is_active = 1 AND deleted_at IS NULL LIMIT 1");
                 $stmt->execute([':id' => $identity]);
                 $user = $stmt->fetch();
 
-                if ($user && (password_verify($inputPass, $user['password']) || $inputPass === $adminPass)) {
+                $allowed = false;
+                if ($user) {
+                    $rs = $pdo->prepare("SELECT 1 FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+                        LEFT JOIN role_permissions rp ON rp.role_id = r.id
+                        LEFT JOIN permissions p ON p.id = rp.permission_id
+                        WHERE ur.user_id = :uid AND (r.slug IN ('super_admin','school_admin') OR p.slug IN ('view_enrollments','approve_enrollments'))
+                        LIMIT 1");
+                    $rs->execute([':uid' => $user['id']]);
+                    $allowed = (bool) $rs->fetchColumn();
+                }
+
+                if ($user && $allowed && !empty($user['password']) && password_verify($inputPass, $user['password'])) {
                     $_SESSION['enrollment_admin_auth'] = true;
                     $_SESSION['enrollment_admin_user'] = $user['name'] ?? $identity;
                     $authenticated = true;
@@ -64,14 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_submit'])) {
             }
         }
 
-        // 3. Fallback to config password
-        if (!$authenticated && $inputPass === $adminPass) {
-            $_SESSION['enrollment_admin_auth'] = true;
-            $_SESSION['enrollment_admin_user'] = 'Admin';
-            $authenticated = true;
-        }
-
-        if (!$authenticated) {
+        if ($authenticated) {
+            session_regenerate_id(true);
+            unset($_SESSION['oe_login_fails']);
+        } else {
+            $_SESSION['oe_login_fails'][] = time();
             $error = 'Invalid Email/Username or Password!';
         }
     } else {
@@ -195,6 +228,7 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
             <?php endif; ?>
 
             <form method="POST" class="space-y-4 text-left">
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars($_SESSION['oe_csrf'], ENT_QUOTES) ?>">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Email / Username</label>
                     <input type="text" name="admin_identity" required placeholder="admin@example.com" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl py-2.5 px-3.5 text-sm focus:border-indigo-500 focus:bg-white outline-none transition-all">
@@ -330,7 +364,8 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                             Edit
                                         </button>
-                                        <form method="POST" action="admin.php?status=<?= e($status) ?>" onsubmit="return confirm('Are you sure you want to delete this student application permanently?');" class="inline">
+                                        <form method="POST" action="admin.php?status=<?= e($status) ?>
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars($_SESSION['oe_csrf'], ENT_QUOTES) ?>">" onsubmit="return confirm('Are you sure you want to delete this student application permanently?');" class="inline">
                                             <input type="hidden" name="action_type" value="delete_enrollment">
                                             <input type="hidden" name="enrollment_id" value="<?= $row['id'] ?>">
                                             <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl font-semibold text-xs transition-all">
@@ -498,7 +533,8 @@ function e($val) { return htmlspecialchars((string)($val ?? ''), ENT_QUOTES, 'UT
                 </button>
             </div>
 
-            <form method="POST" action="admin.php?status=<?= e($status) ?>" class="space-y-5">
+            <form method="POST" action="admin.php?status=<?= e($status) ?>
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars($_SESSION['oe_csrf'], ENT_QUOTES) ?>">" class="space-y-5">
                 <input type="hidden" name="action_type" value="update_enrollment">
                 <input type="hidden" name="enrollment_id" :value="editRecord?.id">
                 <input type="hidden" name="redirect_status" value="<?= e($status) ?>">

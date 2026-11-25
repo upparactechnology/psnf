@@ -749,8 +749,11 @@ class ReportCardController extends Controller
         return $this->view('report-cards/settings', compact('settings'));
     }
 
+    private ?string $lastUploadError = null;
+
     private function handleFileUpload(string $key, ?array $fileInput = null): ?string
     {
+        $this->lastUploadError = null;
         $file = $fileInput ?? ($_FILES[$key] ?? null);
         if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
             return null;
@@ -761,12 +764,13 @@ class ReportCardController extends Controller
             mkdir($targetDir, 0755, true);
         }
         
-        $mimeType = mime_content_type($file['tmp_name']);
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        if (empty($extension)) {
-            $extension = str_replace('image/', '', $mimeType);
+        try {
+            $extension = \App\Services\UploadGuard::check($file, \App\Services\UploadGuard::IMAGES);
+        } catch (\RuntimeException $e) {
+            $this->lastUploadError = $e->getMessage();
+            return null;
         }
-        $filename = 'sig_' . uniqid() . '_' . time() . '.' . $extension;
+        $filename = \App\Services\UploadGuard::storedName($extension, 'sig_');
         $targetPath = $targetDir . '/' . $filename;
         
         if (move_uploaded_file($file['tmp_name'], $targetPath)) {
@@ -806,7 +810,7 @@ class ReportCardController extends Controller
         
         return $this->json([
             'success' => false,
-            'message' => 'Failed to move uploaded file.'
+            'message' => $this->lastUploadError ?? 'Failed to move uploaded file.'
         ]);
     }
 

@@ -43,6 +43,7 @@ ob_start();
                     <th class="p-4">Clock In</th>
                     <th class="p-4">Clock Out</th>
                     <th class="p-4">Working Hours</th>
+                    <th class="p-4">Break</th>
                     <th class="p-4">Method / Device</th>
                     <th class="p-4 text-right">Status</th>
                 </tr>
@@ -50,7 +51,7 @@ ob_start();
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 <?php if (empty($logs)): ?>
                 <tr>
-                    <td colspan="7" class="p-8 text-center text-slate-400 text-xs">No attendance logs recorded for <?= e($date) ?> yet. Click "+ Clock In / Out Entry" to log attendance.</td>
+                    <td colspan="8" class="p-8 text-center text-slate-400 text-xs">No attendance logs recorded for <?= e($date) ?> yet. Click "+ Clock In / Out Entry" to log attendance.</td>
                 </tr>
                 <?php else: ?>
                     <?php foreach ($logs as $l): ?>
@@ -82,9 +83,33 @@ ob_start();
                         </td>
                         <td class="p-4 font-mono text-slate-500">
                             <?= e($l['clock_out'] ?? '--:--') ?>
+                            <?php if (!empty($l['incomplete_log'])): ?><span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold text-[9px] uppercase font-sans" title="Only one scan: no clock-out recorded">no clock-out</span><?php endif; ?>
                         </td>
                         <td class="p-4 font-mono text-indigo-500 font-bold">
                             <?= e($l['working_hours'] ?? '0 hrs 0 mins') ?>
+                        </td>
+                        <td class="p-4 text-2xs">
+                            <?php $b = $l['break'] ?? null; ?>
+                            <?php if ($b && $b['on_break_since']): ?>
+                                <span class="px-2 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400">On break since <?= e($b['on_break_since']) ?></span>
+                            <?php endif; ?>
+                            <?php if ($b && $b['total_break_minutes'] > 0): ?>
+                                <div class="font-mono font-bold <?= $b['exceeded'] ? 'text-red-500' : 'text-slate-600 dark:text-slate-300' ?>">
+                                    <?= (int)$b['total_break_minutes'] ?> min
+                                    <span class="font-normal text-slate-400">/ <?= (int)$b['allowed_minutes'] ?> allowed</span>
+                                </div>
+                                <?php foreach ($b['breaks'] as $br): ?>
+                                    <div class="font-mono text-slate-400"><?= e($br['out']) ?> – <?= e($br['in']) ?> (<?= (int)$br['minutes'] ?>m)</div>
+                                <?php endforeach; ?>
+                                <?php if ($b['exceeded']): ?>
+                                    <span class="inline-block mt-1 px-2 py-0.5 rounded-full font-bold bg-red-500/10 text-red-500 uppercase text-[9px]">Over by <?= (int)$b['exceeded_by'] ?> min</span>
+                                <?php endif; ?>
+                            <?php elseif (!$b || !$b['on_break_since']): ?>
+                                <span class="text-slate-400">—</span>
+                            <?php endif; ?>
+                            <?php if ($b && $b['unmatched']): ?>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-600 uppercase text-[9px]" title="Odd number of scans between clock in and clock out — one break punch has no pair">Unmatched break punch</span>
+                            <?php endif; ?>
                         </td>
                         <td class="p-4">
                             <span class="px-2.5 py-1 rounded-lg text-2xs font-bold border border-indigo-500/30 bg-indigo-500/10 text-indigo-500 inline-flex items-center gap-1.5">
@@ -139,6 +164,10 @@ ob_start();
                         <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Clock Out Time</label>
                         <input type="time" name="clock_out" value="17:00" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono">
                     </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Break Taken (minutes)</label>
+                    <input type="number" name="break_minutes" min="0" placeholder="e.g. 30 (optional)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono">
                 </div>
                 
                 <div class="flex items-center justify-end gap-2 pt-2">

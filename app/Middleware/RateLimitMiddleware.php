@@ -20,7 +20,9 @@ class RateLimitMiddleware
     public function handle(\Core\Request $request): ?string
     {
         $limiter = new RateLimiter($this->maxAttempts, $this->decayMinutes);
-        $key     = RateLimiter::key('route', $request->ip());
+        // Separate bucket per client IP *and* route, so e.g. login attempts and
+        // public form submissions don't consume each other's allowance.
+        $key     = RateLimiter::key('route', $request->ip() . '|' . $request->getMethod() . ' ' . $request->getPath());
 
         if ($limiter->tooManyAttempts($key)) {
             http_response_code(429);

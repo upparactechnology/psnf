@@ -105,7 +105,13 @@ class ReceiptsController extends Controller
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
-            $bgName = bin2hex(random_bytes(16)) . '.' . pathinfo($bgFile['name'], PATHINFO_EXTENSION);
+            try {
+                $bgExt = \App\Services\UploadGuard::check($bgFile, \App\Services\UploadGuard::IMAGES);
+            } catch (\RuntimeException $e) {
+                \Core\Session::flash('error', 'Background image: ' . $e->getMessage());
+                return $this->redirect(url('receipts/settings'));
+            }
+            $bgName = \App\Services\UploadGuard::storedName($bgExt);
             move_uploaded_file($bgFile['tmp_name'], $uploadDir . '/' . $bgName);
         }
 

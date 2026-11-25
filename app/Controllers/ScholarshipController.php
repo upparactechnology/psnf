@@ -51,15 +51,38 @@ class ScholarshipController extends Controller
         $status    = $this->request->input('status', 'active');
         $remarks   = $this->request->input('remarks', '');
 
-        if (!$studentId || !$name || $amount === '') {
+        $name    = trim((string) $name);
+        $remarks = trim((string) $remarks);
+
+        if (!$studentId || $name === '' || $amount === '' || $amount === null) {
             $this->flash('error', 'Student, Scholarship Name, and Amount are required.');
             return $this->redirect(url('scholarships'));
         }
+        if (mb_strlen($name) > 150) {
+            $this->flash('error', 'Scholarship name must be at most 150 characters.');
+            return $this->redirect(url('scholarships'));
+        }
+        if (!in_array($type, ['fixed', 'percentage'], true)) {
+            $this->flash('error', 'Invalid award type.');
+            return $this->redirect(url('scholarships'));
+        }
+        if (!in_array($status, ['active', 'inactive'], true)) {
+            $this->flash('error', 'Invalid award status.');
+            return $this->redirect(url('scholarships'));
+        }
+        if (!is_numeric($amount) || (float) $amount < 0) {
+            $this->flash('error', 'Amount must be a number of 0 or more.');
+            return $this->redirect(url('scholarships'));
+        }
+        if ($type === 'percentage' && (float) $amount > 100) {
+            $this->flash('error', 'A percentage award cannot exceed 100%.');
+            return $this->redirect(url('scholarships'));
+        }
 
-        // Get student context details
+        // Get student context details (must belong to the current tenant)
         $student = $db->selectOne(
-            "SELECT tenant_id, school_id, branch_id FROM students WHERE id = ?",
-            [$studentId]
+            "SELECT tenant_id, school_id, branch_id FROM students WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL",
+            [$studentId, \Core\Database::getTenantId()]
         );
 
         if (!$student) {

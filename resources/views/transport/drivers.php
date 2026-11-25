@@ -35,7 +35,7 @@ ob_start();
             <div class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300 font-mono">
                 <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">License No:</span> <span class="font-bold"><?= e($d['license_number']) ?></span></div>
                 <div class="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span class="text-slate-400">License Expiry:</span> <span class="font-bold text-emerald-500"><?= e($d['license_expiry']) ?></span></div>
-                <div class="flex justify-between py-1"><span class="text-slate-400">Assigned Bus:</span> <span class="font-bold text-indigo-500"><?= e($d['vehicle_number'] ?? 'BUS-01') ?></span></div>
+                <div class="flex justify-between py-1"><span class="text-slate-400">Assigned Bus:</span> <span class="font-bold text-indigo-500"><?= e(!empty($d['vehicle_number']) ? $d['vehicle_number'] : '—') ?></span></div>
             </div>
         </div>
         <?php endforeach; ?>

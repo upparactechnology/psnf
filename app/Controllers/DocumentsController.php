@@ -226,12 +226,17 @@ class DocumentsController extends Controller
         }
 
         $file = $_FILES['file'];
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $storedName = md5(uniqid() . $file['name']) . '.' . $ext;
+        try {
+            $ext = \App\Services\UploadGuard::check($file, \App\Services\UploadGuard::DOCUMENTS);
+        } catch (\RuntimeException $e) {
+            $this->redirect(url('documents/student-documents?student_id=' . $studentId . '&error=' . urlencode($e->getMessage())));
+            return;
+        }
+        $storedName = \App\Services\UploadGuard::storedName($ext);
         
         $uploadDir = STORAGE_PATH . '/uploads/documents/';
         if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+            mkdir($uploadDir, 0755, true);
         }
 
         if (move_uploaded_file($file['tmp_name'], $uploadDir . $storedName)) {

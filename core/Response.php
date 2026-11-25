@@ -32,7 +32,17 @@ class Response
 
     public function redirect(string $url, int $statusCode = 302): string
     {
-        if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://') && !str_starts_with($url, '//')) {
+        // Strip header-injection characters
+        $url = str_replace(["\r", "\n", "\0"], '', $url);
+
+        if (preg_match('#^(https?:)?//#i', $url) || str_starts_with($url, '\\') || str_starts_with($url, '/\\')) {
+            // Absolute / protocol-relative URL: only allow our own host (prevents open redirects)
+            $targetHost = strtolower((string) parse_url(str_replace('\\', '/', $url), PHP_URL_HOST));
+            $ownHost    = strtolower((string) parse_url('http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'), PHP_URL_HOST));
+            if ($targetHost === '' || $targetHost !== $ownHost) {
+                $url = function_exists('url') ? url('/') : '/';
+            }
+        } else {
             $url = function_exists('url') ? url($url) : $url;
         }
         // Flush session before redirect so flash messages persist

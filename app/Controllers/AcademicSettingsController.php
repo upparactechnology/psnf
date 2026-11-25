@@ -76,7 +76,7 @@ class AcademicSettingsController extends Controller
         $students = $db->select("SELECT id, first_name, last_name, admission_number, class, section FROM students WHERE tenant_id = ? AND deleted_at IS NULL ORDER BY first_name ASC", [$tenantId]);
         $subjects = $db->select("SELECT * FROM subjects WHERE tenant_id = ? ORDER BY name ASC", [$tenantId]);
 
-        $shift = $db->selectOne("SELECT lec_grace_minutes FROM shift_templates WHERE id = 1");
+        $shift = \App\Services\ShiftSettings::current($tenantId); // same policy row Staff Settings / payroll use
         $lecGraceMinutes = $shift['lec_grace_minutes'] ?? 5;
 
         // Selected year info for calendar
@@ -140,9 +140,16 @@ class AcademicSettingsController extends Controller
         $db = $this->db();
         $lecGraceMinutes = (int) $this->request->input('lec_grace_minutes', 5);
 
-        $db->update('shift_templates', [
-            'lec_grace_minutes' => $lecGraceMinutes
-        ], 'id = 1');
+        $shiftRow = \App\Services\ShiftSettings::current(\Core\Database::getTenantId());
+        if (!empty($shiftRow['id'])) {
+            $db->update('shift_templates', [
+                'lec_grace_minutes' => $lecGraceMinutes
+            ], 'id = ?', [(int) $shiftRow['id']]);
+            \App\Services\ShiftSettings::flush();
+        } else {
+            Session::flash('error', 'No shift template found. Save Staff Settings first.');
+            return $this->redirect(url('academics/settings?tab=lock'));
+        }
 
         Session::flash('success', 'Lecture-wise attendance settings updated.');
         return $this->redirect(url('academics/settings?tab=lock'));
@@ -196,7 +203,7 @@ class AcademicSettingsController extends Controller
 
                 // 2. Copy Shift Template (staff settings)
                 $shift = $db->selectOne("SELECT * FROM shift_templates WHERE tenant_id = ? AND academic_year_id = ? ORDER BY id DESC LIMIT 1", [$tenantId, (int)$sourceYear['id']]);
-                if (!$shift) $shift = $db->selectOne("SELECT * FROM shift_templates WHERE id = 1");
+                if (!$shift) { $cur = \App\Services\ShiftSettings::current($tenantId); $shift = !empty($cur['id']) ? $db->selectOne("SELECT * FROM shift_templates WHERE id = ?", [(int) $cur['id']]) : false; }
                 if ($shift) {
                     $shiftData = $shift;
                     unset($shiftData['id']);

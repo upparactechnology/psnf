@@ -6,426 +6,309 @@ namespace App\Controllers;
 
 use Core\Controller;
 use Core\Application;
+use Core\Session;
 
 class EnrollmentAdminController extends Controller
 {
-    public function index(): void
+    public function index(): string
     {
         $db = Application::$app->db;
-        $status = $_GET['status'] ?? 'pending';
+        $status = (string)($_GET['status'] ?? 'pending');
+        if (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+            $status = 'pending';
+        }
 
-        $enrollments = $db->query(
-            "SELECT * FROM online_enrollments WHERE status = :status ORDER BY created_at DESC",
-            ['status' => $status]
+        $enrollments = $db->select(
+            "SELECT * FROM online_enrollments WHERE status = ? ORDER BY created_at DESC",
+            [$status]
         );
 
-        $this->render('students/pending_enrollments', [
-            'enrollments' => $enrollments,
-            'currentStatus' => $status
+        return $this->render('students/pending_enrollments', [
+            'enrollments'   => $enrollments,
+            'currentStatus' => $status,
         ]);
     }
 
-    public function show(string $id): void
+    public function show(string $id): string
     {
         $db = Application::$app->db;
-        $enrollment = $db->query("SELECT * FROM online_enrollments WHERE id = :id", ['id' => $id])[0] ?? null;
+        $enrollment = $db->selectOne("SELECT * FROM online_enrollments WHERE id = ?", [(int)$id]);
 
         if (!$enrollment) {
-            $this->redirect(url('students/enrollments'));
-            return;
+            Session::flash('error', 'Enrollment record not found.');
+            return $this->redirect(url('students/enrollments'));
         }
 
-        $schools = $db->query("SELECT * FROM schools WHERE status = 'active' ORDER BY name ASC");
-        $branches = $db->query("SELECT * FROM branches WHERE status = 'active' ORDER BY name ASC");
+        $tenantId = \Core\Database::getTenantId();
+        $schools  = $db->select("SELECT * FROM schools WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL ORDER BY name ASC", [$tenantId]);
+        $branches = $db->select("SELECT * FROM branches WHERE tenant_id = ? AND is_active = 1 AND deleted_at IS NULL ORDER BY name ASC", [$tenantId]);
 
-        $this->render('students/show_enrollment', [
+        return $this->render('students/show_enrollment', [
             'enrollment' => $enrollment,
             'schools'    => $schools,
-            'branches'   => $branches
+            'branches'   => $branches,
         ]);
     }
 
-    public function approve(string $id): void
+    public function approve(string $id): string
     {
-        $db = Application::$app->db;
-        $enrollment = $db->query("SELECT * FROM online_enrollments WHERE id = :id AND status = 'pending'", ['id' => $id])[0] ?? null;
-
-        if (!$enrollment) {
-            \Core\Session::setFlash('errors', ['enrollment' => 'Enrollment record not found or already processed.']);
-            $this->redirect(url('students/enrollments'));
-            return;
-        }
-
-        $schoolId = $_POST['school_id'] ?? null;
-        $branchId = $_POST['branch_id'] ?? null;
+        $schoolId = (int)($_POST['school_id'] ?? 0);
+        $branchId = (int)($_POST['branch_id'] ?? 0);
 
         if (!$schoolId || !$branchId) {
-            \Core\Session::setFlash('errors', ['school_id' => 'Please select School and Branch before approving.']);
-            $this->redirect(url('students/enrollments/' . $id));
-            return;
+            Session::flash('error', 'Please select School and Branch before approving.');
+            return $this->redirect(url('students/enrollments/' . (int)$id));
         }
 
-        $user = \auth();
-        $tenantId = $user['tenant_id'] ?? 1;
-
-        // Split Full Name into First, Middle, Last
-        $nameParts = explode(' ', trim($enrollment['student_full_name']));
-        $firstName = array_shift($nameParts) ?: 'Student';
-        $lastName  = array_pop($nameParts) ?: '';
-        $middleName = implode(' ', $nameParts);
-
-        // Generate Admission Number
-        $admissionNo = 'ADM-' . date('Y') . '-' . rand(1000, 9999);
-        $uuid = \str_uuid();
-
-        // 1. Insert into `students` table
-        $db->query("INSERT INTO students (
-            uuid, tenant_id, school_id, branch_id, admission_number, first_name, middle_name, last_name,
-            gender, dob, photo, aadhar_number, address, created_at
-        ) VALUES (
-            :uuid, :tenant_id, :school_id, :branch_id, :adm, :fname, :mname, :lname,
-            :gender, :dob, :photo, :aadhar, :address, NOW()
-        )", [
-            'uuid'       => $uuid,
-            'tenant_id'  => $tenantId,
-            'school_id'  => $schoolId,
-            'branch_id'  => $branchId,
-            'adm'        => $admissionNo,
-            'fname'      => $firstName,
-            'mname'      => $middleName,
-            'lname'      => $lastName,
-            'gender'     => $enrollment['gender'],
-            'dob'        => $enrollment['dob'],
-            'photo'      => $enrollment['student_photo'],
-            'aadhar'     => $enrollment['student_aadhar'],
-            'address'    => $enrollment['address']
-        ]);
-
-        $studentId = $db->getLastInsertId();
-
-        // 2. Insert Father Guardian
-        if (!empty($enrollment['father_name'])) {
-            $db->query("INSERT INTO guardians (
-                tenant_id, name, relationship, phone, aadhar, photo, created_at
-            ) VALUES (
-                :tenant_id, :name, 'Father', :phone, :aadhar, :photo, NOW()
-            )", [
-                'tenant_id'  => $tenantId,
-                'name'       => $enrollment['father_name'],
-                'phone'      => $enrollment['father_phone'],
-                'aadhar'     => $enrollment['father_aadhar'],
-                'photo'      => $enrollment['father_photo']
-            ]);
-            $guardianId = $db->getLastInsertId();
-            $db->insert('guardian_student', [
-                'guardian_id' => $guardianId,
-                'student_id' => $studentId,
-                'is_primary' => 1,
-                'can_pickup' => 1,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
+        try {
+            $result = $this->importEnrollment((int)$id, $schoolId, $branchId, false);
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Failed to approve application: ' . $e->getMessage());
+            return $this->redirect(url('students/enrollments/' . (int)$id));
         }
 
-        // 3. Insert Mother Guardian
-        if (!empty($enrollment['mother_name'])) {
-            $db->query("INSERT INTO guardians (
-                tenant_id, name, relationship, phone, aadhar, photo, created_at
-            ) VALUES (
-                :tenant_id, :name, 'Mother', :phone, :aadhar, :photo, NOW()
-            )", [
-                'tenant_id'  => $tenantId,
-                'name'       => $enrollment['mother_name'],
-                'phone'      => $enrollment['mother_phone'],
-                'aadhar'     => $enrollment['mother_aadhar'],
-                'photo'      => $enrollment['mother_photo']
-            ]);
-            $guardianId = $db->getLastInsertId();
-            $db->insert('guardian_student', [
-                'guardian_id' => $guardianId,
-                'student_id' => $studentId,
-                'is_primary' => 0,
-                'can_pickup' => 1,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
+        if ($result === null) {
+            Session::flash('error', 'Enrollment record not found or already processed.');
+            return $this->redirect(url('students/enrollments'));
         }
 
-        // 4. Insert Pickup Persons & Emergency Contacts
-        $pickups = json_decode($enrollment['pickup_persons_json'] ?? '[]', true);
-        if (is_array($pickups)) {
-            foreach ($pickups as $p) {
-                $db->query("INSERT INTO guardians (
-                    tenant_id, name, relationship, phone, email, address, photo, created_at
-                ) VALUES (
-                    :tenant_id, :name, :relation, :phone, :email, :address, :photo, NOW()
-                )", [
-                    'tenant_id'  => $tenantId,
-                    'name'       => $p['name'],
-                    'relation'   => $p['relationship'] ?: 'Pickup Person',
-                    'phone'      => $p['phone'] ?: null,
-                    'email'      => $p['email'] ?: null,
-                    'address'    => $p['address'] ?: null,
-                    'photo'      => $p['photo'] ?: null
-                ]);
-                $pickupGuardianId = $db->getLastInsertId();
-
-                $db->insert('guardian_student', [
-                    'guardian_id' => $pickupGuardianId,
-                    'student_id'  => $studentId,
-                    'is_primary'  => 0,
-                    'can_pickup'  => 1,
-                    'created_at'  => date('Y-m-d H:i:s')
-                ]);
-
-                if (!empty($p['is_emergency'])) {
-                    $db->query("INSERT INTO emergency_contacts (
-                        student_id, name, relationship, phone, address, created_at
-                    ) VALUES (
-                        :student_id, :name, :relation, :phone, :address, NOW()
-                    )", [
-                        'student_id' => $studentId,
-                        'name'       => $p['name'],
-                        'relation'   => $p['relationship'] ?: 'Guardian',
-                        'phone'      => $p['phone'] ?: '',
-                        'address'    => $p['address'] ?: null
-                    ]);
-                }
-            }
-        }
-
-        // 5. Attach Aadhar Documents to `student_documents`
-        if (!empty($enrollment['father_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Father Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
-                's' => $studentId, 'name' => $enrollment['father_aadhar_doc'], 'user' => $user['id'] ?? null
-            ]);
-        }
-        if (!empty($enrollment['mother_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Mother Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
-                's' => $studentId, 'name' => $enrollment['mother_aadhar_doc'], 'user' => $user['id'] ?? null
-            ]);
-        }
-        if (!empty($enrollment['student_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Student Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
-                's' => $studentId, 'name' => $enrollment['student_aadhar_doc'], 'user' => $user['id'] ?? null
-            ]);
-        }
-
-        // 6. Mark enrollment as Approved
-        $db->query("UPDATE online_enrollments SET status = 'approved', processed_by = :user, processed_at = NOW() WHERE id = :id", [
-            'user' => $user['id'] ?? null,
-            'id'   => $id
-        ]);
-
-        \Core\Session::setFlash('success', 'Student online application approved and imported into system successfully!');
-        $this->redirect(url('students/' . $studentId));
+        Session::flash('success', 'Student online application approved and imported into system successfully! Admission No: ' . $result['admission_number']);
+        return $this->redirect(url('academics/students/' . $result['student_id']));
     }
 
-    public function quickEnroll(string $id): void
+    public function quickEnroll(string $id): string
     {
-        $db = Application::$app->db;
-        $enrollment = $db->selectOne("SELECT * FROM online_enrollments WHERE id = :id AND status = 'pending'", ['id' => $id]);
-
-        if (!$enrollment) {
-            if ($this->request->isAjax()) {
-                http_response_code(404);
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Enrollment record not found or already processed.']);
-                exit;
-            }
-            \Core\Session::setFlash('errors', ['enrollment' => 'Enrollment record not found or already processed.']);
-            $this->redirect(url('academics/students'));
-            return;
-        }
-
-        $schoolId = $_POST['school_id'] ?? null;
-        $branchId = $_POST['branch_id'] ?? null;
+        $isAjax   = $this->request->isAjax();
+        $schoolId = (int)($_POST['school_id'] ?? 0);
+        $branchId = (int)($_POST['branch_id'] ?? 0);
 
         if (!$schoolId || !$branchId) {
-            if ($this->request->isAjax()) {
-                http_response_code(422);
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Please select School and Branch before enrolling.']);
-                exit;
+            $msg = 'Please select School and Branch before enrolling.';
+            if ($isAjax) {
+                return $this->json(['success' => false, 'message' => $msg], 422);
             }
-            \Core\Session::setFlash('errors', ['school_id' => 'Please select School and Branch before enrolling.']);
-            $this->redirect(url('academics/students'));
-            return;
+            Session::flash('error', $msg);
+            return $this->redirect(url('academics/students'));
         }
 
-        $user = \auth();
-        $tenantId = $user['tenant_id'] ?? 1;
-
-        // Split Full Name into First, Middle, Last
-        $nameParts = explode(' ', trim($enrollment['student_full_name']));
-        $firstName = array_shift($nameParts) ?: 'Student';
-        $lastName  = array_pop($nameParts) ?: '';
-        $middleName = implode(' ', $nameParts);
-
-        // Generate Admission Number
-        $admissionNo = 'ADM-' . date('Y') . '-' . rand(1000, 9999);
-        $uuid = \str_uuid();
-
-        // 1. Insert into `students` table
-        $db->query("INSERT INTO students (
-            uuid, tenant_id, school_id, branch_id, admission_number, first_name, middle_name, last_name,
-            gender, dob, photo, aadhar_number, address, admission_status, created_at
-        ) VALUES (
-            :uuid, :tenant_id, :school_id, :branch_id, :adm, :fname, :mname, :lname,
-            :gender, :dob, :photo, :aadhar, :address, 'enrolled', NOW()
-        )", [
-            'uuid'       => $uuid,
-            'tenant_id'  => $tenantId,
-            'school_id'  => $schoolId,
-            'branch_id'  => $branchId,
-            'adm'        => $admissionNo,
-            'fname'      => $firstName,
-            'mname'      => $middleName,
-            'lname'      => $lastName,
-            'gender'     => $enrollment['gender'],
-            'dob'        => $enrollment['dob'],
-            'photo'      => $enrollment['student_photo'],
-            'aadhar'     => $enrollment['student_aadhar'],
-            'address'    => $enrollment['address']
-        ]);
-
-        $studentId = $db->getLastInsertId();
-
-        // 2. Insert Father Guardian
-        if (!empty($enrollment['father_name'])) {
-            $db->query("INSERT INTO guardians (
-                tenant_id, name, relationship, phone, aadhar, photo, created_at
-            ) VALUES (
-                :tenant_id, :name, 'Father', :phone, :aadhar, :photo, NOW()
-            )", [
-                'tenant_id'  => $tenantId,
-                'name'       => $enrollment['father_name'],
-                'phone'      => $enrollment['father_phone'],
-                'aadhar'     => $enrollment['father_aadhar'],
-                'photo'      => $enrollment['father_photo']
-            ]);
-            $guardianId = $db->getLastInsertId();
-            $db->insert('guardian_student', [
-                'guardian_id' => $guardianId,
-                'student_id' => $studentId,
-                'is_primary' => 1,
-                'can_pickup' => 1,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
-        }
-
-        // 3. Insert Mother Guardian
-        if (!empty($enrollment['mother_name'])) {
-            $db->query("INSERT INTO guardians (
-                tenant_id, name, relationship, phone, aadhar, photo, created_at
-            ) VALUES (
-                :tenant_id, :name, 'Mother', :phone, :aadhar, :photo, NOW()
-            )", [
-                'tenant_id'  => $tenantId,
-                'name'       => $enrollment['mother_name'],
-                'phone'      => $enrollment['mother_phone'],
-                'aadhar'     => $enrollment['mother_aadhar'],
-                'photo'      => $enrollment['mother_photo']
-            ]);
-            $guardianId = $db->getLastInsertId();
-            $db->insert('guardian_student', [
-                'guardian_id' => $guardianId,
-                'student_id' => $studentId,
-                'is_primary' => 0,
-                'can_pickup' => 1,
-                'created_at' => date('Y-m-d H:i:s')
-            ]);
-        }
-
-        // 4. Insert Pickup Persons & Emergency Contacts
-        $pickups = json_decode($enrollment['pickup_persons_json'] ?? '[]', true);
-        if (is_array($pickups)) {
-            foreach ($pickups as $p) {
-                $db->query("INSERT INTO guardians (
-                    tenant_id, name, relationship, phone, email, address, photo, created_at
-                ) VALUES (
-                    :tenant_id, :name, :relation, :phone, :email, :address, :photo, NOW()
-                )", [
-                    'tenant_id'  => $tenantId,
-                    'name'       => $p['name'],
-                    'relation'   => $p['relationship'] ?: 'Pickup Person',
-                    'phone'      => $p['phone'] ?: null,
-                    'email'      => $p['email'] ?: null,
-                    'address'    => $p['address'] ?: null,
-                    'photo'      => $p['photo'] ?: null
-                ]);
-                $pickupGuardianId = $db->getLastInsertId();
-
-                $db->insert('guardian_student', [
-                    'guardian_id' => $pickupGuardianId,
-                    'student_id'  => $studentId,
-                    'is_primary'  => 0,
-                    'can_pickup'  => 1,
-                    'created_at'  => date('Y-m-d H:i:s')
-                ]);
-
-                if (!empty($p['is_emergency'])) {
-                    $db->query("INSERT INTO emergency_contacts (
-                        student_id, name, relationship, phone, address, created_at
-                    ) VALUES (
-                        :student_id, :name, :relation, :phone, :address, NOW()
-                    )", [
-                        'student_id' => $studentId,
-                        'name'       => $p['name'],
-                        'relation'   => $p['relationship'] ?: 'Guardian',
-                        'phone'      => $p['phone'] ?: '',
-                        'address'    => $p['address'] ?: null
-                    ]);
-                }
+        try {
+            $result = $this->importEnrollment((int)$id, $schoolId, $branchId, true);
+        } catch (\Throwable $e) {
+            if ($isAjax) {
+                return $this->json(['success' => false, 'message' => 'Enrollment failed: ' . $e->getMessage()], 500);
             }
+            Session::flash('error', 'Enrollment failed: ' . $e->getMessage());
+            return $this->redirect(url('academics/students'));
         }
 
-        // 5. Attach Aadhar Documents
-        if (!empty($enrollment['father_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Father Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
-                's' => $studentId, 'name' => $enrollment['father_aadhar_doc'], 'user' => $user['id'] ?? null
-            ]);
-        }
-        if (!empty($enrollment['mother_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Mother Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
-                's' => $studentId, 'name' => $enrollment['mother_aadhar_doc'], 'user' => $user['id'] ?? null
-            ]);
-        }
-        if (!empty($enrollment['student_aadhar_doc'])) {
-            $db->query("INSERT INTO student_documents (student_id, type, title, file_name, stored_name, mime_type, file_size, status, created_by, created_at) VALUES (:s, 'aadhar', 'Student Aadhar Card', :name, :name, 'application/octet-stream', 0, 'verified', :user, NOW())", [
-                's' => $studentId, 'name' => $enrollment['student_aadhar_doc'], 'user' => $user['id'] ?? null
-            ]);
+        if ($result === null) {
+            $msg = 'Enrollment record not found or already processed.';
+            if ($isAjax) {
+                return $this->json(['success' => false, 'message' => $msg], 404);
+            }
+            Session::flash('error', $msg);
+            return $this->redirect(url('academics/students'));
         }
 
-        // 6. Mark enrollment as Approved + processed
-        $db->query("UPDATE online_enrollments SET status = 'approved', processed_by = :user, processed_at = NOW() WHERE id = :id", [
-            'user' => $user['id'] ?? null,
-            'id'   => $id
-        ]);
+        Session::flash('success', 'Student enrolled successfully! Admission No: ' . $result['admission_number']);
 
-        \Core\Session::setFlash('success', 'Student enrolled successfully! Admission No: ' . $admissionNo);
-
-        if ($this->request->isAjax()) {
-            http_response_code(200);
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'student_id' => $studentId, 'admission_no' => $admissionNo]);
-            exit;
+        if ($isAjax) {
+            return $this->json(['success' => true, 'student_id' => $result['student_id'], 'admission_no' => $result['admission_number']]);
         }
 
-        $this->redirect(url('academics/students/' . $studentId));
+        return $this->redirect(url('academics/students/' . $result['student_id']));
     }
 
-    public function reject(string $id): void
+    public function reject(string $id): string
     {
         $db = Application::$app->db;
         $user = \auth();
-        $notes = $_POST['admin_notes'] ?? 'Application rejected by school admin.';
+        $notes = trim((string)($_POST['admin_notes'] ?? '')) ?: 'Application rejected by school admin.';
 
-        $db->query("UPDATE online_enrollments SET status = 'rejected', admin_notes = :notes, processed_by = :user, processed_at = NOW() WHERE id = :id", [
-            'notes' => $notes,
-            'user'  => $user['id'] ?? null,
-            'id'    => $id
-        ]);
+        $affected = $db->query(
+            "UPDATE online_enrollments SET status = 'rejected', admin_notes = ?, processed_by = ?, processed_at = NOW() WHERE id = ? AND status = 'pending'",
+            [$notes, $user['id'] ?? null, (int)$id]
+        )->rowCount();
 
-        \Core\Session::setFlash('success', 'Application rejected.');
-        $this->redirect(url('students/enrollments'));
+        if ($affected > 0) {
+            Session::flash('success', 'Application rejected.');
+        } else {
+            Session::flash('error', 'Enrollment record not found or already processed.');
+        }
+        return $this->redirect(url('students/enrollments'));
+    }
+
+    /**
+     * Import a pending online enrollment as a student (plus guardians, pickup persons and
+     * documents) in ONE transaction. The enrollment row is locked with SELECT ... FOR UPDATE
+     * and re-checked for status = 'pending', so double clicks / concurrent approvals cannot
+     * create duplicate students.
+     *
+     * @return array{student_id:int, admission_number:string}|null  null when not pending
+     */
+    private function importEnrollment(int $id, int $schoolId, int $branchId, bool $enrolled): ?array
+    {
+        $db = Application::$app->db;
+        $user = \auth();
+        $tenantId = (int)($user['tenant_id'] ?? \Core\Database::getTenantId() ?? 1);
+
+        // School/branch must belong to the admin's tenant
+        $okBranch = $db->selectOne(
+            "SELECT b.id FROM branches b JOIN schools s ON s.id = b.school_id
+             WHERE b.id = ? AND s.id = ? AND s.tenant_id = ? LIMIT 1",
+            [$branchId, $schoolId, $tenantId]
+        );
+        if (!$okBranch) {
+            throw new \RuntimeException('Selected school/branch is not valid.');
+        }
+
+        return $db->transaction(function ($db) use ($id, $schoolId, $branchId, $enrolled, $user, $tenantId) {
+            $enrollment = $db->selectOne("SELECT * FROM online_enrollments WHERE id = ? FOR UPDATE", [$id]);
+            if (!$enrollment || ($enrollment['status'] ?? '') !== 'pending') {
+                return null;
+            }
+
+            // Split Full Name into First, Middle, Last
+            $nameParts  = preg_split('/\s+/', trim((string)$enrollment['student_full_name']));
+            $firstName  = array_shift($nameParts) ?: 'Student';
+            $lastName   = array_pop($nameParts) ?: '';
+            $middleName = implode(' ', $nameParts);
+
+            $studentRow = [
+                'uuid'          => \str_uuid(),
+                'tenant_id'     => $tenantId,
+                'school_id'     => $schoolId,
+                'branch_id'     => $branchId,
+                'first_name'    => $firstName,
+                'middle_name'   => $middleName,
+                'last_name'     => $lastName,
+                'gender'        => $enrollment['gender'],
+                'dob'           => $enrollment['dob'],
+                'photo'         => $enrollment['student_photo'],
+                'aadhar_number' => $enrollment['student_aadhar'],
+                'address'       => $enrollment['address'],
+                'created_by'    => $user['id'] ?? null,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ];
+            if ($enrolled) {
+                $studentRow['admission_status'] = 'enrolled';
+            }
+
+            // 1. Insert student with a sequential, unique admission number (retry on collision)
+            $studentId = 0;
+            $admissionNo = '';
+            for ($attempt = 0; $attempt < 5; $attempt++) {
+                $admissionNo = $this->nextAdmissionNumber($db);
+                try {
+                    $studentId = (int)$db->insert('students', $studentRow + ['admission_number' => $admissionNo]);
+                    break;
+                } catch (\PDOException $e) {
+                    if (($e->errorInfo[1] ?? 0) !== 1062 || $attempt === 4) {
+                        throw $e;
+                    }
+                }
+            }
+
+            // 2/3. Father & Mother
+            $isPrimary = 1;
+            foreach ([['father', 'Father'], ['mother', 'Mother']] as [$key, $relation]) {
+                if (empty($enrollment[$key . '_name'])) {
+                    continue;
+                }
+                $guardianId = (int)$db->insert('guardians', [
+                    'tenant_id'    => $tenantId,
+                    'name'         => $enrollment[$key . '_name'],
+                    'relationship' => $relation,
+                    'phone'        => (string)($enrollment[$key . '_phone'] ?? ''),
+                    'aadhar'       => $enrollment[$key . '_aadhar'] ?: null,
+                    'photo'        => $enrollment[$key . '_photo'] ?: null,
+                    'created_at'   => date('Y-m-d H:i:s'),
+                ]);
+                $db->query(
+                    "INSERT IGNORE INTO guardian_student (guardian_id, student_id, is_primary, can_pickup, created_at) VALUES (?, ?, ?, 1, NOW())",
+                    [$guardianId, $studentId, $isPrimary]
+                );
+                $isPrimary = 0;
+            }
+
+            // 4. Pickup persons & emergency contacts
+            $pickups = json_decode((string)($enrollment['pickup_persons_json'] ?? '[]'), true);
+            if (is_array($pickups)) {
+                foreach ($pickups as $p) {
+                    if (!is_array($p) || empty($p['name'])) {
+                        continue;
+                    }
+                    $pickupGuardianId = (int)$db->insert('guardians', [
+                        'tenant_id'    => $tenantId,
+                        'name'         => $p['name'],
+                        'relationship' => ($p['relationship'] ?? '') ?: 'Pickup Person',
+                        'phone'        => (string)($p['phone'] ?? ''),
+                        'email'        => ($p['email'] ?? '') ?: null,
+                        'address'      => ($p['address'] ?? '') ?: null,
+                        'photo'        => ($p['photo'] ?? '') ?: null,
+                        'created_at'   => date('Y-m-d H:i:s'),
+                    ]);
+                    $db->query(
+                        "INSERT IGNORE INTO guardian_student (guardian_id, student_id, is_primary, can_pickup, created_at) VALUES (?, ?, 0, 1, NOW())",
+                        [$pickupGuardianId, $studentId]
+                    );
+
+                    if (!empty($p['is_emergency'])) {
+                        $db->insert('emergency_contacts', [
+                            'student_id'   => $studentId,
+                            'name'         => $p['name'],
+                            'relationship' => ($p['relationship'] ?? '') ?: 'Guardian',
+                            'phone'        => (string)($p['phone'] ?? ''),
+                            'address'      => ($p['address'] ?? '') ?: null,
+                            'created_at'   => date('Y-m-d H:i:s'),
+                        ]);
+                    }
+                }
+            }
+
+            // 5. Attach Aadhar documents
+            foreach ([
+                'father_aadhar_doc'  => 'Father Aadhar Card',
+                'mother_aadhar_doc'  => 'Mother Aadhar Card',
+                'student_aadhar_doc' => 'Student Aadhar Card',
+            ] as $col => $title) {
+                if (empty($enrollment[$col])) {
+                    continue;
+                }
+                $db->insert('student_documents', [
+                    'student_id'  => $studentId,
+                    'type'        => 'aadhar',
+                    'title'       => $title,
+                    'file_name'   => $enrollment[$col],
+                    'stored_name' => $enrollment[$col],
+                    'mime_type'   => 'application/octet-stream',
+                    'file_size'   => 0,
+                    'status'      => 'verified',
+                    'created_by'  => $user['id'] ?? null,
+                    'created_at'  => date('Y-m-d H:i:s'),
+                ]);
+            }
+
+            // 6. Mark enrollment as approved
+            $db->query(
+                "UPDATE online_enrollments SET status = 'approved', processed_by = ?, processed_at = NOW() WHERE id = ?",
+                [$user['id'] ?? null, $id]
+            );
+
+            return ['student_id' => $studentId, 'admission_number' => $admissionNo];
+        });
+    }
+
+    /** Next sequential admission number: ADM-<year>-<0001…>. */
+    private function nextAdmissionNumber($db): string
+    {
+        $prefix = 'ADM-' . date('Y') . '-';
+        $row = $db->selectOne(
+            "SELECT MAX(CAST(SUBSTRING(admission_number, ?) AS UNSIGNED)) AS mx
+             FROM students WHERE admission_number LIKE ? AND admission_number REGEXP ?",
+            [strlen($prefix) + 1, $prefix . '%', '^' . $prefix . '[0-9]+$']
+        );
+        $next = (int)($row['mx'] ?? 0) + 1;
+        return $prefix . str_pad((string)$next, 4, '0', STR_PAD_LEFT);
     }
 }

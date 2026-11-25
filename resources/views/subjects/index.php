@@ -236,7 +236,7 @@ function subjectsApp() {
                 <input type="hidden" name="_add_next" :value="addNext ? '1' : '0'" x-ref="addNextField">
                 <div>
                     <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Subject Code</label>
-                    <input type="text" name="code" value="<?= e($nextCode ?? 'SUB-101') ?>" placeholder="e.g. SUB-106" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white">
+                    <input type="text" name="code" value="<?= e($nextCode ?? '') ?>" placeholder="e.g. SUB-106" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Subject Name</label>

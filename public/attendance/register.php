@@ -1,6 +1,13 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_name('PSNF_SESSION');
+    session_set_cookie_params([
+        'lifetime' => 86400,
+        'path'     => '/',
+        'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
@@ -15,18 +22,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit();
     }
 
+    // Simple rate limit, consistent with the main login (5 attempts / 15 minutes),
+    // tracked per session and per IP+email in the shared rate_limits table.
+    $maxAttempts = 5;
+    $lockSeconds = 15 * 60;
+    $now = time();
+    $sessFails = array_filter((array) ($_SESSION['face_reg_login_fails'] ?? []), fn($t) => $t > $now - $lockSeconds);
+    $_SESSION['face_reg_login_fails'] = $sessFails;
+    if (count($sessFails) >= $maxAttempts) {
+        echo json_encode(['success' => false, 'message' => 'Too many attempts. Try again in 15 minutes.']);
+        exit();
+    }
+
     try {
         $pdo = new PDO("mysql:host=127.0.0.1;dbname=psnf_drm;charset=utf8mb4", "root", "", [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
         ]);
+
+        $rlKey = 'login:' . sha1(($_SERVER['REMOTE_ADDR'] ?? '') . $email);
+        $pdo->prepare("DELETE FROM rate_limits WHERE `key` = ? AND expires_at < NOW()")->execute([$rlKey]);
+        $rlStmt = $pdo->prepare("SELECT attempts FROM rate_limits WHERE `key` = ? LIMIT 1");
+        $rlStmt->execute([$rlKey]);
+        if ((int) ($rlStmt->fetchColumn() ?: 0) >= $maxAttempts) {
+            echo json_encode(['success' => false, 'message' => 'Too many attempts. Try again in 15 minutes.']);
+            exit();
+        }
         
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user['password'])) {
-            unset($user['password']);
+        $valid = $user && password_verify($password, $user['password']);
+        if ($valid && (int) $user['is_active'] !== 1) {
+            echo json_encode(['success' => false, 'message' => 'Account is inactive. Contact administrator.']);
+            exit();
+        }
+        if ($valid && !empty($user['locked_until']) && strtotime($user['locked_until']) > $now) {
+            echo json_encode(['success' => false, 'message' => 'Account is locked. Contact administrator.']);
+            exit();
+        }
+
+        if ($valid) {
+            unset($user['password'], $user['remember_token'], $user['two_factor_secret']);
+            $pdo->prepare("DELETE FROM rate_limits WHERE `key` = ?")->execute([$rlKey]);
+            unset($_SESSION['face_reg_login_fails']);
+            session_regenerate_id(true);   // prevent session fixation
+            unset($_SESSION['csrf_token']);
+            $_SESSION['login_at'] = $now;
+            $_SESSION['_last_activity'] = $now;
             $_SESSION['user'] = $user;
             $_SESSION['admin_id'] = $user['id'];
             $_SESSION['admin_name'] = $user['name'] ?? 'Admin';
@@ -34,10 +78,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $_SESSION['face_reg_user'] = $user['name'] ?? 'Admin';
             echo json_encode(['success' => true, 'message' => 'Authentication successful!', 'userName' => $user['name']]);
         } else {
+            $_SESSION['face_reg_login_fails'][] = $now;
+            $upd = $pdo->prepare("UPDATE rate_limits SET attempts = attempts + 1, updated_at = NOW() WHERE `key` = ?");
+            $upd->execute([$rlKey]);
+            if ($upd->rowCount() === 0) {
+                $pdo->prepare("INSERT INTO rate_limits (`key`, attempts, expires_at, created_at, updated_at) VALUES (?, 1, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NOW(), NOW())")->execute([$rlKey]);
+            }
             echo json_encode(['success' => false, 'message' => 'Invalid email or password.']);
         }
     } catch (\Throwable $e) {
-        echo json_encode(['success' => false, 'message' => 'Database authentication error: ' . $e->getMessage()]);
+        error_log('Face registration login error: ' . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Authentication error. Please try again.']);
     }
     exit();
 }

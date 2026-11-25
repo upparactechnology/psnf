@@ -3,16 +3,28 @@ import cv2
 import numpy as np
 from PIL import Image
 import io
+import warnings
 from config import settings
 from utils.logger import logger
+
+# Decompression-bomb guard: refuse absurdly large images instead of only warning
+Image.MAX_IMAGE_PIXELS = settings.MAX_IMAGE_PIXELS
+warnings.simplefilter("error", Image.DecompressionBombWarning)
+
+# Rough upper bound on base64 text length for MAX_IMAGE_BYTES (+ data-URI prefix)
+MAX_BASE64_CHARS = (settings.MAX_IMAGE_BYTES * 4) // 3 + 1024
  
 def base64_to_cv2(base64_string: str) -> np.ndarray:
     """Decodes base64 string (data URI or raw base64) into OpenCV BGR image array."""
     try:
+        if len(base64_string) > MAX_BASE64_CHARS:
+            raise ValueError("image too large")
         if "," in base64_string:
-            base64_string = base64_string.split(",")[1]
-        
+            base64_string = base64_string.split(",", 1)[1]
+
         image_bytes = base64.b64decode(base64_string)
+        if len(image_bytes) > settings.MAX_IMAGE_BYTES:
+            raise ValueError("image too large")
         pil_image = Image.open(io.BytesIO(image_bytes))
         
         # Convert RGB PIL to BGR OpenCV
@@ -23,7 +35,7 @@ def base64_to_cv2(base64_string: str) -> np.ndarray:
         return cv2_img
     except Exception as e:
         logger.error(f"Failed to decode base64 image: {str(e)}")
-        raise ValueError("Invalid or corrupted base64 image input.")
+        raise ValueError("Invalid, corrupted or too large image input (max 5 MB).")
 
 def cv2_to_base64(cv2_img: np.ndarray, format_ext: str = ".jpg") -> str:
     """Encodes OpenCV image array to base64 data URI string."""

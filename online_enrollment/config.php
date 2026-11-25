@@ -13,7 +13,6 @@ return [
     'username' => 'root',
     'password' => '',
     'charset'  => 'utf8mb4',
-    'admin_password' => 'admin123',
     'timezone' => 'Asia/Kolkata',
     'timezone_offset' => '+05:30'
 ];
