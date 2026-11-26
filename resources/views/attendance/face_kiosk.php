@@ -646,6 +646,27 @@ html.kiosk-fs #kioskFsExit { display: block; }
     const overlay  = document.getElementById('kioskResultOverlay');
     const overlayContent = document.getElementById('kioskResultOverlayContent');
 
+    // Recovery state is deliberately separate from attendance/session state.
+    let cameraPending = false, cameraStarted = 0, cameraGeneration = 0;
+    let detectorStarted = 0, detectorFailures = 0;
+    let lastFrameAt = Date.now(), lastVideoTime = -1, lastDetectAt = Date.now();
+    let lastRecoveryAt = 0, recoveryAttempts = 0, healthySince = 0;
+    let healthPending = false, detectGeneration = 0;
+    function recoveryLog(reason) {
+        console.warn('[KioskRecovery]', reason, new Date().toISOString());
+    }
+    async function fetchKiosk(url, options, timeout) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeout);
+        try {
+            const response = await fetch(url, Object.assign({}, options, {signal: controller.signal}));
+            // Keep the deadline active until the response body is consumed.
+            const body = await response.text();
+            let data = null;
+            try { data = JSON.parse(body); } catch(e) {}
+            return {response, data};
+        } finally { clearTimeout(timer); }
+    }
     let isProcessing  = false;
     let pauseUntil    = 0;
     let scanCount     = 0;
@@ -977,6 +998,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
     async function loadFaceDetector() {
         if (detectorLoading || detectorReady) return;
         detectorLoading = true;
+        detectorStarted = Date.now();
         updateDetectorBadge('loading');
 
         const t0 = performance.now();
@@ -1091,6 +1113,14 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 throw new Error('Both CPU and GPU failed. CPU: ' + (dd.cpuError || 'unknown') + ' | GPU: ' + (dd.gpuError || 'unknown'));
             }
 
+            // Release the unused delegate to avoid retaining WASM/GPU resources.
+            for (const unused of [cpuDetector, gpuDetector]) {
+                if (unused && unused !== faceDetector) {
+                    try { if (unused.close) unused.close(); else if (unused.destroy) unused.destroy(); } catch(e) {}
+                }
+            }
+            detectorFailures = 0;
+            detectorError = false;
             var elapsed = Math.round(performance.now() - t0);
             detectorReady = true;
             detectorLoading = false;
@@ -1115,6 +1145,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
         if (!detectorReady || !faceDetector || !vid.videoWidth) return { faceCount: 0, detections: [] };
         try {
             const result = faceDetector.detectForVideo(vid, performance.now());
+            detectorFailures = 0;
             if (dd.detectErrorCount === 0 && dd.faceDetection !== 'success') {
                 dd.faceDetection = 'success';
                 ddUpdate('FaceDetection', 'success');
@@ -1127,6 +1158,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
             return { faceCount: detections.length, detections };
         } catch (e) {
             dd.detectErrorCount++;
+            detectorFailures++;
             if (dd.detectErrorCount === 1) {
                 dd.lastDetectError = e.message || String(e);
                 dd.faceDetection = 'failed';
@@ -1165,12 +1197,19 @@ html.kiosk-fs #kioskFsExit { display: block; }
             else if(type==='dupe') { o.frequency.setValueAtTime(440,ctx.currentTime); o.frequency.setValueAtTime(330,ctx.currentTime+.15); }
             else { o.frequency.setValueAtTime(220,ctx.currentTime); }
             g.gain.setValueAtTime(.12,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.35);
+            o.onended = () => { try { o.disconnect(); g.disconnect(); ctx.close().catch(()=>{}); } catch(e) {} };
             o.start(); o.stop(ctx.currentTime+.35);
+            setTimeout(() => { if (ctx.state !== 'closed') ctx.close().catch(()=>{}); }, 2000);
         } catch(e){}
     }
 
     // ── Camera ───────────────────────────────────────────────────────────────
     async function initCam() {
+        if (cameraPending || document.hidden) return;
+        cameraPending = true;
+        cameraStarted = Date.now();
+        const generation = ++cameraGeneration;
+        try {
         const statusTxt = document.getElementById('scanStatusLabel');
         statusTxt.textContent = 'Starting camera...';
 
@@ -1237,14 +1276,22 @@ html.kiosk-fs #kioskFsExit { display: block; }
             }
         }
 
+        if (generation !== cameraGeneration || document.hidden) {
+            s.getTracks().forEach(t => t.stop());
+            return;
+        }
         vid.srcObject = s;
+        lastFrameAt = Date.now(); lastVideoTime = -1;
+        const activeTrack = s.getVideoTracks()[0];
+        if (activeTrack) activeTrack.addEventListener('ended', () => recoveryLog('camera track ended'));
         vid.style.transform = currentFacingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
         vid.onloadedmetadata = () => {
             vid.play().catch(e => console.warn('[Camera] video.play() error:', e.message));
         };
 
-        vid.addEventListener('playing', () => {
+        vid.onplaying = () => {
             const checkVideoReady = () => {
+                if (generation !== cameraGeneration || vid.srcObject !== s) return;
                 if (vid.videoWidth === 0) {
                     requestAnimationFrame(checkVideoReady);
                     return;
@@ -1258,7 +1305,11 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 startDetectLoop();
             };
             checkVideoReady();
-        }, { once: true });
+        };
+        vid.play().catch(e => recoveryLog('camera play failed'));
+        } finally {
+            if (generation === cameraGeneration) cameraPending = false;
+        }
     }
     
     window.toggleCam = function() {
@@ -1269,7 +1320,8 @@ html.kiosk-fs #kioskFsExit { display: block; }
     window.restartCam = function() {
         pauseUntil = 0; faceCheckFrame = 0; faceReady = false;
         scanSessionActive = false; lastFaceWasPresent = false;
-        if(vid.srcObject) vid.srcObject.getTracks().forEach(t=>t.stop());
+        if (cameraPending || isProcessing) return;
+        _releaseCamera();
         initCam();
     };
 
@@ -1417,10 +1469,13 @@ html.kiosk-fs #kioskFsExit { display: block; }
     function startDetectLoop() {
         if (detectLoopRunning) return;
         detectLoopRunning = true;
+        const generation = ++detectGeneration;
+        lastDetectAt = Date.now();
 
         function loop() {
-            if (!detectLoopRunning) return; // killed by sleep/release; a fresh chain starts on wake
-            if (!vid.videoWidth || isProcessing || Date.now() < pauseUntil) {
+            if (!detectLoopRunning || generation !== detectGeneration) return; // killed by sleep/release; a fresh chain starts on wake
+            lastDetectAt = Date.now();
+            if (!vid.videoWidth || vid.paused || cameraPending || document.hidden || isProcessing || Date.now() < pauseUntil) {
                 setTimeout(loop, DETECT_INTERVAL);
                 return;
             }
@@ -1429,8 +1484,9 @@ html.kiosk-fs #kioskFsExit { display: block; }
             const cx = W * 0.5, cy = H * 0.48;
             const rx = W * 0.34, ry = H * 0.40;
 
-            detectAndWait(W, H, cx, cy, rx, ry);
-            setTimeout(loop, DETECT_INTERVAL);
+            try { detectAndWait(W, H, cx, cy, rx, ry); }
+            catch(e) { faceCheckFrame = 0; faceReady = false; recoveryLog('detection loop exception'); }
+            finally { if (generation === detectGeneration && detectLoopRunning) setTimeout(loop, DETECT_INTERVAL); }
         }
         loop();
     }
@@ -1612,13 +1668,11 @@ html.kiosk-fs #kioskFsExit { display: block; }
         console.log('[Scan] POST:', API);
 
         try {
-            const r = await fetch(API, {
+            const {response: r, data} = await fetchKiosk(API, {
                 method:'POST', headers:{'Content-Type':'application/json','X-Kiosk-Token':KIOSK_TOKEN},
                 body: JSON.stringify({image_base64: base64Img})
-            });
+            }, 30000);
             console.log('[Scan] Response:', r.status);
-            let data = null;
-            try { data = await r.json(); } catch(e){}
 
             // 503 = Python backend offline
             if (!handleApiResponse(r, data)) { return; }
@@ -1664,7 +1718,8 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 pauseUntil = Date.now() + 4000;
             }
         } catch(e) {
-            // Network error — backend likely offline
+            // A timed-out POST may have committed on the server. Never replay it.
+            recoveryLog(e.name === 'AbortError' ? 'recognition deadline exceeded; outcome unknown' : 'recognition network failure');
             setBackendStatus(false);
             showResult('error', 'Backend Offline', 'InsightFace service is unreachable. Please start the Python backend.');
             lbl.textContent = `Backend Offline`;
@@ -1704,10 +1759,11 @@ html.kiosk-fs #kioskFsExit { display: block; }
     }
 
     window.checkBackend = async function() {
+        if (healthPending) return;
+        healthPending = true;
         try {
-            const r = await fetch('<?= url('attendance/api.php?endpoint=/health') ?>', { method: 'GET', headers: {'X-Kiosk-Token': KIOSK_TOKEN} });
+            const {response: r, data: d} = await fetchKiosk('<?= url('attendance/api.php?endpoint=/health') ?>', { method: 'GET', headers: {'X-Kiosk-Token': KIOSK_TOKEN} }, 10000);
             if (r.ok || r.status === 200) {
-                const d = await r.json().catch(() => null);
                 const alive = d && (d.status === 'healthy' || d.model_loaded === true);
                 setBackendStatus(alive);
             } else {
@@ -1715,7 +1771,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
             }
         } catch(e) {
             setBackendStatus(false);
-        }
+        } finally { healthPending = false; }
     };
 
     // Also catch 503 inside doScan response
@@ -1984,6 +2040,9 @@ html.kiosk-fs #kioskFsExit { display: block; }
     // rules are unchanged: wake alone never triggers a scan — the normal
     // face-position + server-recognition checks still apply.
     function _releaseCamera() {
+        cameraGeneration++; cameraPending = false;
+        drawGen++; detectGeneration++;
+        vid.onplaying = null; vid.onloadedmetadata = null;
         try {
             if (vid.srcObject) {
                 vid.srcObject.getTracks().forEach(function(t){ try { t.stop(); } catch(e) {} });
@@ -1993,12 +2052,14 @@ html.kiosk-fs #kioskFsExit { display: block; }
         detectLoopRunning = false; // zombie setTimeout chains exit via the guard in loop()
     }
     function _wakeCamera() {
+        if (cameraPending || document.hidden) return;
+        lastFrameAt = Date.now(); lastVideoTime = -1;
         try {
             var stream = vid.srcObject;
             var alive = !!(stream && stream.getVideoTracks && stream.getVideoTracks().length
-                && stream.getVideoTracks()[0].readyState === 'live' && vid.videoWidth);
+                && stream.getVideoTracks()[0].readyState === 'live' && !stream.getVideoTracks()[0].muted && vid.videoWidth && !vid.paused);
             if (!alive) {
-                detectLoopRunning = false;
+                _releaseCamera();
                 initCam(); // 'playing' handler restarts draw + detect loops
             } else {
                 if (!detectLoopRunning) startDetectLoop();
@@ -2014,8 +2075,8 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 // (or Fully owns the screen). Plain tab switches keep old behavior.
                 if (_sleeping || _kioskHasFully()) _releaseCamera();
             } else {
-                _wakeFromSleep(); // no-op unless sleeping; also re-arms the timer
-                _wakeCamera();
+                if (_sleeping) _wakeFromSleep();
+                else _wakeCamera();
                 try { if (typeof checkBackend === 'function') checkBackend(); } catch(e) {}
             }
         } catch(e) {}
@@ -2028,6 +2089,56 @@ html.kiosk-fs #kioskFsExit { display: block; }
             s.addEventListener('touchend', function() { _wakeFromSleep(); });
         }
     })();
+
+    // ── Self-healing watchdog (visible, awake kiosk only) ─────────────────────
+    function watchdog() {
+        const now = Date.now();
+        if (document.hidden || _sleeping || isProcessing || now < pauseUntil) {
+            lastFrameAt = now; healthySince = 0;
+            return;
+        }
+        if (vid.currentTime !== lastVideoTime) {
+            lastVideoTime = vid.currentTime; lastFrameAt = now;
+        }
+        let reason = '';
+        const track = vid.srcObject && vid.srcObject.getVideoTracks()[0];
+        if (cameraPending && now - cameraStarted > 25000) reason = 'camera initialization stalled';
+        else if (!cameraPending && (!track || track.readyState !== 'live' || track.muted || vid.paused || now - lastFrameAt > 15000)) reason = 'camera frames stalled';
+        else if (detectorLoading && now - detectorStarted > 60000) reason = 'detector initialization stalled';
+        else if (!detectorLoading && (!detectorReady || detectorFailures >= 5)) reason = 'face detector failed';
+        else if (!cameraPending && (!detectLoopRunning || now - lastDetectAt > 15000)) reason = 'detection loop stalled';
+        if (!reason) {
+            if (!healthySince) healthySince = now;
+            if (now - healthySince > 60000) recoveryAttempts = 0;
+            return;
+        }
+        healthySince = 0;
+        if (now - lastRecoveryAt < 15000) return;
+        lastRecoveryAt = now; recoveryAttempts++;
+        recoveryLog(reason);
+        // Reload only as a last resort, only once per five minutes, and never
+        // while an attendance submission is pending or while offline.
+        if (KIOSK_GUEST && navigator.onLine && (recoveryAttempts >= 3 || reason === 'detector initialization stalled' || reason === 'camera initialization stalled')) {
+            try {
+                const key = 'psnf-kiosk-last-reload';
+                const previous = Number(sessionStorage.getItem(key) || 0);
+                if (now - previous > 300000) {
+                    sessionStorage.setItem(key, String(now));
+                    location.reload(); return;
+                }
+            } catch(e) {}
+        }
+        if (reason === 'face detector failed') {
+            window.ddRetryDetector();
+        } else if (reason === 'detection loop stalled') {
+            detectLoopRunning = false; startDetectLoop(); startDrawLoop();
+        } else if (reason === 'camera frames stalled') {
+            _releaseCamera(); initCam();
+        }
+    }
+    window.addEventListener('online', () => { checkBackend(); if (!document.hidden && !_sleeping) watchdog(); });
+    window.addEventListener('pageshow', () => { if (!document.hidden && !_sleeping && !isProcessing) _wakeCamera(); });
+    setInterval(watchdog, 5000);
 
     // ── Initialization ───────────────────────────────────────────────────────
     var _ddRetry = document.getElementById('ddRetryBtn'); if (_ddRetry) _ddRetry.addEventListener('click', function() { window.ddRetryDetector(); });
