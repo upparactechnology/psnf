@@ -647,7 +647,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
     const overlayContent = document.getElementById('kioskResultOverlayContent');
 
     // Recovery state is deliberately separate from attendance/session state.
-    let cameraPending = false, cameraStarted = 0, cameraGeneration = 0;
+    let cameraPending = false, cameraStarted = 0, cameraGeneration = 0, cameraBlocked = false;
     let detectorStarted = 0, detectorFailures = 0;
     let lastFrameAt = Date.now(), lastVideoTime = -1, lastDetectAt = Date.now();
     let lastRecoveryAt = 0, recoveryAttempts = 0, healthySince = 0;
@@ -1153,9 +1153,6 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 console.log('[DetectorDebug] detectForVideo first successful call');
             }
             const detections = result.detections || [];
-            if (detections.length > 0) {
-                // Avoid continuous per-frame logging on long-running tablets.
-            }
             return { faceCount: detections.length, detections };
         } catch (e) {
             dd.detectErrorCount++;
@@ -1206,7 +1203,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
 
     // ── Camera ───────────────────────────────────────────────────────────────
     async function initCam() {
-        if (cameraPending || document.hidden) return;
+        if (cameraPending || document.hidden || cameraBlocked) return;
         cameraPending = true;
         cameraStarted = Date.now();
         const generation = ++cameraGeneration;
@@ -1221,14 +1218,14 @@ html.kiosk-fs #kioskFsExit { display: block; }
         if (!window.isSecureContext) {
             statusTxt.textContent = 'HTTPS Required';
             console.error('[Camera] Not a secure context.');
-            alert('Camera requires HTTPS. Protocol: ' + location.protocol + '. Please use HTTPS.');
+            cameraBlocked = true;
             return;
         }
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             statusTxt.textContent = 'API Not Supported';
             console.error('[Camera] navigator.mediaDevices not available');
-            alert('Your browser does not support camera access.');
+            cameraBlocked = true;
             return;
         }
 
@@ -1248,12 +1245,12 @@ html.kiosk-fs #kioskFsExit { display: block; }
             console.error('[Camera] Ideal constraints failed:', err.name, err.message);
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                 statusTxt.textContent = 'Permission denied';
-                recoveryLog('camera permission denied; user action required');
+                cameraBlocked = true; recoveryLog('camera permission denied; user action required');
                 return;
             }
             if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
                 statusTxt.textContent = 'No camera found';
-                alert('No camera found on this device.');
+                cameraBlocked = true;
                 return;
             }
             if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
@@ -1263,7 +1260,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
             }
             if (err.name === 'SecurityError') {
                 statusTxt.textContent = 'Security blocked';
-                alert('Camera blocked by browser security policy.');
+                cameraBlocked = true;
                 return;
             }
             // Fallback: basic constraints
@@ -1321,6 +1318,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
 
     window.restartCam = function() {
         if (cameraPending || isProcessing) return;
+        cameraBlocked = false;
         pauseUntil = 0; faceCheckFrame = 0; faceReady = false;
         scanSessionActive = false; lastFaceWasPresent = false;
         _releaseCamera();
@@ -1648,6 +1646,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
     }
 
     function hideOverlayResult() {
+        if (overlay.style.opacity === '0' || overlay.style.display === 'none') return;
         overlay.style.opacity = '0';
         overlay.style.pointerEvents = 'none';
         overlayContent.style.transform = 'scale(0.9)';
@@ -1723,11 +1722,11 @@ html.kiosk-fs #kioskFsExit { display: block; }
             // A timed-out POST may have committed on the server. Never replay it.
             recoveryLog(e.name === 'AbortError' ? 'recognition deadline exceeded; outcome unknown' : 'recognition network failure');
             setBackendStatus(false);
-            showResult('error', 'Backend Offline', 'InsightFace service is unreachable. Please start the Python backend.');
-            lbl.textContent = `Backend Offline`;
+            showResult('error', 'Connection interrupted', 'Attendance result is unknown. Check attendance before trying again.');
+            lbl.textContent = 'Connection interrupted';
             lbl.className = 'kiosk-face-label wait';
             lbl.setAttribute('data-custom-status', '1');
-            showOverlayResult('error', 'Backend Offline', 'Service unreachable', 'Please start the Python face recognition service.');
+            showOverlayResult('error', 'Connection interrupted', 'Attendance result unknown', 'Check attendance before trying again.');
             pauseUntil = Date.now() + 5000;
         } finally {
             isProcessing = false;
@@ -2095,7 +2094,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
     // ── Self-healing watchdog (visible, awake kiosk only) ─────────────────────
     function watchdog() {
         const now = Date.now();
-        if (document.hidden || _sleeping || isProcessing || now < pauseUntil) {
+        if (document.hidden || _sleeping || isProcessing || cameraBlocked || now < pauseUntil) {
             lastFrameAt = now; healthySince = 0;
             return;
         }
@@ -2108,7 +2107,8 @@ html.kiosk-fs #kioskFsExit { display: block; }
         else if (!cameraPending && now - cameraStarted > 15000 && (!track || track.readyState !== 'live' || track.muted || vid.paused || now - lastFrameAt > 15000)) reason = 'camera frames stalled';
         else if (detectorLoading && now - detectorStarted > 60000) reason = 'detector initialization stalled';
         else if (!detectorLoading && (!detectorReady || detectorFailures >= 5)) reason = 'face detector failed';
-        else if (!cameraPending && (!detectLoopRunning || now - lastDetectAt > 15000)) reason = 'detection loop stalled';
+        else if (!cameraPending && now - cameraStarted > 15000 && (!detectLoopRunning || now - lastDetectAt > 15000)) reason = 'detection loop stalled';
+        else if (!cameraPending && now - cameraStarted > 15000 && performance.now() - lastDrawTime > 15000) reason = 'draw loop stalled';
         if (!reason) {
             if (!healthySince) healthySince = now;
             if (now - healthySince > 60000) recoveryAttempts = 0;
@@ -2132,7 +2132,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
         }
         if (reason === 'face detector failed' && navigator.onLine) {
             window.ddRetryDetector();
-        } else if (reason === 'detection loop stalled') {
+        } else if (reason === 'detection loop stalled' || reason === 'draw loop stalled') {
             detectLoopRunning = false; startDetectLoop(); startDrawLoop();
         } else if (reason === 'camera frames stalled') {
             _releaseCamera(); initCam();
