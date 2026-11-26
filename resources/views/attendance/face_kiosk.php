@@ -863,6 +863,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
     ddUpdate('JsStarted', 'success');
 
     window.ddRetryDetector = function() {
+        if (detectorLoading) return;
         console.log('[DetectorDebug] Retry requested');
         if (faceDetector) {
             try {
@@ -1153,7 +1154,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
             }
             const detections = result.detections || [];
             if (detections.length > 0) {
-                console.log('[DetectorDebug] Faces: ' + detections.length);
+                // Avoid continuous per-frame logging on long-running tablets.
             }
             return { faceCount: detections.length, detections };
         } catch (e) {
@@ -1183,7 +1184,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
         const now = new Date();
         const t   = now.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'Asia/Kolkata'});
         clockEl.textContent = t.toUpperCase();
-        dateEl.textContent  = now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Kolkata'});
+        if (dateEl) dateEl.textContent  = now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric',timeZone:'Asia/Kolkata'});
     }
     tick(); setInterval(tick, 1000);
 
@@ -1247,7 +1248,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
             console.error('[Camera] Ideal constraints failed:', err.name, err.message);
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                 statusTxt.textContent = 'Permission denied';
-                alert('Camera access was denied. Please allow camera permission and reload.');
+                recoveryLog('camera permission denied; user action required');
                 return;
             }
             if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
@@ -1257,7 +1258,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
             }
             if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
                 statusTxt.textContent = 'Camera busy';
-                alert('Camera is in use by another app.');
+                recoveryLog('camera temporarily busy');
                 return;
             }
             if (err.name === 'SecurityError') {
@@ -1271,7 +1272,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
             } catch (err2) {
                 console.error('[Camera] Basic fallback failed:', err2.name, err2.message);
                 statusTxt.textContent = 'Cam error';
-                alert('Camera error: ' + (err2.message || err2.name || 'Unknown'));
+                recoveryLog('camera initialization failed: ' + (err2.name || 'Unknown'));
                 return;
             }
         }
@@ -1313,14 +1314,15 @@ html.kiosk-fs #kioskFsExit { display: block; }
     }
     
     window.toggleCam = function() {
+        if (cameraPending || isProcessing) return;
         currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
         window.restartCam();
     };
 
     window.restartCam = function() {
+        if (cameraPending || isProcessing) return;
         pauseUntil = 0; faceCheckFrame = 0; faceReady = false;
         scanSessionActive = false; lastFaceWasPresent = false;
-        if (cameraPending || isProcessing) return;
         _releaseCamera();
         initCam();
     };
@@ -2103,7 +2105,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
         let reason = '';
         const track = vid.srcObject && vid.srcObject.getVideoTracks()[0];
         if (cameraPending && now - cameraStarted > 25000) reason = 'camera initialization stalled';
-        else if (!cameraPending && (!track || track.readyState !== 'live' || track.muted || vid.paused || now - lastFrameAt > 15000)) reason = 'camera frames stalled';
+        else if (!cameraPending && now - cameraStarted > 15000 && (!track || track.readyState !== 'live' || track.muted || vid.paused || now - lastFrameAt > 15000)) reason = 'camera frames stalled';
         else if (detectorLoading && now - detectorStarted > 60000) reason = 'detector initialization stalled';
         else if (!detectorLoading && (!detectorReady || detectorFailures >= 5)) reason = 'face detector failed';
         else if (!cameraPending && (!detectLoopRunning || now - lastDetectAt > 15000)) reason = 'detection loop stalled';
@@ -2128,7 +2130,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 }
             } catch(e) {}
         }
-        if (reason === 'face detector failed') {
+        if (reason === 'face detector failed' && navigator.onLine) {
             window.ddRetryDetector();
         } else if (reason === 'detection loop stalled') {
             detectLoopRunning = false; startDetectLoop(); startDrawLoop();
