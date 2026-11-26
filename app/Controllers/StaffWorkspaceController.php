@@ -637,6 +637,7 @@ class StaffWorkspaceController extends Controller
                 $grouped[$key] = $log + ['scans' => [], 'exempted' => false, 'reason' => null];
             }
             $grouped[$key]['scans'][] = $log['check_in'];
+            $grouped[$key]['scan_conf'][] = $log['confidence'];
             if (!empty($log['late_exempted'])) {
                 $grouped[$key]['exempted'] = true;
                 $grouped[$key]['reason'] = $log['late_exemption_reason'];
@@ -664,6 +665,12 @@ class StaffWorkspaceController extends Controller
                 $rules['end'],
                 $date
             );
+            // Scans come ordered by check_in, same order as the labelled punches
+            foreach ($breakInfo['punches'] as $pi => &$punch) {
+                $conf = $data['scan_conf'][$pi] ?? null;
+                $punch['confidence'] = $conf !== null ? round((float)$conf * ((float)$conf <= 1 ? 100 : 1), 1) : null;
+            }
+            unset($punch);
 
             if (count($scans) > 1 && $breakInfo['on_break_since'] === null) {
                 $clockOut = date('h:i A', strtotime($last));
@@ -734,6 +741,10 @@ class StaffWorkspaceController extends Controller
                 $mLog['break_minutes'],
                 \App\Services\StaffAttendanceCalculator::allowedMinutes($mLog['break_allowed_minutes'])
             );
+            $mLog['break']['punches'] = array_values(array_filter([
+                !empty($mLog['clock_in']) ? ['time' => $mLog['clock_in'], 'type' => 'in', 'label' => 'Clock In', 'confidence' => null] : null,
+                (!empty($mLog['clock_out']) && $mLog['clock_out'] !== '--:--') ? ['time' => $mLog['clock_out'], 'type' => 'out', 'label' => 'Clock Out', 'confidence' => null] : null,
+            ]));
         }
         unset($mLog);
 

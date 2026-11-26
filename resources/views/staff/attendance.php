@@ -5,7 +5,7 @@ $breadcrumbs = [['label' => 'Dashboard', 'url' => '/dashboard'], ['label' => 'St
 ob_start();
 ?>
 
-<div x-data="{ logModal: false }" class="space-y-6 max-w-6xl mx-auto">
+<div x-data="{ logModal: false, detail: null }" @keydown.escape.window="detail = null" class="space-y-6 max-w-6xl mx-auto">
 
     <!-- Header & Date Bar -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -55,7 +55,30 @@ ob_start();
                 </tr>
                 <?php else: ?>
                     <?php foreach ($logs as $l): ?>
-                    <tr>
+                    <?php
+                        $bd = $l['break'] ?? [];
+                        $detailJson = json_encode([
+                            'name'          => trim($l['first_name'] . ' ' . $l['last_name']),
+                            'code'          => $l['emp_code'],
+                            'dept'          => $l['department_name'] ?? 'General Staff',
+                            'clock_in'      => $l['clock_in'] ?? '--:--',
+                            'clock_out'     => $l['clock_out'] ?? '--:--',
+                            'hours'         => $l['working_hours'] ?? '0 hrs 0 mins',
+                            'status'        => str_replace('_', '-', (string)$l['status']),
+                            'source'        => $l['source'] ?? 'Face Kiosk',
+                            'exempted'      => !empty($l['late_exempted']),
+                            'reason'        => $l['late_exemption_reason'] ?? null,
+                            'punches'       => $bd['punches'] ?? [],
+                            'breaks'        => $bd['breaks'] ?? [],
+                            'total_break'   => (int)($bd['total_break_minutes'] ?? 0),
+                            'allowed'       => (int)($bd['allowed_minutes'] ?? 0),
+                            'exceeded_by'   => (int)($bd['exceeded_by'] ?? 0),
+                            'unmatched_at'  => $bd['unmatched_at'] ?? null,
+                            'on_break'      => $bd['on_break_since'] ?? null,
+                            'profile_url'   => !empty($l['employee_id']) ? url('staff/employees/' . (int)$l['employee_id']) : null,
+                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+                    ?>
+                    <tr class="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors" title="Click to see all punches for this day" @click="detail = <?= e($detailJson) ?>">
                         <td class="p-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center">
@@ -73,9 +96,9 @@ ob_start();
                             <?php if ($l['status'] === 'late'): ?>
                                 <span class="text-[9px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded ml-1 uppercase">Late</span>
                                 <?php if (!empty($l['late_exempted'])): ?>
-                                    <span class="text-[9px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded ml-1 uppercase cursor-pointer font-bold" title="Exemption Reason: <?= e($l['late_exemption_reason'] ?? 'Admin override') ?>" onclick="toggleExemption(<?= $l['id'] ?>, '<?= e($l['source']) ?>', false)">Exempted ✓</span>
+                                    <span class="text-[9px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded ml-1 uppercase cursor-pointer font-bold" title="Exemption Reason: <?= e($l['late_exemption_reason'] ?? 'Admin override') ?>" @click.stop onclick="toggleExemption(<?= $l['id'] ?>, '<?= e($l['source']) ?>', false)">Exempted ✓</span>
                                 <?php else: ?>
-                                    <button class="text-[9px] bg-slate-200 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded ml-1 uppercase font-bold" onclick="toggleExemption(<?= $l['id'] ?>, '<?= e($l['source']) ?>', true)">Exempt</button>
+                                    <button class="text-[9px] bg-slate-200 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded ml-1 uppercase font-bold" @click.stop onclick="toggleExemption(<?= $l['id'] ?>, '<?= e($l['source']) ?>', true)">Exempt</button>
                                 <?php endif; ?>
                             <?php elseif ($l['status'] === 'half_day'): ?>
                                 <span class="text-[9px] bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded ml-1 uppercase">Half-Day</span>
@@ -90,25 +113,45 @@ ob_start();
                         </td>
                         <td class="p-4 text-2xs">
                             <?php $b = $l['break'] ?? null; ?>
-                            <?php if ($b && $b['on_break_since']): ?>
-                                <span class="px-2 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400">On break since <?= e($b['on_break_since']) ?></span>
-                            <?php endif; ?>
-                            <?php if ($b && $b['total_break_minutes'] > 0): ?>
-                                <div class="font-mono font-bold <?= $b['exceeded'] ? 'text-red-500' : 'text-slate-600 dark:text-slate-300' ?>">
-                                    <?= (int)$b['total_break_minutes'] ?> min
-                                    <span class="font-normal text-slate-400">/ <?= (int)$b['allowed_minutes'] ?> allowed</span>
-                                </div>
-                                <?php foreach ($b['breaks'] as $br): ?>
-                                    <div class="font-mono text-slate-400"><?= e($br['out']) ?> – <?= e($br['in']) ?> (<?= (int)$br['minutes'] ?>m)</div>
-                                <?php endforeach; ?>
-                                <?php if ($b['exceeded']): ?>
-                                    <span class="inline-block mt-1 px-2 py-0.5 rounded-full font-bold bg-red-500/10 text-red-500 uppercase text-[9px]">Over by <?= (int)$b['exceeded_by'] ?> min</span>
-                                <?php endif; ?>
-                            <?php elseif (!$b || !$b['on_break_since']): ?>
+                            <?php
+                                $hasBreakInfo = $b && (!empty($b['breaks']) || $b['total_break_minutes'] > 0 || $b['on_break_since'] || $b['unmatched']);
+                            ?>
+                            <?php if (!$hasBreakInfo): ?>
                                 <span class="text-slate-400">—</span>
-                            <?php endif; ?>
-                            <?php if ($b && $b['unmatched']): ?>
-                                <span class="inline-block mt-1 px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-600 uppercase text-[9px]" title="Odd number of scans between clock in and clock out — one break punch has no pair">Unmatched break punch</span>
+                            <?php else: ?>
+                                <div class="space-y-1">
+                                    <?php foreach ($b['breaks'] as $br): ?>
+                                        <div class="font-mono whitespace-nowrap">
+                                            <span class="text-slate-400">Out</span> <span class="font-bold text-slate-700 dark:text-slate-200"><?= e($br['out']) ?></span>
+                                            <span class="text-slate-400">→ In</span> <span class="font-bold text-slate-700 dark:text-slate-200"><?= e($br['in']) ?></span>
+                                            <span class="text-slate-400">(<?= (int)$br['minutes'] ?>m)</span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                    <?php if ($b['unmatched'] && $b['unmatched_at']): ?>
+                                        <div class="font-mono whitespace-nowrap">
+                                            <span class="text-slate-400">Out</span> <span class="font-bold text-amber-600"><?= e($b['unmatched_at']) ?></span>
+                                            <span class="text-slate-400">→ In</span> <span class="text-amber-600">missing</span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($b['on_break_since']): ?>
+                                        <div class="font-mono whitespace-nowrap">
+                                            <span class="text-slate-400">Out</span> <span class="font-bold text-sky-600 dark:text-sky-400"><?= e($b['on_break_since']) ?></span>
+                                            <span class="px-1.5 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 text-[9px] uppercase">On break now</span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($b['total_break_minutes'] > 0): ?>
+                                        <div class="font-mono font-bold <?= $b['exceeded'] ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400' ?>">
+                                            Total <?= (int)$b['total_break_minutes'] ?> min
+                                            <span class="font-normal text-slate-400">/ <?= (int)$b['allowed_minutes'] ?> allowed</span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($b['exceeded']): ?>
+                                        <span class="inline-block px-2 py-0.5 rounded-full font-bold bg-red-500/10 text-red-500 uppercase text-[9px]">Over by <?= (int)$b['exceeded_by'] ?> min</span>
+                                    <?php endif; ?>
+                                    <?php if ($b['unmatched']): ?>
+                                        <span class="inline-block px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-600 uppercase text-[9px]" title="Odd number of scans between clock in and clock out — one break punch has no pair">Unmatched break punch</span>
+                                    <?php endif; ?>
+                                </div>
                             <?php endif; ?>
                         </td>
                         <td class="p-4">
@@ -133,6 +176,111 @@ ob_start();
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
+
+    <!-- Day Detail Modal (click on an employee row) -->
+    <div x-show="detail" class="fixed inset-0 z-50 flex items-center justify-center px-4" x-cloak>
+        <div class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" @click="detail = null"></div>
+        <template x-if="detail">
+        <div class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5 z-10 text-xs">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center" x-text="detail.name.charAt(0).toUpperCase()"></div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white" x-text="detail.name"></h3>
+                        <p class="text-slate-500"><span class="font-mono text-indigo-500" x-text="detail.code"></span> · <span x-text="detail.dept"></span> · <span class="font-mono"><?= e(date('d M Y', strtotime($date))) ?></span></p>
+                    </div>
+                </div>
+                <button type="button" @click="detail = null" class="text-slate-400 hover:text-slate-700 dark:hover:text-white text-lg leading-none">&times;</button>
+            </div>
+
+            <!-- Summary -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                    <div class="text-slate-400 text-[10px] uppercase font-semibold">Clock In</div>
+                    <div class="font-mono font-bold text-slate-900 dark:text-white" x-text="detail.clock_in"></div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                    <div class="text-slate-400 text-[10px] uppercase font-semibold">Clock Out</div>
+                    <div class="font-mono font-bold text-slate-900 dark:text-white" x-text="detail.clock_out"></div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                    <div class="text-slate-400 text-[10px] uppercase font-semibold">Working</div>
+                    <div class="font-mono font-bold text-indigo-500" x-text="detail.hours"></div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                    <div class="text-slate-400 text-[10px] uppercase font-semibold">Status</div>
+                    <div class="font-bold uppercase text-slate-900 dark:text-white" x-text="detail.status"></div>
+                    <div x-show="detail.exempted" class="text-emerald-500 text-[10px]" x-text="'Exempted: ' + (detail.reason || 'Admin override')"></div>
+                </div>
+            </div>
+
+            <!-- All punches timeline -->
+            <div>
+                <h4 class="font-bold text-slate-900 dark:text-white mb-2">All Punches <span class="font-normal text-slate-400" x-text="'(' + detail.punches.length + ')'"></span></h4>
+                <template x-if="detail.punches.length === 0">
+                    <p class="text-slate-400">No punches recorded.</p>
+                </template>
+                <ol class="relative border-l-2 border-slate-200 dark:border-slate-700 ml-2 space-y-3">
+                    <template x-for="(p, i) in detail.punches" :key="i">
+                        <li class="ml-4 relative">
+                            <span class="absolute -left-[23px] top-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900"
+                                  :class="{
+                                      'bg-emerald-500': p.type === 'in',
+                                      'bg-slate-500': p.type === 'out',
+                                      'bg-sky-500': p.type === 'break_out' || p.type === 'break_in',
+                                      'bg-amber-500': p.type === 'unmatched'
+                                  }"></span>
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <span class="font-mono font-bold text-slate-900 dark:text-white" x-text="p.time"></span>
+                                    <span class="ml-2 font-semibold"
+                                          :class="{
+                                              'text-emerald-600 dark:text-emerald-400': p.type === 'in',
+                                              'text-slate-600 dark:text-slate-300': p.type === 'out',
+                                              'text-sky-600 dark:text-sky-400': p.type === 'break_out' || p.type === 'break_in',
+                                              'text-amber-600': p.type === 'unmatched'
+                                          }" x-text="p.label"></span>
+                                </div>
+                                <span x-show="p.confidence !== null && p.confidence !== undefined" class="text-slate-400 font-mono text-[10px]" x-text="'match ' + p.confidence + '%'"></span>
+                            </div>
+                        </li>
+                    </template>
+                </ol>
+            </div>
+
+            <!-- Break summary -->
+            <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-slate-900 dark:text-white">Break Time</h4>
+                    <span class="font-mono font-bold" :class="detail.exceeded_by > 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'"
+                          x-text="detail.total_break + ' / ' + detail.allowed + ' min allowed'"></span>
+                </div>
+                <template x-for="(br, i) in detail.breaks" :key="'b' + i">
+                    <div class="flex justify-between font-mono text-slate-600 dark:text-slate-300">
+                        <span x-text="'Break ' + (i + 1) + ':  Out ' + br.out + '  →  In ' + br.in"></span>
+                        <span class="font-bold" x-text="br.minutes + ' min'"></span>
+                    </div>
+                </template>
+                <div x-show="detail.unmatched_at" class="text-amber-600 font-mono" x-text="'Break out at ' + detail.unmatched_at + ' has no break in (odd number of scans)'"></div>
+                <div x-show="detail.on_break" class="text-sky-600 dark:text-sky-400 font-mono" x-text="'On break since ' + detail.on_break"></div>
+                <div x-show="detail.breaks.length === 0 && !detail.unmatched_at && !detail.on_break && detail.total_break === 0" class="text-slate-400">No break taken.</div>
+                <div x-show="detail.exceeded_by > 0">
+                    <span class="inline-block px-2 py-0.5 rounded-full font-bold bg-red-500/10 text-red-500 uppercase text-[9px]" x-text="'Over by ' + detail.exceeded_by + ' min'"></span>
+                </div>
+                <p class="text-slate-400 text-[10px]">Breaks are paid: working hours are not reduced.</p>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+                <span class="text-slate-400" x-text="'Source: ' + detail.source"></span>
+                <div class="flex gap-2">
+                    <a x-show="detail.profile_url" :href="detail.profile_url" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500">Full Monthly Record</a>
+                    <button type="button" @click="detail = null" class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">Close</button>
+                </div>
+            </div>
+        </div>
+        </template>
     </div>
 
     <!-- Clock Entry Modal -->

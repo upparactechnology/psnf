@@ -67,7 +67,9 @@ class StaffAttendanceCalculator
             'exceeded'            => false,
             'exceeded_by'         => 0,
             'unmatched'           => false,
+            'unmatched_at'        => null,
             'on_break_since'      => null,
+            'punches'             => [],
         ];
 
         // Live hint: today, even scan count, latest scan before shift end
@@ -82,12 +84,43 @@ class StaffAttendanceCalculator
             }
         }
 
+        $result['punches'] = self::labelPunches($ts, $result['on_break_since'] !== null);
+
         if ($count < 3) {
             return $result;
         }
 
         $middle = array_slice($ts, 1, $count - 2);
         return self::pairBreaks($middle, $result);
+    }
+
+    /**
+     * Label every scan of the day: Clock In / Break Out / Break In / Clock Out.
+     * @return array<int, array{time:string, type:string, label:string}>
+     */
+    private static function labelPunches(array $ts, bool $onBreak): array
+    {
+        $n = count($ts);
+        $middleCount = max(0, $n - 2);
+        $out = [];
+        foreach ($ts as $i => $t) {
+            if ($i === 0) {
+                [$type, $label] = ['in', 'Clock In'];
+            } elseif ($i === $n - 1) {
+                [$type, $label] = $onBreak ? ['break_out', 'Break Out (on break now)'] : ['out', 'Clock Out'];
+            } else {
+                $m = $i - 1;
+                if ($m % 2 === 1) {
+                    [$type, $label] = ['break_in', 'Break In'];
+                } elseif ($m === $middleCount - 1) {
+                    [$type, $label] = ['unmatched', 'Break Out (no break in)'];
+                } else {
+                    [$type, $label] = ['break_out', 'Break Out'];
+                }
+            }
+            $out[] = ['time' => date('h:i A', $t), 'type' => $type, 'label' => $label];
+        }
+        return $out;
     }
 
     private static function pairBreaks(array $middle, array $result): array
@@ -104,6 +137,7 @@ class StaffAttendanceCalculator
         }
         if ($n % 2 === 1) {
             $result['unmatched'] = true;
+            $result['unmatched_at'] = date('h:i A', $middle[$n - 1]);
         }
         return self::applyLimit($result);
     }
@@ -119,7 +153,9 @@ class StaffAttendanceCalculator
             'exceeded'            => false,
             'exceeded_by'         => 0,
             'unmatched'           => false,
+            'unmatched_at'        => null,
             'on_break_since'      => null,
+            'punches'             => [],
         ]);
     }
 
