@@ -124,15 +124,16 @@ $emp = $user['employee'] ?? null;
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Shift Start Time</label>
-                        <input type="time" name="min_clock_in" value="<?= e($fn('min_clock_in', $emp['min_clock_in'] ?? '09:00')) ?>" class="<?= iClass('min_clock_in',$errors) ?>">
+                        <input type="time" name="min_clock_in" value="<?= e(substr((string) $fn('min_clock_in', $emp['min_clock_in'] ?? '09:00'), 0, 5)) ?>" class="<?= iClass('min_clock_in',$errors) ?>">
                     </div>
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Shift End Time</label>
-                        <input type="time" name="max_clock_out" value="<?= e($fn('max_clock_out', $emp['max_clock_out'] ?? '17:00')) ?>" class="<?= iClass('max_clock_out',$errors) ?>">
+                        <input type="time" name="max_clock_out" value="<?= e(substr((string) $fn('max_clock_out', $emp['max_clock_out'] ?? '17:00'), 0, 5)) ?>" class="<?= iClass('max_clock_out',$errors) ?>">
                     </div>
                     <div class="space-y-1.5">
                         <label class="block text-xs font-medium text-slate-400">Grace (Mins)</label>
-                        <input type="number" name="grace_period" min="0" value="<?= e($fn('grace_period') ?: '5') ?>" class="<?= iClass('grace_period',$errors) ?>">
+                        <input type="number" name="grace_period" min="0" value="<?= e((string) ($fn('grace_period') ?? '')) ?>" class="<?= iClass('grace_period',$errors) ?>" placeholder="Policy default">
+                        <span class="text-[10px] text-slate-500">Leave blank to use Staff Settings (custom shift = 10 min).</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -192,7 +193,7 @@ $emp = $user['employee'] ?? null;
         <?php endif; ?>
 
         <div class="flex items-center justify-between">
-            <a href="<?= url('users') ?>" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-all">Cancel</a>
+            <a href="<?= e(url($redirectTo)) ?>" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 transition-all">Cancel</a>
             <button type="submit" :disabled="loading" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-lg hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #a855f7);" :class="loading?'opacity-70 cursor-not-allowed':''">
                 <svg x-show="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                 Save Changes

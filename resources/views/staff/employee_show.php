@@ -67,6 +67,12 @@ if (!empty($employee['user_id'])) {
             <!-- Edit Employee Form Card -->
             <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 space-y-3">
                 <h3 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">Edit Employee Shift & Profile</h3>
+                <?php if ($linkedUser): ?>
+                <!-- Linked employees are edited in the same full form used to create them -->
+                <p class="text-slate-500 leading-relaxed">Account details, salary, department, shift timings, grace, break allowance and roles are all edited in one place.</p>
+                <a href="<?= url('users/' . $linkedUser['id'] . '/edit?redirect_to=' . urlencode('/staff/employees/' . $employee['id'])) ?>"
+                   class="block w-full text-center py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all">Edit Employee</a>
+                <?php else: ?>
                 <form action="<?= url('staff/employees/' . $employee['id']) ?>" method="POST" class="space-y-3">
                     <?= \Core\View::csrf() ?>
                     <div class="grid grid-cols-2 gap-2">
@@ -129,6 +135,7 @@ if (!empty($employee['user_id'])) {
                     </div>
                     <button type="submit" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all">Save Changes</button>
                 </form>
+                <?php endif; ?>
             </div>
         </div>
     </div>

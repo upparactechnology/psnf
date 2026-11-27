@@ -78,10 +78,13 @@ ob_start();
                         <td class="p-4">
                             <span class="px-2.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-500 uppercase"><?= e($emp['status']) ?></span>
                         </td>
-                        <td class="p-4 text-right">
+                        <td class="p-4 text-right whitespace-nowrap">
+                            <?php if (!empty($emp['user_id']) && has_permission('edit_staff_user_accounts')): ?>
+                                <a href="<?= url('users/' . (int) $emp['user_id'] . '/edit?redirect_to=' . urlencode('/staff/employees')) ?>" class="text-slate-500 font-bold hover:text-indigo-500 hover:underline mr-3">Edit</a>
+                            <?php endif; ?>
                             <?php if ($emp['id']): ?>
                                 <a href="<?= url('staff/employees/' . $emp['id']) ?>" class="text-indigo-500 font-bold hover:underline">Profile →</a>
-                            <?php else: ?>
+                            <?php elseif (empty($emp['user_id'])): ?>
                                 <span class="text-slate-400 text-2xs">No record</span>
                             <?php endif; ?>
                         </td>

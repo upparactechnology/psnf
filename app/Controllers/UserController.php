@@ -137,13 +137,15 @@ class UserController extends Controller
         }
 
         $lectureTime = !empty($data['lecture_time']) ? $data['lecture_time'] : null;
-        $gracePeriod = isset($data['grace_period']) && $data['grace_period'] !== '' ? (int) $data['grace_period'] : 5;
-        
+        // Blank = follow the shift policy (Staff Settings); a number overrides it for this user.
+        $gracePeriod = isset($data['grace_period']) && $data['grace_period'] !== '' ? max(0, (int) $data['grace_period']) : null;
+
         $salaryBasic = isset($data['salary_basic']) && $data['salary_basic'] !== '' ? (float) $data['salary_basic'] : 0.00;
         $deptId = !empty($data['department_id']) ? (int) $data['department_id'] : null;
         $desigId = !empty($data['designation_id']) ? (int) $data['designation_id'] : null;
         $minClockIn = !empty($data['min_clock_in']) ? $data['min_clock_in'] : null;
         $maxClockOut = !empty($data['max_clock_out']) ? $data['max_clock_out'] : null;
+        $breakAllowed = (isset($data['break_allowed_minutes']) && $data['break_allowed_minutes'] !== '') ? max(0, (int) $data['break_allowed_minutes']) : null;
 
         $data['uuid']         = str_uuid();
         $data['tenant_id']    = \Core\Database::getTenantId();
@@ -175,9 +177,10 @@ class UserController extends Controller
 
         EmployeeSyncService::syncUserToEmployee($userId);
 
-        if ($salaryBasic > 0 || $deptId || $desigId || $minClockIn || $maxClockOut) {
+        if ($salaryBasic > 0 || $deptId || $desigId || $minClockIn || $maxClockOut || $breakAllowed !== null) {
             $db = \Core\Application::$app->db;
             $updateData = [];
+            if ($breakAllowed !== null) $updateData['break_allowed_minutes'] = $breakAllowed;
             if ($salaryBasic > 0) $updateData['salary_basic'] = $salaryBasic;
             if ($deptId) $updateData['department_id'] = $deptId;
             if ($desigId) $updateData['designation_id'] = $desigId;
@@ -269,7 +272,8 @@ class UserController extends Controller
         }
 
         $lectureTime = !empty($data['lecture_time']) ? $data['lecture_time'] : null;
-        $gracePeriod = isset($data['grace_period']) && $data['grace_period'] !== '' ? (int) $data['grace_period'] : 5;
+        // Blank = follow the shift policy (Staff Settings); a number overrides it for this user.
+        $gracePeriod = isset($data['grace_period']) && $data['grace_period'] !== '' ? max(0, (int) $data['grace_period']) : null;
 
         $salaryBasic = isset($data['salary_basic']) && $data['salary_basic'] !== '' ? (float) $data['salary_basic'] : null;
         $deptId = !empty($data['department_id']) ? (int) $data['department_id'] : null;

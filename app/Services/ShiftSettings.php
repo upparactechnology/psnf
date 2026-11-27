@@ -16,6 +16,9 @@ namespace App\Services;
  */
 class ShiftSettings
 {
+    /** Grace for employees whose shift start differs from the template (see Staff Settings). */
+    public const CUSTOM_SHIFT_GRACE = 10;
+
     /** @var array<string, array> */
     private static array $cache = [];
 
@@ -88,7 +91,8 @@ class ShiftSettings
      * user_grace_period (users.grace_period, NULL when no linked user / not set).
      *
      *  start     = employees.min_clock_in if set, else template start_time
-     *  grace     = users.grace_period if not NULL, else template grace_minutes
+     *  grace     = users.grace_period if not NULL, else CUSTOM_SHIFT_GRACE when the
+     *              employee has a custom start, else template grace_minutes
      *  late_after= start + grace (check-in strictly after this is late)
      *  half_day  = template half_day_after when start == template start,
      *              else start + (template half_day_after - template start_time)
@@ -103,8 +107,16 @@ class ShiftSettings
         $start = self::hms($employee['min_clock_in'] ?? null, $tplStart);
         $end   = self::hms($employee['max_clock_out'] ?? null, $tplEnd);
 
+        // Per-user override wins; otherwise follow the policy shown in Staff Settings:
+        // template grace for the standard shift, a fixed 10 min for custom shifts.
         $userGrace = $employee['user_grace_period'] ?? null;
-        $grace = ($userGrace !== null && $userGrace !== '') ? (int) $userGrace : (int) ($shift['grace_minutes'] ?? 15);
+        if ($userGrace !== null && $userGrace !== '') {
+            $grace = (int) $userGrace;
+        } elseif ($start !== $tplStart) {
+            $grace = self::CUSTOM_SHIFT_GRACE;
+        } else {
+            $grace = (int) ($shift['grace_minutes'] ?? 15);
+        }
 
         $toSecs = static fn(string $hms): int => (int) substr($hms, 0, 2) * 3600 + (int) substr($hms, 3, 2) * 60 + (int) substr($hms, 6, 2);
         $fmt    = static fn(int $s): string => sprintf('%02d:%02d:%02d', intdiv(max(0, min($s, 86399)), 3600), intdiv(max(0, min($s, 86399)) % 3600, 60), max(0, min($s, 86399)) % 60);

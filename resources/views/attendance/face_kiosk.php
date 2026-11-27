@@ -1764,6 +1764,9 @@ html.kiosk-fs #kioskFsExit { display: block; }
         healthPending = true;
         try {
             const {response: r, data: d} = await fetchKiosk('<?= url('attendance/api.php?endpoint=/health') ?>', { method: 'GET', headers: {'X-Kiosk-Token': KIOSK_TOKEN} }, 10000);
+            // 401 = the PHP session (and its kiosk token) expired, e.g. the tablet
+            // slept overnight with timers frozen. Only a fresh page load issues a new token.
+            if (r.status === 401 && _kioskReload('kiosk token expired')) return;
             if (r.ok || r.status === 200) {
                 const alive = d && (d.status === 'healthy' || d.model_loaded === true);
                 setBackendStatus(alive);
@@ -1777,6 +1780,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
 
     // Also catch 503 inside doScan response
     function handleApiResponse(r, data) {
+        if (r.status === 401 && _kioskReload('kiosk token expired', true)) return false;
         if (r.status === 503) {
             setBackendStatus(false);
             showResult('error', 'Backend Offline', data?.fix || 'Start the Python InsightFace service.');
@@ -1982,6 +1986,53 @@ html.kiosk-fs #kioskFsExit { display: block; }
     var _lastFaceSeenAt = 0;
     var _sleeping = false;
     var _screenOffSent = false; // one-shot fully.turnScreenOff() per idle episode
+
+    // ── Long-idle recovery ───────────────────────────────────────────────────
+    // After a whole night with the screen off, Android/Fully freezes the page:
+    // timers stop, the PHP session (and its kiosk token) expires and the camera
+    // pipeline goes stale. Patching that in place is unreliable, so a guest kiosk
+    // reloads itself once it is visible again after a long pause.
+    var LONG_PAUSE_MS = 60 * 60 * 1000;      // hidden / frozen this long => reload on wake
+    var RESUME_SLEEP_KEY = 'psnf-kiosk-resume-sleep';
+    var _hiddenSince = document.hidden ? Date.now() : 0;
+    var _reloadWhenOnline = '';
+    function _kioskReload(reason, force) {
+        if (!KIOSK_GUEST) return false;            // never yank the page from a logged-in admin
+        if (isProcessing && !force) return false;  // never interrupt a pending submission
+        if (!navigator.onLine) { _reloadWhenOnline = reason; return false; } // avoid the offline error page
+        recoveryLog('reloading kiosk: ' + reason);
+        try { if (_sleeping) sessionStorage.setItem(RESUME_SLEEP_KEY, '1'); } catch(e) {}
+        location.reload();
+        return true;
+    }
+    // Restore the black sleep screen if the kiosk reloaded itself while asleep;
+    // the first detected face wakes it as usual.
+    try {
+        if (sessionStorage.getItem(RESUME_SLEEP_KEY)) {
+            sessionStorage.removeItem(RESUME_SLEEP_KEY);
+            if (KIOSK_GUEST) {
+                _sleeping = true;
+                var _rs = document.getElementById('kioskSleep'); if (_rs) _rs.style.display = 'block';
+            }
+        }
+    } catch(e) {}
+    // Heartbeat: a big gap between ticks means the page was frozen (device sleep).
+    var _lastBeatAt = Date.now();
+    setInterval(function() {
+        var now = Date.now(), gap = now - _lastBeatAt;
+        _lastBeatAt = now;
+        if (gap < 120000) return;
+        recoveryLog('page was frozen for ' + Math.round(gap / 1000) + 's');
+        if (document.hidden) {
+            // Make the visibility handler treat this as a long pause.
+            _hiddenSince = Math.min(_hiddenSince || now, now - gap);
+        } else if (gap >= LONG_PAUSE_MS) {
+            _kioskReload('resumed after long freeze');
+        } else {
+            try { checkBackend(); } catch(e) {} // 401 here also reloads
+            if (!_sleeping) _wakeCamera();
+        }
+    }, 10000);
     function _kioskHasFully() {
         try { return (typeof fully !== 'undefined') && fully !== null && typeof fully.turnScreenOff === 'function'; }
         catch(e) { return false; }
@@ -2069,19 +2120,43 @@ html.kiosk-fs #kioskFsExit { display: block; }
             setTimeout(function() { try { resizeOverlay(); } catch(e) {} }, 300);
         } catch(e) { try { initCam(); } catch(e2) {} }
     }
+    var _lastVisibleAt = 0;
+    function _onKioskVisible() {
+        if (document.hidden) return;
+        // visibilitychange and Fully's screenOn/onResume often fire together
+        if (Date.now() - _lastVisibleAt < 3000 && !_hiddenSince) return;
+        _lastVisibleAt = Date.now();
+        var hiddenFor = _hiddenSince ? Date.now() - _hiddenSince : 0;
+        _hiddenSince = 0;
+        if (hiddenFor >= LONG_PAUSE_MS) {
+            _sleeping = false; // the reloaded page should come up awake
+            if (_kioskReload('visible again after ' + Math.round(hiddenFor / 60000) + ' min')) return;
+        }
+        if (_sleeping) _wakeFromSleep();
+        else _wakeCamera();
+        try { if (typeof checkBackend === 'function') checkBackend(); } catch(e) {}
+    }
+    window.__kioskOnVisible = function() { try { _onKioskVisible(); } catch(e) {} };
     document.addEventListener('visibilitychange', function() {
         try {
             if (document.hidden) {
+                if (!_hiddenSince) _hiddenSince = Date.now();
                 // Release the camera only when the kiosk put the screen to sleep
                 // (or Fully owns the screen). Plain tab switches keep old behavior.
                 if (_sleeping || _kioskHasFully()) _releaseCamera();
             } else {
-                if (_sleeping) _wakeFromSleep();
-                else _wakeCamera();
-                try { if (typeof checkBackend === 'function') checkBackend(); } catch(e) {}
+                _onKioskVisible();
             }
         } catch(e) {}
     });
+    // Some Fully Kiosk / WebView builds do not fire visibilitychange when the
+    // screen turns back on, so also listen to Fully's own screen/resume events.
+    try {
+        if (_kioskHasFully() && typeof fully.bind === 'function') {
+            fully.bind('screenOn', 'window.__kioskOnVisible && window.__kioskOnVisible();');
+            fully.bind('onResume', 'window.__kioskOnVisible && window.__kioskOnVisible();');
+        }
+    } catch(e) {}
     // Tap anywhere on the sleep overlay to wake (plain-browser fallback path).
     (function() {
         var s = document.getElementById('kioskSleep');
@@ -2094,7 +2169,11 @@ html.kiosk-fs #kioskFsExit { display: block; }
     // ── Self-healing watchdog (visible, awake kiosk only) ─────────────────────
     function watchdog() {
         const now = Date.now();
-        if (document.hidden || _sleeping || isProcessing || cameraBlocked || now < pauseUntil) {
+        // Keep checking while the black sleep overlay is up (the page is still
+        // visible and the camera must stay healthy to notice the next face);
+        // previously a camera that died overnight under the overlay was never
+        // recovered and the kiosk stayed black until a manual reload.
+        if (document.hidden || isProcessing || cameraBlocked || now < pauseUntil) {
             lastFrameAt = now; healthySince = 0;
             return;
         }
@@ -2126,7 +2205,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 const previous = Number(sessionStorage.getItem(key) || 0);
                 if (now - previous > 300000) {
                     sessionStorage.setItem(key, String(now));
-                    location.reload(); return;
+                    if (_kioskReload(reason)) return;
                 }
             } catch(e) {}
         }
@@ -2138,8 +2217,15 @@ html.kiosk-fs #kioskFsExit { display: block; }
             _releaseCamera(); initCam();
         }
     }
-    window.addEventListener('online', () => { checkBackend(); if (!document.hidden && !_sleeping) watchdog(); });
-    window.addEventListener('pageshow', () => { if (!document.hidden && !_sleeping && !isProcessing) _wakeCamera(); });
+    window.addEventListener('online', () => {
+        if (_reloadWhenOnline && _kioskReload(_reloadWhenOnline)) return;
+        checkBackend(); if (!document.hidden) watchdog();
+    });
+    window.addEventListener('pageshow', (e) => {
+        // Restored from the back/forward cache: treat like coming back from a pause
+        if (e && e.persisted && !document.hidden) { _onKioskVisible(); return; }
+        if (!document.hidden && !_sleeping && !isProcessing) _wakeCamera();
+    });
     setInterval(watchdog, 5000);
 
     // ── Initialization ───────────────────────────────────────────────────────
