@@ -385,6 +385,7 @@ $router->get('/attendance/face-kiosk',    [App\Controllers\FaceRecognitionContro
 $router->post('/attendance/face-kiosk',   [App\Controllers\FaceRecognitionController::class, 'kioskView'], ['auth.kiosk']);
 $router->get('/attendance/face-register', [App\Controllers\FaceRecognitionController::class, 'registerView'], ['auth', 'permission:view_face_register']);
 $router->post('/attendance/face-register',[App\Controllers\FaceRecognitionController::class, 'registerView'], ['auth', 'permission:view_face_register']);
+$router->get('/attendance/face-scan-logs', [App\Controllers\FaceRecognitionController::class, 'scanLogsView'], ['auth', 'permission:view_face_register']);
 $router->get('/attendance/face-history',  [App\Controllers\FaceRecognitionController::class, 'historyView'], ['auth', 'permission:view_staff_attendance']);
 
 // ─── Timetables ──────────────────────────────────────────────────────────────

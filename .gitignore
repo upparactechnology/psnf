@@ -65,8 +65,8 @@ test_req.php
 # ─── Windows scripts ────────────────────────────────────
 *.bat
 *.ps1
-install_flutter.bat
-install_flutter.ps1
+scripts/install_flutter.bat
+scripts/install_flutter.ps1
 start_backend.bat
 
 # ─── Claude/AI agent files ──────────────────────────────

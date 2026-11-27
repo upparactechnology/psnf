@@ -80,6 +80,8 @@ def recognize_face(
             designation        = res.get("designation"),
             confidence         = res.get("confidence", 0.0),
             check_in           = res.get("check_in"),
+            reason             = res.get("reason"),
+            no_faces_registered= bool(res.get("no_faces_registered", False)),
             message            = res.get("message", "Recognition completed.")
         )
     except HTTPException:

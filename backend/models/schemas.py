@@ -21,6 +21,10 @@ class RegisterFaceRequest(BaseModel):
 class VerifyFaceRequest(BaseModel):
     image_base64: Base64Image = Field(..., description="Base64-encoded frame from camera (max 5 MB)")
     tenant_id: Optional[int] = Field(None, description="Restrict matching to users of this tenant (set by the PHP proxy)")
+    # Kiosk diagnostics (all optional; stored in face_scan_logs for the admin page)
+    session_id: Optional[Annotated[str, StringConstraints(max_length=40)]] = Field(None, description="Groups the retries of one kiosk scan")
+    attempt: Optional[int] = Field(None, ge=1, le=10, description="Attempt number within the scan session")
+    client_meta: Optional[Annotated[str, StringConstraints(max_length=4000)]] = Field(None, description="JSON: camera resolution, crop, capabilities")
 
 
 class VerifyFaceResponse(BaseModel):
@@ -35,6 +39,10 @@ class VerifyFaceResponse(BaseModel):
     message: str
     already_checked_in: bool = False
     check_in: Optional[str] = None
+    # Machine-readable failure reason for the kiosk retry logic:
+    # blurry | dark | overexposed | no_face | multiple_faces | liveness | not_recognized | error
+    reason: Optional[str] = None
+    no_faces_registered: bool = False
 
 
 class UserListItem(BaseModel):

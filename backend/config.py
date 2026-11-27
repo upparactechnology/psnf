@@ -72,14 +72,22 @@ class Settings(BaseSettings):
     NO_FACE_IDLE_TIMEOUT: int = int(os.getenv("NO_FACE_IDLE_TIMEOUT", "300"))  # seconds with no face detected before model unloads
 
     # Image Quality Thresholds
-    BLUR_THRESHOLD: float = float(os.getenv("BLUR_THRESHOLD", "40.0"))  # Laplacian variance threshold
+    # Sharpness is measured on the detected FACE only (crop resized to 128x128), not the
+    # whole frame — a plain wall or a hazy cover sheet no longer makes a sharp face "blurry".
+    # Calibrated on real kiosk/registration images: sharp faces ~60-370, truly soft ~10-15.
+    FACE_BLUR_THRESHOLD: float = float(os.getenv("FACE_BLUR_THRESHOLD", "20.0"))
     MIN_BRIGHTNESS: float = float(os.getenv("MIN_BRIGHTNESS", "30.0"))
     MAX_BRIGHTNESS: float = float(os.getenv("MAX_BRIGHTNESS", "230.0"))
+
+    # Scan diagnostics (admin "Face Scan Logs" page)
+    FAILED_SCAN_IMAGE_DAYS: int = int(os.getenv("FAILED_SCAN_IMAGE_DAYS", "7"))   # failed-scan snapshots kept
+    SCAN_LOG_RETENTION_DAYS: int = int(os.getenv("SCAN_LOG_RETENTION_DAYS", "60"))  # log rows kept
 
     # Storage Paths
     BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
     UPLOAD_FACES_DIR: str = os.path.join(BASE_DIR, "uploads", "faces")
     UPLOAD_ATTENDANCE_DIR: str = os.path.join(BASE_DIR, "uploads", "attendance")
+    UPLOAD_FAILED_DIR: str = os.path.join(BASE_DIR, "uploads", "failed")
 
     # Security & JWT
     JWT_SECRET: str = os.getenv("JWT_SECRET", "")  # no default secret; JWT helpers refuse to work without it
@@ -97,3 +105,4 @@ settings = Settings()
 # Ensure upload directories exist
 os.makedirs(settings.UPLOAD_FACES_DIR, exist_ok=True)
 os.makedirs(settings.UPLOAD_ATTENDANCE_DIR, exist_ok=True)
+os.makedirs(settings.UPLOAD_FAILED_DIR, exist_ok=True)

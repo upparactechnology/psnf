@@ -67,31 +67,43 @@ class FaceMatcher:
         if threshold is None:
             threshold = settings.SIMILARITY_THRESHOLD
 
+        best_id, best_score, _ = self.match_details(target_embedding, allowed_ids)
+        if best_id is not None and best_score >= threshold:
+            return best_id, best_score
+        return None, best_score
+
+    def match_details(
+        self,
+        target_embedding: np.ndarray,
+        allowed_ids: Optional[Set[int]] = None,
+    ) -> Tuple[Optional[int], float, float]:
+        """
+        Returns (closest_user_id, best_score, second_best_score) WITHOUT applying the
+        threshold. second_best_score is the best score of any OTHER user — the gap
+        between the two shows how confidently the face was separated from others.
+        Used for diagnostics; never shown on the kiosk.
+        """
         with self._lock:
             snapshot = list(self._embedding_cache.items())
 
-        if not snapshot:
-            return None, 0.0
-
         target_embedding = _normalize(target_embedding)
 
-        best_employee_id: Optional[int] = None
-        highest_score: float = 0.0
-
+        per_user = []
         for emp_id, emb_list in snapshot:
             if allowed_ids is not None and emp_id not in allowed_ids:
                 continue
-            for emb in emb_list:
-                # Cosine similarity for normalized vectors is simply dot product
-                score = float(np.dot(target_embedding, emb))
-                if score > highest_score:
-                    highest_score = score
-                    best_employee_id = emp_id
+            if not emb_list:
+                continue
+            # Cosine similarity for normalized vectors is simply dot product
+            per_user.append((max(float(np.dot(target_embedding, emb)) for emb in emb_list), emp_id))
 
-        if highest_score >= threshold:
-            return best_employee_id, round(highest_score, 4)
+        if not per_user:
+            return None, 0.0, 0.0
 
-        return None, round(highest_score, 4)
+        per_user.sort(reverse=True)
+        best_score, best_id = per_user[0]
+        second = per_user[1][0] if len(per_user) > 1 else 0.0
+        return best_id, round(max(best_score, 0.0), 4), round(max(second, 0.0), 4)
 
 
 # Global singleton matcher instance for in-memory speed

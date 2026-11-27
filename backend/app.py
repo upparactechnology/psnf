@@ -104,6 +104,13 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
+    # 7. Remove expired failed-scan snapshots / old scan-log rows
+    try:
+        from services.scan_log_service import maybe_prune
+        maybe_prune(force=True)
+    except Exception as prune_err:
+        logger.warning(f"Scan-log cleanup skipped: {prune_err}")
+
     logger.info("Service ready — model will load on first face recognition request.")
     yield
 
@@ -160,12 +167,35 @@ _SAFE_NAME = re.compile(r"^[A-Za-z0-9_\-]+\.(jpg|jpeg|png)$", re.IGNORECASE)
 
 @app.get("/uploads/{folder}/{filename}", include_in_schema=False)
 async def serve_upload(folder: str, filename: str):
-    if folder not in ("faces", "attendance") or not _SAFE_NAME.match(filename):
+    if folder not in ("faces", "attendance", "failed") or not _SAFE_NAME.match(filename):
         raise HTTPException(status_code=404, detail="Not found")
     path = os.path.realpath(os.path.join(uploads_dir, folder, filename))
     if os.path.commonpath([path, uploads_dir]) != uploads_dir or not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="Not found")
     return FileResponse(path, media_type="image/jpeg" if filename.lower().endswith(("jpg", "jpeg")) else "image/png")
+
+
+@app.get("/api/diagnostics/config", include_in_schema=False)
+def diagnostics_config():
+    """Live recognition settings + engine state for the admin Face Scan Logs page."""
+    with matcher._lock:
+        users = len(matcher._embedding_cache)
+        vectors = sum(len(v) for v in matcher._embedding_cache.values())
+    return {
+        "success": True,
+        "model_name": settings.MODEL_NAME,
+        "model_loaded": model_manager.is_loaded(),
+        "similarity_threshold": settings.SIMILARITY_THRESHOLD,
+        "face_blur_threshold": settings.FACE_BLUR_THRESHOLD,
+        "min_brightness": settings.MIN_BRIGHTNESS,
+        "max_brightness": settings.MAX_BRIGHTNESS,
+        "detection_size": settings.DETECTION_SIZE,
+        "cooldown_minutes": settings.COOLDOWN_MINUTES,
+        "failed_image_days": settings.FAILED_SCAN_IMAGE_DAYS,
+        "log_retention_days": settings.SCAN_LOG_RETENTION_DAYS,
+        "cached_users": users,
+        "cached_vectors": vectors,
+    }
 
 
 # Routers
