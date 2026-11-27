@@ -20,8 +20,7 @@ ob_start();
             </div>
             
             <?php if ($selectedReportCard): ?>
-            <a href="<?= url('students/' . $student['id'] . '/report-card/view?semester=' . urlencode($selectedReportCard['semester']) . '&academic_year=' . urlencode($selectedReportCard['academic_year']) . '&pdf=1') ?>" 
-               target="_blank"
+            <a href="<?= url('parent/students/' . (int) $student['id'] . '/report-card?report_card_id=' . (int) $selectedReportCard['id'] . '&pdf=1') ?>"
                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all shadow-md hover:shadow-lg" 
                style="background: linear-gradient(135deg, #6366f1, #a855f7);">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -85,21 +84,20 @@ ob_start();
                     <h5 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject Performance Summary</h5>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <?php
-                        $subMap = [
-                            'english' => 'English Language',
-                            'maths' => 'Mathematics',
-                            'evs_gk' => 'GK / EVS'
-                        ];
+                        $subMap = ['english' => 'English', 'maths' => 'Maths', 'gk' => 'General Knowledge / EVS'];
                         foreach ($subMap as $key => $subLabel):
                             $subjData = $selectedReportCard['academic_profile'][$key] ?? [];
-                            $ut = (float)($subjData['unit_test'] ?? 0);
-                            $th = (float)($subjData['theory'] ?? 0);
-                            $pr = (float)($subjData['practical'] ?? 0);
-                            $total = $ut + $th + $pr;
+                            $res = \App\Services\PearlReportCard::subjectResult($subjData);
+                            $parts = [];
+                            foreach (\App\Services\PearlReportCard::ACADEMIC_COLUMNS as $col => [$colLabel, $colMax]) {
+                                $v = $subjData[$col]['v'] ?? '';
+                                if ($v !== '') $parts[] = strtok($colLabel, ' [') . ': ' . $v . (is_numeric($v) ? '/' . $colMax : '');
+                            }
                         ?>
                         <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 text-center">
-                            <span class="block text-xs font-medium text-slate-500"><?= $subLabel ?></span>
-                            <span class="block text-xl font-bold text-slate-800 dark:text-white mt-1.5"><?= $total ?> <span class="text-[10px] text-slate-400">/75</span></span>
+                            <span class="block text-xs font-medium text-slate-500"><?= e($subLabel) ?></span>
+                            <span class="block text-xl font-bold text-slate-800 dark:text-white mt-1.5"><?= $res['grade'] !== '' ? e($res['grade']) . ' <span class="text-[10px] text-slate-400">' . e($res['pct']) . '%</span>' : '—' ?></span>
+                            <span class="block text-[10px] text-slate-400 mt-1"><?= e(implode(' · ', $parts)) ?></span>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -111,15 +109,15 @@ ob_start();
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-xl flex justify-between items-center">
                             <span class="text-xs text-slate-500">Working Days:</span>
-                            <span class="text-sm font-bold text-slate-800 dark:text-white"><?= e($selectedReportCard['attendance_profile']['total_days'] ?? '0') ?></span>
+                            <span class="text-sm font-bold text-slate-800 dark:text-white"><?= e(($selectedReportCard['attendance_profile']['working_days'] ?? '') ?: '—') ?></span>
                         </div>
                         <div class="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-xl flex justify-between items-center">
                             <span class="text-xs text-slate-500">Days Present:</span>
-                            <span class="text-sm font-bold text-slate-800 dark:text-white"><?= e($selectedReportCard['attendance_profile']['present_days'] ?? '0') ?></span>
+                            <span class="text-sm font-bold text-slate-800 dark:text-white"><?= e(($selectedReportCard['attendance_profile']['present_days'] ?? '') ?: '—') ?></span>
                         </div>
                         <div class="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-xl flex justify-between items-center">
                             <span class="text-xs text-slate-500">Punctuality:</span>
-                            <span class="text-sm font-bold text-emerald-500"><?= e($selectedReportCard['attendance_profile']['punctuality'] ?? 'A') ?></span>
+                            <span class="text-sm font-bold text-emerald-500"><?= e(($selectedReportCard['attendance_profile']['punctuality'] ?? '') ?: '—') ?></span>
                         </div>
                     </div>
                 </div>
@@ -128,7 +126,7 @@ ob_start();
                 <div class="space-y-3">
                     <h5 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Class Teacher's Evaluative Narrative</h5>
                     <div class="p-4 rounded-xl border border-slate-100 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-950/20 text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans italic">
-                        "<?= nl2br(e($selectedReportCard['feedback_text'] ?? 'Student shows consistent growth.')) ?>"
+                        <?= $selectedReportCard['feedback_text'] !== '' ? '"' . nl2br(e($selectedReportCard['feedback_text'])) . '"' : '—' ?>
                     </div>
                 </div>
 

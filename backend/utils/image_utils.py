@@ -49,6 +49,30 @@ def check_image_blur(cv2_img: np.ndarray) -> float:
     variance = cv2.Laplacian(gray, cv2.CV_64F).var()
     return float(variance)
 
+def face_quality(cv2_img: np.ndarray, bbox) -> dict:
+    """
+    Quality metrics measured on the face region only.
+    The crop is resized to a fixed 128x128 so the sharpness score does not depend on
+    how big the face is (people standing further back are not penalised for that alone).
+    Returns {} if the bbox does not overlap the image.
+    """
+    h, w = cv2_img.shape[:2]
+    x1, y1, x2, y2 = [int(v) for v in bbox]
+    x1, y1 = max(0, x1), max(0, y1)
+    x2, y2 = min(w, x2), min(h, y2)
+    if x2 - x1 < 4 or y2 - y1 < 4:
+        return {}
+    gray = cv2.cvtColor(cv2_img[y1:y2, x1:x2], cv2.COLOR_BGR2GRAY)
+    interp = cv2.INTER_AREA if (x2 - x1) > 128 else cv2.INTER_LINEAR
+    norm = cv2.resize(gray, (128, 128), interpolation=interp)
+    return {
+        "blur": float(cv2.Laplacian(norm, cv2.CV_64F).var()),
+        "brightness": float(gray.mean()),
+        "contrast": float(gray.std()),
+        "width": int(x2 - x1),
+    }
+
+
 def check_image_brightness(cv2_img: np.ndarray) -> float:
     """Calculates average brightness score (HSV V-channel)."""
     hsv = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2HSV)

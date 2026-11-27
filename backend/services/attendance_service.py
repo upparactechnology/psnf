@@ -1,4 +1,5 @@
 import os
+import time
 import threading
 import cv2
 from datetime import datetime, date
@@ -16,6 +17,7 @@ from recognition.detector import FaceDetector
 from recognition.embedding import EmbeddingExtractor
 from recognition.liveness import verify_face_liveness
 from recognition.matcher import matcher
+from services.scan_log_service import record_scan, save_failed_snapshot
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -55,9 +57,53 @@ class AttendanceService:
         user_agent: str
     ) -> Dict[str, Any]:
         """
+        Runs the recognition pipeline and records one face_scan_logs row for the
+        admin "Face Scan Logs" page (failed frames are also saved to uploads/failed/).
+        Similarity scores are logged for admins only — failures return confidence 0.0.
+        """
+        t0 = time.monotonic()
+        diag: Dict[str, Any] = {
+            "tenant_id": getattr(req, "tenant_id", None),
+            "session_id": getattr(req, "session_id", None),
+            "attempt": getattr(req, "attempt", None),
+            "client_meta": getattr(req, "client_meta", None),
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "threshold": settings.SIMILARITY_THRESHOLD,
+            "blur_threshold": settings.FACE_BLUR_THRESHOLD,
+        }
+        img_holder: Dict[str, Any] = {}
+        try:
+            res = self._verify(db, req, ip_address, user_agent, diag, img_holder)
+        except Exception as e:
+            diag["outcome"] = "error"
+            diag["message"] = str(e)[:255]
+            diag["processing_ms"] = int((time.monotonic() - t0) * 1000)
+            record_scan(diag)
+            raise
+
+        if res.get("success"):
+            diag["outcome"] = "cooldown" if res.get("already_checked_in") else "success"
+            diag["matched_user_id"] = res.get("user_id")
+            diag["image_path"] = res.get("_image_path")
+        else:
+            diag["outcome"] = res.get("reason") or "error"
+            img = img_holder.get("img")
+            if img is not None and diag["outcome"] != "error":
+                diag["image_path"] = save_failed_snapshot(img, diag["outcome"], diag.get("score"))
+        diag["message"] = res.get("message")
+        diag["processing_ms"] = int((time.monotonic() - t0) * 1000)
+        record_scan(diag)
+
+        res.pop("_image_path", None)
+        return res
+
+    def _verify(self, db: Session, req: VerifyFaceRequest, ip_address: str, user_agent: str,
+                diag: Dict[str, Any], img_holder: Dict[str, Any]) -> Dict[str, Any]:
+        """
         Full pipeline:
           1. Decode & resize image
-          2. Detect face (InsightFace, mandatory)
+          2. Detect face (InsightFace, mandatory) + face-region quality
           3. Liveness check
           4. Extract 512D embedding
           5. Match against in-memory cache (user_id keyed)
@@ -67,27 +113,40 @@ class AttendanceService:
         # 1. Decode & resize
         img_bgr = base64_to_cv2(req.image_base64)
         img_bgr = resize_image_max(img_bgr, max_dim=1024)
+        img_holder["img"] = img_bgr
+        diag["img_height"], diag["img_width"] = img_bgr.shape[:2]
 
         # 2. Face detection & quality
         det_res = self.detector.validate_and_detect(img_bgr)
+        diag.update({
+            "blur_score": det_res.blur_score if det_res.face_count == 1 else None,
+            "brightness": det_res.brightness_score,
+            "face_brightness": det_res.face_brightness,
+            "face_contrast": det_res.face_contrast,
+            "face_width": det_res.face_width,
+            "det_score": det_res.det_score,
+            "yaw": det_res.yaw if det_res.face_count == 1 else None,
+            "pitch": det_res.pitch if det_res.face_count == 1 else None,
+        })
         if not det_res.is_valid:
             logger.info(f"Detection failed: {det_res.error_message}")
-            return {"success": False, "message": det_res.error_message or "Face quality check failed.", "confidence": 0.0}
+            return {"success": False, "reason": det_res.reason or "error",
+                    "message": det_res.error_message or "Face quality check failed.", "confidence": 0.0}
 
         # 3. Liveness check
         liveness_ok, liveness_msg = verify_face_liveness(img_bgr, det_res.bbox)
         if not liveness_ok:
             logger.warning(f"Liveness check failed: {liveness_msg}")
-            return {"success": False, "message": f"Security: {liveness_msg}", "confidence": 0.0}
+            return {"success": False, "reason": "liveness", "message": f"Security: {liveness_msg}", "confidence": 0.0}
 
         # 4. Extract embedding (reuses the detection pass when possible)
         try:
             target_embedding = self.extractor.extract_embedding(img_bgr, face=det_res.face)
         except ValueError as e:
-            return {"success": False, "message": str(e), "confidence": 0.0}
+            return {"success": False, "reason": "no_face", "message": str(e), "confidence": 0.0}
         except RuntimeError as e:
             logger.error(f"Embedding extraction failed: {e}")
-            return {"success": False, "message": "Face processing failed. Please try again.", "confidence": 0.0}
+            return {"success": False, "reason": "error", "message": "Face processing failed. Please try again.", "confidence": 0.0}
 
         # 5. Cosine match (optionally restricted to one tenant's users)
         allowed_ids = None
@@ -96,9 +155,10 @@ class AttendanceService:
             allowed_ids = {
                 row[0] for row in db.query(ERPUser.id).filter(ERPUser.tenant_id == tenant_id).all()
             }
-        matched_user_id, confidence = matcher.match(
-            target_embedding, threshold=settings.SIMILARITY_THRESHOLD, allowed_ids=allowed_ids
-        )
+        best_id, best_score, second_score = matcher.match_details(target_embedding, allowed_ids=allowed_ids)
+        diag.update({"best_user_id": best_id, "score": best_score, "second_score": second_score})
+        matched_user_id = best_id if (best_id is not None and best_score >= settings.SIMILARITY_THRESHOLD) else None
+        confidence = best_score
 
         if not matched_user_id:
             # Check if any faces are registered at all
@@ -106,6 +166,7 @@ class AttendanceService:
             if total == 0:
                 return {
                     "success": False,
+                    "reason": "not_recognized",
                     "no_faces_registered": True,
                     "message": "No face profiles registered yet. Please register users at Face Registration first.",
                     "confidence": 0.0
@@ -113,6 +174,7 @@ class AttendanceService:
             logger.info(f"Face not recognized: score={confidence:.4f} < threshold={settings.SIMILARITY_THRESHOLD}")
             return {
                 "success": False,
+                "reason": "not_recognized",
                 "message": "Face not recognized. Please try again or contact the administrator.",
                 "confidence": 0.0
             }
@@ -136,6 +198,7 @@ class AttendanceService:
             db.rollback()
             return {
                 "success": False,
+                "reason": "inactive_user",
                 "message": "Matched user account is inactive or has been removed.",
                 "confidence": round(confidence, 4)
             }
@@ -222,7 +285,8 @@ class AttendanceService:
             "designation": user.designation,
             "confidence": round(confidence, 4),
             "check_in": now.strftime("%Y-%m-%d %H:%M:%S"),
-            "message": f"Attendance marked for {user.name}!"
+            "message": f"Attendance marked for {user.name}!",
+            "_image_path": rel_path
         }
 
     def get_attendance_history(

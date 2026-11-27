@@ -73,3 +73,44 @@ class Attendance(Base):
     created_at      = Column(DateTime, default=now_ist_naive)
 
     user = relationship("ERPUser", back_populates="attendances", foreign_keys=[user_id])
+
+
+class FaceScanLog(Base):
+    """
+    One row per kiosk recognition attempt (success, cooldown or failure) — powers the
+    admin "Face Scan Logs" page. Scores are stored here and NEVER sent to the kiosk.
+    Failed-scan snapshots live in uploads/failed/ and are deleted after
+    settings.FAILED_SCAN_IMAGE_DAYS; rows after settings.SCAN_LOG_RETENTION_DAYS.
+    Same schema as database/migrations/20261128_CreateFaceScanLogs.php.
+    """
+    __tablename__ = "face_scan_logs"
+    __table_args__ = {"extend_existing": True}
+
+    id              = Column(BigInteger, primary_key=True, autoincrement=True)
+    created_at      = Column(DateTime, default=now_ist_naive, index=True)
+    tenant_id       = Column(Integer, nullable=True, index=True)
+    outcome         = Column(String(20), nullable=False, index=True)   # success | cooldown | not_recognized | blurry | dark | overexposed | no_face | multiple_faces | liveness | error
+    message         = Column(String(255), nullable=True)
+    matched_user_id = Column(Integer, nullable=True, index=True)      # set on success / cooldown
+    best_user_id    = Column(Integer, nullable=True)                  # closest registered person (even below threshold)
+    score           = Column(Float, nullable=True)                    # best similarity score
+    second_score    = Column(Float, nullable=True)                    # best score of any other person
+    threshold       = Column(Float, nullable=True)
+    blur_score      = Column(Float, nullable=True)                    # face-region sharpness
+    blur_threshold  = Column(Float, nullable=True)
+    brightness      = Column(Float, nullable=True)                    # whole frame
+    face_brightness = Column(Float, nullable=True)
+    face_contrast   = Column(Float, nullable=True)
+    face_width      = Column(Integer, nullable=True)                  # px in the received image
+    det_score       = Column(Float, nullable=True)
+    yaw             = Column(Float, nullable=True)
+    pitch           = Column(Float, nullable=True)
+    img_width       = Column(Integer, nullable=True)
+    img_height      = Column(Integer, nullable=True)
+    image_path      = Column(String(255), nullable=True)
+    session_id      = Column(String(40), nullable=True, index=True)   # groups the retries of one kiosk scan
+    attempt         = Column(Integer, nullable=True)
+    client_meta     = Column(Text, nullable=True)                     # JSON from the kiosk (camera, crop, device)
+    processing_ms   = Column(Integer, nullable=True)
+    ip_address      = Column(String(45), nullable=True)
+    user_agent      = Column(String(255), nullable=True)

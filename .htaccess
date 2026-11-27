@@ -20,7 +20,7 @@ RewriteRule (?i)\.(sql|log|bat|ps1|md|sh|lock|env)$ - [F,L]
 RewriteRule (^|/)composer\.(json|lock)$ - [F,L]
 
 # Internal source / data folders (optionally reached through the erp/ or public/ prefix)
-RewriteRule ^(erp/)?(backend|database|config|core|app|routes|resources|graphify-out|\.agents|staff_app|driver_app)(/|$) - [F,L]
+RewriteRule ^(erp/)?(backend|database|config|core|app|routes|resources|graphify-out|\.agents|staff_app|driver_app|docs|scripts)(/|$) - [F,L]
 RewriteRule ^(erp/)?(public/)?storage/(logs|keys)(/|$) - [F,L]
 
 # Root-level maintenance / debug scripts

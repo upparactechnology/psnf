@@ -1,2 +1,0 @@
-<?php
-// Diagnosed permissions seeding.

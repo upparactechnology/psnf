@@ -56,6 +56,7 @@ $routes = [
     '/api/attendance/history'  => [['GET'],           'admin', 'query'],
     '/api/attendance/delete'   => [['DELETE', 'POST'],'admin', 'query'],
     '/api/detect-frame'        => [['POST'],          'admin', null],
+    '/api/diagnostics/config'  => [['GET'],           'admin', null],
     '/api/model/load'          => [['POST'],          'admin', null],
     '/api/model/unload'        => [['POST'],          'admin', null],
 ];
@@ -68,7 +69,7 @@ if (!str_starts_with($endpoint, '/api/') && !str_starts_with($endpoint, '/health
 
 $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
-if (preg_match('#^/uploads/(faces|attendance)/([A-Za-z0-9_\-]+\.(?:jpg|jpeg|png|webp))$#i', $endpoint, $m)) {
+if (preg_match('#^/uploads/(faces|attendance|failed)/([A-Za-z0-9_\-]+\.(?:jpg|jpeg|png|webp))$#i', $endpoint, $m)) {
     $routeCfg = [['GET'], 'admin', null];
 } elseif (isset($routes[$endpoint])) {
     $routeCfg = $routes[$endpoint];

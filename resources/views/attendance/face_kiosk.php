@@ -531,7 +531,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
                     <video id="kioskVideo" autoplay playsinline muted></video>
                     <canvas id="kioskOverlayCanvas"></canvas>
                     <div class="kiosk-scan-line" id="scanLine" style="display:none;"></div>
-                    <div class="kiosk-face-label wait" id="faceLbl">👤 Position your face inside the guide</div>
+                    <div class="kiosk-face-label wait" id="faceLbl">👤 Look at the camera</div>
                     <canvas id="kioskCapCanvas" style="display:none;"></canvas>
                     
                     <!-- Result Overlay Centered and Big -->
@@ -992,7 +992,9 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 delegate: delegate
             },
             runningMode: 'VIDEO',
-            minDetectionConfidence: 0.5
+            // Slightly more sensitive so people standing further back are still picked up;
+            // the server (InsightFace) makes the real face / quality decision.
+            minDetectionConfidence: 0.4
         });
     }
 
@@ -1170,6 +1172,185 @@ html.kiosk-fs #kioskFsExit { display: block; }
         }
     }
 
+    // ── Camera tuning (focus / exposure) — feature-detected, silently skipped ──
+    // Most tablet front cameras are fixed-focus with no hardware zoom, so zoom is done
+    // in software (captureForRecognition). What the camera supports is recorded in
+    // cameraInfo and sent with each scan, so admins can see it on Face Scan Logs.
+    let camTrack = null;
+    let cameraInfo = {};
+    let expComp = null;          // {min, max, step, value} when exposureCompensation is supported
+    let poiSupported = false;    // pointsOfInterest (meter exposure/focus on the face)
+    let lastMeterAt = 0, lastFaceForExposureAt = 0, meterBusy = false;
+    const meterCanvas = document.createElement('canvas');
+    meterCanvas.width = 24; meterCanvas.height = 24;
+
+    async function tuneCamera(track) {
+        camTrack = track || null;
+        expComp = null; poiSupported = false;
+        cameraInfo = { w: vid.videoWidth, h: vid.videoHeight };
+        if (!track || typeof track.getCapabilities !== 'function') { cameraInfo.caps = 'none'; return; }
+        let caps = {};
+        try { caps = track.getCapabilities() || {}; } catch (e) { cameraInfo.caps = 'error'; return; }
+        const supported = (navigator.mediaDevices.getSupportedConstraints && navigator.mediaDevices.getSupportedConstraints()) || {};
+        cameraInfo.label = (track.label || '').slice(0, 60);
+        cameraInfo.maxRes = (caps.width && caps.height) ? (caps.width.max + 'x' + caps.height.max) : null;
+        cameraInfo.focus = caps.focusMode || [];
+        cameraInfo.exposure = caps.exposureMode || [];
+        cameraInfo.zoom = caps.zoom ? (caps.zoom.min + '-' + caps.zoom.max) : null;
+        poiSupported = !!supported.pointsOfInterest;
+        cameraInfo.poi = poiSupported;
+
+        const advanced = {};
+        if ((caps.focusMode || []).includes('continuous')) advanced.focusMode = 'continuous';
+        if ((caps.exposureMode || []).includes('continuous')) advanced.exposureMode = 'continuous';
+        if ((caps.whiteBalanceMode || []).includes('continuous')) advanced.whiteBalanceMode = 'continuous';
+        if (caps.exposureCompensation && caps.exposureCompensation.max > caps.exposureCompensation.min) {
+            expComp = {
+                min: caps.exposureCompensation.min,
+                max: caps.exposureCompensation.max,
+                step: caps.exposureCompensation.step || 0.33,
+                value: 0
+            };
+            cameraInfo.expComp = expComp.min + '..' + expComp.max;
+        }
+        if (Object.keys(advanced).length) {
+            try { await track.applyConstraints({ advanced: [advanced] }); cameraInfo.applied = Object.keys(advanced); }
+            catch (e) { cameraInfo.applied = 'failed'; }
+        }
+        console.log('[Camera] capabilities:', JSON.stringify(cameraInfo));
+    }
+
+    // Every ~1.2s while a face is visible: point the camera's metering at the face and
+    // nudge exposure compensation so the FACE (not the bright background or the light
+    // coming through the cover sheet) ends up properly exposed.
+    function meterOnFace(bbox) {
+        const now = Date.now();
+        lastFaceForExposureAt = now;
+        if (!camTrack || meterBusy || now - lastMeterAt < 1200) return;
+        if (!poiSupported && !expComp) return;
+        lastMeterAt = now;
+        const vw = vid.videoWidth, vh = vid.videoHeight;
+        const adv = {};
+        if (poiSupported) {
+            adv.pointsOfInterest = [{
+                x: Math.min(1, Math.max(0, (bbox.originX + bbox.width / 2) / vw)),
+                y: Math.min(1, Math.max(0, (bbox.originY + bbox.height / 2) / vh))
+            }];
+        }
+        if (expComp) {
+            try {
+                const mc = meterCanvas.getContext('2d', { willReadFrequently: true });
+                mc.drawImage(vid, bbox.originX, bbox.originY, bbox.width, bbox.height, 0, 0, 24, 24);
+                const px = mc.getImageData(0, 0, 24, 24).data;
+                let sum = 0;
+                for (let i = 0; i < px.length; i += 4) sum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+                const luma = sum / (px.length / 4);
+                let v = expComp.value;
+                if (luma < 85) v += expComp.step;
+                else if (luma > 175) v -= expComp.step;
+                v = Math.min(expComp.max, Math.max(expComp.min, Math.round(v * 100) / 100));
+                if (v !== expComp.value) { expComp.value = v; adv.exposureCompensation = v; }
+                cameraInfo.faceLuma = Math.round(luma);
+            } catch (e) { /* tainted/unsupported — ignore */ }
+        }
+        if (!Object.keys(adv).length) return;
+        meterBusy = true;
+        camTrack.applyConstraints({ advanced: [adv] })
+            .catch(() => { if (adv.pointsOfInterest) poiSupported = false; })
+            .finally(() => { meterBusy = false; });
+    }
+
+    // Reset exposure compensation once nobody has been in front of the camera for 10s.
+    function resetExposureIfIdle() {
+        if (!expComp || expComp.value === 0 || !camTrack || meterBusy) return;
+        if (Date.now() - lastFaceForExposureAt < 10000) return;
+        expComp.value = 0;
+        meterBusy = true;
+        camTrack.applyConstraints({ advanced: [{ exposureCompensation: 0 }] })
+            .catch(() => {}).finally(() => { meterBusy = false; });
+    }
+
+    // ── Software auto-zoom ──────────────────────────────────────────────────
+    // Crops the camera's FULL-RESOLUTION frame around the detected face (plus margin)
+    // so tall, short, near or far people all reach the server as a large, sharp face —
+    // without zooming the camera itself (which would push tall/short people out of frame).
+    const CROP_MARGIN = 2.5;      // crop side = face size x 2.5 (context for the server detector)
+    const CROP_MIN_OUT = 480;     // small (far) faces are scaled up to at least this
+    const CROP_MAX_OUT = 960;     // large crops are scaled down to this
+    let lastCropInfo = null;
+
+    function captureForRecognition(det) {
+        const vw = vid.videoWidth, vh = vid.videoHeight;
+        let sx = 0, sy = 0, sw = vw, sh = vh;
+        const bbox = det && det.boundingBox;
+        if (bbox && bbox.width > 0 && bbox.height > 0) {
+            let side = Math.max(bbox.width, bbox.height) * CROP_MARGIN;
+            side = Math.min(side, vw, vh);
+            const cxF = bbox.originX + bbox.width / 2;
+            const cyF = bbox.originY + bbox.height / 2;
+            sx = Math.round(Math.min(Math.max(0, cxF - side / 2), vw - side));
+            sy = Math.round(Math.min(Math.max(0, cyF - side / 2), vh - side));
+            sw = sh = Math.round(side);
+        }
+        let outW, outH;
+        const longest = Math.max(sw, sh);
+        const scale = longest < CROP_MIN_OUT ? CROP_MIN_OUT / longest
+                    : (longest > CROP_MAX_OUT ? CROP_MAX_OUT / longest : 1);
+        outW = Math.round(sw * scale); outH = Math.round(sh * scale);
+
+        cap.width = outW; cap.height = outH;
+        const cc = cap.getContext('2d', { willReadFrequently: true });
+        cc.save();
+        cc.imageSmoothingEnabled = true;
+        cc.imageSmoothingQuality = 'high';
+        if (currentFacingMode === 'user') {   // keep mirrored, same as registration photos
+            cc.translate(outW, 0); cc.scale(-1, 1);
+        }
+        cc.drawImage(vid, sx, sy, sw, sh, 0, 0, outW, outH);
+        cc.restore();
+
+        lastCropInfo = {
+            frame: vw + 'x' + vh,
+            crop: [sx, sy, sw, sh],
+            out: outW + 'x' + outH,
+            face: bbox ? [Math.round(bbox.width), Math.round(bbox.height)] : null,
+            conf: det && det.categories && det.categories[0] ? Math.round(det.categories[0].score * 100) / 100 : null
+        };
+        return cap.toDataURL('image/jpeg', 0.9);
+    }
+
+    function buildClientMeta() {
+        try {
+            return JSON.stringify({
+                cam: cameraInfo,
+                cap: lastCropInfo,
+                screen: (window.screen ? screen.width + 'x' + screen.height : null),
+                lowEnd: isLowEnd
+            }).slice(0, 3900);
+        } catch (e) { return null; }
+    }
+
+    // ── Automatic retries ───────────────────────────────────────────────────
+    // A blurry / not-recognised result is retried automatically (new photo) up to
+    // MAX_ATTEMPTS times without the person stepping away. Never retried: success,
+    // already-checked-in, network errors (a timed-out request may have committed).
+    const MAX_ATTEMPTS = 3;
+    const RETRYABLE = ['blurry', 'not_recognized', 'no_face', 'liveness', 'dark', 'overexposed'];
+    let scanAttempt = 0;
+    let scanSessionId = null;
+    function newScanSession() {
+        scanAttempt = 0;
+        scanSessionId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    }
+    const FRIENDLY_FAIL = {
+        blurry: 'Image not sharp enough. Please hold still and look at the camera.',
+        no_face: 'Face not clearly visible. Please look at the camera.',
+        liveness: 'Please look straight at the camera.',
+        dark: 'Too dark. Please face the screen.',
+        overexposed: 'Too much glare. Please step slightly to the side.',
+        not_recognized: 'Face not recognized. Please try again or contact the administrator.'
+    };
+
     // ── Scan session state ──────────────────────────────────────────────────
     let scanSessionActive = false;
     let lastFaceWasPresent = false;
@@ -1231,11 +1412,14 @@ html.kiosk-fs #kioskFsExit { display: block; }
 
         let s = null;
         try {
+            // Ask for the sensor's full 4:3 resolution (tablet front cameras are 4:3) so a
+            // face further from the camera still has enough pixels after the face crop.
+            // Low-end devices keep 1280x720 to protect detection speed.
             const idealConstraints = {
                 video: {
                     facingMode: { ideal: currentFacingMode },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    width: { ideal: isLowEnd ? 1280 : 1920 },
+                    height: { ideal: isLowEnd ? 720 : 1440 }
                 },
                 audio: false
             };
@@ -1299,6 +1483,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 const settings = track ? track.getSettings() : {};
                 statusTxt.textContent = 'Camera ready \u2014 ' + vid.videoWidth + 'x' + vid.videoHeight;
                 console.log('[Camera] Active track:', track ? track.label : 'none', 'resolution:', settings.width + 'x' + settings.height);
+                tuneCamera(track);
                 startDrawLoop();
                 startDetectLoop();
             };
@@ -1330,8 +1515,8 @@ html.kiosk-fs #kioskFsExit { display: block; }
         const rect = vid.getBoundingClientRect();
         ovl.width  = Math.round(rect.width) || 400;
         ovl.height = Math.round(rect.height) || 300;
-        cap.width  = ovl.width;
-        cap.height = ovl.height;
+        // The capture canvas is sized per scan from the camera's native frame
+        // (see captureForRecognition), no longer from the on-screen video size.
     }
 
     // ── Draw Loop (overlay + face detection) ──────────────────────────────────
@@ -1506,6 +1691,11 @@ html.kiosk-fs #kioskFsExit { display: block; }
             scanSessionActive = false;
             faceCheckFrame = 0;
             faceReady = false;
+            scanAttempt = 0; scanSessionId = null;
+        }
+        if (!facePresentNow && !scanSessionActive && scanAttempt > 0 && !isProcessing) {
+            // Person walked away in the middle of automatic retries
+            scanAttempt = 0; scanSessionId = null;
         }
         lastFaceWasPresent = facePresentNow;
 
@@ -1522,9 +1712,10 @@ html.kiosk-fs #kioskFsExit { display: block; }
         if (!facePresentNow) {
             faceCheckFrame = 0;
             faceReady = false;
+            resetExposureIfIdle();
             scanLine.style.display = 'none';
             if (!scanSessionActive && !isProcessing) {
-                lbl.textContent = '\uD83D\uDC64 Position your face inside the guide';
+                lbl.textContent = '\uD83D\uDC64 Look at the camera';
                 lbl.className = 'kiosk-face-label wait';
             }
             return;
@@ -1544,21 +1735,23 @@ html.kiosk-fs #kioskFsExit { display: block; }
         if (scanSessionActive) return;
 
         // ── Single face detected — size heuristic ─────────────────────────
-        // If bounding box available, check if face is too small (far) or too large (close)
+        // Faces anywhere in the frame are accepted (the oval is only a hint) and the
+        // capture is auto-zoomed onto the face, so only really tiny / huge faces are refused.
         if (detections.length === 1 && detections[0].boundingBox) {
             const bbox = detections[0].boundingBox;
+            meterOnFace(bbox);
             const faceAreaRatio = (bbox.width * bbox.height) / (vid.videoWidth * vid.videoHeight);
-            if (faceAreaRatio < 0.01) {
+            if (bbox.width < 80 || faceAreaRatio < 0.004) {
                 faceCheckFrame = 0;
                 faceReady = false;
-                lbl.textContent = '\uD83D\uDD39 Move closer';
+                lbl.textContent = '\uD83D\uDD39 Please come a little closer';
                 lbl.className = 'kiosk-face-label wait';
                 return;
             }
-            if (faceAreaRatio > 0.35) {
+            if (faceAreaRatio > 0.45) {
                 faceCheckFrame = 0;
                 faceReady = false;
-                lbl.textContent = '\uD83D\uDD39 Move back';
+                lbl.textContent = '\uD83D\uDD39 Please step back a little';
                 lbl.className = 'kiosk-face-label wait';
                 return;
             }
@@ -1572,25 +1765,8 @@ html.kiosk-fs #kioskFsExit { display: block; }
             lbl.className = 'kiosk-face-label ready';
             scanLine.style.display = 'block';
 
-            // Capture frame for server recognition
-            const cc = cap.getContext('2d', { willReadFrequently: true });
-            cc.save();
-            if (currentFacingMode === 'user') {
-                cc.translate(cap.width, 0); cc.scale(-1,1);
-            }
-            const vRatio = vid.videoWidth / vid.videoHeight;
-            const cRatio = cap.width / cap.height;
-            let sWidth = vid.videoWidth, sHeight = vid.videoHeight, sX = 0, sY = 0;
-            if (vRatio > cRatio) {
-                sWidth = vid.videoHeight * cRatio;
-                sX = (vid.videoWidth - sWidth) / 2;
-            } else {
-                sHeight = vid.videoWidth / cRatio;
-                sY = (vid.videoHeight - sHeight) / 2;
-            }
-            cc.drawImage(vid, sX, sY, sWidth, sHeight, 0, 0, cap.width, cap.height);
-            cc.restore();
-            const base64Img = cap.toDataURL('image/jpeg', 0.7);
+            // Capture: auto-zoomed crop of the camera's native frame around the face (JPEG 0.9)
+            const base64Img = captureForRecognition(detections[0]);
 
             console.log('[Scan] Sending recognition request');
             console.log('[Scan] Image size:', Math.round(base64Img.length / 1024) + 'KB');
@@ -1662,16 +1838,25 @@ html.kiosk-fs #kioskFsExit { display: block; }
     async function doScan(base64Img) {
         isProcessing = true;
         scanSessionActive = true;
+        if (!scanSessionId || scanAttempt === 0) newScanSession();
+        scanAttempt++;
+        let finished = true;   // false when an automatic retry follows
         scanCount++;
         var _stScans = document.getElementById('statScans'); if (_stScans) _stScans.textContent = scanCount;
-        lbl.textContent = 'Identifying...'; lbl.className = 'kiosk-face-label scan';
+        lbl.textContent = scanAttempt > 1 ? `Identifying... (try ${scanAttempt}/${MAX_ATTEMPTS})` : 'Identifying...';
+        lbl.className = 'kiosk-face-label scan';
 
-        console.log('[Scan] POST:', API);
+        console.log('[Scan] POST:', API, 'attempt', scanAttempt);
 
         try {
             const {response: r, data} = await fetchKiosk(API, {
                 method:'POST', headers:{'Content-Type':'application/json','X-Kiosk-Token':KIOSK_TOKEN},
-                body: JSON.stringify({image_base64: base64Img})
+                body: JSON.stringify({
+                    image_base64: base64Img,
+                    session_id: scanSessionId,
+                    attempt: scanAttempt,
+                    client_meta: buildClientMeta()
+                })
             }, 30000);
             console.log('[Scan] Response:', r.status);
 
@@ -1709,13 +1894,26 @@ html.kiosk-fs #kioskFsExit { display: block; }
                 lbl.setAttribute('data-custom-status', '1');
                 showOverlayResult('warn', 'No Faces Registered', 'Register faces first', 'Face profiles must be enrolled before verification.');
                 pauseUntil = Date.now() + 5000;
+            } else if (data && data.reason && RETRYABLE.includes(data.reason) && scanAttempt < MAX_ATTEMPTS) {
+                // Automatic retry: no error screen, no beep — a fresh photo is taken
+                // as soon as the face is steady again (person does not need to step away).
+                finished = false;
+                lbl.textContent = `Hold still... retrying (${scanAttempt + 1}/${MAX_ATTEMPTS})`;
+                lbl.className = 'kiosk-face-label wait';
+                lbl.setAttribute('data-custom-status', '1');
+                scanSessionActive = false;
+                pauseUntil = Date.now() + 700;
             } else {
+                // Final failure. Similarity scores are never shown here (admins see them
+                // on the Face Scan Logs page); only a friendly hint is displayed.
+                const reason = data && data.reason;
+                const hint = (reason && FRIENDLY_FAIL[reason]) || (data && data.message) || 'Face not recognized. Please try again.';
                 beep('error');
-                showResult('error', 'Not Recognized', data && data.message ? data.message : 'Face not recognized. Please try again.', data && data.confidence ? data.confidence : null);
+                showResult('error', 'Not Recognized', hint, null);
                 lbl.textContent = `Not Recognized`;
                 lbl.className = 'kiosk-face-label wait';
                 lbl.setAttribute('data-custom-status', '1');
-                showOverlayResult('error', 'Not Recognized', 'Please try again', data && data.message ? data.message : 'Face not recognized.');
+                showOverlayResult('error', 'Not Recognized', 'Please try again', hint);
                 pauseUntil = Date.now() + 4000;
             }
         } catch(e) {
@@ -1731,6 +1929,7 @@ html.kiosk-fs #kioskFsExit { display: block; }
         } finally {
             isProcessing = false;
             faceCheckFrame = 0; faceReady = false;
+            if (finished) { scanAttempt = 0; scanSessionId = null; }
         }
     }
 

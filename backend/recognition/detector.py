@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from typing import Tuple, Optional, Any
 from config import settings
-from utils.image_utils import check_image_blur, check_image_brightness
+from utils.image_utils import check_image_brightness, face_quality
 from utils.logger import logger
 
 # Haar cascade path (bundled with OpenCV)
@@ -20,7 +20,12 @@ class FaceDetectionResult:
         brightness_score: float = 0.0,
         pitch: float = 0.0,
         yaw: float = 0.0,
-        face: Any = None
+        face: Any = None,
+        reason: Optional[str] = None,
+        face_brightness: Optional[float] = None,
+        face_contrast: Optional[float] = None,
+        face_width: Optional[int] = None,
+        det_score: Optional[float] = None
     ):
         self.is_valid         = is_valid
         self.error_message    = error_message
@@ -33,6 +38,14 @@ class FaceDetectionResult:
         self.yaw              = yaw
         # InsightFace Face object (carries .embedding) — lets callers skip a second inference
         self.face             = face
+        # Machine-readable failure reason: blurry | dark | overexposed | no_face |
+        # multiple_faces | error   (None when valid)
+        self.reason           = reason
+        # Face-region diagnostics (for the admin scan-log page)
+        self.face_brightness  = face_brightness
+        self.face_contrast    = face_contrast
+        self.face_width       = face_width
+        self.det_score        = det_score
 
 
 class FaceDetector:
@@ -118,36 +131,25 @@ class FaceDetector:
         Tier 2: InsightFace-based detection with quality checks.
 
         Pipeline:
-          1. Blur quality check (Laplacian variance)
-          2. Brightness quality check
-          3. InsightFace face detection
+          1. Frame brightness check (catches a covered / totally dark camera)
+          2. InsightFace face detection
+          3. Sharpness check on the FACE region only (settings.FACE_BLUR_THRESHOLD)
+
+        Sharpness used to be measured on the whole frame before detection, which rejected
+        sharp faces in front of plain walls or behind a hazy cover sheet.
 
         Updates model_manager face-presence state:
           - 0 faces  -> no-face state (timer starts ticking toward unload)
           - 1+ faces -> face-present state (timer resets)
         """
-        # ── 1. Blur check ────────────────────────────────────────────────────────
-        blur_score = check_image_blur(img_bgr)
-        if blur_score < settings.BLUR_THRESHOLD:
-            # Blur failure — treat as no-face for lifecycle purposes
-            if self._model_manager is not None:
-                self._model_manager.mark_no_face()
-            return FaceDetectionResult(
-                is_valid=False,
-                error_message=(
-                    f"Image is too blurry (score {blur_score:.1f} < {settings.BLUR_THRESHOLD}). "
-                    "Please hold the camera still."
-                ),
-                blur_score=blur_score
-            )
-
-        # ── 2. Brightness check ──────────────────────────────────────────────────
+        # ── 1. Brightness check (whole frame) ────────────────────────────────────
         brightness_score = check_image_brightness(img_bgr)
         if brightness_score < settings.MIN_BRIGHTNESS:
             if self._model_manager is not None:
                 self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
+                reason="dark",
                 error_message=(
                     f"Image is too dark (brightness {brightness_score:.1f}). "
                     "Please move to a well-lit area."
@@ -159,6 +161,7 @@ class FaceDetector:
                 self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
+                reason="overexposed",
                 error_message=(
                     f"Image is overexposed (brightness {brightness_score:.1f}). "
                     "Please reduce glare or direct light."
@@ -166,7 +169,7 @@ class FaceDetector:
                 brightness_score=brightness_score
             )
 
-        # ── 3. InsightFace detection (mandatory) ─────────────────────────────────
+        # ── 2. InsightFace detection (mandatory) ─────────────────────────────────
         try:
             faces = self._model_getter().get(img_bgr)
         except Exception as e:
@@ -175,8 +178,8 @@ class FaceDetector:
                 self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
+                reason="error",
                 error_message="Face detection failed. Please try again.",
-                blur_score=blur_score,
                 brightness_score=brightness_score
             )
 
@@ -188,9 +191,9 @@ class FaceDetector:
                 self._model_manager.mark_no_face()
             return FaceDetectionResult(
                 is_valid=False,
+                reason="no_face",
                 error_message="No face detected. Please align your face clearly in front of the camera.",
                 face_count=0,
-                blur_score=blur_score,
                 brightness_score=brightness_score
             )
 
@@ -201,15 +204,16 @@ class FaceDetector:
         if face_count > 1:
             return FaceDetectionResult(
                 is_valid=False,
+                reason="multiple_faces",
                 error_message=f"Multiple faces detected ({face_count}). Only one person must be in frame.",
                 face_count=face_count,
-                blur_score=blur_score,
                 brightness_score=brightness_score
             )
 
         face = faces[0]
         bbox = tuple(map(int, face.bbox))
         kps  = getattr(face, 'kps', None)
+        det_score = float(getattr(face, 'det_score', 0.0) or 0.0)
 
         pitch, yaw = 0.0, 0.0
         if kps is not None and len(kps) == 5:
@@ -225,8 +229,10 @@ class FaceDetector:
             lower_dist = abs(mouth_center_y - nose_y)
             pitch = upper_dist / (lower_dist + 1e-6)
 
-        return FaceDetectionResult(
-            is_valid=True,
+        # ── 3. Sharpness on the face region only ─────────────────────────────────
+        fq = face_quality(img_bgr, bbox)
+        blur_score = fq.get("blur", 0.0)
+        common = dict(
             face_count=1,
             bbox=bbox,
             kps=kps,
@@ -234,5 +240,20 @@ class FaceDetector:
             brightness_score=brightness_score,
             pitch=pitch,
             yaw=yaw,
-            face=face
+            face_brightness=fq.get("brightness"),
+            face_contrast=fq.get("contrast"),
+            face_width=fq.get("width"),
+            det_score=det_score,
         )
+        if blur_score < settings.FACE_BLUR_THRESHOLD:
+            return FaceDetectionResult(
+                is_valid=False,
+                reason="blurry",
+                error_message=(
+                    f"Face is too blurry (score {blur_score:.1f} < {settings.FACE_BLUR_THRESHOLD}). "
+                    "Please hold still."
+                ),
+                **common
+            )
+
+        return FaceDetectionResult(is_valid=True, face=face, **common)
